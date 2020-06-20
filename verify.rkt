@@ -1,0 +1,63 @@
+#lang racket/base
+
+; Make and verify hashes and signatures.
+
+(provide make-digest
+         make-signature
+         digest=?
+         verify-signature)
+
+(require racket/file
+         racket/path
+         racket/port
+         racket/system)
+
+(define openssl (find-executable-path "openssl"))
+
+(define (run-openssl-command stdin-source . args)
+  (define-values (sp from-stdout to-stdin from-stderr)
+    (apply subprocess #f #f #f openssl args))
+
+  (copy-port stdin-source to-stdin)
+  (close-output-port to-stdin)
+
+  (sync sp)
+  (define exit-code (subprocess-status sp))
+
+  (copy-port from-stderr (current-output-port))
+  (define output (port->bytes from-stdout))
+
+  (close-input-port from-stderr)
+  (close-input-port from-stdout)
+  (values exit-code output))
+
+(define (make-digest target-path)
+  (call-with-input-file target-path
+    (λ (in)
+      (run-openssl-command in
+                           "dgst" "-binary" "-sha384"))))
+
+(define (digest=? digest target-path)
+  (define-values (exit-code other-digest) (make-digest target-path))
+  (and (eq? exit-code 0)
+       (bytes=? digest other-digest)))
+
+(define (make-signature digest private-key-path)
+  (run-openssl-command (open-input-bytes digest)
+                       "pkeyutl"
+                       "-sign"
+                       "-inkey" private-key-path))
+
+(define (verify-signature digest signature public-key)
+  (define tmpsig (make-temporary-file))
+  (call-with-output-file tmpsig
+    #:exists 'truncate/replace
+    (λ (o) (copy-port (open-input-bytes signature) o)))
+  (define-values (exit-code msg)
+    (run-openssl-command
+     (open-input-bytes digest)
+     "pkeyutl"
+     "-verify"
+     "-sigfile" tmpsig
+     "-pubin" "-inkey" public-key))
+  (eq? exit-code 0))
