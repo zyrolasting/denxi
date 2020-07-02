@@ -1,19 +1,27 @@
 #lang racket/base
 
-(provide BASE-SERVICE-ENDPOINT
-         make-endpoint
-         current-zccatalog-service-endpoint)
+(provide make-endpoint
+         call-with-each-catalog
+         for-catalog
+         (all-from-out net/url))
 
-(require net/url)
-
-; Leverage the envvar and parameter for testing purposes.
-(define BASE-SERVICE-ENDPOINT
-  (string->url (or (getenv "GSYS_ZCP_CATALOG_ENDPOINT")
-                   "https://zcpkgs.com:443")))
+(require net/url
+         "../config.rkt"
+         "../logging.rkt")
 
 (define current-zccatalog-service-endpoint
-  (make-parameter BASE-SERVICE-ENDPOINT))
+  (make-parameter (string->url (cdar (ZCPKG_SERVICE_ENDPOINTS)))))
 
+(define (call-with-each-catalog f)
+  (for/or ([base (in-list (ZCPKG_SERVICE_ENDPOINTS))])
+    (log-zcpkg-info "Trying ~v catalog at ~a" (car base) (cdr base))
+    (parameterize ([current-zccatalog-service-endpoint (cdr base)])
+      (f))))
+
+(define-syntax-rule (for-catalog catalog-name expr ...)
+  (parameterize ([current-zccatalog-service-endpoint
+                  (string->url (cdr (assoc catalog-name (ZCPKG_SERVICE_ENDPOINTS))))])
+    expr ...))
 
 (define-syntax-rule (make-endpoint expr ...)
   (struct-copy url (current-zccatalog-service-endpoint) expr ...))

@@ -15,7 +15,7 @@
          (prefix-in limit: web-server/dispatchers/limit)
          (prefix-in lift: web-server/dispatchers/dispatch-lift)
          (prefix-in filter: web-server/dispatchers/dispatch-filter)
-         "endpoints.rkt")
+         "endpoint.rkt")
 
 ; Server enforces char limit
 (define FEEDBACK-CHAR-LIMIT 2000)
@@ -65,4 +65,4 @@
                            (lift:make accept-feedback))))
 
 (define feedback-endpoint
-  (make-endpoint "/feedback"))
+  (make-endpoint [path (list (path/param "feedback" null))]))

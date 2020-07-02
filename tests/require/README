@@ -1,6 +1,0 @@
-This is an example of two disjoint directories that in turn hold APs.
-
-'local' links to 'shared', such that searches from 'local' will
-continue to 'shared'. Both 'local' and 'shared' have an AP named
-'pkg'. The one in 'local' must shadow the one in 'shared', to
-prevent surprises.

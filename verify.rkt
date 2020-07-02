@@ -1,16 +1,24 @@
 #lang racket/base
 
-; Make and verify hashes and signatures.
+; Define procedures used to verify custom data,
+; so that other processes can continue.
 
 (provide make-digest
          make-signature
          digest=?
-         verify-signature)
+         verify-signature
+         well-formed-zcpkg-info?)
 
-(require racket/file
-         racket/path
-         racket/port
-         racket/system)
+(require idiocket/contract
+         idiocket/file
+         idiocket/function
+         idiocket/path
+         idiocket/port
+         idiocket/system
+         "string.rkt"
+         "zcpkg-info.rkt"
+         "revision.rkt"
+         "dependency.rkt")
 
 (define openssl (find-executable-path "openssl"))
 
@@ -61,3 +69,23 @@
      "-sigfile" tmpsig
      "-pubin" "-inkey" public-key))
   (eq? exit-code 0))
+
+
+; TODO: Write hash algorithm-dependent check
+(define (non-empty-bytes? b)
+  (and (bytes? b)
+       (> (bytes-length b) 0)))
+
+(define well-formed-zcpkg-info?
+  (curry passes-invariant-assertion?
+         (struct/c zcpkg-info
+                   name-string?
+                   name-string?
+                   name-string?
+                   revision-number?
+                   (listof name-string?)
+                   (or/c #f path-string?)
+                   (listof dependency-string?)
+                   (or/c #f non-empty-bytes?)
+                   (or/c #f non-empty-bytes?)
+                   (or/c #f exact-positive-integer?))))

@@ -13,6 +13,12 @@
                  (string-join opts "|")
                  ")"))
 
+; TODO: Flesh out definition of allowed names.
+;
+; - No spaces
+; - No character or word that a Windows, Mac OSX, or a (typical) Linux distribution would reserve.
+; - No path separators
+;
 (define name-pattern-string "[^/\\s]+")
 (define maybe-spaces-pattern-string "\\s*")
 
@@ -27,3 +33,5 @@
   (λ (v)
     (and (string? v)
          (regexp-match rx v))))
+
+(define name-string? (make-rx-predicate name-pattern-string))

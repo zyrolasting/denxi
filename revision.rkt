@@ -9,28 +9,38 @@
          racket/generator
          racket/match
          racket/sequence
-         racket/string
-         "base.rkt")
+         "string.rkt")
 
 (provide (all-defined-out))
 
 (struct revision (retracted? names))
 (struct exn:fail:zcpkg:invalid-revision-interval exn:fail (lo hi))
 
+(define (add1-if do-it? low-num)
+  (if do-it? (add1 low-num) low-num))
+
+(define (sub1-if do-it? hi-num)
+  (if do-it? (sub1 hi-num) hi-num))
+
 ; High-level resolution procedure. Uses the rest of the module.
 (define (resolve-revision-query v revisions)
-  (cond [(exact-nonnegative-integer? v)
-         (sequence-ref revisions v)]
+  (define-values (l h) (revision-query->values v revisions))
+  (for/or ([(rev index) (in-available-revisions revisions l h)])
+    rev))
+
+(define (revision-query->values v revisions)
+  (cond [(revision-number? v) v]
         [(revision-number-string? v)
-         (resolve-revision-query (string->number v) revisions)]
-        [(revision-name-string? v)
-         (resolve-revision-query (revision-name->number v revisions) revisions)]
+         (revision-query->values (string->number v) revisions)]
         [(revision-range-string? v)
-         (resolve-revision-range v revisions)]
+         (revision-range->values v revisions)]
+        [(revision-name-string? v)
+         (revision-query->values (revision-name->number v revisions) revisions)]
         [else (raise-argument-error
-               'resolve-revision-query
+               'revision-query->values
                "A valid revision query"
                v)]))
+
 
 ; Iterates over available revisions with preference to later revisions.
 (define (in-available-revisions revisions [lo 0] [hi (sub1 (sequence-length revisions))])
@@ -41,11 +51,13 @@
       (unless (revision-retracted? rev)
         (yield rev i)))))
 
-; Get the latest in the range
-(define (resolve-revision-range str revisions)
-  (define-values (l h) (revision-range->values str revisions))
-  (for/or ([(rev index) (in-available-revisions revisions l h)])
-    rev))
+(define (revision-number-in-range? n l h)
+  (and (>= n l)
+       (<= n h)))
+
+(define (revision-range-subset? l1 h1 l2 h2)
+  (and (revision-number-in-range? l1 l2 h2)
+       (revision-number-in-range? h1 l2 h2)))
 
 ; Translate "[initial, breaking-change)" to a numerical equivalent.
 (define (revision-range->values str revisions)
@@ -56,13 +68,10 @@
      (define hi-num  (revision-name->number hi-name revisions))
 
      (define low-adjusted
-       (if (equal? open-bracket "(")
-           (add1 low-num) low-num))
+       (add1-if (equal? open-bracket "(") low-num))
 
      (define hi-adjusted
-       (if (equal? close-bracket ")")
-           (sub1 hi-num)
-           hi-num))
+       (sub1-if (equal? close-bracket ")") hi-num))
 
      (assert-valid-revision-range low-adjusted hi-adjusted str)
 
@@ -74,7 +83,7 @@
         str)]))
 
 (define (revision-name->number name revisions)
-  (cond [(exact-nonnegative-integer? name) name]
+  (cond [(revision-number? name) name]
         [(revision-number-string? name)
          (revision-name->number (string->number name) revisions)]
         [(equal? name "oldest") 0]
@@ -150,5 +159,8 @@
 (define revision-string?
   (make-rx-predicate revision-pattern-string))
 
+(define revision-number?
+  exact-nonnegative-integer?)
+
 (define revision-query/c
-  (or/c exact-nonnegative-integer? revision-string?))
+  (or/c revision-number? revision-string?))

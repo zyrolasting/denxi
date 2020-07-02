@@ -20,7 +20,7 @@
 
 /!\ ONLY USE THE FEEDBACK COMMAND IF YOU CONSENT TO THESE TERMS. /!\
 
-When you send feedback, it's submitted as plain text to a server.
+When you send feedback, it's submitted as clear text to a server.
 While the connection is encrypted, you should not send any private
 information.
 

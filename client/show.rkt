@@ -2,11 +2,39 @@
 
 (provide show-command)
 
-(require racket/cmdline)
+(require racket/cmdline
+         racket/match
+         racket/pretty
+         "../workspace.rkt")
 
+
+(define HELP-FMT #<<EOF
+Usage: raco zcpkg show <what>
+
+Show a report on requested information.
+
+raco zcpkg show installed: Show installed packages
+raco zcpkg show workspace: Show detected workspace path
+EOF
+)
+
+
+(define (show-help . _)
+  (displayln HELP-FMT))
+
+(define (show-workspace)
+  (displayln (ZCPKG_WORKSPACE)))
+
+(define (show-installed)
+  (void))
 
 (define (show-command)
-  (command-line
-   #:args zcp-package-names
-   (for ([versionless-name (in-list zcp-package-names)])
-     (define info (zcpkg-get-info )))))
+  (parse-command-line "zcpkg" (current-command-line-arguments)
+                      '()
+                      (λ (flags action . args)
+                        ((match action
+                           ["workspace" show-workspace]
+                           ["installed" show-installed]
+                           [_ show-help])))
+                      '("what")
+                      show-help))

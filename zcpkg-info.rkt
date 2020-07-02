@@ -1,43 +1,40 @@
 #lang racket/base
 
-; Responsible for helping others understand the purpose and release
-; information of a package.
+; Define metadata about a zero-collection package.
 
-(provide (struct-out zcpkg-info)
-         read-zcpkg-info
-         write-zcpkg-info
-         getinfo/zcpkg)
+(provide (all-defined-out))
 
-(require idiocket/file
+(require racket/format
+         "workspace.rkt"
+         "config.rkt"
          "metadata.rkt")
 
 (struct zcpkg-info
-  (distributor     ; The name of the party distributing the artifact in a catalog.
-   project         ; The name of the project submitted by a distributor.
-   artifact        ; The name of an artifact in a project.
-   edition         ; The name of an artifact's design.
-   revision-number ; The number of a design's implementation.
-   revision-names  ; Aliases for the revision-number.
-   installer       ; A Racket module responsible for userspace changes.
-   dependencies)   ; A list of dependency queries.
+  (provider-name     ; The name of the package provider
+   package-name      ; The name of the package itself
+   edition-name      ; The name of a design used in the package
+   revision-number   ; The number of a design's implementation.
+   revision-names    ; Aliases for the revision-number.
+   installer         ; A Racket module responsible for userspace changes.
+   dependencies      ; A list of dependency queries.
+   integrity         ; A digest used to verify package contents
+   signature         ; A signature used to authenticate the provider
+   upload-timestamp) ; A timestamp marking when the package was accepted by a server.
   #:transparent)
 
 (declare-info-i/o zcpkg-info)
 
-(define (zcpkg-get-info-file-path p)
-  (or (get-path-if-file-exists (build-path p "info.rkt"))
-      (get-path-if-file-exists (build-path p "zcp-info.rkt"))))
-
-(define (zcpkg-get-info p)
-  (read-zcpkg-info (zcpkg-get-info-file-path p)))
-
-(define (zcpkg-comparable? a b)
-  (for/and ([p (in-list (list zcpkg-info-distributor
-                              zcpkg-info-edition
-                              zcpkg-info-artifact))])
-    (equal? (p a) (p b))))
-
 (define (zcpkg-compare-versions a b)
-  (and (zcpkg-comparable? a b)
+  (and (andmap (λ (p) (equal? (p a) (p b)))
+               (list zcpkg-info-provider-name
+                     zcpkg-info-package-name
+                     zcpkg-info-edition-name))
        (- (zcpkg-info-revision-number a)
           (zcpkg-info-revision-number b))))
+
+(define (zcpkg-info->install-path info)
+  (build-workspace-path (ZCPKG_INSTALL_RELATIVE_PATH)
+                        (zcpkg-info-provider-name info)
+                        (zcpkg-info-package-name info)
+                        (zcpkg-info-edition-name info)
+                        (~a (zcpkg-info-revision-number info))))

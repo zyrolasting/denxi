@@ -11,11 +11,11 @@
 (define HELP-FMT #<<EOF
 Usage: raco zcpkg download <subcommand> [args] ...
 
-Downloads files to local cache.
+Download packages to a local cache.
 
-  download file:   Download and verify tgz archive from URL
-  download github: Download archive from GitHub
-  download clear:  Clear download cache
+  download file:    Download and verify tgz archive from URL
+  download github:  Download ZIP archive from GitHub
+  download clear:   Clear download cache
 
 EOF
 )
@@ -43,13 +43,13 @@ EOF
 
 (define (download-file-command)
   (command-line #:args (str)
-                (displayln (download-archive str))))
+                (displayln (void str))))
 
 (define (download-github-archive)
   (command-line
    #:args (un+repo [ref "master"])
    (define dest
-     (download-file
+     (void
       (string->url
        (format "https://github.com/~a/archive/~a.zip" un+repo ref))))
    (printf "Downloaded ZIP to ~a~n" dest)))

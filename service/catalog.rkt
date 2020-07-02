@@ -9,10 +9,7 @@
          web-server/dispatchers/filesystem-map
          (prefix-in files:
                     web-server/dispatchers/dispatch-files)
-         "path.rkt")
-
-(define url->path
-  (make-url->path catalogs/))
+         "../workspace.rkt")
 
 (define catalog-dispatcher
-  (files:make #:url->path url->path))
+  (files:make #:url->path (make-url->path (build-workspace-path "home"))))

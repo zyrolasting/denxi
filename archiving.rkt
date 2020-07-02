@@ -1,16 +1,16 @@
 #lang racket/base
 
-; Responsible for packing and unpacking directories.
-; Hides the algorithm responsible from the user.
+; Pack and unpack archives containing packages.
+; Hide the algorithms responsible from the user.
 
-(require racket/contract)
+(require idiocket/contract)
 
 (provide (contract-out [pack   (-> directory-exists? path?)]
                        [unpack (-> archive-path? path?)]
                        [archive-path? predicate/c]))
 
-(require racket/file
-         racket/path
+(require idiocket/file
+         idiocket/path
          file/tar
          file/gzip
          file/untgz)
@@ -26,9 +26,9 @@
            #:exists-ok? #t)
     archive-path))
 
-(define (unpack path)
-  (untgz path)
-  (path-replace-extension path #""))
+(define (unpack path #:to [dest (path-only path)])
+  (untgz path #:dest dest)
+  dest)
 
 (define (archive-path? path)
   (equal? (path-get-extension path) #".tgz"))

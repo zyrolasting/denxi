@@ -6,7 +6,7 @@
          racket/string
          idiocket/bool
          rackunit
-         zcpkg/source/revision)
+         zcpkg/revision)
 
 (define (make-valid-range-sequence low hi)
   (in-generator

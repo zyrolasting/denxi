@@ -1,34 +1,36 @@
 #lang racket/base
 
 (require racket/cmdline
+         "config.rkt"
+         "capture.rkt"
+         "restore.rkt"
          "download.rkt"
+         "upload.rkt"
          "install.rkt"
          "uninstall.rkt"
          "update.rkt"
          "show.rkt"
-         "feedback.rkt"
-         "lock.rkt")
+         "serve.rkt"
+         "feedback.rkt")
 
 (define HELP-FMT #<<EOF
 Usage: raco zcpkg <subcommand> [args] ...
 
-Package management:
   raco zcpkg install:   Install packages
   raco zcpkg uninstall: Uninstall packages
   raco zcpkg update:    Change package version
-  raco zcpkg show:      Describe packages
-  raco zcpkg lock:      Record expected dependencies in lock file
-  raco zcpkg resolve:   Make a concrete dependency name
 
-Catalog:
-  raco zcpkg register:  Register a catalog
-  raco zcpkg login:     Authenticate against a catalog
-  raco zcpkg download:  Download a package artifact
-  raco zcpkg publish:   Submit a package to a catalog
-
-Other:
-  raco zcpkg feedback:  Send feedback
+  raco zcpkg show:      Review key information
   raco zcpkg config:    Set options
+
+  raco zcpkg capture:   Capture workspace
+  raco zcpkg restore:   Restore captured workspace
+
+  raco zcpkg serve:     Host a catalog
+  raco zcpkg register:  Register an account
+  raco zcpkg download:  Download from a catalog
+  raco zcpkg upload:    Upload to a catalog
+  raco zcpkg feedback:  Send feedback
 
 EOF
 )
@@ -52,10 +54,13 @@ EOF
                              ["install"   install-command]
                              ["uninstall" uninstall-command]
                              ["update"    update-command]
+                             ["config"    config-command]
                              ["show"      show-command]
                              ["feedback"  feedback-command]
-                             ["lock"      lock-command]
+                             ["capture"   capture-command]
+                             ["restore"   restore-command]
                              ["download"  download-command]
+                             ["upload"    upload-command]
                              [_ (λ () (unrecognized-command action))]))))
                       '("subcommand" "args")
                       void))

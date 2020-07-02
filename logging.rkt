@@ -2,13 +2,13 @@
 
 (provide (all-defined-out))
 
-(require racket/logging
-         "jobs/messages.rkt")
+(require racket/logging)
 
 (define-logger zcpkg)
 
-(define (log-$report id m)
-  (log-message zcpkg-logger
-               ($report-level m)
-               (format "~a: ~a" id ($report-message m))
-               ($report-data m)))
+(define-syntax-rule (show-zcpkg-logs body ...)
+  (with-logging-to-port (current-output-port)
+    (λ () body ...)
+    #:logger zcpkg-logger
+    'debug
+    'zcpkg))

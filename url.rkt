@@ -1,13 +1,20 @@
 #lang racket/base
 
-
 (require racket/contract
+         racket/function
+         racket/list
          net/url)
 
 (provide (all-from-out net/url)
          (contract-out
+          [indicates-fs-path? (-> url? boolean?)]
           [find-directory-path (-> url? (or/c #f path?))]
-          [find-catalog-name (-> url? (or/c #f ))]))
+          [url-string? predicate/c]))
+
+(define (url-string? s)
+  (with-handlers ([exn:fail? (λ _ #f)])
+    (and (string->url s)
+         #t)))
 
 (define (find-directory-path u)
   (with-handlers ([exn? (const #f)])
@@ -20,13 +27,11 @@
                  (if (url-path-absolute? u)
                      (car (filesystem-root-list))
                      (current-directory))
-                 (map path/param-path (url-path u)))))))
+                 (filter-map (λ (pp)
+                               (and (not (equal? "" (path/param-path pp)))
+                                    (path/param-path pp)))
+                             (url-path u)))))))
 
-(define (find-catalog-name u)
-  (with-handlers ([exn? (const #f)])
-    (and (not (or (url-scheme u)
-                  (indicates-fs-path? u)))
-         (apply make-artifact-name (map path/param-path (url-path u))))))
 
 (define (indicates-fs-path? u)
   (define leading (get-leading-path-element u))
@@ -34,6 +39,7 @@
       (eq? 'same leading)
       (equal? "" leading) ; For UNC path (Windows)
       (url-path-absolute? u)))
+
 
 (define (get-leading-path-element u)
   (define path/params (url-path u))
