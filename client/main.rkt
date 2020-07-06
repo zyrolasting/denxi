@@ -10,8 +10,7 @@
          "uninstall.rkt"
          "update.rkt"
          "show.rkt"
-         "serve.rkt"
-         "feedback.rkt")
+         "serve.rkt")
 
 (define HELP-FMT #<<EOF
 Usage: raco zcpkg <subcommand> [args] ...
@@ -30,7 +29,6 @@ Usage: raco zcpkg <subcommand> [args] ...
   raco zcpkg register:  Register an account
   raco zcpkg download:  Download from a catalog
   raco zcpkg upload:    Upload to a catalog
-  raco zcpkg feedback:  Send feedback
 
 EOF
 )
@@ -56,7 +54,6 @@ EOF
                              ["update"    update-command]
                              ["config"    config-command]
                              ["show"      show-command]
-                             ["feedback"  feedback-command]
                              ["capture"   capture-command]
                              ["restore"   restore-command]
                              ["download"  download-command]

@@ -13,7 +13,6 @@
          (prefix-in lift:
                     web-server/dispatchers/dispatch-lift)
          "catalog.rkt"
-         "feedback.rkt"
          "endpoint.rkt")
 
 (define (not-found req)
@@ -26,6 +25,5 @@
          #:dispatch
          (seq:make
           (logged:make #:format logged:extended-format #:log-path (current-output-port))
-          feedback-dispatcher
           catalog-dispatcher
           (lift:make not-found))))
