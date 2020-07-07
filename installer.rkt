@@ -39,8 +39,8 @@
 
 
 (define (make-installer zcpkg-path info)
-  (define installer-path (get-installer-path zcpkg-path name info))
   (define name (dependency->string (zcpkg-info->dependency info)))
+  (define installer-path (get-installer-path zcpkg-path name info))
   (installer
    (if installer-path
        (parameterize ([sandbox-output 'pipe]
