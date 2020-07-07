@@ -12,6 +12,7 @@
          "uninstall.rkt"
          "update.rkt"
          "show.rkt"
+         "recant.rkt"
          "serve.rkt")
 
 (define HELP-FMT #<<EOF
@@ -32,6 +33,7 @@ Usage: raco zcpkg <subcommand> [args] ...
   raco zcpkg register:  Register an account
   raco zcpkg download:  Download from a catalog
   raco zcpkg upload:    Upload to a catalog
+  raco zcpkg recant:    Stop distributing an uploaded artifact
 
 EOF
 )
@@ -67,6 +69,7 @@ EOF
                              ["restore"   restore-command]
                              ["download"  download-command]
                              ["upload"    upload-command]
+                             ["recant"    recant-command]
                              [_ (λ () (unrecognized-command action))]))))
                       '("subcommand" "args")
                       void))

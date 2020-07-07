@@ -71,6 +71,14 @@
                                (dependency-revision-min/for-inclusive-checks with-range)
                                (dependency-revision-max/for-inclusive-checks with-range))))
 
+(define (dependency-exact? d)
+  (writeln d)
+  (and (concrete-dependency? d)
+       (not (dependency-revision-min-exclusive? d))
+       (not (dependency-revision-max-exclusive? d))
+       (equal? (dependency-revision-min d)
+               (dependency-revision-max d))))
+
 (define (dependency-string? s)
   (fail-as #f (string->dependency s)))
 
