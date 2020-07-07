@@ -1,6 +1,7 @@
 #lang racket/base
 
 (require racket/cmdline
+         "new.rkt"
          "config.rkt"
          "capture.rkt"
          "restore.rkt"
@@ -18,6 +19,7 @@ Usage: raco zcpkg <subcommand> [args] ...
   raco zcpkg install:   Install packages
   raco zcpkg uninstall: Uninstall packages
   raco zcpkg update:    Change package version
+  raco zcpkg new:       Make skeleton package
 
   raco zcpkg show:      Review key information
   raco zcpkg config:    Set options
@@ -51,6 +53,7 @@ EOF
                           ((match action
                              ["install"   install-command]
                              ["uninstall" uninstall-command]
+                             ["new"       new-command]
                              ["update"    update-command]
                              ["config"    config-command]
                              ["show"      show-command]
