@@ -13,6 +13,7 @@
           [exact-dependency? predicate/c]
           [dependency-string? predicate/c]
           [dependency-variant? predicate/c]
+          [dependency-identity=? (-> dependency-variant? dependency-variant? boolean?)]
           [coerce-dependency (-> dependency-variant? dependency?)]
           [dependency->string (-> dependency? string?)]
           [string->dependency (-> string? dependency?)]
@@ -124,11 +125,16 @@
   (assert-valid-revision-range l1 h1 "haystack dependency")
   (assert-valid-revision-range l2 h2 "needle dependency")
 
-  (and (andmap (λ (p) (equal? (p to-match) (p exact-dep)))
-               (list dependency-provider-name
-                     dependency-package-name
-                     dependency-edition-name))
+  (and (dependency-identity=? exact-dep to-match)
        (revision-range-subset? l1 h1 l2 h2)))
+
+(define (dependency-identity=? a b)
+  (define x (coerce-dependency a))
+  (define y (coerce-dependency b))
+  (andmap (λ (p) (equal? (p x) (p y)))
+          (list dependency-provider-name
+                dependency-package-name
+                dependency-edition-name)))
 
 (define (coerce-dependency v)
   (cond [(dependency? v) v]

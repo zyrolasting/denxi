@@ -56,6 +56,23 @@
     (check-equal? (url-path url-repr) (url-path (dependency->url target))))
 
 
+  (test-true "Detect equal dependency identities"
+             (dependency-identity=? (dependency "a" "b" "c" #f #f #f #f)
+                                    (dependency "a" "b" "c" #f #f #f #f)))
+
+  (test-false "Detect differing provider names"
+              (dependency-identity=? (dependency "a" "b" "c" #f #f #f #f)
+                                     (dependency " " "b" "c" #f #f #f #f)))
+
+  (test-false "Detect differing package names"
+              (dependency-identity=? (dependency "a" "b" "c" #f #f #f #f)
+                                     (dependency "a" " " "c" #f #f #f #f)))
+
+  (test-false "Detect differing edition names"
+              (dependency-identity=? (dependency "a" "b" "c" #f #f #f #f)
+                                     (dependency "a" "b" " " #f #f #f #f)))
+
+
   (test-case "Use Strings and URLs to produce exact and inexact dependencies"
     (define (check-conversion dep str)
       (check-equal? dep (string->dependency str))
