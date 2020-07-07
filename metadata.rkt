@@ -12,6 +12,7 @@
 (require idiocket/contract
          idiocket/exn
          idiocket/function
+         idiocket/path
          idiocket/port
          idiocket/sandbox
          idiocket/string
@@ -34,7 +35,9 @@
 ;
 (define (make-lookup-procedure variant)
   (cond [(path? variant)
-         (define i ((make-evaluator 'racket/base) `(dynamic-require ,variant '#%info-lookup)))
+         (define i
+           (parameterize ([sandbox-path-permissions `((read ,(path-only variant)))])
+             ((make-evaluator 'racket/base) `(dynamic-require ,variant '#%info-lookup))))
          (λ (k) (with-handlers ([exn:fail? (const #f)]) (i k)))]
 
         [(input-port? variant)
