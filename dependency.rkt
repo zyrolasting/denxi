@@ -96,23 +96,23 @@
      (dependency provider-name
                  package-name
                  "draft"
-                 #t "newest"
-                 #t "newest")]
+                 #f "newest"
+                 #f "newest")]
 
     [(list (? name-string? edition-name))
      (dependency provider-name
                  package-name
                  edition-name
-                 #t "newest"
-                 #t "newest")]
+                 #f "newest"
+                 #f "newest")]
 
     [(list (? name-string? edition-name)
            (? revision-string? revision))
      (dependency provider-name
                  package-name
                  edition-name
-                 #t revision
-                 #t revision)]
+                 #f revision
+                 #f revision)]
 
     [(list (? name-string? edition-name)
            (? revision-string? min-revision)
@@ -120,8 +120,8 @@
      (dependency provider-name
                  package-name
                  edition-name
-                 #t min-revision
-                 #t max-revision)]
+                 #f min-revision
+                 #f max-revision)]
 
     [(list (? name-string? edition-name)
            min-flag
