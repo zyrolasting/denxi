@@ -1,6 +1,7 @@
 #lang racket/base
 
 (require racket/cmdline
+         "../config.rkt"
          "new.rkt"
          "config.rkt"
          "capture.rkt"
@@ -47,7 +48,12 @@ EOF
 (module+ main
   (require racket/match)
   (parse-command-line "zcpkg" (current-command-line-arguments)
-                      '()
+                      `((once-each
+                         ,(ZCPKG_VERBOSE/make-flag-spec
+                           (λ (flag-string help-str param)
+                             `((,flag-string)
+                               ,(λ _ (param #t))
+                               (,help-str))))))
                       (λ (flags action . args)
                         (parameterize ([current-command-line-arguments (list->vector args)])
                           ((match action
