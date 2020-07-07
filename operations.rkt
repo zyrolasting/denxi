@@ -15,7 +15,7 @@
          "download.rkt"
          "workspace.rkt"
          "config.rkt"
-         "printer.rkt"
+         "logging.rkt"
          "dependency.rkt"
          "url.rkt"
          "zcpkg-info.rkt")

@@ -14,7 +14,7 @@
 
 (define (call-with-each-catalog f)
   (for/or ([base (in-list (ZCPKG_SERVICE_ENDPOINTS))])
-    (log-zcpkg-info "Trying ~v catalog at ~a" (car base) (cdr base))
+    (<< "Trying ~v catalog at ~a" (car base) (cdr base))
     (parameterize ([current-zccatalog-service-endpoint (cdr base)])
       (f))))
 

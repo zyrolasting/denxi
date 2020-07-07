@@ -5,13 +5,10 @@
 (provide (all-defined-out))
 
 (require racket/place
-         "../printer.rkt")
+         "../logging.rkt")
 
 ; Start a job. Use the ID for logging.
 (struct $run (id command) #:prefab)
-
-; Log a message
-(struct $log (message level data) #:prefab)
 
 ; Ask the user a question.
 (struct $ask (prompt) #:prefab)
@@ -26,17 +23,10 @@
 ; The below bindings are for use in a created place.
 
 (define current-place-channel (make-parameter #f))
+(define current-job-id (make-parameter #f))
 
 (define (send-upstream val)
   (place-channel-put (current-place-channel) val))
-
-(define (<<log #:level [level 'info]
-               #:data [data (continuation-mark-set->context (current-continuation-marks))]
-               fmt-string . args)
-  (send-upstream (current-place-channel)
-                 ($log (apply format/job fmt-string args)
-                       level
-                       data)))
 
 (define (<<fin)
   (send-upstream ($fin (current-job-id))))

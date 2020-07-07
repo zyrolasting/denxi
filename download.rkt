@@ -15,7 +15,6 @@
          net/head
          "logging.rkt"
          "workspace.rkt"
-         "logging.rkt"
          "config.rkt"
          "verify.rkt"
          "zcpkg-info.rkt"
@@ -64,9 +63,9 @@
 (define (download-file u path)
   (cache-file
    #:exists-ok? #t
-   #:notify-cache-use (λ (s) (log-zcpkg-info "Cache hit for ~a" s))
-   #:log-error-string (λ (s) (log-zcpkg-error s))
-   #:log-debug-string (λ (s) (log-zcpkg-debug s))
+   #:notify-cache-use (λ (s) (<< "Cache hit for ~a" s))
+   #:log-error-string (λ (s) (<< s))
+   #:log-debug-string (λ (s) (<< #:level 'debug s))
    path path (get-cache-directory)
    (λ ()
      (make-directory* (path-only path))

@@ -32,7 +32,7 @@
            commands))
   (define job-count (hash-count jobs))
   (define team (make-team job-count))
-  (log-zcpkg-info "Starting ~v jobs" job-count)
+  (<< "Starting ~v jobs" job-count)
   (process-jobs team jobs))
 
 
@@ -42,13 +42,12 @@
       (let ([remaining (send-jobs team jobs)])
         (match (apply sync (for/list ([$ (in-hash-values team)]) ($)))
           [(place-detach-envelope $)
-           (log-zcpkg-error (format-worker-message $ "Unexpected shutdown in worker. Stop the presses!"))
+           (<< #:worker (place-resources-id $)
+               "Unexpected shutdown in worker. Stop the presses!")
            (process-jobs team (hash))]
-          [(from-stdout $ v)
-           (display (format-worker-message $ v) (current-output-port))
-           (process-jobs team (if (eof-object? v) (hash) remaining))]
-          [(from-stderr $ v)
-           (display (format-worker-message $ v) (current-error-port))
+          [(or (from-stdout $ v)
+               (from-stderr $ v))
+           (<< #:worker (place-resources-id $) v)
            (process-jobs team (if (eof-object? v) (hash) remaining))]
           [(from-place-channel $ v)
            (handle-place-message $ v team jobs)]
@@ -64,26 +63,25 @@
 
 
 (define (handle-place-message $ v team jobs)
-  (log-zcpkg-debug "Got ~s" v)
   (match v
     [($seq run-first run-after)
      (process-jobs team (add-jobs jobs run-first run-after))]
-    [($log message level data)
-     (log-message zcpkg-logger level (format-worker-message $ message) data)
-     (process-jobs team jobs)]
     [($ask prompt)
      (display prompt)
      (flush-output)
      ($ (λ (o) (displayln (read-line) o)))
      (process-jobs team jobs)]
     [($fin id)
-     (log-zcpkg-debug (format-worker-message $ (format "finished job ~a" id)))
+     (<< #:level 'debug
+         #:worker (place-resources-id $)
+         #:job id
+         "finished job")
      (process-jobs team (finish-job jobs id))]))
 
 
 (define (make-team job-count)
   (define num (min (processor-count) job-count))
-  (log-zcpkg-info "Spawning ~v workers" num)
+  (<< "Spawning ~v workers" num)
   (for/hash ([id (in-range num)])
     (values id (make-place-controller/dynamic-place* #:id id place.rkt))))
 
@@ -113,7 +111,10 @@
   (define assignee (modulo (job-id j) (hash-count team)))
   (define place-controller (hash-ref team assignee))
   (define message ($run (job-id j) (job-command j)))
-  (log-zcpkg-debug "Sending job ~a to worker ~a" (job-id j) assignee)
+  (<< #:level 'debug
+      "Sending job ~a to worker ~a"
+      (job-id j)
+      assignee)
   (place-controller message)
   (struct-copy job j [state 'sent]))
 
@@ -140,6 +141,3 @@
                 command
                 (job (hash-count table)
                      'new dependencies command))))
-
-(define (format-worker-message $ message)
-  (format "worker ~a: ~a" (place-resources-id $) message))

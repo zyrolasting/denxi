@@ -41,10 +41,11 @@
 
 (define (make-guard id cnt)
   (λ (v)
-    (log-message zcpkg-logger
-                 'debug
-                 (format "setting ~a: ~s" id v)
-                 (vector id v (current-continuation-marks)))
+    (<< #:level 'debug
+        #:setting id
+        #:value v
+        #:trace (continuation-mark-set->context (current-continuation-marks))
+        "setting ~a: ~s" id v)
     (with-handlers ([exn:fail? (λ (e) (raise (rewrite-contract-error-message e id)))])
       (invariant-assertion cnt v))))
 

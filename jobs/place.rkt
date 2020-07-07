@@ -9,7 +9,7 @@
          racket/exn
          "messages.rkt"
          "../operations.rkt"
-         "../printer.rkt")
+         "../logging.rkt")
 
 (define (main pch)
   (with-handlers ([exn:break? (λ (e) (exit 0))])
