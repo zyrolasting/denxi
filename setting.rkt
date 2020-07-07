@@ -37,9 +37,7 @@
 
 (define (make-setting id cnt [initial (void)])
   ; - The guard does not check the initial value.
-  ; - The new name makes the printed string nicer.
-  (procedure-rename (make-parameter initial (make-guard id cnt))
-                    id))
+  (make-parameter initial (make-guard id cnt)))
 
 (define (make-guard id cnt)
   (λ (v)
