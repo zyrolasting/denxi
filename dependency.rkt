@@ -1,15 +1,29 @@
 #lang racket/base
 
-; Define a data type representing a parsed version of a user's
-; possibly vague and/or ambiguous request for a package.  Define the
-; conditions in which a query is "concrete", meaning that it alone
-; references an exact package with an exact version.
+; Define a data type representing a user's possibly vague and/or
+; ambiguous reference to a package. Detect and prefer any values
+; that are neither.
 
 
-(provide (all-defined-out))
+(require idiocket/contract)
 
-(require idiocket/contract
-         idiocket/match
+(provide (struct-out dependency)
+         (contract-out
+          [well-formed-dependency? predicate/c]
+          [concrete-dependency? predicate/c]
+          [exact-dependency? predicate/c]
+          [dependency-string? predicate/c]
+          [dependency-variant? predicate/c]
+          [coerce-dependency (-> dependency-variant? dependency?)]
+          [dependency->string (-> dependency? string?)]
+          [string->dependency (-> string? dependency?)]
+          [dependency->url (-> dependency? url?)]
+          [url->dependency (-> url? dependency?)]
+          [zcpkg-info->dependency (-> zcpkg-info? dependency?)]
+          [dependency-match? (-> well-formed-dependency? exact-dependency? boolean?)]))
+
+
+(require idiocket/match
          idiocket/exn
          idiocket/format
          idiocket/function
@@ -29,6 +43,8 @@
    revision-max)
   #:transparent)
 
+; Define "Well-formed" to mean that a dependency structure
+; has correct value types for referencing some package.
 (define well-formed-dependency?
   (curry passes-invariant-assertion?
          (struct/c dependency
@@ -40,6 +56,8 @@
                    boolean?
                    revision?)))
 
+; Define a "concrete" dependency as a well-formed dependency
+; with a revision number range for some package.
 (define concrete-dependency?
   (curry passes-invariant-assertion?
          (struct/c dependency
@@ -51,33 +69,50 @@
                    boolean?
                    revision-number-string?)))
 
-(define (dependency-revision-min/for-inclusive-checks d)
-  (add1-if (dependency-revision-min-exclusive? d)
-           (dependency-revision-min d)))
+; Recognize the many sources of a dependency declarations.
+(define dependency-variant?
+  (disjoin url?
+           string?
+           dependency?
+           zcpkg-info?))
 
-(define (dependency-revision-max/for-inclusive-checks d)
-  (sub1-if (dependency-revision-min-exclusive? d)
-           (dependency-revision-min d)))
-
-(define (dependency-match? to-match with-range)
-  (and (concrete-dependency? to-match)
-       (concrete-dependency? with-range)
-       (andmap (λ (p) (equal? (p to-match) (p with-range)))
-               (list dependency-provider-name
-                     dependency-package-name
-                     dependency-edition-name))
-       (revision-range-subset? (dependency-revision-min/for-inclusive-checks to-match)
-                               (dependency-revision-max/for-inclusive-checks to-match)
-                               (dependency-revision-min/for-inclusive-checks with-range)
-                               (dependency-revision-max/for-inclusive-checks with-range))))
-
-(define (dependency-exact? d)
-  (writeln d)
+; Define an exact dependency as a concrete dependency where the
+; revision number range has exactly one element.  Assuming a
+; provider's identity is not compromised, an exact dependency is
+; globally unique.
+(define (exact-dependency? d)
   (and (concrete-dependency? d)
        (not (dependency-revision-min-exclusive? d))
        (not (dependency-revision-max-exclusive? d))
        (equal? (dependency-revision-min d)
                (dependency-revision-max d))))
+
+(define (dependency-revision-min/for-inclusive-checks d)
+  (add1-if (dependency-revision-min-exclusive? d)
+           (string->number (dependency-revision-min d))))
+
+(define (dependency-revision-max/for-inclusive-checks d)
+  (sub1-if (dependency-revision-max-exclusive? d)
+           (string->number (dependency-revision-max d))))
+
+; Check if a well-formed dependency encompasses an exact dependency.
+(define (dependency-match? to-match/variant exact-dep/variant)
+  (define to-match (coerce-dependency to-match/variant))
+  (define exact-dep (coerce-dependency exact-dep/variant))
+  (and (andmap (λ (p) (equal? (p to-match) (p exact-dep)))
+               (list dependency-provider-name
+                     dependency-package-name
+                     dependency-edition-name))
+       (revision-range-subset? (dependency-revision-min/for-inclusive-checks exact-dep)
+                               (dependency-revision-max/for-inclusive-checks exact-dep)
+                               (dependency-revision-min/for-inclusive-checks to-match)
+                               (dependency-revision-max/for-inclusive-checks to-match))))
+
+(define (coerce-dependency v)
+  (cond [(dependency? v) v]
+        [(string? v) (string->dependency v)]
+        [(url? v) (url->dependency v)]
+        [(zcpkg-info? v) (zcpkg-info->dependency v)]))
 
 (define (dependency-string? s)
   (fail-as #f (string->dependency s)))
@@ -136,6 +171,17 @@
                  (exclusive-flag->bool max-flag "revision maximum flag")
                  max-revision)]))
 
+(define (zcpkg-info->dependency info)
+  (dependency (zcpkg-info-provider-name info)
+              (zcpkg-info-package-name info)
+              (zcpkg-info-edition-name info)
+              #f
+              (zcpkg-info-revision-number info)
+              #f
+              (zcpkg-info-revision-number info)))
+
+(define (dependency->string d)
+  (url->string (url #f #f #f #f #f (url-path (dependency->url d)) #f #f)))
 
 (define (dependency->url d)
   (make-endpoint

@@ -38,7 +38,7 @@ EOF
                                      (exit 1))])
                     (string->dependency dependency-string)))
 
-                (unless (dependency-exact? dep)
+                (unless (exact-dependency? dep)
                   (printf "Cannot recant ~s. You need to specify an EXACT version.~n" dependency-string)
                   (printf "This helps protect you from recanting the wrong thing.~n")
                   (printf "e.g. ~s~n" example)
