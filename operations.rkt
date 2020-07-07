@@ -130,7 +130,9 @@
 (define (setup source-path info)
   (define zcpkg-path (zcpkg-info->install-path info))
   (make-directory* (path-only zcpkg-path))
-  (with-handlers ([exn:fail? (λ (e) (delete-directory/files zcpkg-path))])
+  (with-handlers ([exn:fail? (λ (e)
+                               (delete-directory/files zcpkg-path)
+                               (raise e))])
     (copy-directory/files source-path zcpkg-path)
     (maybe-run-installer zcpkg-path info '(set-up!))))
 
