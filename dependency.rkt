@@ -66,9 +66,9 @@
              name-string?
              name-string?
              boolean?
-             revision-number-string?
+             (or/c revision-number-string? revision-number?)
              boolean?
-             revision-number-string?)
+             (or/c revision-number-string? revision-number?))
    v))
 
 ; Recognize the many sources of a dependency declarations.
@@ -86,16 +86,21 @@
   (and (concrete-dependency? d)
        (not (dependency-revision-min-exclusive? d))
        (not (dependency-revision-max-exclusive? d))
-       (equal? (dependency-revision-min d)
-               (dependency-revision-max d))))
+       (equal? (normalize-revision-number (dependency-revision-min d))
+               (normalize-revision-number (dependency-revision-max d)))))
+
+(define (normalize-revision-number n)
+  (if (revision-number-string? n)
+      (string->number n)
+      n))
 
 (define (dependency-revision-min/for-inclusive-checks d)
   (add1-if (dependency-revision-min-exclusive? d)
-           (string->number (dependency-revision-min d))))
+           (normalize-revision-number (dependency-revision-min d))))
 
 (define (dependency-revision-max/for-inclusive-checks d)
   (sub1-if (dependency-revision-max-exclusive? d)
-           (string->number (dependency-revision-max d))))
+           (normalize-revision-number (dependency-revision-max d))))
 
 ; Check if a well-formed dependency encompasses an exact dependency.
 (define (dependency-match? to-match/variant exact-dep/variant)

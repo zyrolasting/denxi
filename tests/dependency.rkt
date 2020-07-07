@@ -101,6 +101,10 @@
   (test-true "Match a dependency using a revision range"
              (dependency-match? "joe/pkg;draft;0;100" "joe/pkg;draft;0;0"))
 
+  (test-true "Match a dependency using a revision range, even with string+number mixes"
+             (dependency-match? (dependency "joe" "pkg" "draft" #f "0" #f 100)
+                                (dependency "joe" "pkg" "draft" #f 0 #f "0")))
+
   (test-true "Match a dependency exactly"
              (dependency-match? "joe/pkg;draft;2;2" "joe/pkg;draft;2;2"))
 
