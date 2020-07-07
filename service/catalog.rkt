@@ -1,6 +1,6 @@
 #lang racket/base
 
-(provide catalog-dispatcher)
+(provide make-catalog-dispatcher)
 
 (require racket/runtime-path
          net/url
@@ -11,5 +11,5 @@
                     web-server/dispatchers/dispatch-files)
          "../workspace.rkt")
 
-(define catalog-dispatcher
-  (files:make #:url->path (make-url->path (build-workspace-path "home"))))
+(define (make-catalog-dispatcher install-path)
+  (files:make #:url->path (make-url->path install-path)))

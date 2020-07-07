@@ -12,18 +12,22 @@
                     web-server/dispatchers/dispatch-log)
          (prefix-in lift:
                     web-server/dispatchers/dispatch-lift)
+         "../workspace.rkt"
+         "../config.rkt"
          "catalog.rkt"
          "endpoint.rkt")
+
 
 (define (not-found req)
   (response/output #:code 404
                    #:mime-type #"text/plain; charset=utf-8"
                    (λ (o) (displayln "Resource not found." o))))
 
+
 (define (start-server)
   (serve #:port (url-port (make-endpoint))
          #:dispatch
          (seq:make
-          (logged:make #:format logged:extended-format #:log-path (current-output-port))
-          catalog-dispatcher
+          (logged:make #:format logged:extended-format #:log-path "server.log")
+          (make-catalog-dispatcher (build-workspace-path (ZCPKG_INSTALL_RELATIVE_PATH)))
           (lift:make not-found))))

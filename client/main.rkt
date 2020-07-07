@@ -63,6 +63,7 @@ EOF
                              ["uninstall" uninstall-command]
                              ["new"       new-command]
                              ["update"    update-command]
+                             ["serve"     serve-command]
                              ["config"    config-command]
                              ["show"      show-command]
                              ["capture"   capture-command]
