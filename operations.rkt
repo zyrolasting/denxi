@@ -105,7 +105,8 @@
                     (λ () (current-directory zcpkg-path))])
       (with-handlers ([(const #t)
                        (λ (e)
-                         (<< "Installer raised a value ~a~n~a~n"
+                         (<< "~a raised a value~n~a~n"
+                             name
                              (if (exn? e)
                                  (exn->string e)
                                  (~v e))))])
