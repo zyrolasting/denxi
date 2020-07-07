@@ -26,7 +26,7 @@
     "my-project"
     "draft"
     12
-    ((0 "initial"))
+    ("initial")
     "installer.rkt"
     ("zyrolasting/unlike-assets/lib/draft/0" "jondoe/cool/doc/draft/marvelous")
     #"12345678"

@@ -1,7 +1,7 @@
 #lang info
 
 (define edition-name "draft")
-(define revision-names '((0 "initial")))
+(define revision-names '("initial"))
 (define installer "installer.rkt")
 (define dependencies
   '("zyrolasting/unlike-assets/lib/draft/0"
