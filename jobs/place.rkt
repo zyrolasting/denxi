@@ -8,7 +8,8 @@
          racket/match
          racket/exn
          "messages.rkt"
-         "../operations.rkt"
+         "../install.rkt"
+         "../uninstall.rkt"
          "../logging.rkt")
 
 (define (main pch)
@@ -25,9 +26,6 @@
 (define (run command)
   (match command
     [(vector "install" package-source)
-     (install package-source)]
-    [(vector "update" package-path package-source)
-     (uninstall package-path)
      (install package-source)]
     [(vector "uninstall" package-path)
      (uninstall package-path)]

@@ -10,7 +10,6 @@
          "upload.rkt"
          "install.rkt"
          "uninstall.rkt"
-         "update.rkt"
          "show.rkt"
          "recant.rkt"
          "serve.rkt")
@@ -20,7 +19,6 @@ Usage: raco zcpkg <subcommand> [args] ...
 
   raco zcpkg install:   Install packages
   raco zcpkg uninstall: Uninstall packages
-  raco zcpkg update:    Change package version
   raco zcpkg new:       Make skeleton package
 
   raco zcpkg show:      Review key information
@@ -62,7 +60,6 @@ EOF
                              ["install"   install-command]
                              ["uninstall" uninstall-command]
                              ["new"       new-command]
-                             ["update"    update-command]
                              ["serve"     serve-command]
                              ["config"    config-command]
                              ["show"      show-command]
