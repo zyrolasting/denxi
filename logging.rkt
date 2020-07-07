@@ -17,6 +17,7 @@
 (provide
  <<
  (contract-out
+  [current-hash-predicate (parameter/c (-> hash? any/c))]
   [write-output (->* (hash?) (#:format output-format? output-port?) void?)]
   [read-output (-> any/c hash?)]))
 

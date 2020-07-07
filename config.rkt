@@ -15,6 +15,13 @@
 (define (make-workspace-rcfile name)
   (ws/ "etc/zcpkg" name))
 
+(current-hash-predicate
+ (λ (h)
+   (define topic (hash-set h 'topic 'none))
+   (cond [(eq? topic 'none) #t]
+         [(eq? topic 'debug)
+          (ZCPKG_VERBOSE)])))
+
 ; This macro defines a reloadable configuration space derived from
 ; the workspace directory.
 

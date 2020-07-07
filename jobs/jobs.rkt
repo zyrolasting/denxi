@@ -72,7 +72,7 @@
      ($ (λ (o) (displayln (read-line) o)))
      (process-jobs team jobs)]
     [($fin id)
-     (<< #:level 'debug
+     (<< #:topic 'debug
          #:worker (place-resources-id $)
          #:job id
          "finished job")
@@ -111,7 +111,7 @@
   (define assignee (modulo (job-id j) (hash-count team)))
   (define place-controller (hash-ref team assignee))
   (define message ($run (job-id j) (job-command j)))
-  (<< #:level 'debug
+  (<< #:topic 'debug
       "Sending job ~a to worker ~a"
       (job-id j)
       assignee)

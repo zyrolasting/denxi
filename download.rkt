@@ -65,7 +65,7 @@
    #:exists-ok? #t
    #:notify-cache-use (λ (s) (<< "Cache hit for ~a" s))
    #:log-error-string (λ (s) (<< s))
-   #:log-debug-string (λ (s) (<< #:level 'debug s))
+   #:log-debug-string (λ (s) (<< #:topic 'debug s))
    path path (get-cache-directory)
    (λ ()
      (make-directory* (path-only path))
