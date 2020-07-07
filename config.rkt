@@ -1,10 +1,12 @@
 #lang racket/base
 
 (require idiocket/contract
+         idiocket/format
          idiocket/match
          "setting.rkt"
          "url.rkt"
          "workspace.rkt"
+         "logging.rkt"
          (for-syntax racket/base
                      racket/syntax
                      syntax/parse
@@ -17,13 +19,20 @@
 ; the workspace directory.
 
 (define-syntax (define-configuration stx)
+  (define (suffix-id suffix stxlist)
+    (stx-map (λ (s) (format-id s "~a/~a" s suffix))
+             stxlist))
+
   (syntax-parse stx
-    [(_ [name:id cnt:expr default:expr] ...)
-     (with-syntax ([(loader ...)
-                    (stx-map (λ (s) (format-id s "~a/load" s))
-                             #'(name ...))])
-       #'(begin (begin (provide loader name)
+    [(_ [name:id cnt:expr default:expr str:expr] ...)
+     (with-syntax ([(loader ...)   (suffix-id "load" #'(name ...))]
+                   [(get-flag-spec ...) (suffix-id "make-flag-spec" #'(name ...))])
+       #'(begin (begin (provide loader name get-flag-spec)
                        (define (loader) (load-setting 'name make-workspace-rcfile default))
+                       (define (get-flag-spec f)
+                         (f (setting-id->cli-flag-string 'name)
+                            (format "~a (Default: ~s)" str (~s default))
+                            name))
                        (define name (make-setting 'name cnt (loader))))
                 ...
 
@@ -75,56 +84,91 @@
      ; Actually system-dependent. Some systems say 4096, but I'll be conservative.
      [(unix) 1024]
 
-     [else #f])]
+     [else #f])
+
+   "Soft maximum characters for path."]
 
   ; Spacetime limits on installer sandboxes
-  [ZCPKG_INSTALLER_MEMORY_LIMIT_MB (>=/c 0) 30]
-  [ZCPKG_INSTALLER_TIME_LIMIT_SECONDS (>=/c 0) (* 5 60)]
+  [ZCPKG_INSTALLER_MEMORY_LIMIT_MB
+   (>=/c 0)
+   30
+   "Installer memory quota, in megabytes."]
+  [ZCPKG_INSTALLER_TIME_LIMIT_SECONDS
+   (>=/c 0)
+   (* 5 60)
+   "Installer time limit, in seconds."]
 
   ; Controls network and file I/O permissions for sandboxed installers.
-  [ZCPKG_INSTALLER_ALLOWED_HOSTS (listof string?) null]
+  [ZCPKG_INSTALLER_ALLOWED_HOSTS
+   (listof string?)
+   null
+   "A list of strings, where each string is a host an installer may contact."]
+
   [ZCPKG_INSTALLER_PATH_PERMISSIONS
    (listof (list/c (or/c 'execute 'write 'delete
                       'read-bytecode 'read 'exists)
                    (or/c byte-regexp? bytes? string? path?)))
-   null]
+   null
+   "A value for sandbox-path-permissions"]
 
   ; Scenario: Artifact does not have a signature. This is normal
   ; when prototyping or working with a trusted peer, so
   ; we'll prompt by default.
-  [ZCPKG_ON_UNSIGNED_ARTIFACT (or/c 'allow 'fail 'ask) 'ask]
+  [ZCPKG_ON_UNSIGNED_ARTIFACT
+   (or/c 'allow 'fail 'ask)
+   'ask
+   "How to handle an unsigned artifact from a catalog"]
 
   ; Scenario: Artifact signature cannot be verified with publisher's public key.
   ; This is more suspicious.
-  [ZCPKG_ON_SIGNATURE_MISMATCH (or/c 'allow 'fail 'ask) 'fail]
+  [ZCPKG_ON_SIGNATURE_MISMATCH
+   (or/c 'allow 'fail 'ask)
+   'fail
+   "How to handle an artifact with a signature that does not match a provider's public key."]
 
   ; Halt when downloaded artifact does not pass integrity check
-  [ZCPKG_ON_TAMPERED_ARTIFACT (or/c 'allow 'fail 'ask) 'fail]
+  [ZCPKG_ON_TAMPERED_ARTIFACT
+   (or/c 'allow 'fail 'ask)
+   'fail
+   "How to handle an artifact that does not pass an integrity check"]
 
-  ; Colorize printed output
-  [ZCPKG_COLORIZE_OUTPUT boolean? #f]
+  [ZCPKG_COLORIZE_OUTPUT
+   boolean?
+   #f
+   "Colorize printed output"]
 
-  ; Print 'debug level logs
-  [ZCPKG_VERBOSE boolean? #f]
-
-  ; Include installer I/O operations on 'debug level.  Does not imply
-  ; ZCPKG_VERBOSE becaue log receivers are considered separate than
-  ; the desire to print the debug level.
-  [ZCPKG_LOG_INSTALLER_IO boolean? #f]
+  [ZCPKG_VERBOSE
+   boolean?
+   #f
+   "Show more information in program output"]
 
   ; Check integrity information for files created
   ; while the installer was running.
-  [ZCPKG_VERIFY_POST_INSTALL_INTEGRITY boolean? #f]
+  [ZCPKG_VERIFY_POST_INSTALL_INTEGRITY
+   boolean?
+   #f
+   "Check integrity information after installation"]
 
   ; Where to install packages.
-  [ZCPKG_INSTALL_RELATIVE_PATH path-string? "opt"]
+  [ZCPKG_INSTALL_RELATIVE_PATH
+   path-string?
+   "opt"
+   "Workspace-relative path for installed packages"]
 
   ; A list of catalogs to try.
-  [ZCPKG_SERVICE_ENDPOINTS (listof (cons/c string? url-string?))
-                           (list (cons "default" "https://zcpkgs.com"))]
+  [ZCPKG_SERVICE_ENDPOINTS
+   (listof (cons/c string? url-string?))
+   (list (cons "default" "https://zcpkgs.com"))
+   (string-append "A list of catalog pairs to try when installing "
+                  "packages (e.g. ((\"catalog-name\" . \"http://example.com\") ...).")]
 
-  ; The maximum number of redirects to follow when downloading an artifact.
-  [ZCPKG_DOWNLOAD_MAX_REDIRECTS exact-nonnegative-integer? 2]
+  [ZCPKG_DOWNLOAD_MAX_REDIRECTS
+   exact-nonnegative-integer?
+   2
+   "Maximum redirects to follow when downloading an artifact"]
 
   ; Guarentee a cache miss when downloading artifacts, if #t.
-  [ZCPKG_DOWNLOAD_IGNORE_CACHE boolean? #f])
+  [ZCPKG_DOWNLOAD_IGNORE_CACHE
+   boolean?
+   #f
+   "If set, ignore the download cache."])

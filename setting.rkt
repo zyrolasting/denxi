@@ -22,11 +22,12 @@
 ;   (read)able value. If the setting is a boolean, omit the "...".
 
 (provide make-setting
-         load-setting)
+         load-setting
+         setting-id->cli-flag-string)
 
 (require racket/contract
          racket/file
-         "logging.rkt")
+         racket/string)
 
 (define (load-setting id make-rcfile-path default)
   (define str (symbol->string id))
@@ -36,18 +37,19 @@
       default))
 
 (define (make-setting id cnt [initial (void)])
-  ; - The guard does not check the initial value.
+  ; Note that the guard does not check the initial value.
   (make-parameter initial (make-guard id cnt)))
 
 (define (make-guard id cnt)
   (λ (v)
-    (<< #:level 'debug
-        #:setting id
-        #:value v
-        #:trace (continuation-mark-set->context (current-continuation-marks))
-        "setting ~a: ~s" id v)
     (with-handlers ([exn:fail? (λ (e) (raise (rewrite-contract-error-message e id)))])
       (invariant-assertion cnt v))))
+
+(define (setting-id->cli-flag-string id)
+  (string-append "--"
+                 (string-downcase
+                  (string-join (cdr (string-split (symbol->string id) "_"))
+                               "-"))))
 
 (define (rewrite-contract-error-message e id)
   (struct-copy exn:fail:contract e
