@@ -10,11 +10,11 @@
 (define HELP-FMT #<<EOF
 Usage: raco zcpkg config <subcommand>
 
-Change or review package manager configuration.
+Handles package manager configuration.
 
-raco zcpkg config set <key> <value>
-raco zcpkg config get <key>
-raco zcpkg config dump
+config set <key> <value>: Set a value by key
+config get <key>: Get a value by key
+config dump: Write all used keys and values
 
 EOF
 )
