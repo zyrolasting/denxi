@@ -121,10 +121,13 @@
 
 
 (define (pump-lines-from-port name in out)
-  (define line (read-line in))
+  (define source
+    (or (sync/timeout 0.05 in)
+        (open-input-bytes #"")))
+  (define line (read-line source))
   (or (eof-object? line)
       (begin (<< "~a: ~a~n" name line)
-             (pump-lines-from-port name in out))))
+             (pump-lines-from-port name source out))))
 
 
 (define (setup source-path info)
