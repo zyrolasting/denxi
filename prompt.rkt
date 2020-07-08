@@ -14,9 +14,9 @@
 (define (prompt message read-answer consider-answer)
   (displayln message)
   (let loop ()
+    (purge-ready-input)
     (display "> ")
     (flush-output)
-    (purge-ready-input)
     (define answer (read-answer (sync/enable-break (current-input-port))))
     (define control
       (if (eof-object? answer)
