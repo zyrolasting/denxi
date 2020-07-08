@@ -118,7 +118,7 @@
                          "\n"))])
   (sequence-ref infos 0))
 
-(define (find-installed-infos variant all-info)
+(define (find-installed-infos variant [all-info (in-installed-info)])
   (define dep (coerce-dependency variant))
   (sequence-filter (λ (info) (dependency-match? dep info))
                    all-info))
