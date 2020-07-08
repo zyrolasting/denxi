@@ -54,6 +54,9 @@
                                (delete-directory/files zcpkg-path)
                                (raise e))])
     (copy-directory/files source-path zcpkg-path)
+    (make-file-or-directory-link
+     (ZCPKG_WORKSPACE)
+     (build-path zcpkg-path CONVENTIONAL_WORKSPACE_NAME))
     (define installer (make-installer zcpkg-path info))
     (installer '(set-up!))))
 
