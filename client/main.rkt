@@ -6,6 +6,7 @@
          "config.rkt"
          "capture.rkt"
          "restore.rkt"
+         "link.rkt"
          "download.rkt"
          "upload.rkt"
          "install.rkt"
@@ -61,6 +62,7 @@ EOF
                              ["uninstall" uninstall-command]
                              ["new"       new-command]
                              ["serve"     serve-command]
+                             ["link"      link-command]
                              ["config"    config-command]
                              ["show"      show-command]
                              ["capture"   capture-command]
