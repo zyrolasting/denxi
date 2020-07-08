@@ -15,24 +15,29 @@
          "recant.rkt"
          "serve.rkt")
 
+
 (define HELP-FMT #<<EOF
-Usage: raco zcpkg <subcommand> [args] ...
+Usage: raco zcpkg <subcommand> ...
 
-  raco zcpkg install:   Install packages
-  raco zcpkg uninstall: Uninstall packages
-  raco zcpkg new:       Make skeleton package
+Where <subcommand> is one of:
 
-  raco zcpkg show:      Review key information
-  raco zcpkg config:    Set options
-
-  raco zcpkg capture:   Capture workspace
-  raco zcpkg restore:   Restore captured workspace
-
-  raco zcpkg serve:     Host a catalog
-  raco zcpkg register:  Register an account
-  raco zcpkg download:  Download from a catalog
-  raco zcpkg upload:    Upload to a catalog
-  raco zcpkg recant:    Stop distributing an uploaded artifact
+  install    Install packages
+  uninstall  Uninstall packages
+  link       Make links to installed packages
+  show       Print helpful reports
+  config     Set options
+  capture    Capture workspace
+  restore    Restore workspace
+  diff       Compare workspace to capture
+  new        Make a new package
+  register   Register an account on a catalog
+  recant     Stop distributing an uploaded artifact
+  serve      Serve installed packages
+  download   Download from a catalog
+  pack       Bundle package for upload
+  upload     Upload to a catalog
+  unpack     Extract bundled package
+  run        Run package command
 
 EOF
 )
