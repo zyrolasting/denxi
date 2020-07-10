@@ -7,7 +7,8 @@
          idiocket/match
          idiocket/path
          idiocket/port
-         "jobs/jobs.rkt"
+         "message.rkt"
+         "team.rkt"
          "verify.rkt"
          "config.rkt"
          "workspace.rkt")
@@ -95,7 +96,7 @@
 
 (define (reproduce-workspace entries [commands null])
   (if (null? entries)
-      (apply start-work commands)
+      (process-jobs commands)
       (reproduce-workspace
        (cdr entries)
        (let* ([entry (car entries)]

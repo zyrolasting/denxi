@@ -15,9 +15,11 @@
          "file.rkt"
          "installer.rkt"
          "logging.rkt"
+         "prompt.rkt"
          "url.rkt"
          "workspace.rkt"
-         "zcpkg-info.rkt")
+         "zcpkg-info.rkt"
+         "message.rkt")
 
 
 (define (install source)

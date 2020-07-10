@@ -3,14 +3,12 @@
 (provide uninstall-command)
 
 (require racket/cmdline
-         "../jobs/jobs.rkt"
+         "../team.rkt"
+         "../message.rkt"
          "../config.rkt")
 
 (define (uninstall-command)
   (command-line #:args dependency-strings
-                (apply start-work
-                       (for/list ([path (in-list dependency-strings)])
-                         (vector "uninstall" (if (complete-path? path)
-                                                 path
-                                                 (build-path (ZCPKG_INSTALL_RELATIVE_PATH)
-                                                             path)))))))
+                (process-jobs
+                 (for/list ([ds (in-list dependency-strings)])
+                   ($uninstall-package ds)))))
