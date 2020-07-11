@@ -1,18 +1,24 @@
 #lang racket/base
 
 ; Define a package source as a string that could refer to a local file
-; or a remote resource.  A package source should transform to an URL.
+; or a remote resource.  A package source should ultimately lead to a
+; local directory path containing the source code of a package.
 
 (require racket/contract)
 
+(define source-variant/c (or/c url? dependency? path?))
+
 (provide
  (contract-out
-  [variant->zcpkg-info
-   (->* ((or/c url? dependency? path?) string?) () zcpkg-info?)]
-  [source->variant
-   (-> string? (or/c url? dependency? path?))]))
+  [zcpkg-directory->zcpkg-info (-> path? zcpkg-info?)]
 
-(require "config.rkt"
+  [variant->zcpkg-directory (-> source-variant/c path?)]
+
+  [source->variant
+   (-> string? source-variant/c)]))
+
+(require racket/path
+         "config.rkt"
          "dependency.rkt"
          "string.rkt"
          "url.rkt"
@@ -54,26 +60,24 @@
       (source->maybe-dependency v)
       (string->url v)))
 
-(define (variant->zcpkg-info variant source)
-  (define info.rkt
-    (cond [(path? variant)
-           variant]
+(define (zcpkg-directory->zcpkg-info dirpath)
+  (define info.rkt (build-path dirpath "info.rkt"))
+  (if (file-exists? info.rkt)
+      (read-zcpkg-info info.rkt)
+      (error 'install-package
+             "No info.rkt in ~a~n"
+             dirpath)))
 
-          [(dependency? variant)
-           (error "Getting info by a dependency struct is not yet implemented")]
-
-          [(url? variant)
-           (error "Getting info by an URL is not yet implemented")]
-
-          [else #f]))
-
-  (unless (file-exists? info.rkt)
-    (error 'install-package
-           "No info for ~a~n"
-           source))
-
-  (read-zcpkg-info info.rkt))
-
+(define (variant->zcpkg-directory variant)
+  (cond [(path? variant)
+         (if (file-exists? variant)
+             (path-only variant)
+             variant)]
+        [(dependency? variant)
+         (error "Getting a source directory by a dependency struct is not yet implemented")]
+        [(url? variant)
+         (error "Getting a source directory by an URL is not yet implemented")]
+        [else #f]))
 
 (module+ test
   (require rackunit
