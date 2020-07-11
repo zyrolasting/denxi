@@ -9,12 +9,12 @@
          verify-signature
          well-formed-zcpkg-info?)
 
-(require idiocket/contract
-         idiocket/file
-         idiocket/function
-         idiocket/path
-         idiocket/port
-         idiocket/system
+(require racket/file
+         racket/function
+         racket/path
+         racket/port
+         racket/system
+         "contract.rkt"
          "string.rkt"
          "zcpkg-info.rkt"
          "revision.rkt"

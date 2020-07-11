@@ -4,7 +4,7 @@
 ; ambiguous reference to a package. Detect and prefer any values
 ; that are neither.
 
-(require racket/contract)
+(require "contract.rkt")
 
 (provide (struct-out dependency)
          (contract-out
@@ -42,11 +42,6 @@
    revision-max-exclusive?
    revision-max)
   #:transparent)
-
-(define (passes-invariant-assertion? c v)
-  (with-handlers ([exn:fail:contract? (λ (e) #f)])
-    (invariant-assertion c v)
-    #t))
 
 ; Define "Well-formed" to mean that a dependency structure
 ; has correct value types for referencing some package.
