@@ -1,18 +1,11 @@
 #lang racket/base
 
 
-(provide download-artifact-info
-         download-artifact
-         clear-download-cache!)
-
-
 (require racket/file
          racket/list
          racket/path
          racket/port
-         file/cache
          net/url
-         net/head
          "logging.rkt"
          "workspace.rkt"
          "config.rkt"
@@ -25,15 +18,14 @@
 (define (get-cache-directory)
   (build-workspace-path "var/cache/zcpkg"))
 
-; Warning: Firewalls may remove headers not mentioned in RFC 2616.
-; Provide workaround with tailored GET?
-(define (download-artifact-info dep)
+(define (download/dependency dep)
   (define-values (catalog-name maybe-well-formed-artifact-info)
-    (call-with-each-catalog
-     (λ ()
+    (try-catalogs
+     (λ (catalog-name catalog-url-base)
        (define info-url (dependency->url dep))
-       (define from-service (head-impure-port info-url))
-       (read-zcpkg-info from-service))))
+       (read-zcpkg-info (download-file info-url
+                                       catalog-name
+                                       #f)))))
 
   (unless catalog-name
     (error 'download-artifact-info
@@ -60,18 +52,37 @@
   artifact-path)
 
 
+(define (download-file/with-cache u)
+  ; TODO: Some URLs will map to the same path here,
+  ; causing unwanted cache hits. Map URLs to unique
+  ; file paths.
+  (define cached-path
+    (build-path (get-cache-directory)
+                (apply build-path
+                       (url-host u)
+                       (map path/param-path (url-path u)))))
+  (if (file-exists? cached-path)
+      cached-path
+      (download-file u cached-path)))
+
+
 (define (download-file u path)
-  (cache-file
-   #:exists-ok? #t
-   #:notify-cache-use (λ (s) (<< "Cache hit for ~a" s))
-   #:log-error-string (λ (s) (<< s))
-   #:log-debug-string (λ (s) (<< #:topic 'debug s))
-   path path (get-cache-directory)
-   (λ ()
-     (make-directory* (path-only path))
-     (call-with-output-file path
-       (λ (out)
-         (copy-port (get-pure-port u #:redirections (ZCPKG_DOWNLOAD_MAX_REDIRECTS)) out))))))
+  (make-directory* (path-only path))
+  (define-values (in headers)
+    (get-pure-port/headers u
+                           #:status? #t
+                           #:redirections
+                           (ZCPKG_DOWNLOAD_MAX_REDIRECTS)))
+
+  (define status (string->number (car (regexp-match #px"(\\d\\d\\d)" headers))))
+
+  (and (= status 200)
+       (call-with-output-file
+         #:exists 'truncate/replace
+         path
+         (λ (out)
+           (copy-port in out)
+           path))))
 
 
 (define (clear-download-cache!)
