@@ -4,6 +4,7 @@
          try-catalogs
          for-catalog
          current-zccatalog-service-endpoint
+         merge-endpoints
          (struct-out next-zcpkg-catalog))
 
 (require "../url.rkt"
