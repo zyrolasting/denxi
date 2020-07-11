@@ -8,7 +8,7 @@ compile:
 	raco make client/*.rkt service/*.rkt *.rkt
 
 exe: compile
-	raco exe client/main.rkt
+	raco exe -o zcpkg client/main.rkt
 
 doc:
 	raco make *.scrbl
