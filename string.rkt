@@ -1,9 +1,11 @@
 #lang racket/base
 
 (provide (all-defined-out)
-         (all-from-out racket/string))
+         (all-from-out racket/string
+                       racket/format))
 
-(require racket/string)
+(require racket/string
+         racket/format)
 
 (define (whole/pattstr s) (string-append "^" s "$"))
 (define (group/pattstr s)
@@ -12,6 +14,9 @@
   (string-append "(?:"
                  (string-join opts "|")
                  ")"))
+
+(define (~a* . args)
+  (apply ~a (map (λ (s) (~a s "\n")) args)))
 
 ; TODO: Flesh out definition of allowed names.
 ;
