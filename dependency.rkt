@@ -148,7 +148,7 @@
         [(zcpkg-info? v) (zcpkg-info->dependency v)]))
 
 (define (dependency-string? s)
-  (fail-as #f (string->dependency s)))
+  (fail-as #f (and (string->dependency s) #t)))
 
 (define (string->dependency s)
   (url->dependency (string->url s)))
