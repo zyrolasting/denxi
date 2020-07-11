@@ -1,6 +1,6 @@
 #lang scribble/manual
 @require[@for-label[racket/base]
-         "../workspace.rkt"]
+         "workspace.rkt"]
 
 @title{A Zero-Collection Package Management System}
 @author[(author+email "Sage L. Gerard" "sage@sagegerard.com" #:obfuscate? #t)]
