@@ -6,16 +6,16 @@
 ; more interfaces than just module exports.
 
 (provide declare-info-i/o
-         (all-from-out idiocket/sandbox
-                       idiocket/string))
+         (all-from-out racket/sandbox
+                       racket/string))
 
-(require idiocket/contract
-         idiocket/exn
-         idiocket/function
-         idiocket/path
-         idiocket/port
-         idiocket/sandbox
-         idiocket/string
+(require racket/contract
+         racket/exn
+         racket/function
+         racket/path
+         racket/port
+         racket/sandbox
+         racket/string
          net/head
          (for-syntax racket/base
                      racket/format
