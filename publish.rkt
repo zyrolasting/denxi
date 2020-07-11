@@ -21,9 +21,9 @@
            (make-signature digest private-key)))
 
     (define external-zcpkg-info
-      (struct-copy zcpkg-info/public
+      (struct-copy zcpkg-info
                    metadata
-                   [ctime (current-seconds)]
+                   [upload-timestamp (current-seconds)]
                    [integrity digest]
                    [signature signature]))
 
