@@ -88,14 +88,6 @@
                                        [idle? no-jobs?])))
            (if no-jobs? null (cdr jobs))))
 
-
-(define (echo team value)
-  (display value)
-  team)
-
-(define (on-unverified-host state host)
-  (void))
-
 (define (on-new-dependencies team dependent-name dependencies)
   (define answer
     (prompt/confirmation #:dangerous? #f
@@ -148,5 +140,4 @@
 
 
 (define-message-pump (handle-team-event company?)
-  on-idle
-  echo)
+  on-idle)
