@@ -19,7 +19,8 @@
   (cond [(path? v)
          (define p
            (cond [(directory-exists? v)
-                  (build-path v "info.rkt")]
+                  (source->maybe-path (build-path v "info.rkt")
+                                      relative-path-root)]
                  [(file-exists? v)
                   (build-path v)]
                  [else #f]))
@@ -30,10 +31,12 @@
         [(url? v)
          (and (or (not (url-scheme v))
                   (equal? (url-scheme v) "file"))
-              (source->maybe-path (url->maybe-path v relative-path-root)))]
+              (source->maybe-path (url->maybe-path v relative-path-root)
+                                  relative-path-root))]
 
         [(url-string? v)
-         (source->maybe-path (string->url v))]
+         (source->maybe-path (string->url v)
+                             relative-path-root)]
 
         [else #f]))
 
