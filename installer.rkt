@@ -7,11 +7,11 @@
          flush-installer-output
          (struct-out installer))
 
-(require idiocket/exn
-         idiocket/format
-         idiocket/path
-         idiocket/function
-         idiocket/sandbox
+(require racket/exn
+         racket/format
+         racket/path
+         racket/function
+         racket/sandbox
          "workspace.rkt"
          "config.rkt"
          "logging.rkt"
@@ -89,3 +89,13 @@
   (or (eof-object? line)
       (begin (<< "~a: ~a~n" name line)
              (pump-lines-from-port name source out))))
+
+(define (path-prefix? to-check prefix-pathy)
+  (define maybe-prefixed (explode-path (simplify-path (path->complete-path to-check))))
+  (define pref (explode-path (simplify-path (path->complete-path prefix-pathy))))
+
+  (and (<= (length pref)
+           (length maybe-prefixed))
+       (for/and ([(el index) (in-indexed pref)])
+         (equal? (list-ref maybe-prefixed index)
+                 el))))
