@@ -19,18 +19,20 @@
          "logging.rkt"
          "message.rkt"
          "prompt.rkt"
+         "source.rkt"
          "url.rkt"
          "workspace.rkt"
          "zcpkg-info.rkt")
 
-(struct workstate (id pch dependencies)
+(struct workstate (id pch)
   #:property prop:evt (struct-field-index pch)
   #:property prop:procedure
   (λ (self v)
     (place-channel-put (workstate-pch self) v)
     self))
 
-(define (worker-main pch [state (workstate #f pch (hash))])
+
+(define (worker-main pch [state (workstate #f pch)])
   (with-handlers ([exn:break? void]
                   [exn? (λ (e) (state ($on-error (exn->string e))))]
                   [place-message-allowed? state]
@@ -40,70 +42,41 @@
 
 (define (assign-id state id)
   (define next (struct-copy workstate state [id id]))
-  (handle-message (next ($on-idle id))
-                  (sync next)))
-
-(define (install-package state package-source)
-  (void))
-
-(define (uninstall-package state dependency-string)
-  (void))
-
-(define (on-new-dependencies state dependent-eds dependencies-ds-list)
-  (void)
-  #;(prompt/confirmation #:dangerous? #f
-                       #:param ZCPKG_INSTALL_DEPENDENCIES
-                       (~a* (~a dependent-name " needs the following to work: ")
-                            (string-join (map (λ (s) (~a "  " s)) dependencies) "\n")
-                            "Install these too?"))
-  #;(process-jobs team
-                  (add-jobs jobs
-                            ($install-package dependent)
-                            (map $install-package dependencies))))
+  (next ($on-idle id)))
 
 
-(define (before-making-orphans state affected)
-  (void)
-  #;(prompt/confirmation #:dangerous? #f
-                       #:param ZCPKG_UNINSTALL_ORPHANS
-                       (~a* (~a "Uninstalling " name " will orphan the following dependent packages.")
-                            (string-join (map (λ (s) (~a "  " s)) affected) "\n")
-                               "Do you want to uninstall them too?")))
+(define (install-package state source)
+  (define variant (source->variant source))
+  (define should-link? (path? variant))
+  (define source-path (variant->zcpkg-directory variant))
+  (define info (zcpkg-directory->zcpkg-info source-path))
+  (define install-path (zcpkg-info->install-path info))
+  (define dependencies (zcpkg-info-dependencies info))
+
+  (unless (zcpkg-installed? info)
+    (make-zcpkg-install-dir #:link? should-link? source-path install-path)
+    (make-zcpkg-workspace-link install-path)
+    (make-zcpkg-dependency-links dependencies install-path))
+
+  (state ($on-package-installed info))
+
+  (define unavailable (filter-missing-dependencies dependencies))
+  (unless (null? unavailable)
+    (state ($on-new-dependencies
+            dependencies
+            (dependency->string (coerce-dependency info)))))
+
+  (state ($on-idle (workspace-id state))))
 
 
-(define (on-bad-digest state name)
-  (void)
-  #;(prompt/confirmation
-   #:param ZCPKG_TRUST_BAD_DIGEST
-   (~a* (~a name " may have been corrupted or altered.")
-        "Do you want to install this package anyway?")))
-
-
-(define (on-bad-signature message state)
-  (void)
-  #;(prompt/confirmation
-   #:param ZCPKG_TRUST_BAD_SIGNATURE
-   (~a* (~a name "'s signature does not match the provider's key.")
-        "If you are testing your own package, you can safely proceed."
-        "Otherwise, proceeding means running code from an unverified source."
-        "Do you want to install this package anyway?")))
-
-(define (on-missing-signature message state)
-  (void)
-  #;(prompt/confirmation
-   #:param ZCPKG_TRUST_UNSIGNED
-   (~a* (~a name " is unsigned.")
-        "If you are testing your own package, you can safely proceed."
-        "Otherwise, proceeding means running code from an unverified source."
-        "Do you want to install this package anyway?")))
-
-(define (on-unverified-host message state) (void))
-(define (on-package-installed message state) (void))
-(define (on-user-refusal message state) (void))
-
-(define (echo state value)
-  (state ($echo value))
-  (state ($on-idle (workstate-id state))))
+(define (uninstall-package state dependency-variant)
+  (define target-info (find-info/expect-one dependency-variant))
+  (define install-path (zcpkg-info->install-path target-info))
+  (for ([maybe-dependent-info (in-installed-info)])
+    (when (dependency-match? maybe-dependent-info target-info)
+      (uninstall-package state maybe-dependent-info)))
+  (delete-directory/files/empty-parents install-path)
+  (state ($on-idle (workspace-id state))))
 
 (define (stop state)
   (exit 0))
