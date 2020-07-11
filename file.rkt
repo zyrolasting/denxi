@@ -105,6 +105,13 @@
     info-seq)
    0))
 
+(define (filter-missing-dependencies dependencies)
+  (for/fold ([wip null])
+            ([dep (in-list dependencies)])
+    (if (= (sequence-length (find-installed-infos dep)) 0)
+        (cons dep wip)
+        wip)))
+
 (define (find-info/expect-one dependency-variant)
   (define infos (find-installed-infos dependency-variant))
   (case (sequence-length infos)
