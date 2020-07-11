@@ -5,15 +5,23 @@
 (require racket/contract
          racket/exn
          racket/format
+         racket/function
          racket/list
          racket/match
-         racket/runtime-path
+         racket/path
          racket/place
-         racket/function
-         racket/match
-         racket/exn
+         "archiving.rkt"
+         "config.rkt"
+         "dependency.rkt"
+         "download.rkt"
+         "file.rkt"
+         "installer.rkt"
+         "logging.rkt"
          "message.rkt"
-         "logging.rkt")
+         "prompt.rkt"
+         "url.rkt"
+         "workspace.rkt"
+         "zcpkg-info.rkt")
 
 (struct workstate (id pch dependencies)
   #:property prop:evt (struct-field-index pch)
