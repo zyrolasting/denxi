@@ -65,8 +65,8 @@
 
 (define (make-sandbox-init zcpkg-path)
   (λ () ; Run this in context of sandbox.
-    (local-require zcpkg/config
-                   zcpkg/workspace)
+    (local-require "config.rkt"
+                   "workspace.rkt")
     (current-directory zcpkg-path)
     (ZCPKG_WORKSPACE (find-workspace-directory))
     (reload-configuration!)))
