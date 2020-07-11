@@ -1,22 +1,28 @@
 #lang racket/base
 
 (provide make-endpoint
-         call-with-each-catalog
+         try-catalogs
          for-catalog
-         (all-from-out net/url))
+         current-zccatalog-service-endpoint
+         (struct-out next-zcpkg-catalog))
 
-(require net/url
+(require "../url.rkt"
          "../config.rkt"
          "../logging.rkt")
+
+(struct next-zcpkg-catalog ())
 
 (define current-zccatalog-service-endpoint
   (make-parameter (string->url (cdar (ZCPKG_SERVICE_ENDPOINTS)))))
 
-(define (call-with-each-catalog f)
-  (for/or ([base (in-list (ZCPKG_SERVICE_ENDPOINTS))])
-    (<< "Trying ~v catalog at ~a" (car base) (cdr base))
-    (parameterize ([current-zccatalog-service-endpoint (cdr base)])
-      (f))))
+(define (try-catalogs f [catalogs (ZCPKG_SERVICE_ENDPOINTS)])
+  (if (null? catalogs)
+      (error "Tried all catalogs")
+      (with-handlers ([next-zcpkg-catalog?
+                       (λ (e) (try-catalogs f (cdr catalogs)))])
+        (values (caar catalogs)
+                (f (caar catalogs)
+                   (string->url (cdar catalogs)))))))
 
 (define-syntax-rule (for-catalog catalog-name expr ...)
   (parameterize ([current-zccatalog-service-endpoint
