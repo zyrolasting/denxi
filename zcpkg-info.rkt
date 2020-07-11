@@ -20,7 +20,7 @@
    integrity         ; A digest used to verify package contents
    signature         ; A signature used to authenticate the provider
    upload-timestamp) ; A timestamp marking when the package was accepted by a server.
-  #:transparent)
+  #:prefab)
 
 (declare-info-i/o zcpkg-info)
 
