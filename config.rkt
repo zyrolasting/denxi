@@ -1,5 +1,8 @@
 #lang racket/base
 
+(provide confirmation-answer?
+         user-consents?)
+
 (require idiocket/contract
          idiocket/format
          idiocket/match
@@ -21,6 +24,13 @@
    (cond [(eq? topic 'none) #t]
          [(eq? topic 'debug)
           (ZCPKG_VERBOSE)])))
+
+(define confirmation-answer?
+  (or/c 'yes 'no 'always 'ask))
+
+(define (user-consents? answer)
+  (or (eq? answer 'yes)
+      (eq? answer 'always)))
 
 ; This macro defines a reloadable configuration space derived from
 ; the workspace directory.
@@ -121,23 +131,23 @@
   ; Scenario: Artifact does not have a signature. This is normal
   ; when prototyping or working with a trusted peer, so
   ; we'll prompt by default.
-  [ZCPKG_ON_UNSIGNED_ARTIFACT
-   (or/c 'allow 'fail 'ask)
+  [ZCPKG_TRUST_UNSIGNED
+   confirmation-answer?
    'ask
    "How to handle an unsigned artifact from a catalog"]
 
   ; Scenario: Artifact signature cannot be verified with publisher's public key.
   ; This is more suspicious.
-  [ZCPKG_ON_SIGNATURE_MISMATCH
-   (or/c 'allow 'fail 'ask)
-   'fail
+  [ZCPKG_TRUST_BAD_SIGNATURE
+   confirmation-answer?
+   'no
    "How to handle an artifact with a signature that does not match a provider's public key."]
 
   ; Halt when downloaded artifact does not pass integrity check
-  [ZCPKG_ON_TAMPERED_ARTIFACT
-   (or/c 'allow 'fail 'ask)
-   'fail
-   "How to handle an artifact that does not pass an integrity check"]
+  [ZCPKG_TRUST_BAD_DIGEST
+   confirmation-answer?
+   'no
+   "How to handle an artifact that does not pass an integrity check."]
 
   [ZCPKG_COLORIZE_OUTPUT
    boolean?
@@ -168,6 +178,21 @@
    (list (cons "default" "https://zcpkgs.com"))
    (string-append "A list of catalog pairs to try when installing "
                   "packages (e.g. ((\"catalog-name\" . \"http://example.com\") ...).")]
+
+  [ZCPKG_USE_INSTALLER
+   confirmation-answer?
+   'ask
+   "How to handle package installers."]
+
+  [ZCPKG_INSTALL_DEPENDENCIES
+   confirmation-answer?
+   'ask
+   "How to handle installing package dependencies."]
+
+  [ZCPKG_UNINSTALL_ORPHANS
+   confirmation-answer?
+   'ask
+   "How to handle orphaned package dependents."]
 
   [ZCPKG_DOWNLOAD_MAX_REDIRECTS
    exact-nonnegative-integer?
