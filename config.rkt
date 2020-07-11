@@ -3,9 +3,9 @@
 (provide confirmation-answer?
          user-consents?)
 
-(require idiocket/contract
-         idiocket/format
-         idiocket/match
+(require racket/contract
+         racket/format
+         racket/match
          "setting.rkt"
          "url.rkt"
          "workspace.rkt"
