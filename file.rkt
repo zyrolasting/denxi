@@ -164,6 +164,34 @@
 (define (zcpkg-installed? info)
   (directory-exists? (zcpkg-info->install-path info)))
 
+
+(define (delete-directory/files/empty-parents path)
+  (delete-directory/files path)
+  (define cpath (path->complete-path path))
+  (let loop ([current (simplify-path cpath)] [next (../ cpath)])
+    (if (equal? current next)
+        (void)
+        (and (directory-empty? next)
+             (begin (delete-directory next)
+                    (loop))))))
+
+(define (directory-empty? path)
+  (null? (directory-list path)))
+
+(define (../ path)
+  (simplify-path (build-path path 'up)))
+
+(define (call-with-temporary-directory f #:cd? [cd? #t])
+  (define tmp-dir (make-temporary-file "rktdir~a" 'directory))
+  (dynamic-wind void
+                (λ () (parameterize ([current-directory (if cd? tmp-dir (current-directory))])
+                        (f tmp-dir)))
+                (λ () (delete-directory/files tmp-dir))))
+
+(define-syntax-rule (with-temporary-directory body ...)
+  (call-with-temporary-directory
+   (λ (tmp-dir) body ...)))
+
 (module+ test
   (provide temp-fs dir >>)
   (require rackunit

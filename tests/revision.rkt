@@ -4,7 +4,7 @@
          racket/generator
          racket/sequence
          racket/string
-         idiocket/bool
+         racket/bool
          rackunit
          zcpkg/revision)
 

@@ -3,10 +3,10 @@
 (provide capture-workspace
          restore-workspace)
 
-(require idiocket/file
-         idiocket/match
-         idiocket/path
-         idiocket/port
+(require racket/match
+         racket/path
+         racket/port
+         "file.rkt"
          "message.rkt"
          "team.rkt"
          "verify.rkt"

@@ -2,8 +2,7 @@
 
 (provide (all-defined-out))
 
-(require idiocket/format
-         idiocket/port
+(require racket/port
          "string.rkt"
          "config.rkt")
 

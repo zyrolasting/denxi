@@ -1,7 +1,7 @@
 #lang racket/base
 
 (require "../workspace.rkt"
-         idiocket/file
+         racket/file
          zcpkg/operations
          zcpkg/zcpkg-info
          rackunit

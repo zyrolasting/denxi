@@ -2,7 +2,7 @@
 
 (provide with-new-workspace)
 
-(require idiocket/file
+(require "../file.rkt"
          "../workspace.rkt")
 
 (define-syntax-rule (with-new-workspace body ...)
