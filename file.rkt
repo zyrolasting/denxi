@@ -1,18 +1,19 @@
 #lang racket/base
 
 (provide (all-defined-out)
-         (all-from-out idiocket/file))
+         (all-from-out racket/file))
 
-(require idiocket/path
-         idiocket/file
-         idiocket/set
-         idiocket/sequence
+(require racket/path
+         racket/file
+         racket/set
+         racket/sequence
          "config.rkt"
          "dependency.rkt"
          "revision.rkt"
          "string.rkt"
          "zcpkg-info.rkt"
          "workspace.rkt")
+
 
 (define (in-install-directory)
   (in-directory (build-workspace-path (ZCPKG_INSTALL_RELATIVE_PATH))))
@@ -38,7 +39,7 @@
                  (in-installed-info)))
 
 ; Resolve the revision names in an abstract dependency
-(define (abstract-dependency->concrete-dependency ad/variant infos)
+(define (abstract-dependency->concrete-dependency ad/variant [infos (in-installed-info)])
   (define (maybe-resolve-name rev info names)
     (cond [(revision-number? rev) rev]
           [(revision-number-string? rev) rev]
@@ -105,6 +106,9 @@
     info-seq)
    0))
 
+(define (abstract-dependency->exact-dependency ad [infos (in-installed-info)])
+  (concrete-dependency->exact-dependency (abstract-dependency->concrete-dependency ad infos) infos))
+
 (define (filter-missing-dependencies dependencies)
   (for/fold ([wip null])
             ([dep (in-list dependencies)])
@@ -112,7 +116,7 @@
         (cons dep wip)
         wip)))
 
-(define (find-info/expect-one dependency-variant)
+(define (find-exactly-one-info dependency-variant)
   (define infos (find-installed-infos dependency-variant))
   (case (sequence-length infos)
     [(0) (error 'uninstall "~a is not installed" dependency-variant)]
@@ -125,6 +129,33 @@
                          "\n"))])
   (sequence-ref infos 0))
 
+(define (make-zcpkg-install-dir #:link? link? source-path install-path)
+  (make-directory* (path-only install-path))
+  (if link?
+      (make-file-or-directory-link source-path install-path)
+      (copy-directory/files source-path install-path)))
+
+
+(define (make-zcpkg-workspace-link [where (current-directory)])
+  (define ws-link (build-path where CONVENTIONAL_WORKSPACE_NAME))
+  (unless (link-exists? ws-link)
+    (make-file-or-directory-link (ZCPKG_WORKSPACE) ws-link))
+  ws-link)
+
+
+(define (make-zcpkg-dependency-links dependencies [where (current-directory)])
+  (define links-dir (build-path where "zcdeps"))
+  (make-directory* links-dir)
+  (for/list ([dep-variant (in-list dependencies)])
+    (define info (find-latest dep-variant))
+    (define install-path (zcpkg-info->install-path info))
+    (define link-path (build-path links-dir
+                                  (zcpkg-info-provider-name info)
+                                  (zcpkg-info-package-name info)))
+    (make-file-or-directory-link install-path link-path)
+    link-path))
+
+
 (define (find-installed-infos variant [all-info (in-installed-info)])
   (define dep (coerce-dependency variant))
   (sequence-filter (λ (info) (dependency-match? dep info))
@@ -132,3 +163,60 @@
 
 (define (zcpkg-installed? info)
   (directory-exists? (zcpkg-info->install-path info)))
+
+(module+ test
+  (provide temp-fs dir >>)
+  (require rackunit
+           racket/set
+           (for-syntax racket/base))
+
+  (define-syntax-rule (temp-fs expr ...)
+    (let ([tmpdir (make-temporary-file "~a" 'directory)])
+      (parameterize ([current-directory tmpdir])
+        expr ...
+        (delete-directory/files tmpdir))))
+
+  (define-syntax (dir stx)
+    (syntax-case stx ()
+      [(_ kw body ...)
+       (with-syntax ([dirname (keyword->string (syntax-e #'kw))])
+         #'(begin (make-directory dirname)
+                  (parameterize ([current-directory dirname])
+                    body ...)))]))
+
+  (define-syntax (>> stx)
+    (syntax-case stx ()
+      [(_ kw val)
+       (let ([e (syntax-e #'val)])
+         (with-syntax ([fname (keyword->string (syntax-e #'kw))]
+                       [writer (cond [(string? e)
+                                      #'(λ (o) (displayln val o))]
+                                     [(bytes? e)
+                                      #'(λ (o) (write-bytes val o))]
+                                     [else #'val])])
+           #'(call-with-output-file fname writer)))]
+      [(_ kw)
+       #'(>> kw "")]))
+
+
+  (temp-fs [dir #:inst [>> #:a] [dir #:nested [>> #:b]]]
+           [dir #:other [>> #:should-not-appear]]
+           (parameterize ([ZCPKG_WORKSPACE (current-directory)]
+                          [ZCPKG_INSTALL_RELATIVE_PATH "inst"])
+             (test-equal? "Provide all paths in install directory"
+                          (apply set (sequence->list (in-install-directory)))
+                          (apply set (map (λ (p)
+                                            (build-path (current-directory) p))
+                                          '("inst/a"
+                                            "inst/nested"
+                                            "inst/nested/b"))))))
+
+  (temp-fs [dir #:inst [dir #:pkgA [>> #:info.rkt "#lang info"]] [dir #:pkgB [>> #:info.rkt "#lang info"]]]
+           (parameterize ([ZCPKG_WORKSPACE (current-directory)]
+                          [ZCPKG_INSTALL_RELATIVE_PATH "inst"])
+             (test-equal? "Provide all paths to installed info.rkt files"
+                          (apply set (sequence->list (in-installed-info-paths)))
+                          (apply set (map (λ (p)
+                                            (build-path (current-directory) p))
+                                          '("inst/pkgA/info.rkt"
+                                            "inst/pkgB/info.rkt")))))))
