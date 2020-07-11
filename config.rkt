@@ -169,7 +169,7 @@
   ; Where to install packages.
   [ZCPKG_INSTALL_RELATIVE_PATH
    path-string?
-   "opt"
+   "usr/lib/racket"
    "Workspace-relative path for installed packages"]
 
   ; A list of catalogs to try.
