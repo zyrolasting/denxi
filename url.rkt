@@ -8,7 +8,7 @@
 (provide (all-from-out net/url)
          (contract-out
           [indicates-fs-path? (-> url? boolean?)]
-          [file-url->local-path (-> url? (or/c #f path?))]
+          [url->maybe-path (->* (url?) (path-string?) (or/c #f path?))]
           [url-string? predicate/c]))
 
 (define (url-string? s)
@@ -16,13 +16,14 @@
     (and (string->url s)
          #t)))
 
-(define (file-url->local-path u)
+(define (url->maybe-path u [relative-path-root (current-directory)])
   (with-handlers ([exn? (const #f)])
     (simplify-path
      (apply build-path
-            (if (url-path-absolute? u)
+            (if (and (url-path-absolute? u)
+                     (not (member (get-leading-path-element u) '(same up))))
                 (car (filesystem-root-list))
-                (current-directory))
+                relative-path-root)
             (filter-map (λ (pp)
                           (and (not (equal? "" (path/param-path pp)))
                                (path/param-path pp)))
