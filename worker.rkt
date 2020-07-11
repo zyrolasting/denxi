@@ -66,17 +66,17 @@
             dependencies
             (dependency->string (coerce-dependency info)))))
 
-  (state ($on-idle (workspace-id state))))
+  (state ($on-idle (workstate-id state))))
 
 
 (define (uninstall-package state dependency-variant)
-  (define target-info (find-info/expect-one dependency-variant))
+  (define target-info (find-exactly-one-info dependency-variant))
   (define install-path (zcpkg-info->install-path target-info))
   (for ([maybe-dependent-info (in-installed-info)])
     (when (dependency-match? maybe-dependent-info target-info)
       (uninstall-package state maybe-dependent-info)))
   (delete-directory/files/empty-parents install-path)
-  (state ($on-idle (workspace-id state))))
+  (state ($on-idle (workstate-id state))))
 
 (define (stop state)
   (exit 0)
