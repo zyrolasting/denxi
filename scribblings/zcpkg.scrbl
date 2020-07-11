@@ -1,5 +1,6 @@
 #lang scribble/manual
-@require[@for-label[racket/base] zcpkg/path]
+@require[@for-label[racket/base]
+         "../workspace.rkt"]
 
 @title{A Zero-Collection Package Management System}
 @author[(author+email "Sage L. Gerard" "sage@sagegerard.com" #:obfuscate? #t)]
@@ -133,7 +134,7 @@ those rules and defines useful document conventions.
 @subsection{Workspace directory}
 
 The package manager starts life by searching for a special
-@deftech{workspace directory} named @depdir. When there is no room for
+@deftech{workspace directory} named @|depdir|. When there is no room for
 confusion, I will sometimes refer to this directory and/or its
 contents as a @deftech{workspace}. The package manager will first
 check to see if @depdir is a subdirectory of
@@ -299,8 +300,8 @@ modify not just the configuration, but everything in the
 
 @section{Service}
 
-@tt{zcpkg} can work entirely offline, but a server is available at
-@SERVICE-URL to host ZCPs on behalf of a @deftech{distributor}.  A
+@tt{zcpkg} can work entirely offline, but a server is available
+to host ZCPs on behalf of a @deftech{distributor}.  A
 distributor can be a publisher, the actual author or a package, or
 some other party. The service only trusts that an authenticated
 distributor has the right to distribute the packages they submit.
@@ -351,7 +352,7 @@ By the above rules, every package starts on version @racket{draft:0}.
 $ raco zcpkg install <package-source> ...
 }|
 
-@margin{Why less support for package scopes? The honest reason is to
+@margin-note{Why less support for package scopes? The honest reason is to
 reduce the scope of work for the first release of this project. Parity
 with @secref["concept:source" #:doc '(lib
 "pkg/scribblings/pkg.scrbl")] is a goal, provided that checksums
