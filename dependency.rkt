@@ -4,7 +4,7 @@
 ; ambiguous reference to a package. Detect and prefer any values
 ; that are neither.
 
-(require idiocket/contract)
+(require racket/contract)
 
 (provide (struct-out dependency)
          (contract-out
@@ -23,10 +23,10 @@
           [dependency-match? (-> dependency-variant? dependency-variant? boolean?)]))
 
 
-(require idiocket/match
-         idiocket/exn
-         idiocket/format
-         idiocket/function
+(require racket/match
+         racket/exn
+         racket/format
+         racket/function
          "service/endpoint.rkt"
          "string.rkt"
          "url.rkt"
@@ -42,6 +42,11 @@
    revision-max-exclusive?
    revision-max)
   #:transparent)
+
+(define (passes-invariant-assertion? c v)
+  (with-handlers ([exn:fail:contract? (λ (e) #f)])
+    (invariant-assertion c v)
+    #t))
 
 ; Define "Well-formed" to mean that a dependency structure
 ; has correct value types for referencing some package.
@@ -148,7 +153,8 @@
         [(zcpkg-info? v) (zcpkg-info->dependency v)]))
 
 (define (dependency-string? s)
-  (fail-as #f (and (string->dependency s) #t)))
+  (with-handlers ([(const #t) (const #f)])
+    (and (string->dependency s) #t)))
 
 (define (string->dependency s)
   (url->dependency (string->url s)))
