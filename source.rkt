@@ -7,8 +7,9 @@
 
 (provide
  (contract-out
-  [source->zcpkg-info (-> string? zcpkg-info?)]
-  [resolve-source
+  [variant->zcpkg-info
+   (or/c url? dependency? path?)]
+  [source->variant
    (-> string? (or/c url? dependency? path?))]))
 
 (require "config.rkt"
@@ -48,14 +49,12 @@
     (and (well-formed-dependency? dep)
          dep)))
 
-(define (resolve-source v)
+(define (source->variant v)
   (or (source->maybe-path v)
       (source->maybe-dependency v)
       (string->url v)))
 
-(define (source->zcpkg-info source)
-  (define variant (resolve-source source))
-
+(define (variant->zcpkg-info variant)
   (define info.rkt
     (cond [(path? variant)
            variant]
