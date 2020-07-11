@@ -17,7 +17,7 @@
           [coerce-dependency (-> dependency-variant? dependency?)]
           [dependency->string (-> dependency? string?)]
           [string->dependency (-> string? dependency?)]
-          [dependency->url (-> dependency? url?)]
+          [dependency->url (->* (dependency?) (url?) url?)]
           [url->dependency (-> url? dependency?)]
           [zcpkg-info->dependency (-> zcpkg-info? dependency?)]
           [dependency-match? (-> dependency-variant? dependency-variant? boolean?)]))
@@ -216,8 +216,8 @@
 (define (dependency->string d)
   (url->string (url #f #f #f #f #f (url-path (dependency->url d)) null #f)))
 
-(define (dependency->url d)
-  (make-endpoint
+(define (dependency->url d [base (make-endpoint)])
+  (struct-copy url base
    [path
     (list (path/param (dependency-provider-name d) null)
           (path/param (dependency-package-name d)
