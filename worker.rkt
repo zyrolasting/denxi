@@ -83,5 +83,6 @@
 
 (define-message-pump (handle-message workstate?)
   assign-id
-  echo
-  stop)
+  stop
+  install-package
+  uninstall-package)
