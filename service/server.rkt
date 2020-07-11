@@ -14,6 +14,7 @@
                     web-server/dispatchers/dispatch-lift)
          "../workspace.rkt"
          "../config.rkt"
+         "../url.rkt"
          "catalog.rkt"
          "endpoint.rkt")
 
