@@ -8,7 +8,7 @@
 (provide
  (contract-out
   [variant->zcpkg-info
-   (or/c url? dependency? path?)]
+   (->* ((or/c url? dependency? path?) string?) () zcpkg-info?)]
   [source->variant
    (-> string? (or/c url? dependency? path?))]))
 
@@ -54,7 +54,7 @@
       (source->maybe-dependency v)
       (string->url v)))
 
-(define (variant->zcpkg-info variant)
+(define (variant->zcpkg-info variant source)
   (define info.rkt
     (cond [(path? variant)
            variant]
