@@ -79,7 +79,8 @@
   (state ($on-idle (workspace-id state))))
 
 (define (stop state)
-  (exit 0))
+  (exit 0)
+  state)
 
 (define-message-pump (handle-message workstate?)
   assign-id
