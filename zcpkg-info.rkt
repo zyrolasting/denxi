@@ -32,9 +32,12 @@
        (- (zcpkg-info-revision-number a)
           (zcpkg-info-revision-number b))))
 
+(define (zcpkg-info->relative-path info)
+  (build-path (zcpkg-info-provider-name info)
+              (zcpkg-info-package-name info)
+              (zcpkg-info-edition-name info)
+              (~a (zcpkg-info-revision-number info))))
+
 (define (zcpkg-info->install-path info)
   (build-workspace-path (ZCPKG_INSTALL_RELATIVE_PATH)
-                        (zcpkg-info-provider-name info)
-                        (zcpkg-info-package-name info)
-                        (zcpkg-info-edition-name info)
-                        (~a (zcpkg-info-revision-number info))))
+                        (zcpkg-info->relative-path info)))
