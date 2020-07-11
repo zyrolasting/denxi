@@ -1,5 +1,6 @@
 #lang racket/base
 
+(provide clear-download-cache!)
 
 (require racket/file
          racket/list
