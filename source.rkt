@@ -7,13 +7,15 @@
 
 (provide
  (contract-out
+  [source->zcpkg-info (-> string? zcpkg-info?)]
   [resolve-source
    (-> string? (or/c url? dependency? path?))]))
 
 (require "config.rkt"
          "dependency.rkt"
          "string.rkt"
-         "url.rkt")
+         "url.rkt"
+         "zcpkg-info.rkt")
 
 (define (source->maybe-path v [relative-path-root (current-directory)])
   (cond [(path? v)
@@ -50,6 +52,29 @@
   (or (source->maybe-path v)
       (source->maybe-dependency v)
       (string->url v)))
+
+(define (source->zcpkg-info source)
+  (define variant (resolve-source source))
+
+  (define info.rkt
+    (cond [(path? variant)
+           variant]
+
+          [(dependency? variant)
+           (error "Getting info by a dependency struct is not yet implemented")]
+
+          [(url? variant)
+           (error "Getting info by an URL is not yet implemented")]
+
+          [else #f]))
+
+  (unless (file-exists? info.rkt)
+    (error 'install-package
+           "No info for ~a~n"
+           source))
+
+  (read-zcpkg-info info.rkt))
+
 
 (module+ test
   (require rackunit
