@@ -15,7 +15,7 @@ exe: compile test
 
 doc:
 	raco make *.scrbl
-	raco scribble --dest doc +m manual.scrbl
+	raco scribble --dest doc +m *.scrbl
 
 clean:
 	git clean -fdX
