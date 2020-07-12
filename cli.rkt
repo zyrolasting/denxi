@@ -74,6 +74,7 @@
   serve      Serve installed packages
   download   Download packages and metadata
   upload     Upload packages and metadata
+
 EOF
 ))
 
@@ -170,6 +171,7 @@ EOF
   set   Set a new value for a setting
   get   Get the current value of a setting
   dump  Write a hash table of all settings
+
 EOF
 ))
 
@@ -233,6 +235,7 @@ EOF
    #<<EOF
 where <what> is one of
   workspace  The current target workspace directory
+
 EOF
 ))
 
