@@ -30,7 +30,9 @@
                              (and/c (not/c file-exists?)
                                     (not/c directory-exists?)
                                     (not/c link-exists?))))
-                (find-workspace-directory)))
+                (or (find-workspace-directory)
+                    (build-path (current-directory)
+                                CONVENTIONAL_WORKSPACE_NAME))))
 
 (define (build-workspace-path . paths)
   (apply build-path (ZCPKG_WORKSPACE)
