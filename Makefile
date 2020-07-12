@@ -1,13 +1,16 @@
 all: exe docs
 .PHONY: all
 
+test:
+	raco test .
+
 setup:
 	raco pkg install web-server-lib rackunit-lib
 
 compile:
 	raco make client/*.rkt service/*.rkt *.rkt
 
-exe: compile
+exe: compile test
 	raco exe -o zcpkg client/main.rkt
 
 doc:
