@@ -28,6 +28,7 @@
 (define-message $on-bad-signature (info))
 (define-message $on-missing-signature (info))
 (define-message $on-unverified-host (host))
+(define-message $on-package-installed (info))
 (define-message $echo (value))
 (define-message $on-idle (id))
 (define-message $stop ())

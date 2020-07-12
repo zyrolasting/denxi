@@ -101,6 +101,10 @@
            (append (set->list deduped)
                    (company-jobs team))))
 
+(define (on-package-installed team info)
+  (printf "Installed ~a~n" info)
+  team)
 
 (define-message-pump (handle-team-event company?)
-  on-idle)
+  on-idle
+  on-package-installed)
