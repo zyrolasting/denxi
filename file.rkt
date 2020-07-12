@@ -78,7 +78,7 @@
 
 ; Resolve the revision names in an abstract dependency
 (define (abstract-dependency->concrete-dependency ad/variant [infos (in-installed-info)])
-  (define (maybe-resolve-name rev info names)
+  (define (maybe-resolve-name rev names)
     (cond [(revision-number? rev) rev]
           [(revision-number-string? rev) rev]
           [(revision-name-string? rev)
