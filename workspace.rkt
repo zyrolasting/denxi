@@ -12,7 +12,7 @@
          "setting.rkt")
 
 (define CONVENTIONAL_WORKSPACE_NAME "zcw")
-(define CONVENTIONAL_DEPENDENCY_DIRECTORY_NAME "zcdeps")
+(define CONVENTIONAL_DEPENDENCY_DIRECTORY_NAME "zcpkg-deps")
 
 (define (find-workspace-directory [current-dir (current-directory)])
   (define complete-current-dir (simplify-path (path->complete-path current-dir)))
