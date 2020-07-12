@@ -55,7 +55,6 @@
 
   (unless (zcpkg-installed? info)
     (make-zcpkg-install-dir #:link? should-link? source-path install-path)
-    (make-zcpkg-workspace-link install-path)
     (make-zcpkg-dependency-links dependencies install-path))
 
   (state ($on-package-installed info))
