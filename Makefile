@@ -4,7 +4,7 @@ all: exe docs
 test:
 	raco test .
 
-setup:
+racket-deps:
 	raco pkg install web-server-lib rackunit-lib
 
 compile:
