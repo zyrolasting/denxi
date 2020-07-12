@@ -5,6 +5,7 @@
 
 (require racket/path
          racket/file
+         racket/generator
          racket/set
          racket/sequence
          "config.rkt"
@@ -14,15 +15,52 @@
          "zcpkg-info.rkt"
          "workspace.rkt")
 
+(define (path-cycles? path [previous #f] [encountered (set)])
+  ; Do not let simplify-path consult filesystem, because that would
+  ; follow any link present. We would not get its identity then.
+  (define simple (simplify-path path #f))
+  (define id (file-or-directory-identity simple #t))
+  (cond [(equal? id previous) #f] ; Checks for root directory, given call below.
+        [(set-member? encountered id)]
+        [else
+         (path-cycles? (build-path simple 'up)
+                       id
+                       (set-add encountered id))]))
 
-(define (in-install-directory)
-  (in-directory (build-workspace-path (ZCPKG_INSTALL_RELATIVE_PATH))))
+(define (build-install-path . args)
+  (apply build-workspace-path (ZCPKG_INSTALL_RELATIVE_PATH) args))
+
+(define (in-workspace)
+  (in-directory (build-workspace-path)
+                (λ (p) (if (link-exists? p)
+                           (not (path-cycles? p))
+                           (not (member (path->string (file-name-from-path p)) '(".git")))))))
+
+(define (ls path)
+  (map path->string (directory-list path)))
+
+(define (get-installed-providers)
+  (ls (build-install-path)))
+
+(define (get-installed-provider-packages provider)
+  (ls (build-install-path provider)))
+
+(define (get-installed-package-editions provider package)
+  (ls (build-install-path provider package)))
+
+(define (get-installed-edition-revisions provider package edition)
+  (ls (build-install-path provider package edition)))
+
+(define (get-latest-installed-revision provider package edition)
+  (apply max (map string->number (get-installed-edition-revisions provider package edition))))
 
 (define (in-installed-info-paths)
-  (sequence-filter
-   (λ (p) (equal? (file-name-from-path p)
-                  (build-path "info.rkt")))
-   (in-install-directory)))
+  (in-generator
+   (for* ([provider (in-list (get-installed-providers))]
+          [package  (in-list (get-installed-provider-packages provider))]
+          [edition  (in-list (get-installed-package-editions provider package))]
+          [revision (in-list (get-installed-edition-revisions provider package edition))])
+     (yield (build-install-path provider package edition revision "info.rkt")))))
 
 (define (in-installed-info)
   (sequence-map read-zcpkg-info
