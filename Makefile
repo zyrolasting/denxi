@@ -8,10 +8,10 @@ racket-deps:
 	raco pkg install web-server-lib rackunit-lib
 
 compile:
-	raco make client/*.rkt service/*.rkt *.rkt
+	raco make service/*.rkt *.rkt
 
 exe: compile test
-	raco exe -o zcpkg client/main.rkt
+	raco exe -o zcpkg cli.rkt
 
 doc:
 	raco make *.scrbl

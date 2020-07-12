@@ -89,13 +89,6 @@
            (if no-jobs? null (cdr jobs))))
 
 (define (on-new-dependencies team dependent-name dependencies)
-  (define answer
-    (prompt/confirmation #:dangerous? #f
-                         #:param ZCPKG_INSTALL_DEPENDENCIES
-                         (~a* (~a dependent-name " needs the following to work: ")
-                              (string-join (map (λ (s) (~a "  " s)) dependencies) "\n")
-                              "Install these too?")))
-
   (define new-jobs
     (map $install-package dependencies))
 
@@ -107,36 +100,6 @@
   (company (company-workers team)
            (append (set->list deduped)
                    (company-jobs team))))
-
-(define (before-making-orphans state name affected)
-  (prompt/confirmation #:dangerous? #f
-                       #:param ZCPKG_UNINSTALL_ORPHANS
-                       (~a* (~a "Uninstalling " name " will orphan the following dependent packages.")
-                            (string-join (map (λ (s) (~a "  " s)) affected) "\n")
-                            "Do you want to uninstall them too?")))
-
-(define (on-bad-digest state name)
-  (prompt/confirmation
-   #:param ZCPKG_TRUST_BAD_DIGEST
-   (~a* (~a name " may have been corrupted or altered.")
-        "Do you want to install this package anyway?")))
-
-
-(define (on-bad-signature state name)
-  (prompt/confirmation
-   #:param ZCPKG_TRUST_BAD_SIGNATURE
-   (~a* (~a name "'s signature does not match the provider's key.")
-        "If you are testing your own package, you can safely proceed."
-        "Otherwise, proceeding means running code from an unverified source."
-        "Do you want to install this package anyway?")))
-
-(define (on-missing-signature state name)
-  (prompt/confirmation
-   #:param ZCPKG_TRUST_UNSIGNED
-   (~a* (~a name " is unsigned.")
-        "If you are testing your own package, you can safely proceed."
-        "Otherwise, proceeding means running code from an unverified source."
-        "Do you want to install this package anyway?")))
 
 
 (define-message-pump (handle-team-event company?)

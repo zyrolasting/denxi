@@ -60,9 +60,3 @@
   (param (if (eq? out 'yes) 'ask out))
 
   out)
-
-
-(define (prompt/use-installer name)
-  (prompt/confirmation #:dangerous? #f
-                       #:param ZCPKG_USE_INSTALLER
-                       (~a "Do you want to run " name "'s installer?")))

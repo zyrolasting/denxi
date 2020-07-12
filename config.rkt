@@ -1,15 +1,11 @@
 #lang racket/base
 
-(provide confirmation-answer?
-         user-consents?)
-
 (require racket/contract
          racket/format
          racket/match
          "setting.rkt"
          "url.rkt"
          "workspace.rkt"
-         "logging.rkt"
          (for-syntax racket/base
                      racket/syntax
                      syntax/parse
@@ -17,20 +13,6 @@
 
 (define (make-workspace-rcfile name)
   (ws/ "etc/zcpkg" name))
-
-(current-hash-predicate
- (λ (h)
-   (define topic (hash-set h 'topic 'none))
-   (cond [(eq? topic 'none) #t]
-         [(eq? topic 'debug)
-          (ZCPKG_VERBOSE)])))
-
-(define confirmation-answer?
-  (or/c 'yes 'no 'always 'ask))
-
-(define (user-consents? answer)
-  (or (eq? answer 'yes)
-      (eq? answer 'always)))
 
 ; This macro defines a reloadable configuration space derived from
 ; the workspace directory.
@@ -42,14 +24,9 @@
 
   (syntax-parse stx
     [(_ [name:id cnt:expr default:expr str:expr] ...)
-     (with-syntax ([(loader ...)   (suffix-id "load" #'(name ...))]
-                   [(get-flag-spec ...) (suffix-id "make-flag-spec" #'(name ...))])
-       #'(begin (begin (provide loader name get-flag-spec)
+     (with-syntax ([(loader ...) (suffix-id "load" #'(name ...))])
+       #'(begin (begin (provide loader name)
                        (define (loader) (load-setting 'name make-workspace-rcfile default))
-                       (define (get-flag-spec f)
-                         (f (setting-id->cli-flag-string 'name)
-                            (format "~a (Default: ~s)" str (~s default))
-                            name))
                        (define name (make-setting 'name cnt (loader))))
                 ...
 
@@ -132,22 +109,22 @@
   ; when prototyping or working with a trusted peer, so
   ; we'll prompt by default.
   [ZCPKG_TRUST_UNSIGNED
-   confirmation-answer?
-   'ask
-   "How to handle an unsigned artifact from a catalog"]
+   boolean?
+   #f
+   "If set, trust unsigned packages."]
 
   ; Scenario: Artifact signature cannot be verified with publisher's public key.
   ; This is more suspicious.
   [ZCPKG_TRUST_BAD_SIGNATURE
-   confirmation-answer?
-   'no
+   boolean?
+   #f
    "How to handle an artifact with a signature that does not match a provider's public key."]
 
   ; Halt when downloaded artifact does not pass integrity check
   [ZCPKG_TRUST_BAD_DIGEST
-   confirmation-answer?
-   'no
-   "How to handle an artifact that does not pass an integrity check."]
+   boolean?
+   #f
+   "How to handle an artifact that does not pass an integrity check. Implies ZCPKG_TRUST_UNSIGNED."]
 
   [ZCPKG_COLORIZE_OUTPUT
    boolean?
@@ -179,20 +156,15 @@
    (string-append "A list of catalog pairs to try when installing "
                   "packages (e.g. ((\"catalog-name\" . \"http://example.com\") ...).")]
 
-  [ZCPKG_USE_INSTALLER
-   confirmation-answer?
-   'ask
-   "How to handle package installers."]
+  [ZCPKG_INSTALL_ORPHAN
+   boolean?
+   #f
+   "When installing a package, do not install dependencies."]
 
-  [ZCPKG_INSTALL_DEPENDENCIES
-   confirmation-answer?
-   'ask
-   "How to handle installing package dependencies."]
-
-  [ZCPKG_UNINSTALL_ORPHANS
-   confirmation-answer?
-   'ask
-   "How to handle orphaned package dependents."]
+  [ZCPKG_LEAVE_ORPHANS
+   boolean?
+   #t
+   "When uninstalling a package, uninstall packages orphaned in the process."]
 
   [ZCPKG_DOWNLOAD_MAX_REDIRECTS
    exact-nonnegative-integer?
