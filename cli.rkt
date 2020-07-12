@@ -26,7 +26,7 @@
 
 
 (module+ main
-  (define maybe-exit (run-command-line (current-command-line-arguments)))
+  (define maybe-exit (top-level-cli (current-command-line-arguments)))
   (exit (if (exact-nonnegative-integer? maybe-exit)
             maybe-exit
             0)))
@@ -239,10 +239,11 @@ EOF
 (define (uninstall-command args)
   (run-command-line
    #:program "uninstall"
+   #:arg-help-strings '("urns")
    #:args args
-   (λ (flags . dependency-strings)
+   (λ (flags . urns)
      (process-jobs
-      (for/list ([ds (in-list dependency-strings)])
+      (for/list ([ds (in-list urns)])
         ($uninstall-package ds))))))
 
 (define (restore-command args)
