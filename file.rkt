@@ -144,7 +144,7 @@
 
 
 (define (make-zcpkg-dependency-links dependencies [where (current-directory)])
-  (define links-dir (build-path where "zcdeps"))
+  (define links-dir (build-path where CONVENTIONAL_DEPENDENCY_DIRECTORY_NAME))
   (make-directory* links-dir)
   (for/list ([dep-variant (in-list dependencies)])
     (define info (find-latest dep-variant))

@@ -4,6 +4,7 @@
          find-workspace-directory
          ZCPKG_WORKSPACE
          CONVENTIONAL_WORKSPACE_NAME
+         CONVENTIONAL_DEPENDENCY_DIRECTORY_NAME
          ws/)
 
 (require idiocket/contract
@@ -11,6 +12,7 @@
          "setting.rkt")
 
 (define CONVENTIONAL_WORKSPACE_NAME "zcpkg")
+(define CONVENTIONAL_DEPENDENCY_DIRECTORY_NAME "zcdeps")
 
 (define (find-workspace-directory [current-dir (current-directory)])
   (define complete-current-dir (simplify-path (path->complete-path current-dir)))
