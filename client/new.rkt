@@ -17,14 +17,6 @@
   (displayln "(define dependencies '())"))
 
 
-(define (write-README.md package-name)
-  (printf #<<EOF
-# ~a
-
-EOF
-package-name))
-
-
 (define (write-installer.rkt package-name)
   (displayln "#lang racket/base\n")
   (displayln "(define (set-up!)\n  (void))\n")
@@ -38,7 +30,6 @@ package-name))
       (λ (o) (parameterize ([current-output-port o])
                (proc name)))))
   (make-file "info.rkt" write-info.rkt)
-  (make-file "README.md" write-README.md)
   (make-file "installer.rkt" write-installer.rkt))
 
 
