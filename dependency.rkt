@@ -17,8 +17,6 @@
           [coerce-dependency (-> dependency-variant? dependency?)]
           [dependency->string (-> dependency? string?)]
           [string->dependency (-> string? dependency?)]
-          [dependency->url (->* (dependency?) (url?) url?)]
-          [url->dependency (-> url? dependency?)]
           [zcpkg-info->dependency (-> zcpkg-info? dependency?)]
           [dependency-match? (-> dependency-variant? dependency-variant? boolean?)]))
 
@@ -29,7 +27,6 @@
          racket/function
          "service/endpoint.rkt"
          "string.rkt"
-         "url.rkt"
          "zcpkg-info.rkt"
          "revision.rkt")
 
@@ -73,8 +70,7 @@
 
 ; Recognize the many sources of a dependency declarations.
 (define (dependency-variant? v)
-  ((disjoin url?
-            string?
+  ((disjoin string?
             dependency?
             zcpkg-info?) v))
 
@@ -144,7 +140,6 @@
 (define (coerce-dependency v)
   (cond [(dependency? v) v]
         [(string? v) (string->dependency v)]
-        [(url? v) (url->dependency v)]
         [(zcpkg-info? v) (zcpkg-info->dependency v)]))
 
 (define (dependency-string? s)
@@ -152,30 +147,27 @@
     (and (string->dependency s) #t)))
 
 (define (string->dependency s)
-  (url->dependency (string->url s)))
-
-(define (url->dependency u)
-  (match-define
-    (list (path/param provider-name _)
-          (path/param package-name version-info))
-    (url-path u))
-
-  (match version-info
-    [(list)
+  (match (string-split s ":")
+    [(list (? name-string? provider-name)
+           (? name-string? package-name))
      (dependency provider-name
                  package-name
                  "draft"
                  #f "newest"
                  #f "newest")]
 
-    [(list (? name-string? edition-name))
+    [(list (? name-string? provider-name)
+           (? name-string? package-name)
+           (? name-string? edition-name))
      (dependency provider-name
                  package-name
                  edition-name
                  #f "newest"
                  #f "newest")]
 
-    [(list (? name-string? edition-name)
+    [(list (? name-string? provider-name)
+           (? name-string? package-name)
+           (? name-string? edition-name)
            (? revision-string? revision))
      (dependency provider-name
                  package-name
@@ -183,7 +175,9 @@
                  #f revision
                  #f revision)]
 
-    [(list (? name-string? edition-name)
+    [(list (? name-string? provider-name)
+           (? name-string? package-name)
+           (? name-string? edition-name)
            (? revision-string? min-revision)
            (? revision-string? max-revision))
      (dependency provider-name
@@ -192,7 +186,9 @@
                  #f min-revision
                  #f max-revision)]
 
-    [(list (? name-string? edition-name)
+    [(list (? name-string? provider-name)
+           (? name-string? package-name)
+           (? name-string? edition-name)
            min-flag
            (? revision-string? min-revision)
            max-flag
@@ -215,25 +211,21 @@
               (zcpkg-info-revision-number info)))
 
 (define (dependency->string d)
-  (url->string (url #f #f #f #f #f (url-path (dependency->url d)) null #f)))
-
-(define (dependency->url d [base (make-endpoint)])
-  (struct-copy url base
-   [path
-    (list (path/param (dependency-provider-name d) null)
-          (path/param (dependency-package-name d)
-                      (list (dependency-edition-name d)
-                            (bool->exclusive-flag (dependency-revision-min-exclusive? d))
-                            (dependency-revision-min d)
-                            (bool->exclusive-flag (dependency-revision-max-exclusive? d))
-                            (dependency-revision-max d))))]))
-
+  (string-join
+   (list (dependency-provider-name d)
+         (dependency-package-name d)
+         (dependency-edition-name d)
+         (bool->exclusive-flag (dependency-revision-min-exclusive? d))
+         (dependency-revision-min d)
+         (bool->exclusive-flag (dependency-revision-max-exclusive? d))
+         (dependency-revision-max d))
+   ":"))
 
 (define (exclusive-flag->bool flag name)
   (match flag
     ["i" #f]
     ["e" #t]
-    [_ (raise-argument-error 'url->dependency
+    [_ (raise-argument-error 'string->dependency
                              (format "\"i\" or \"e\" for ~a" name)
                              flag)]))
 
@@ -278,17 +270,13 @@
 
   (test-case "Convert between dependency instances and their representations"
     (define target (dependency "joe" "pkg" "edition" #f "8" #f "8"))
-    (define str-repr "joe/pkg;edition;i;8;i;8")
-    (define url-repr (string->url str-repr))
+    (define str-repr "joe:pkg:edition:i:8:i:8")
     (define info-repr (zcpkg-info "joe" "pkg" "edition" "8" #f #f #f #f #f #f))
     (check-equal? target (string->dependency str-repr))
     (check-equal? target (coerce-dependency str-repr))
-    (check-equal? target (url->dependency url-repr))
-    (check-equal? target (coerce-dependency url-repr))
     (check-equal? target (zcpkg-info->dependency info-repr))
     (check-equal? target (coerce-dependency info-repr))
-    (check-equal? str-repr (dependency->string target))
-    (check-equal? (url-path url-repr) (url-path (dependency->url target))))
+    (check-equal? str-repr (dependency->string target)))
 
 
   (test-true "Detect equal dependency identities"
@@ -308,25 +296,24 @@
                                      (dependency "a" "b" " " #f #f #f #f)))
 
 
-  (test-case "Use Strings and URLs to produce exact and inexact dependencies"
+  (test-case "Use strings to produce exact and inexact dependencies"
     (define (check-conversion dep str)
-      (check-equal? dep (string->dependency str))
-      (check-equal? dep (url->dependency (string->url str))))
+      (check-equal? dep (string->dependency str)))
 
     (check-conversion (dependency "joe" "pkg" "draft" #f "newest" #f "newest")
-                      "joe/pkg")
+                      "joe:pkg")
 
     (check-conversion (dependency "joe" "pkg" "edition" #f "newest" #f "newest")
-                      "joe/pkg;edition")
+                      "joe:pkg:edition")
 
     (check-conversion (dependency "joe" "pkg" "edition" #f "initial" #f "initial")
-                      "joe/pkg;edition;initial")
+                      "joe:pkg:edition:initial")
 
     (check-conversion (dependency "joe" "pkg" "edition" #f "min" #f "max")
-                      "joe/pkg;edition;min;max")
+                      "joe:pkg:edition:min:max")
 
     (check-conversion (dependency "joe" "pkg" "edition" #f "beta" #t "prod")
-                      "joe/pkg;edition;i;beta;e;prod"))
+                      "joe:pkg:edition:i:beta:e:prod"))
 
   (test-pred "Use zcpkg-info instances to produce exact dependencies"
              exact-dependency?
@@ -334,51 +321,51 @@
 
 
   (test-true "Match a dependency using a revision range"
-             (dependency-match? "joe/pkg;draft;0;100" "joe/pkg;draft;0;0"))
+             (dependency-match? "joe:pkg:draft:0:100" "joe:pkg:draft:0:0"))
 
   (test-true "Match a dependency using a revision range, even with string+number mixes"
              (dependency-match? (dependency "joe" "pkg" "draft" #f "0" #f 100)
                                 (dependency "joe" "pkg" "draft" #f 0 #f "0")))
 
   (test-true "Match a dependency exactly"
-             (dependency-match? "joe/pkg;draft;2;2" "joe/pkg;draft;2;2"))
+             (dependency-match? "joe:pkg:draft:2:2" "joe:pkg:draft:2:2"))
 
   (test-true "Match a dependency that risks an off-by-one error (lower bound)"
-             (dependency-match? "joe/pkg;draft;e;1;i;3"
-                                "joe/pkg;draft;2;2"))
+             (dependency-match? "joe:pkg:draft:e:1:i:3"
+                                "joe:pkg:draft:2:2"))
 
   (test-true "Match a dependency that risks an off-by-one error (upper bound)"
-             (dependency-match? "joe/pkg;draft;i;1;e;3"
-                                "joe/pkg;draft;2;2"))
+             (dependency-match? "joe:pkg:draft:i:1:e:3"
+                                "joe:pkg:draft:2:2"))
 
   (test-false "Do not match a dependency that differs in provider name"
-              (dependency-match? "joe/pkg;draft;i;1;e;3"
-                                 "je/pkg;draft;2;2"))
+              (dependency-match? "joe:pkg:draft:i:1:e:3"
+                                 "je:pkg:draft:2:2"))
 
   (test-false "Do not match a dependency that differs in package name"
-              (dependency-match? "joe/pkg;draft;i;1;e;3"
-                                 "joe/pg;draft;2;2"))
+              (dependency-match? "joe:pkg:draft:i:1:e:3"
+                                 "joe:pg:draft:2:2"))
 
   (test-false "Do not match a dependency that differs in edition name"
-              (dependency-match? "joe/pkg;draft;i;1;e;3"
-                                 "joe/pkg;drft;2;2"))
+              (dependency-match? "joe:pkg:draft:i:1:e:3"
+                                 "joe:pkg:drft:2:2"))
 
   (test-exn "Raise a contract error if comparing two inexact dependencies"
             #rx"expected: An exact dependency"
-            (λ () (dependency-match? "joe/pkg;draft;i;1;e;3"
-                                     "joe/pkg")))
+            (λ () (dependency-match? "joe:pkg:draft:i:1:e:3"
+                                     "joe:pkg")))
 
   (test-exn "Raise a contract error if matching against an ill-formed dependency"
             #rx"expected: A concrete dependency"
             (λ () (dependency-match? (dependency #f #f #f #f #f #f #f)
-                                     "joe/pkg;draft;1;1")))
+                                     "joe:pkg:draft:1:1")))
 
   (test-exn "Raise a contract error if matching against an abstract dependency"
             #rx"expected: A concrete dependency"
-            (λ () (dependency-match? "joe/pkg"
-                                     "joe/pkg;draft;1;1")))
+            (λ () (dependency-match? "joe:pkg"
+                                     "joe:pkg:draft:1:1")))
 
   (test-exn "Raise a special error if matching against an invalid interval"
             exn:fail:zcpkg:invalid-revision-interval?
-            (λ () (dependency-match? "joe/pkg;draft;10;1"
-                                     "joe/pkg;draft;1"))))
+            (λ () (dependency-match? "joe:pkg:draft:10:1"
+                                     "joe:pkg:draft:1"))))
