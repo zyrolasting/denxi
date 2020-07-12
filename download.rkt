@@ -16,6 +16,14 @@
          "dependency.rkt")
 
 
+(define (dependency->url leading-path dep)
+  (merge-endpoints
+   (url #f #f #f #f #f
+        (list (path/param leading-path null)
+              (path/param (dependency->string dep) null))
+        null #f)))
+
+
 (define (get-cache-directory)
   (build-workspace-path "var/cache/zcpkg"))
 
@@ -23,7 +31,7 @@
   (define-values (catalog-name maybe-well-formed-artifact-info)
     (try-catalogs
      (λ (catalog-name catalog-url-base)
-       (define info-url (dependency->url dep))
+       (define info-url (dependency->url "info" dep))
        (read-zcpkg-info (download-file info-url
                                        catalog-name
                                        #f)))))
@@ -44,7 +52,7 @@
 
 
 (define (download-artifact catalog-name query info)
-  (define artifact-info-url (for-catalog catalog-name (dependency->url query)))
+  (define artifact-info-url (for-catalog catalog-name (dependency->url "artifact" query)))
   (define artifact-path (download-file artifact-info-url))
   (define checksum (zcpkg-info-integrity info))
   (unless (equal? (make-digest artifact-path) checksum)
