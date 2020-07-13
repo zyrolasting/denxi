@@ -7,7 +7,7 @@
          make-signature
          digest=?
          verify-signature
-         well-formed-zcpkg-info?)
+         validate-zcpkg-info)
 
 (require racket/file
          racket/function
@@ -16,6 +16,7 @@
          racket/system
          "contract.rkt"
          "string.rkt"
+         "url.rkt"
          "zcpkg-info.rkt"
          "dependency.rkt")
 
@@ -75,16 +76,52 @@
   (and (bytes? b)
        (> (bytes-length b) 0)))
 
-(define well-formed-zcpkg-info?
-  (curry passes-invariant-assertion?
-         (struct/c zcpkg-info
-                   name-string?
-                   name-string?
-                   name-string?
-                   revision-number?
-                   (listof name-string?)
-                   (or/c #f path-string?)
-                   (listof dependency-string?)
-                   (or/c #f non-empty-bytes?)
-                   (or/c #f non-empty-bytes?)
-                   (or/c #f exact-positive-integer?))))
+(define (validate-zcpkg-info info #:for-server? [for-server? #f])
+  (define errors null)
+  (define (proc->string p) (symbol->string (object-name p)))
+  (define prefix-length (add1 (string-length (proc->string zcpkg-info))))
+
+  (define (<< f . a) (set! errors (cons (apply format f a) errors)))
+  (define (check predicate accessor expected)
+    (unless (predicate (accessor info))
+      (<< "~a: not ~a. Got: ~s"
+          (substring (proc->string accessor) prefix-length)
+          expected
+          (accessor info))))
+
+  (check name-string? zcpkg-info-provider-name
+         "a valid name string")
+
+  (check name-string? zcpkg-info-package-name
+         "a valid name string")
+
+  (check name-string? zcpkg-info-edition-name
+         "a valid name string")
+
+  (check revision-number? zcpkg-info-revision-number
+         "an exact non-negative integer")
+
+  (check (listof name-string?) zcpkg-info-revision-names
+         "a list of name strings")
+
+  (check (or/c #f path-string?)
+         zcpkg-info-installer
+         "a path string, or #f")
+
+  (check (listof (or/c dependency-string?
+                       path-string?
+                       url-string?))
+         zcpkg-info-dependencies
+         "a list containing dependency URNs, URLs, or paths")
+
+  (when for-server?
+    (check non-empty-bytes? zcpkg-info-integrity
+           "a byte string")
+
+    (check non-empty-bytes? zcpkg-info-signature
+           "a byte string")
+
+    (check exact-positive-integer? zcpkg-info-upload-timestamp
+           "a positive integer"))
+
+  (reverse errors))
