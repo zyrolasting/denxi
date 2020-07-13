@@ -17,7 +17,6 @@
          "contract.rkt"
          "string.rkt"
          "zcpkg-info.rkt"
-         "revision.rkt"
          "dependency.rkt")
 
 (define openssl (find-executable-path "openssl"))

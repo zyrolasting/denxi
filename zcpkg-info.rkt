@@ -24,6 +24,11 @@
 
 (declare-info-i/o zcpkg-info)
 
+(define (zcpkg-non-revision-identity=? info provider package edition)
+  (and (equal? (zcpkg-info-provider-name info) provider)
+       (equal? (zcpkg-info-package-name info) package)
+       (equal? (zcpkg-info-edition-name info) edition)))
+
 (define (zcpkg-compare-versions a b)
   (and (andmap (λ (p) (equal? (p a) (p b)))
                (list zcpkg-info-provider-name
