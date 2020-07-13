@@ -12,7 +12,7 @@
  (contract-out
   [zcpkg-directory->zcpkg-info (-> path? zcpkg-info?)]
 
-  [variant->zcpkg-directory (-> source-variant/c path?)]
+  [variant->zcpkg-info (->* (source-variant/c) (complete-path?) zcpkg-info?)]
 
   [source->variant
    (-> string? source-variant/c)]))
@@ -20,6 +20,7 @@
 (require racket/path
          "config.rkt"
          "dependency.rkt"
+         "download.rkt"
          "string.rkt"
          "url.rkt"
          "zcpkg-info.rkt")
@@ -68,16 +69,15 @@
              "No info.rkt in ~a~n"
              dirpath)))
 
-(define (variant->zcpkg-directory variant)
-  (cond [(path? variant)
-         (if (file-exists? variant)
-             (path-only variant)
-             variant)]
-        [(dependency? variant)
-         (error "Getting a source directory by a dependency struct is not yet implemented")]
-        [(url? variant)
-         (error "Getting a source directory by an URL is not yet implemented")]
-        [else #f]))
+(define (variant->zcpkg-info variant [requesting-path (current-directory)])
+  (if (path? variant)
+      (let ([complete
+             (if (complete-path? variant) variant
+                 (build-path requesting-path variant))])
+        (if (directory-exists? complete)
+            (build-path complete "info.rkt")
+            complete))
+      (download-info variant)))
 
 (module+ test
   (require rackunit

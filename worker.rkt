@@ -10,6 +10,7 @@
          racket/match
          racket/path
          racket/place
+         racket/set
          "archiving.rkt"
          "config.rkt"
          "dependency.rkt"
@@ -44,17 +45,30 @@
   (define next (struct-copy workstate state [id id]))
   (next ($on-idle id)))
 
+(define (find-dependencies source [found (set)])
+  (define variant (source->variant source))
+  (define info (variant->zcpkg-info variant))
+  (define deps (zcpkg-info-dependencies info))
+  (define accum
+   (set-union found
+              (apply set deps)))
+  (for/fold ([wip accum])
+            ([dep (in-list deps)])
+    (find-dependencies dep wip)))
+
 
 (define (install-package state source)
   (define variant (source->variant source))
-  (define should-link? (path? variant))
-  (define source-path (variant->zcpkg-directory variant))
-  (define info (zcpkg-directory->zcpkg-info source-path))
+  (define info (variant->zcpkg-info variant))
   (define install-path (zcpkg-info->install-path info))
   (define dependencies (zcpkg-info-dependencies info))
 
   (unless (zcpkg-installed? info)
-    (make-zcpkg-install-dir #:link? should-link? source-path install-path)
+    (if (path? variant)
+        (begin (make-directory* (path-only install-path))
+               (make-file-or-directory-link variant install-path))
+        (unpack (download-artifact source)
+                #:to install-path))
     (make-zcpkg-dependency-links dependencies install-path))
 
   (state ($on-package-installed info))

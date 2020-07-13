@@ -89,12 +89,6 @@
                          "\n"))])
   (sequence-ref infos 0))
 
-(define (make-zcpkg-install-dir #:link? link? source-path install-path)
-  (make-directory* (path-only install-path))
-  (if link?
-      (make-file-or-directory-link source-path install-path)
-      (copy-directory/files source-path install-path)))
-
 
 (define (make-zcpkg-workspace-link [where (current-directory)])
   (define ws-link (build-path where CONVENTIONAL_WORKSPACE_NAME))
