@@ -1,59 +1,65 @@
 #lang racket/base
 
-(provide clear-download-cache!)
+(provide clear-download-cache!
+         download-info
+         download-artifact)
 
-(require racket/file
-         racket/list
+(require racket/list
          racket/path
          racket/port
-         net/url
-         "logging.rkt"
-         "workspace.rkt"
          "config.rkt"
+         "dependency.rkt"
+         "file.rkt"
+         "logging.rkt"
+         "string.rkt"
+         "url.rkt"
          "verify.rkt"
-         "zcpkg-info.rkt"
-         "service/endpoint.rkt"
-         "dependency.rkt")
-
-
-(define (dependency->url leading-path dep)
-  (merge-endpoints
-   (url #f #f #f #f #f
-        (list (path/param leading-path null)
-              (path/param (dependency->string dep) null))
-        null #f)))
+         "workspace.rkt"
+         "zcpkg-info.rkt")
 
 
 (define (get-cache-directory)
   (build-workspace-path "var/cache/zcpkg"))
 
-(define (download/dependency dep)
-  (define-values (catalog-name maybe-well-formed-artifact-info)
-    (try-catalogs
-     (λ (catalog-name catalog-url-base)
-       (define info-url (dependency->url "info" dep))
-       (read-zcpkg-info (download-file info-url
-                                       catalog-name
-                                       #f)))))
 
-  (unless catalog-name
-    (error 'download-artifact-info
-           "~v: Artifact info not found in any catalog"
-           dep))
-
-  (unless (well-formed-zcpkg-info? maybe-well-formed-artifact-info)
-    (error 'download-artifact-info
-           "~v: Ill-formed artifact metadata from catalog ~v"
-           dep
-           catalog-name))
-
-  (values catalog-name
-          maybe-well-formed-artifact-info))
+(define (clear-download-cache!)
+  (delete-directory/files (get-cache-directory)))
 
 
-(define (download-artifact catalog-name query info)
-  (define artifact-info-url (for-catalog catalog-name (dependency->url "artifact" query)))
-  (define artifact-path (download-file artifact-info-url))
+(define (dependency->url catalog-url path-prefix dep)
+  (merge-urls
+   (url #f #f #f #f #f
+        (list (path/param path-prefix null)
+              (path/param (dependency->string dep) null))
+        null #f)
+   catalog-url))
+
+
+(define (download-info variant)
+  (if (url? variant)
+      (values variant (assert-valid-info (read-zcpkg-info (download-file variant))))
+      (let* ([dep (coerce-dependency variant)]
+             [dep-string (dependency->string dep)])
+        (for/fold ([u #f] [p #f])
+                  ([name&string-url (in-list (ZCPKG_SERVICE_ENDPOINTS))])
+          #:break p
+          (define catalog-string-url (cdr name&string-url))
+          (define catalog-url (string->url catalog-string-url))
+          (download-info (dependency->url catalog-url "info" dep))))))
+
+
+(define (assert-valid-info source-url info)
+  (define errors (validate-zcpkg-info info))
+  (unless (null? errors)
+    (error 'download-info
+           "Bad info from ~a:~n~a"
+           (url->string source-url)
+           (apply ~a (map (λ (err) (~a "  " err "\n"))))))
+  info)
+
+
+(define (download-artifact catalog-url dep info)
+  (define artifact-path (download-file (dependency->url catalog-url "artifact" dep)))
   (define checksum (zcpkg-info-integrity info))
   (unless (equal? (make-digest artifact-path) checksum)
     (error 'download-artifact
@@ -61,38 +67,34 @@
   artifact-path)
 
 
-(define (download-file/with-cache u)
-  ; TODO: Some URLs will map to the same path here,
-  ; causing unwanted cache hits. Map URLs to unique
-  ; file paths.
-  (define cached-path
-    (build-path (get-cache-directory)
-                (apply build-path
-                       (url-host u)
-                       (map path/param-path (url-path u)))))
+; Works if only the URL host and path matter.
+(define (url->cache-path u)
+  (build-path (get-cache-directory)
+              (apply build-path
+                     (url-host u)
+                     (map path/param-path (url-path u)))))
+
+
+(define (download-file u [cached-path (url->cache-path u)])
   (if (file-exists? cached-path)
-      cached-path
-      (download-file u cached-path)))
+      (begin
+        (printf "cache: ~a~n" (url->string u))
+        cached-path)
+      (begin
+        (printf "download: ~a~n" (url->string u))
+        (make-directory* (path-only cached-path))
+        (let*-values ([(in headers)
+                       (get-pure-port/headers u
+                                              #:status? #t
+                                              #:redirections
+                                              (ZCPKG_DOWNLOAD_MAX_REDIRECTS))]
 
-
-(define (download-file u path)
-  (make-directory* (path-only path))
-  (define-values (in headers)
-    (get-pure-port/headers u
-                           #:status? #t
-                           #:redirections
-                           (ZCPKG_DOWNLOAD_MAX_REDIRECTS)))
-
-  (define status (string->number (car (regexp-match #px"(\\d\\d\\d)" headers))))
-
-  (and (= status 200)
-       (call-with-output-file
-         #:exists 'truncate/replace
-         path
-         (λ (out)
-           (copy-port in out)
-           path))))
-
-
-(define (clear-download-cache!)
-  (delete-directory/files (get-cache-directory)))
+                      [(status)
+                       (string->number (car (regexp-match #px"(\\d\\d\\d)" headers)))])
+          (and (= status 200)
+               (call-with-output-file
+                 #:exists 'truncate/replace
+                 cached-path
+                 (λ (out)
+                   (copy-port in out)
+                   cached-path)))))))
