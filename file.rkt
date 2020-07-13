@@ -79,10 +79,10 @@
 (define (find-exactly-one-info dependency-variant)
   (define infos (search-zcpkg-infos dependency-variant (in-installed-info)))
   (case (sequence-length infos)
-    [(0) (error 'uninstall "~a is not installed" dependency-variant)]
+    [(0) (error 'find-exactly-one-info "~a is not installed" dependency-variant)]
     [(1) (void)]
     [else
-     (error 'find-exact-info
+     (error 'find-exactly-one-info
             "~s is ambiguous. Which of these did you mean?~n~s"
             (string-join (map (compose dependency->string coerce-dependency)
                               infos)
