@@ -33,7 +33,6 @@
          racket/generator
          racket/match
          racket/sequence
-         "service/endpoint.rkt"
          "string.rkt"
          "zcpkg-info.rkt")
 

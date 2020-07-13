@@ -9,7 +9,6 @@
          racket/sequence
          racket/vector
          (for-syntax racket/base)
-         "service/endpoint.rkt"
          "service/server.rkt"
          "capture.rkt"
          "config.rkt"
