@@ -65,7 +65,7 @@
   (define target-info (find-exactly-one-info dependency-variant))
   (define install-path (zcpkg-info->install-path target-info))
   (delete-directory/files/empty-parents install-path)
-  (state ($on-package-uninstalled info))
+  (state ($on-package-uninstalled target-info))
   (state ($on-idle (workstate-id state))))
 
 
