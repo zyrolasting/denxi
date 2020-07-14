@@ -90,29 +90,37 @@
   (sequence-ref infos 0))
 
 
+; Note that these links form cycles. Users won't be able to recurse
+; all directories without first removing or breaking the links.
+(define (make-zcpkg-links dependencies [where (current-directory)])
+  (make-zcpkg-workspace-link where)
+  (make-zcpkg-dependency-links dependencies where))
+
+
 (define (make-zcpkg-workspace-link [where (current-directory)])
   (define ws-link (build-path where CONVENTIONAL_WORKSPACE_NAME))
   (unless (link-exists? ws-link)
     (make-file-or-directory-link (ZCPKG_WORKSPACE) ws-link))
   ws-link)
 
-
 (define (make-zcpkg-dependency-links dependencies [where (current-directory)])
-  (define links-dir (build-path where CONVENTIONAL_DEPENDENCY_DIRECTORY_NAME))
-  (make-directory* links-dir)
-  (for/list ([dep-variant (in-list dependencies)])
-    (define available (search-zcpkg-infos dep-variant (in-installed-info)))
-    (define info (sequence-ref available 0))
-    (define install-path (zcpkg-info->install-path info))
-    (define link-path (build-path links-dir
-                                  (zcpkg-info-provider-name info)
-                                  (zcpkg-info-package-name info)))
-    (make-file-or-directory-link install-path link-path)
-    link-path))
+  (unless (null? dependencies)
+    (define links-dir (build-path where CONVENTIONAL_DEPENDENCY_DIRECTORY_NAME))
+    (make-directory* links-dir)
+    (for/list ([dep-variant (in-list dependencies)])
+      (define available (search-zcpkg-infos dep-variant (in-installed-info)))
+      (define info (sequence-ref available 0))
+      (define install-path (zcpkg-info->install-path info))
+      (define link-path (build-path links-dir
+                                    (zcpkg-info-provider-name info)
+                                    (zcpkg-info-package-name info)))
+      (make-file-or-directory-link install-path link-path)
+      link-path)))
 
 
 (define (zcpkg-installed? info)
   (directory-exists? (zcpkg-info->install-path info)))
+
 
 (define (delete-directory/files/empty-parents path)
   (delete-directory/files path)
