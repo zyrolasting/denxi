@@ -39,4 +39,6 @@
     (and (string? v)
          (regexp-match rx v))))
 
-(define name-string? (make-rx-predicate name-pattern-string))
+(define name-string?
+  (procedure-rename (make-rx-predicate name-pattern-string)
+                    'name-string?))
