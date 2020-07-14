@@ -57,7 +57,7 @@
           [package (in-list (get-installed-provider-packages provider))]
           [edition (in-list (get-installed-package-editions provider package))]
           [revision (in-list (get-installed-edition-revisions provider package edition))])
-     (yield (build-install-path provider package edition revision "info.rkt")))))
+     (yield (build-install-path provider package edition revision CONVENTIONAL_PACKAGE_INFO_DIRECTORY_NAME)))))
 
 (define (in-installed-info)
   (sequence-map read-zcpkg-info
@@ -155,6 +155,11 @@
            racket/set
            (for-syntax racket/base))
 
+  (define (display-to-temp-file content)
+    (define path (make-temporary-file "~a"))
+    (display-to-file #:exists 'truncate/replace content path)
+    path)
+
   (define-syntax-rule (temp-fs expr ...)
     (let ([tmpdir (make-temporary-file "~a" 'directory)])
       (parameterize ([current-directory tmpdir])
@@ -189,7 +194,7 @@
            (parameterize ([ZCPKG_WORKSPACE (current-directory)]
                           [ZCPKG_INSTALL_RELATIVE_PATH "inst"])
              (test-equal? "Provide all paths in install directory"
-                          (apply set (sequence->list (in-install-directory)))
+                          (apply set (sequence->list (in-workspace)))
                           (apply set (map (λ (p)
                                             (build-path (current-directory) p))
                                           '("inst/a"
@@ -200,7 +205,7 @@
            (parameterize ([ZCPKG_WORKSPACE (current-directory)]
                           [ZCPKG_INSTALL_RELATIVE_PATH "inst"])
              (test-equal? "Provide all paths to installed info.rkt files"
-                          (apply set (sequence->list (in-installed-info-paths)))
+                          (apply set (sequence->list (in-workspace)))
                           (apply set (map (λ (p)
                                             (build-path (current-directory) p))
                                           '("inst/pkgA/info.rkt"

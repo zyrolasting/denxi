@@ -1,96 +1,70 @@
 #lang racket/base
 
-; Convert sources of metadata to instances of a given structure.
-;
-; WARNING: This means that structure names and field names are part of
-; more interfaces than just module exports.
+; Define metadata as persistent values.
+; Use the filesystem until a DB is warranted.
 
-(provide declare-info-i/o
-         (all-from-out racket/sandbox
-                       racket/string))
-
-(require racket/contract
-         racket/exn
-         racket/function
+(require racket/file
+         racket/match
          racket/path
-         racket/port
-         racket/sandbox
-         racket/string
-         net/head
-         (for-syntax racket/base
-                     racket/format
-                     racket/list
-                     racket/match
-                     racket/struct-info
-                     racket/string
-                     racket/syntax
-                     syntax/parse))
-
-; Return a procedure that looks up a value by an identifier.
-;
-; Assume two sources:
-;
-; - A path to a `#lang info` file.
-; - An input port with raw HTTP header information.
-;
-(define (make-lookup-procedure variant)
-  (cond [(path? variant)
-         (define i
-           (parameterize ([sandbox-path-permissions `((read ,(path-only variant)))])
-             ((make-evaluator 'racket/base) `(dynamic-require ,variant '#%info-lookup))))
-         (λ (k) (with-handlers ([exn:fail? (const #f)]) (i k)))]
-
-        [(input-port? variant)
-         (define headers (extract-all-fields (port->string variant)))
-         (λ (v)
-           (define pair (assoc (if (string? v) v (symbol->string v)) headers))
-           ; Assume the HTTP header value is (read)able.
-           ; If you want a string, then quote the value.
-           (and pair (read (open-input-string (cdr pair)))))]
-        [else (error (format "Cannot read metadata source: ~a" variant))]))
+         "contract.rkt")
 
 
-; Expand to procedures that integrate a struct definition with lookup procedures.
-(define-syntax (declare-info-i/o stx)
-  (define (coerce-string stx)
-    (if (identifier? stx)
-        (symbol->string (syntax->datum stx))
-        (~a stx)))
+(provide
+ (contract-out
+  [set-metadatum!
+   (->* (flat-contract? any/c path?) (#:preamble (listof string?)) void?)]
+  [get-metadatum
+   (->* (flat-contract? path?) (#:optional? any/c) any/c)]
+  [get-metadata
+   (-> path? (listof (list/c any/c flat-contract? path-string?)) list?)]
+  [set-metadata!
+   (-> path? (listof (list/c flat-contract? any/c path-string?)) void?)]))
 
-  (syntax-parse stx
-    [(_ struct-id:id)
-     (match-define (list _ ctor _ accessors _ supertype)
-       (extract-struct-info (syntax-local-value #'struct-id)))
 
-     (define ctor-str (~a (coerce-string ctor) "-"))
-     (define super-str (~a (coerce-string supertype) "-"))
+(define (get-metadatum #:optional? [optional? #f] cnt path)
+  (define lockfile (make-lock-file-name path))
+  (with-handlers ([exn?
+                   (λ (e)
+                     (delete-file lockfile)
+                     (cond [(exn:fail:contract? e)
+                            (raise (rewrite-contract-error-message e (file-name-from-path path)))]
+                           [(exn:fail:filesystem? e)
+                            (unless optional? (raise e))]
+                           [else (raise e)]))])
+    (call-with-file-lock/timeout
+     path 'shared
+     (λ () (invariant-assertion cnt (call-with-input-file path read)))
+     (λ () (error 'get-metadatum!
+                  "Failed to obtain lock for ~a"
+                  path)))
+    (delete-file lockfile)))
 
-     (define (accessor-id->field-name acc)
-       (string->symbol (string-replace
-                        (string-replace (coerce-string acc) ctor-str "")
-                        super-str
-                        "")))
 
-     (with-syntax ([reader (format-id stx "read-~a" #'struct-id)]
-                   [writer (format-id stx "write-~a" #'struct-id)]
-                   [get-info (format-id stx "getinfo/~a" #'struct-id)]
-                   [ctor-patt ctor]
-                   [(accessor-patt ...) (reverse accessors)]
-                   [(abbrev-patt ...) (map accessor-id->field-name (reverse accessors))])
-       #'(begin
-           (define (reader variant)
-             (define l (make-lookup-procedure variant))
-             ; A metadata name can be just a field name, or the
-             ; complete accessor name. The field names allow for
-             ; abbreviated identifiers for `#lang info` files.  The
-             ; full accessor names are for unambiguous metadata items.
-             (ctor-patt (or (l 'abbrev-patt) (l 'accessor-patt)) ...))
-           (define (get-info p)
-             (define f (build-path p "info.rkt"))
-             (and f (reader f)))
-           (define (writer instance [out (current-output-port)])
-             (parameterize ([current-output-port out])
-               (displayln "#lang info\n")
-               (begin
-                 (writeln `(define info-patt ,(accessor-patt instance)))
-                 ...)))))]))
+(define (set-metadatum! #:preamble [preamble null] cnt value path)
+  (invariant-assertion cnt value)
+  (define lockfile (make-lock-file-name path))
+  (call-with-file-lock/timeout
+   path 'exclusive
+   (λ ()
+     (call-with-output-file #:exists 'truncate/replace
+       path (λ (o)
+              (for ([line (in-list preamble)])
+                (display "; ")
+                (displayln line))
+              (write value o))))
+   (λ () (error 'set-metadatum!
+                "Failed to obtain lock for ~a"
+                path)))
+  (delete-file lockfile))
+
+
+(define (get-metadata dir requirements)
+  (for/list ([requirement (in-list requirements)])
+    (match-define (list optional? cnt filename) requirement)
+    (get-metadatum #:optional? optional? cnt (build-path dir filename))))
+
+
+(define (set-metadata! dir requirements)
+  (for ([requirement (in-list requirements)])
+    (match-define (list cnt val filename) requirement)
+    (set-metadatum! cnt val (build-path dir filename))))

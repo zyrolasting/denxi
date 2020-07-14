@@ -25,9 +25,9 @@
          load-setting
          setting-id->cli-flag-string)
 
-(require racket/contract
-         racket/file
-         racket/string)
+(require racket/file
+         racket/string
+         "contract.rkt")
 
 (define (load-setting id make-rcfile-path default)
   (define str (symbol->string id))
@@ -50,10 +50,3 @@
                  (string-downcase
                   (string-join (cdr (string-split (symbol->string id) "_"))
                                "-"))))
-
-(define (rewrite-contract-error-message e id)
-  (struct-copy exn:fail:contract e
-               [message #:parent exn
-                        (regexp-replace #rx"^[^\n]+"
-                                        (exn-message e)
-                                        (format "Invalid value for ~a" id))]))

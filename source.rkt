@@ -27,16 +27,9 @@
 
 (define (source->maybe-path v [relative-path-root (current-directory)])
   (cond [(path? v)
-         (define p
-           (cond [(directory-exists? v)
-                  (source->maybe-path (build-path v "info.rkt")
-                                      relative-path-root)]
-                 [(file-exists? v)
-                  (build-path v)]
-                 [else #f]))
-         (and p
-              (simplify-path (if (complete-path? p) p
-                                 (build-path relative-path-root p))))]
+         (and (directory-exists? v)
+              (simplify-path (if (complete-path? v) v
+                                 (build-path relative-path-root v))))]
 
         [(url? v)
          (and (or (not (url-scheme v))
@@ -62,11 +55,10 @@
       (string->url v)))
 
 (define (zcpkg-directory->zcpkg-info dirpath)
-  (define info.rkt (build-path dirpath "info.rkt"))
-  (if (file-exists? info.rkt)
-      (read-zcpkg-info info.rkt)
-      (error 'install-package
-             "No info.rkt in ~a~n"
+  (if (directory-exists? dirpath)
+      (read-zcpkg-info dirpath)
+      (error 'zcpkg-directory->zcpkg-info
+             "No package metadata in ~a~n"
              dirpath)))
 
 (define (variant->zcpkg-info variant [requesting-path (current-directory)])

@@ -17,6 +17,7 @@
          "download.rkt"
          "file.rkt"
          "message.rkt"
+         "metadata.rkt"
          "setting.rkt"
          "source.rkt"
          "string.rkt"
@@ -213,15 +214,45 @@ EOF
    (λ (flags name)
      (make-directory name)
 
-     (define (write-info.rkt package-name)
-       (displayln "#lang info\n")
-       (writeln `(define provider-name "you"))
-       (writeln `(define package-name ,package-name))
-       (writeln `(define edition-name  "draft"))
-       (writeln `(define revision-number 0))
-       (displayln "(define revision-names '(\"initial\"))")
-       (writeln `(define installer "installer.rkt"))
-       (displayln "(define dependencies '())"))
+     (define (write-info cnt info-name val . preamble-lines)
+       (set-metadatum! cnt val
+                       #:preamble preamble-lines
+                       (build-path CONVENTIONAL_PACKAGE_INFO_DIRECTORY_NAME
+                                   info-name)))
+
+
+     (write-info name-string? "provider-name" "you"
+                 "This string acts as your identity on a server."
+                 "While short names are available on a first-come-first-serve basis,"
+                 "you should defer to http://www.lanana.org/lsbreg/providers/index.html"
+                 "as a naming authority."
+                 ""
+                 "A safe cross-catalog name is your own domain name.")
+
+     (write-info name-string? "package-name" name
+                 "This string is your package name.")
+
+     (write-info name-string? "edition-name" "draft"
+                 "The string is the edition name of your package."
+                 "An edition is the name of a design for a package."
+                 "No two editions are expected to be compatible with one another.")
+
+     (write-info revision-number? "revision-number" 0
+                 "This is the revision number for your current edition."
+                 "If you already published an edition with the number shown"
+                 "here, then increment it and update revision-names.")
+
+     (write-info (listof name-string?) "revision-names"
+                 "This is the list of names used as aliases for your revision number."
+                 "Make sure to update this along with the revision number.")
+
+     (write-info (or/c #f path-string?) "installer" "installer.rkt"
+                 "This is a path relative to the root of your package."
+                 "It points to a Racket module that a user is asked"
+                 "to use first to set up your package")
+
+     (write-info list? "dependencies" null
+                 "This is a list of your package's dependencies.")
 
      (define (write-installer.rkt package-name)
        (displayln "#lang racket/base\n")
@@ -232,7 +263,6 @@ EOF
          (λ (o) (parameterize ([current-output-port o])
                   (proc name)))))
 
-     (make-file "info.rkt" write-info.rkt)
      (make-file "installer.rkt" write-installer.rkt))))
 
 

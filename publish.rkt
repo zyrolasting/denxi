@@ -20,15 +20,4 @@
       (and private-key
            (make-signature digest private-key)))
 
-    (define external-zcpkg-info
-      (struct-copy zcpkg-info
-                   metadata
-                   [upload-timestamp (current-seconds)]
-                   [integrity digest]
-                   [signature signature]))
-
-    (call-with-output-file
-      (build-path output-directory "info.rkt")
-      (λ (o) (write-zcpkg-info external-zcpkg-info o)))
-
     output-directory))
