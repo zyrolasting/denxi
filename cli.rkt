@@ -5,7 +5,9 @@
          racket/pretty
          racket/list
          racket/match
+         racket/os
          racket/path
+         racket/port
          racket/sequence
          racket/set
          racket/vector
@@ -212,7 +214,9 @@ EOF
    #:arg-help-strings '("package-name")
    #:args args
    (λ (flags name)
-     (make-directory* (build-path name CONVENTIONAL_PACKAGE_INFO_DIRECTORY_NAME))
+     ; We want to error out if the directories exist.
+     (make-directory name)
+     (make-directory (build-path name CONVENTIONAL_PACKAGE_INFO_DIRECTORY_NAME))
 
      (define (write-info cnt info-name val . preamble-lines)
        (set-metadatum! cnt val
@@ -226,44 +230,59 @@ EOF
          (λ (o) (parameterize ([current-output-port o])
                   (proc)))))
 
-     (write-info name-string? "provider-name" "you"
-                 "This string acts as your identity on a server."
-                 "While short names are available on a first-come-first-serve basis,"
-                 "you should defer to http://www.lanana.org/lsbreg/providers/index.html"
-                 "as a naming authority."
-                 ""
-                 "A safe cross-catalog name is your own domain name.")
+     (write-info name-string? "provider-name" (gethostname)
+                 (~a "This is the identity of the party meant to distribute " name)
+                 "Provided it belongs to the distributing party,"
+                 "a domain name is a safe cross-catalog name.")
 
      (write-info name-string? "package-name" name
-                 "This string is your package name.")
+                 "This is your package's name.")
 
      (write-info name-string? "edition-name" "draft"
-                 "The string is the edition name of your package."
-                 "An edition is the name of a design for a package."
-                 "No two editions are expected to be compatible with one another.")
+                 (~a "This is " name "'s edition."))
 
      (write-info revision-number? "revision-number" 0
-                 "This is the revision number for your current edition."
-                 "If you already published an edition with the number shown"
-                 "here, then increment it and update revision-names.")
+                 "This is the revision number for your current edition.")
 
      (write-info (listof name-string?) "revision-names" null
-                 "This is the list of names used as aliases for your revision number."
-                 "Make sure to update this along with the revision number.")
+                 "This is a list of names used as aliases for your revision number."
+                 "BE SURE to update this with the revision number.")
 
      (write-info (or/c #f path-string?) "installer" "installer.rkt"
-                 "This is a path relative to the root of your package."
-                 "It points to a Racket module that a user is asked"
-                 "to use first to set up your package")
+                 (~a "This is a path relative to the root of " name)
+                 "It points to an interactive Racket module"
+                 "meant to set up userspace for " name)
 
      (write-info list? "dependencies" null
                  "This is a list of your package's dependencies.")
 
      (make-file "installer.rkt"
                 (λ ()
-                  (displayln "#lang racket/base\n")
-                  (displayln "; This module is meant for running in a sandboxed REPL."))))))
-
+                  (display-lines
+                   '("#lang racket/base"
+                     ""
+                     "; This module is for setting up dependencies in userspace outside of Racket,"
+                     "; like an isolated Python installation or a C library."
+                     ";"
+                     "; For security, `zcpkg` asks the user to run (show-help) in a zero-trust sandbox"
+                     "; to learn what EXACTLY your package will do to their system if they consent "
+                     "; to extra automated setup."
+                     ";"
+                     "; Write (show-help) to explain the bindings in this module, and the permissions"
+                     "; you need for them to work."
+                     ";"
+                     "; To build trust:"
+                     ";   1. Ask for as little as possible."
+                     ";   2. Be specific. \"I need write permission for /etc\" is too broad,"
+                     ";      and that can come off as suspicious."
+                     ";   3. Do exactly what you say you will do, and nothing else."
+                     ";"
+                     "; Finally, be mindful that other versions of your package may have"
+                     "; already modified the user's system. Look for evidence of your impact,"
+                     "; and react accordingly."
+                     ""
+                     "(define (show-help)"
+                     "  (displayln \"I need write permission for...\"))")))))))
 
 
 (define (serve-command args)
