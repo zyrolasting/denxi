@@ -51,17 +51,17 @@
 (define (get-installed-edition-revisions provider package edition)
   (ls (build-install-path provider package edition)))
 
-(define (in-installed-info-paths)
+(define (in-installed-package-paths)
   (in-generator
    (for* ([provider (in-list (get-installed-providers))]
           [package (in-list (get-installed-provider-packages provider))]
           [edition (in-list (get-installed-package-editions provider package))]
           [revision (in-list (get-installed-edition-revisions provider package edition))])
-     (yield (build-install-path provider package edition revision CONVENTIONAL_PACKAGE_INFO_DIRECTORY_NAME)))))
+     (yield (build-install-path provider package edition revision)))))
 
 (define (in-installed-info)
   (sequence-map read-zcpkg-info
-                (in-installed-info-paths)))
+                (in-installed-package-paths)))
 
 (define (in-abstract-dependency-declarations)
   (sequence-fold (λ (wip info)
