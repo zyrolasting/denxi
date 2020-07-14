@@ -12,13 +12,13 @@
 (provide
  (contract-out
   [set-metadatum!
-   (->* (flat-contract? any/c path?) (#:preamble (listof string?)) void?)]
+   (->* (flat-contract? any/c path-string?) (#:preamble (listof string?)) void?)]
   [get-metadatum
-   (->* (flat-contract? path?) (#:optional? any/c) any/c)]
+   (->* (flat-contract? path-string?) (#:optional? any/c) any/c)]
   [get-metadata
-   (-> path? (listof (list/c any/c flat-contract? path-string?)) list?)]
+   (-> path-string? (listof (list/c any/c flat-contract? path-string?)) list?)]
   [set-metadata!
-   (-> path? (listof (list/c flat-contract? any/c path-string?)) void?)]))
+   (-> path-string? (listof (list/c flat-contract? any/c path-string?)) void?)]))
 
 
 (define (get-metadatum #:optional? [optional? #f] cnt path)
