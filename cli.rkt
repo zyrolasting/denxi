@@ -7,6 +7,7 @@
          racket/match
          racket/path
          racket/sequence
+         racket/set
          racket/vector
          (for-syntax racket/base)
          "server.rkt"
@@ -17,6 +18,7 @@
          "file.rkt"
          "message.rkt"
          "setting.rkt"
+         "source.rkt"
          "string.rkt"
          "team.rkt"
          "url.rkt"
@@ -92,12 +94,39 @@ EOF
          (switch "-U" ZCPKG_TRUST_UNSIGNED)
          (switch "-i" ZCPKG_VERIFY_POST_INSTALL_INTEGRITY)
          (switch "-o" ZCPKG_INSTALL_ORPHAN)
+         (switch "-y" ZCPKG_INSTALL_CONSENT)
          (switch "-x" ZCPKG_DOWNLOAD_IGNORE_CACHE))
-   (λ (flags . package-sources)
-     (process-jobs
-      (for/list ([source (in-list package-sources)])
-        ($install-package source))))))
 
+   (λ (flags . package-sources)
+     (define to-install (mutable-set))
+
+     (define (find-dependencies source)
+       (define variant (source->variant source))
+       (define info (variant->zcpkg-info variant))
+       (define deps (filter-missing-dependencies (zcpkg-info-dependencies info)))
+       (set-add! to-install source)
+       (for ([dep (in-list deps)])
+         (set-add! to-install dep)
+         (find-dependencies dep)))
+
+     (for ([source (in-list package-sources)])
+       (find-dependencies source))
+
+     (if (ZCPKG_INSTALL_CONSENT)
+         (process-jobs
+          (for/list ([target (in-set to-install)])
+            ($install-package target)))
+         (begin
+           ; For the users sake, show the potentially long installation list
+           ; in lexographical order.
+           (displayln (apply ~a*
+                             (sort (set->list
+                                    (set-subtract to-install
+                                                  (apply set package-sources)))
+                                   string<?)))
+           (displayln "The above dependencies are needed to install")
+           (displayln (apply ~a* package-sources))
+           (displayln "Run with -y to consent to installation"))))))
 
 (define (capture-command args)
   (run-command-line

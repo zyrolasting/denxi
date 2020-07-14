@@ -161,6 +161,11 @@
    #f
    "When installing a package, do not install dependencies."]
 
+  [ZCPKG_INSTALL_CONSENT
+   boolean?
+   #f
+   "Proceed with installation"]
+
   [ZCPKG_LEAVE_ORPHANS
    boolean?
    #t

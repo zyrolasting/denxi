@@ -41,55 +41,34 @@
     (worker-main pch
                  (handle-message state (sync state)))))
 
+
 (define (assign-id state id)
   (define next (struct-copy workstate state [id id]))
   (next ($on-idle id)))
-
-(define (find-dependencies source [found (set)])
-  (define variant (source->variant source))
-  (define info (variant->zcpkg-info variant))
-  (define deps (zcpkg-info-dependencies info))
-  (define accum
-   (set-union found
-              (apply set deps)))
-  (for/fold ([wip accum])
-            ([dep (in-list deps)])
-    (find-dependencies dep wip)))
 
 
 (define (install-package state source)
   (define variant (source->variant source))
   (define info (variant->zcpkg-info variant))
-  (define install-path (zcpkg-info->install-path info))
-  (define dependencies (zcpkg-info-dependencies info))
-
   (unless (zcpkg-installed? info)
+    (define install-path (zcpkg-info->install-path info))
     (if (path? variant)
         (begin (make-directory* (path-only install-path))
                (make-file-or-directory-link variant install-path))
         (unpack (download-artifact source)
-                #:to install-path))
-    (make-zcpkg-dependency-links dependencies install-path))
-
+                #:to install-path)))
   (state ($on-package-installed info))
-
-  (define unavailable (filter-missing-dependencies dependencies))
-  (unless (null? unavailable)
-    (state ($on-new-dependencies
-            dependencies
-            (dependency->string (coerce-dependency info)))))
-
   (state ($on-idle (workstate-id state))))
 
 
 (define (uninstall-package state dependency-variant)
   (define target-info (find-exactly-one-info dependency-variant))
   (define install-path (zcpkg-info->install-path target-info))
-  (for ([maybe-dependent-info (in-installed-info)])
-    (when (dependency-match? maybe-dependent-info target-info)
-      (uninstall-package state maybe-dependent-info)))
   (delete-directory/files/empty-parents install-path)
+  (state ($on-package-uninstalled info))
   (state ($on-idle (workstate-id state))))
+
+
 
 (define (stop state)
   (exit 0)
