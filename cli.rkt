@@ -212,14 +212,19 @@ EOF
    #:arg-help-strings '("package-name")
    #:args args
    (λ (flags name)
-     (make-directory name)
+     (make-directory* (build-path name CONVENTIONAL_PACKAGE_INFO_DIRECTORY_NAME))
 
      (define (write-info cnt info-name val . preamble-lines)
        (set-metadatum! cnt val
                        #:preamble preamble-lines
-                       (build-path CONVENTIONAL_PACKAGE_INFO_DIRECTORY_NAME
+                       (build-path name
+                                   CONVENTIONAL_PACKAGE_INFO_DIRECTORY_NAME
                                    info-name)))
 
+     (define (make-file file-name proc)
+       (call-with-output-file (build-path name file-name)
+         (λ (o) (parameterize ([current-output-port o])
+                  (proc)))))
 
      (write-info name-string? "provider-name" "you"
                  "This string acts as your identity on a server."
@@ -242,7 +247,7 @@ EOF
                  "If you already published an edition with the number shown"
                  "here, then increment it and update revision-names.")
 
-     (write-info (listof name-string?) "revision-names"
+     (write-info (listof name-string?) "revision-names" null
                  "This is the list of names used as aliases for your revision number."
                  "Make sure to update this along with the revision number.")
 
@@ -254,16 +259,11 @@ EOF
      (write-info list? "dependencies" null
                  "This is a list of your package's dependencies.")
 
-     (define (write-installer.rkt package-name)
-       (displayln "#lang racket/base\n")
-       (displayln "; This module is meant for running in a sandboxed REPL."))
+     (make-file "installer.rkt"
+                (λ ()
+                  (displayln "#lang racket/base\n")
+                  (displayln "; This module is meant for running in a sandboxed REPL."))))))
 
-     (define (make-file file-name proc)
-       (call-with-output-file (build-path name file-name)
-         (λ (o) (parameterize ([current-output-port o])
-                  (proc name)))))
-
-     (make-file "installer.rkt" write-installer.rkt))))
 
 
 (define (serve-command args)
