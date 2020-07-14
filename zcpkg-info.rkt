@@ -8,7 +8,6 @@
          "config.rkt"
          "metadata.rkt"
          "string.rkt"
-         "struct-info.rkt"
          "workspace.rkt")
 
 (struct zcpkg-info
@@ -20,8 +19,7 @@
    installer         ; A Racket module responsible for userspace changes.
    dependencies      ; A list of dependency queries.
    integrity         ; A digest used to verify package contents
-   signature         ; A signature used to authenticate the provider
-   upload-timestamp) ; A timestamp marking when the package was accepted by a server.
+   signature)        ; A signature used to authenticate the provider
   #:prefab)
 
 (define (zcpkg-non-revision-identity=? info provider package edition)
@@ -50,6 +48,11 @@
 (define (read-zcpkg-info dir)
   (apply zcpkg-info
          (get-metadata dir
-                       (map
-                        (λ (acc) (list #t any/c acc))
-                        (accessor-names zcpkg-info)))))
+                       (list #f name-string? "provider-name")
+                       (list #f name-string? "edition-name")
+                       (list #f name-string? "revision-number")
+                       (list #t name-string? "revision-names")
+                       (list #t path-string? "installer")
+                       (list #t (listof string?) "dependencies")
+                       (list #t bytes? "integrity")
+                       (list #t bytes? "signature"))))

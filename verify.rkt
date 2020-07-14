@@ -119,9 +119,6 @@
            "a byte string")
 
     (check non-empty-bytes? zcpkg-info-signature
-           "a byte string")
-
-    (check exact-positive-integer? zcpkg-info-upload-timestamp
-           "a positive integer"))
+           "a byte string"))
 
   (reverse errors))
