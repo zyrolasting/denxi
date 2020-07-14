@@ -243,7 +243,7 @@ EOF
    #:args args
    (λ (flags)
      (start-server)
-     (printf "Service up at ~a~n^C to stop~n" (url->string (make-endpoint)))
+     (printf "Service up. ^C to stop~n")
      (with-handlers ([exn:break? (λ (e) (displayln "bye"))])
        (sync/enable-break never-evt)))))
 
