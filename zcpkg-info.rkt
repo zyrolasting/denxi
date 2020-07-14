@@ -47,7 +47,7 @@
 
 (define (read-zcpkg-info dir)
   (apply zcpkg-info
-         (get-metadata dir
+         (get-metadata (build-path dir CONVENTIONAL_PACKAGE_INFO_DIRECTORY_NAME)
                        (list (list #f name-string? "provider-name")
                              (list #f name-string? "package-name")
                              (list #f name-string? "edition-name")
