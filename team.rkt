@@ -4,7 +4,9 @@
 ; distribute tasks around the user's hardware.  Use a metaphor to help
 ; the reader understand how this module manages Racket places.
 
-(provide process-jobs)
+(provide process-jobs
+         make-company
+         stop-company)
 
 (require racket/format
          racket/future
@@ -39,10 +41,12 @@
 
 ; Define an entry point for parallel work, such that messages are
 ; built into the company metaphor.
-(define (process-jobs messages)
-  (let loop ([team (make-company messages)])
-    (and (company? team)
-         (loop (update-company team)))))
+(define (process-jobs team)
+  (let loop ([wip team])
+    (if (and (andmap worker-idle? (company-workers wip))
+             (null? (company-jobs wip)))
+        wip
+        (loop (update-company wip)))))
 
 (define (make-company messages)
   (company (start-workers (length messages)) messages))
@@ -54,7 +58,7 @@
     (place-channel-put pch ($assign-id id))
     (worker id pch #f)))
 
-(define (stop-workers team)
+(define (stop-company team)
   (for ([w (in-list (company-workers team))])
     (define ch (worker-channel w))
     (place-channel-put ch ($stop))
@@ -62,17 +66,14 @@
         (place-kill ch))))
 
 (define (update-company team)
-  (if (and (andmap worker-idle? (company-workers team))
-           (null? (company-jobs team)))
-      (stop-workers team)
-      (let ([variant (sync team)])
-        (cond [($message? variant)
-               (handle-team-event team variant)]
-              [(input-port? variant)
-               (displayln (read-line variant))
-               team]
-              [else (write variant)
-                    team]))))
+  (let ([variant (sync team)])
+    (cond [($message? variant)
+           (handle-team-event team variant)]
+          [(input-port? variant)
+           (displayln (read-line variant))
+           team]
+          [else (write variant)
+                team])))
 
 ;; Message handlers
 
