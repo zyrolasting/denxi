@@ -96,11 +96,11 @@
   (make-zcpkg-workspace-link where)
   (make-zcpkg-dependency-links dependencies where))
 
-
 (define (make-zcpkg-workspace-link [where (current-directory)])
   (define ws-link (build-path where CONVENTIONAL_WORKSPACE_NAME))
-  (unless (link-exists? ws-link)
-    (make-file-or-directory-link (ZCPKG_WORKSPACE) ws-link))
+  (when (link-exists? ws-link)
+    (delete-file ws-link))
+  (make-file-or-directory-link (ZCPKG_WORKSPACE) ws-link)
   ws-link)
 
 (define (make-zcpkg-dependency-links dependencies [where (current-directory)])
@@ -114,6 +114,8 @@
       (define link-path (build-path links-dir
                                     (zcpkg-info-provider-name info)
                                     (zcpkg-info-package-name info)))
+      (when (link-exists? link-path)
+        (delete-file link-path))
       (make-file-or-directory-link install-path link-path)
       link-path)))
 
