@@ -55,7 +55,7 @@
               (for ([line (in-list preamble)])
                 (display "; " o)
                 (displayln line o))
-              (write value o))))
+              (writeln value o))))
    (λ () (error 'set-metadatum!
                 "Failed to obtain lock for ~a"
                 path)))
