@@ -16,17 +16,17 @@
 (define (capture-workspace)
   (call-with-output-file "capture.rktd"
     (λ (o)
-      (parameterize ([current-directory (ZCPKG_WORKSPACE)])
+      (parameterize ([current-directory (workspace-directory)])
         (write-to-file (make-capture) o)))))
 
 (define (restore-workspace path)
-  (rename-file-or-directory (ZCPKG_WORKSPACE)
-                            (path-replace-extension (ZCPKG_WORKSPACE) ".bak"))
+  (rename-file-or-directory (workspace-directory)
+                            (path-replace-extension (workspace-directory) ".bak"))
   (call-with-temporary-directory
    (λ (tmp-dir)
-     (parameterize ([ZCPKG_WORKSPACE tmp-dir])
+     (parameterize ([workspace-directory tmp-dir])
        (reproduce-workspace (file->value path))
-       (copy-directory/files tmp-dir (ZCPKG_WORKSPACE))))))
+       (copy-directory/files tmp-dir (workspace-directory))))))
 
 
 (struct capture-entry (path digest reproduction) #:prefab)
@@ -56,7 +56,7 @@
           (capture-commands fstab)))
 
 (define (capture-rcfiles fstab)
-  (parameterize ([current-directory (ZCPKG_WORKSPACE)])
+  (parameterize ([current-directory (workspace-directory)])
     (for/hash ([p (in-directory "etc")])
       (define entry (hash-ref fstab p))
       (capture-entry (path->string p)

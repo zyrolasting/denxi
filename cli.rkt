@@ -313,7 +313,7 @@ EOF
    (λ (flags what)
      (match what
        ["workspace"
-        (displayln (ZCPKG_WORKSPACE))]
+        (displayln (workspace-directory))]
        [_ (printf "Unrecognized argument for show command: ~s~n"
                   what)
           (printf "Run with -h for valid arguments.")

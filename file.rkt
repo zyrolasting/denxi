@@ -100,7 +100,7 @@
   (define ws-link (build-path where CONVENTIONAL_WORKSPACE_NAME))
   (when (link-exists? ws-link)
     (delete-file ws-link))
-  (make-file-or-directory-link (ZCPKG_WORKSPACE) ws-link)
+  (make-file-or-directory-link (workspace-directory) ws-link)
   ws-link)
 
 (define (make-zcpkg-dependency-links dependencies [where (current-directory)])
@@ -193,7 +193,7 @@
 
   (temp-fs [dir #:inst [>> #:a] [dir #:nested [>> #:b]]]
            [dir #:other [>> #:should-not-appear]]
-           (parameterize ([ZCPKG_WORKSPACE (current-directory)]
+           (parameterize ([workspace-directory (current-directory)]
                           [ZCPKG_INSTALL_RELATIVE_PATH "inst"])
              (test-equal? "Provide all paths in install directory"
                           (apply set (sequence->list (in-workspace)))
@@ -204,7 +204,7 @@
                                             "inst/nested/b"))))))
 
   (temp-fs [dir #:inst [dir #:pkgA [>> #:info.rkt "#lang info"]] [dir #:pkgB [>> #:info.rkt "#lang info"]]]
-           (parameterize ([ZCPKG_WORKSPACE (current-directory)]
+           (parameterize ([workspace-directory (current-directory)]
                           [ZCPKG_INSTALL_RELATIVE_PATH "inst"])
              (test-equal? "Provide all paths to installed info.rkt files"
                           (apply set (sequence->list (in-workspace)))

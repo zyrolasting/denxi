@@ -2,7 +2,7 @@
 
 (provide build-workspace-path
          find-workspace-directory
-         ZCPKG_WORKSPACE
+         workspace-directory
          CONVENTIONAL_WORKSPACE_NAME
          CONVENTIONAL_DEPENDENCY_DIRECTORY_NAME
          CONVENTIONAL_PACKAGE_INFO_DIRECTORY_NAME)
@@ -24,17 +24,20 @@
         (and (not (equal? complete-current-dir parent))
              (find-workspace-directory parent)))))
 
-(define ZCPKG_WORKSPACE
-  (make-setting 'ZCPKG_WORKSPACE
-                (and/c complete-path?
-                       (or/c directory-exists?
-                             (and/c (not/c file-exists?)
-                                    (not/c directory-exists?)
-                                    (not/c link-exists?))))
-                (or (find-workspace-directory)
-                    (build-path (current-directory)
-                                CONVENTIONAL_WORKSPACE_NAME))))
+(define workspace-directory
+  (make-parameter
+   (or (find-workspace-directory)
+       (build-path (current-directory)
+                   CONVENTIONAL_WORKSPACE_NAME))
+   (λ (v)
+     (invariant-assertion
+      (and/c complete-path?
+             (or/c directory-exists?
+                   (and/c (not/c file-exists?)
+                          (not/c directory-exists?)
+                          (not/c link-exists?))))
+      v))))
 
 (define (build-workspace-path . paths)
-  (apply build-path (ZCPKG_WORKSPACE)
+  (apply build-path (workspace-directory)
          paths))
