@@ -16,7 +16,6 @@
          "dependency.rkt"
          "download.rkt"
          "file.rkt"
-         "installer.rkt"
          "logging.rkt"
          "message-pump.rkt"
          "message.rkt"
