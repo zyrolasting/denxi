@@ -1,29 +1,32 @@
 #lang racket/base
 
-; Define a package source as a string that could refer to a local file
-; or a remote resource.  A package source should ultimately lead to a
-; local directory path containing the source code of a package.
+; Given a list of strings, find the scope of work for an installation.
 
 (require racket/contract)
 
-(define source-variant/c (or/c url? dependency? path?))
-
-(provide
- (contract-out
-  [zcpkg-directory->zcpkg-info (-> path? zcpkg-info?)]
-
-  [variant->zcpkg-info (->* (source-variant/c) (complete-path?) zcpkg-info?)]
-
-  [source->variant
-   (-> string? source-variant/c)]))
+(provide (all-defined-out))
 
 (require racket/path
+         racket/set
          "config.rkt"
          "dependency.rkt"
          "download.rkt"
+         "file.rkt"
+         "message.rkt"
          "string.rkt"
          "url.rkt"
          "zcpkg-info.rkt")
+
+
+(define (source->variant v [requesting-path (current-directory)])
+  (or (source->maybe-path v requesting-path)
+      (source->maybe-dependency v)
+      (string->url v)))
+
+(define (variant->source v)
+  (cond [(url? v) (url->string v)]
+        [(dependency? v) (dependency->string v)]
+        [(path? v) (path->string v)]))
 
 (define (source->maybe-path v [relative-path-root (current-directory)])
   (cond [(path? v)
@@ -43,33 +46,13 @@
 
         [else #f]))
 
+
 (define (source->maybe-dependency v)
   (with-handlers ([exn? (λ _ #f)])
     (define dep (coerce-dependency v))
     (and (well-formed-dependency? dep)
          dep)))
 
-(define (source->variant v)
-  (or (source->maybe-path v)
-      (source->maybe-dependency v)
-      (string->url v)))
-
-(define (zcpkg-directory->zcpkg-info dirpath)
-  (if (directory-exists? dirpath)
-      (read-zcpkg-info dirpath)
-      (error 'zcpkg-directory->zcpkg-info
-             "No package metadata in ~a~n"
-             dirpath)))
-
-(define (variant->zcpkg-info variant [requesting-path (current-directory)])
-  (if (path? variant)
-      (let ([complete
-             (if (complete-path? variant) variant
-                 (build-path requesting-path variant))])
-        (if (directory-exists? complete)
-            (build-path complete "info.rkt")
-            complete))
-      (download-info variant)))
 
 (module+ test
   (require rackunit
@@ -78,13 +61,12 @@
   (define-runtime-path ./ ".")
 
   (parameterize ([current-directory ./])
-    (test-equal? "If it looks like a file path, then make it a file path"
-                 (source->maybe-path "./source.rkt")
-                 (simplify-path "./source.rkt"))
+    (test-false "If it looks like a file path, then it doesn't count"
+                (source->maybe-path "./source.rkt"))
 
-    (test-equal? "If it looks like a directory path, then make it a info.rkt file path"
+    (test-equal? "If it looks like a directory path, then use it."
                  (source->maybe-path ".")
-                 (simplify-path "./info.rkt"))
+                 (simplify-path "."))
 
     (test-equal? "Mimic rules for file:// url pointing to a file."
                  (source->maybe-path "file:///./source.rkt")
@@ -99,11 +81,11 @@
 
   (test-true "All valid dependency strings are valid sources"
              (andmap (λ (s) (dependency? (source->maybe-dependency s)))
-                     (list "provider/package"
-                           "provider/package;draft"
-                           "provider/package;draft;newest"
-                           "provider/package;draft;oldest;newest"
-                           "provider/package;draft;i;oldest;e;newest")))
+                     (list "provider:package"
+                           "provider:package:draft"
+                           "provider:package:draft:newest"
+                           "provider:package:draft:oldest:newest"
+                           "provider:package:draft:i:oldest:e:newest")))
 
   (test-false "Invalid dependency strings are not valid sources"
               (dependency? (source->maybe-dependency "fsdfhbsdfj"))))
