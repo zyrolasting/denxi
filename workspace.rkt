@@ -7,9 +7,8 @@
          CONVENTIONAL_DEPENDENCY_DIRECTORY_NAME
          CONVENTIONAL_PACKAGE_INFO_FILE_NAME)
 
-(require idiocket/contract
-         idiocket/path
-         "setting.rkt")
+(require racket/contract
+         racket/path)
 
 (define CONVENTIONAL_WORKSPACE_NAME "zcpkg-workspace")
 (define CONVENTIONAL_DEPENDENCY_DIRECTORY_NAME "zcpkg-deps")
