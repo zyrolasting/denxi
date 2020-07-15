@@ -5,8 +5,7 @@
          ZCPKG_WORKSPACE
          CONVENTIONAL_WORKSPACE_NAME
          CONVENTIONAL_DEPENDENCY_DIRECTORY_NAME
-         CONVENTIONAL_PACKAGE_INFO_DIRECTORY_NAME
-         ws/)
+         CONVENTIONAL_PACKAGE_INFO_DIRECTORY_NAME)
 
 (require idiocket/contract
          idiocket/path
@@ -39,5 +38,3 @@
 (define (build-workspace-path . paths)
   (apply build-path (ZCPKG_WORKSPACE)
          paths))
-
-(define ws/ build-workspace-path)

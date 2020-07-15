@@ -196,7 +196,7 @@ EOF
                                 (param (read (open-input-string value)))
                                 (param)))
 
-                            (define target (ws/ "etc/zcpkg" key))
+                            (define target (build-workspace-path "etc/zcpkg" key))
                             (make-directory* (path-only target))
                             (write-to-file #:exists 'truncate/replace
                                            (param) target)
