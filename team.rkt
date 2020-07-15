@@ -31,7 +31,7 @@
 ; later processing. This is important for reprioritizing and
 ; sequencing work (e.g. downloading packages after knowing what all
 ; there is to download).
-(struct company (iterate workers jobs backlog)
+(struct company (workers jobs backlog)
   #:property prop:evt
   (λ (self) (apply choice-evt (company-workers self))))
 
@@ -55,9 +55,8 @@
         team
         (loop (update-company wip)))))
 
-(define (make-company iterate messages)
-  (company iterate
-           (start-workers)
+(define (make-company messages)
+  (company (start-workers)
            messages
            null))
 
@@ -78,7 +77,7 @@
 (define (update-company team)
   (let ([variant (sync team)])
     (cond [($message? variant)
-           ((company-iterate) team variant)]
+           (handle-team-event team variant)]
           [(input-port? variant)
            (displayln (read-line variant))
            team]
@@ -89,7 +88,7 @@
 
 ; If a worker says it has nothing to do, then give it work.
 (define (on-idle team id)
-  (match-define (company _ workers jobs _) team)
+  (match-define (company workers jobs _) team)
   (define no-jobs? (null? jobs))
   (struct-copy company team
                [workers
@@ -110,7 +109,7 @@
   (struct-copy company team
                [jobs (cons job (company-jobs team))]))
 
-(define-message-pump (handle-team-event company?)
+(define-message-pump (handle-team-event company? default-message-handler)
   add-job
   backlog-job
   on-idle)
