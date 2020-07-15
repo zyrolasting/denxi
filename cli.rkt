@@ -15,6 +15,7 @@
          "server.rkt"
          "capture.rkt"
          "config.rkt"
+         "contract.rkt"
          "dependency.rkt"
          "download.rkt"
          "file.rkt"
@@ -84,6 +85,29 @@ EOF
 
 
 (define (install-command args)
+  (define (format-dependencies dependencies)
+    (apply ~a*
+           (sort (for/list ([job dependencies])
+                   (cond [($install-package? job)
+                          ($install-package-source job)]
+                         [($download-package? job)
+                          ($download-package-source job)]))
+                 string<?)))
+
+
+  ; Multiple dependents may each want the same dependencies.  A
+  ; package metadata structure is unique, so removing duplicate
+  ; instances means removing redundant work.
+  (define (remove-redundant-work jobs)
+    (remove-duplicates #:key (λ (job)
+                               (if ($install-package? job)
+                                   ($install-package-info job)
+                                   ($download-package-info job)))
+                       jobs))
+
+  (define (show-report team)
+    (void))
+
   (run-command-line
    #:program "install"
    #:args args
@@ -101,35 +125,20 @@ EOF
          (switch "-x" ZCPKG_DOWNLOAD_IGNORE_CACHE))
 
    (λ (flags . package-sources)
-     (define to-install (mutable-set))
+     (define team (make-company (map $resolve-source package-sources)))
+     (define knows-scope-of-work (process-jobs team))
+     (define no-repeated-work (remove-redundant-work (company-backlog team)))
 
-     (define (find-dependencies source)
-       (define variant (source->variant source))
-       (define info (variant->zcpkg-info variant))
-       (define deps (filter-missing-dependencies (zcpkg-info-dependencies info)))
-       (set-add! to-install source)
-       (for ([dep (in-list deps)])
-         (set-add! to-install dep)
-         (find-dependencies dep)))
+     (dynamic-wind
+       void
+       (λ ()
+         (show-report
+          (process-jobs
+           (struct-copy company knows-scope-of-work
+                        [jobs no-repeated-work]
+                        [backlog null]))))
+       (λ () (stop-company no-repeated-work))))))
 
-     (for ([source (in-list package-sources)])
-       (find-dependencies source))
-
-     (if (ZCPKG_INSTALL_CONSENT)
-         (process-jobs
-          (for/list ([target (in-set to-install)])
-            ($install-package target)))
-         (begin
-           ; For the users sake, show the potentially long installation list
-           ; in lexographical order.
-           (displayln (apply ~a*
-                             (sort (set->list
-                                    (set-subtract to-install
-                                                  (apply set package-sources)))
-                                   string<?)))
-           (displayln "The above dependencies are needed to install")
-           (displayln (apply ~a* package-sources))
-           (displayln "Run with -y to consent to installation"))))))
 
 (define (capture-command args)
   (run-command-line
