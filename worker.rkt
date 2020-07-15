@@ -107,6 +107,31 @@
   (state ($on-idle (workstate-id state))))
 
 
+(define (resolve-source state source requesting-directory order)
+  (define variant (source->variant source requesting-directory))
+  (define local? (path? variant))
+
+  (define job
+    (if local?
+        ($install-package (read-zcpkg-info variant) source)
+        (let-values ([(catalog-url info) (download-info variant)])
+          ($download-package info (url->string catalog-url) source))))
+
+  (define info
+    (if local?
+        ($install-package-info job)
+        ($download-package-info job)))
+
+  (for ([dependency-source (in-list (zcpkg-info-dependencies info))])
+    (state ($add-job
+            ($resolve-source dependency-source
+                            (if local?
+                                source
+                                (current-directory))
+                            (add1 order)))))
+
+  (state ($backlog-job job))
+  (state ($on-idle (workstate-id state))))
 
 (define (stop state)
   (exit 0)
@@ -115,6 +140,7 @@
 (define-message-pump (handle-message workstate? default-message-handler)
   assign-id
   stop
+  resolve-source
   install-package
   download-package
   uninstall-package)
