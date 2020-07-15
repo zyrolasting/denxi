@@ -6,7 +6,8 @@
 
 (provide process-jobs
          make-company
-         stop-company)
+         stop-company
+         (struct-out company))
 
 (require racket/format
          racket/future
