@@ -86,6 +86,14 @@
 
 ;; Message handlers
 
+(define (add-job team job)
+  (struct-copy company team
+               [jobs (cons job (company-jobs team))]))
+
+(define (backlog-job team job)
+  (struct-copy company team
+               [backlog (cons job (company-backlog team))]))
+
 ; If a worker says it has nothing to do, then give it work.
 (define (on-idle team id)
   (match-define (company workers jobs _) team)
@@ -101,15 +109,21 @@
                [jobs
                 (if no-jobs? null (cdr jobs))]))
 
-(define (backlog-job team backlog? job)
-  (struct-copy company team
-               [backlog (cons job (company-backlog team))]))
 
-(define (add-job team job)
-  (struct-copy company team
-               [jobs (cons job (company-jobs team))]))
+(define (on-bad-digest team info)
+  team)
+
+(define (on-bad-signature team info)
+  team)
+
+(define (on-missing-signature team info)
+  team)
+
 
 (define-message-pump (handle-team-event company? default-message-handler)
   add-job
   backlog-job
-  on-idle)
+  on-idle
+  on-bad-digest
+  on-bad-signature
+  on-missing-signature)
