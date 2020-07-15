@@ -1,9 +1,9 @@
 #lang racket/base
 
-(require racket/contract
-         racket/function
+(require racket/function
          racket/list
-         net/url)
+         net/url
+         "contract.rkt")
 
 (provide (all-from-out net/url)
          (contract-out
