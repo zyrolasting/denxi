@@ -34,17 +34,20 @@
 (define-message $on-idle (id))
 (define-message $stop ())
 
+(define (default-message-handler s m)
+  (error 'default-message-handler
+         "Unknown message: ~s"
+         m))
+
 (define-syntax (define-message-pump stx)
   (syntax-case stx ()
-    [(_ [id cnt] handler ...)
+    [(_ [id cnt default-handler] handler ...)
      (with-syntax ([(predicate ...) (stx-map (λ (s) (format-id stx "$~a?" s)) #'(handler ...))])
        #'(define/contract id
            (-> cnt $message? cnt)
            (let ([handlers (list (cons predicate handler)
                                  ...
-                                 (cons (λ _ #t)
-                                       (λ (s m)
-                                         (error 'id "Unknown message: ~s" m))))])
+                                 (cons (λ _ #t) default-handler))])
              (λ (state message)
                (apply (ormap (λ (pair)
                                (and ((car pair) message)
@@ -67,7 +70,9 @@
     (example-state (* (example-state-v s)
                       v)))
 
-  (define-message-pump (foo example-state?) mset mmul)
+  (define-message-pump (foo example-state? default-message-handler)
+    mset
+    mmul)
 
   (test-exn "Require an instance of a state object"
             exn:fail:contract?

@@ -23,9 +23,13 @@
          "prompt.rkt"
          "string.rkt")
 
-; Company metaphor: A company has workers (places) and jobs to do (messages).
-; The message pump in this module sends jobs to workers.
-(struct company (workers jobs)
+; Company metaphor: A company has workers (places) and jobs to do
+; (messages).  The message pump in this module sends jobs to workers.
+; The backlog is the same as jobs, except they are accumulated for
+; later processing. This is important for reprioritizing and
+; sequencing work (e.g. downloading packages after knowing what all
+; there is to download).
+(struct company (iterate workers jobs backlog)
   #:property prop:evt
   (λ (self) (apply choice-evt (company-workers self))))
 
@@ -39,20 +43,24 @@
     (place-channel-put (worker-channel self) v)
     self))
 
-; Define an entry point for parallel work, such that messages are
-; built into the company metaphor.
+; Do all jobs in the company. Workers may discover work to put in the
+; backlog. Once the jobs are done, new jobs should be selected from
+; the backlog.
 (define (process-jobs team)
   (let loop ([wip team])
     (if (and (andmap worker-idle? (company-workers wip))
              (null? (company-jobs wip)))
-        wip
+        team
         (loop (update-company wip)))))
 
-(define (make-company messages)
-  (company (start-workers (length messages)) messages))
+(define (make-company iterate messages)
+  (company iterate
+           (start-workers)
+           messages
+           null))
 
-(define (start-workers job-count)
-  (for/list ([id (in-range (max 1 (min (sub1 (processor-count)) job-count)))])
+(define (start-workers)
+  (for/list ([id (in-range (processor-count))])
     (define pch (place inner-pch (worker-main inner-pch)))
     ; The worker needs to identify itself for some messages.
     (place-channel-put pch ($assign-id id))
@@ -68,7 +76,7 @@
 (define (update-company team)
   (let ([variant (sync team)])
     (cond [($message? variant)
-           (handle-team-event team variant)]
+           ((company-iterate) team variant)]
           [(input-port? variant)
            (displayln (read-line variant))
            team]
@@ -79,33 +87,28 @@
 
 ; If a worker says it has nothing to do, then give it work.
 (define (on-idle team id)
-  (match-define (company workers jobs) team)
+  (match-define (company _ workers jobs _) team)
   (define no-jobs? (null? jobs))
-  (company (list-update workers id
+  (struct-copy company team
+               [workers
+                (list-update workers id
                         (λ (w)
                           (unless no-jobs?
                             (w (car jobs)))
                           (struct-copy worker w
-                                       [idle? no-jobs?])))
-           (if no-jobs? null (cdr jobs))))
+                                       [idle? no-jobs?])))]
+               [jobs
+                (if no-jobs? null (cdr jobs))]))
 
-(define (on-new-dependencies team dependent-name dependencies)
-  (define new-jobs
-    (map $install-package dependencies))
+(define (backlog-job team backlog? job)
+  (struct-copy company team
+               [backlog (cons job (company-backlog team))]))
 
-  ; Guard against duplicate jobs
-  (define deduped
-    (set-union (apply set new-jobs)
-               (company-jobs team)))
-
-  (company (company-workers team)
-           (append (set->list deduped)
-                   (company-jobs team))))
-
-(define (on-package-installed team info)
-  (printf "Installed ~a~n" info)
-  team)
+(define (add-job team job)
+  (struct-copy company team
+               [jobs (cons job (company-jobs team))]))
 
 (define-message-pump (handle-team-event company?)
-  on-idle
-  on-package-installed)
+  add-job
+  backlog-job
+  on-idle)
