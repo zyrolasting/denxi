@@ -6,7 +6,6 @@
 
 (require "contract.rkt"
          "config.rkt"
-         "metadata.rkt"
          "string.rkt"
          "workspace.rkt")
 
