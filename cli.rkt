@@ -248,7 +248,7 @@ EOF
                  "This is a list of names used as aliases for your revision number."
                  "BE SURE to update this with the revision number.")
 
-     (write-info (or/c #f path-string?) "installer" "installer.rkt"
+     (write-info (or/c #f path-string?) "setup-module" "setup.rkt"
                  (~a "This is a path relative to the root of " name)
                  "It points to an interactive Racket module"
                  "meant to set up userspace for " name)
@@ -256,7 +256,7 @@ EOF
      (write-info list? "dependencies" null
                  "This is a list of your package's dependencies.")
 
-     (make-file "installer.rkt"
+     (make-file "setup.rkt"
                 (λ ()
                   (display-lines
                    '("#lang racket/base"

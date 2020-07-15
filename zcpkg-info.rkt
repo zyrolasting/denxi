@@ -16,7 +16,7 @@
    edition-name      ; The name of a design used in the package
    revision-number   ; The number of a design's implementation.
    revision-names    ; Aliases for the revision-number.
-   installer         ; A Racket module responsible for userspace changes.
+   setup-module      ; A Racket module responsible for userspace changes.
    dependencies      ; A list of dependency queries.
    integrity         ; A digest used to verify package contents
    signature)        ; A signature used to authenticate the provider

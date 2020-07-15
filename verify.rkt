@@ -105,7 +105,7 @@
          "a list of name strings")
 
   (check (or/c #f path-string?)
-         zcpkg-info-installer
+         zcpkg-info-setup-module
          "a path string, or #f")
 
   (check (listof (or/c dependency-string?
