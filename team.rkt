@@ -19,6 +19,7 @@
          (only-in "worker.rkt" worker-main)
          "config.rkt"
          "logging.rkt"
+         "message-pump.rkt"
          "message.rkt"
          "prompt.rkt"
          "string.rkt")

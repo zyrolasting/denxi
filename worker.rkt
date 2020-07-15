@@ -18,6 +18,7 @@
          "file.rkt"
          "installer.rkt"
          "logging.rkt"
+         "message-pump.rkt"
          "message.rkt"
          "prompt.rkt"
          "source.rkt"
