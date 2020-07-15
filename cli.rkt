@@ -70,10 +70,10 @@
   new        Create a new package
   show       Print helpful information
   config     Configure the package manager
-  capture    Create a restore point
-  restore    Revert files according to a restore point
-  diff       Compare files to restore point
-  sandbox    Use untrusted package
+  capture    Create a capture file
+  restore    Reproduce files via a capture
+  diff       Compare files to a capture
+  sandbox    Start sandboxed REPL for package's setup module.
   register   Register an account on a catalog
   serve      Serve installed packages
   download   Download packages and metadata
