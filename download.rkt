@@ -59,12 +59,7 @@
 
 
 (define (download-artifact catalog-url dep info)
-  (define artifact-path (download-file (dependency->url catalog-url "artifact" dep)))
-  (define checksum (zcpkg-info-integrity info))
-  (unless (equal? (make-digest artifact-path) checksum)
-    (error 'download-artifact
-           "Integrity violation for ~a" artifact-path))
-  artifact-path)
+  (download-file (dependency->url catalog-url "artifact" dep)))
 
 
 ; Works if only the URL host and path matter.

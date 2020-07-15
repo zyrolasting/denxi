@@ -22,6 +22,7 @@
          "prompt.rkt"
          "source.rkt"
          "url.rkt"
+         "verify.rkt"
          "workspace.rkt"
          "zcpkg-info.rkt")
 
@@ -47,17 +48,54 @@
   (next ($on-idle id)))
 
 
-(define (install-package state source)
-  (define variant (source->variant source))
-  (define info (variant->zcpkg-info variant))
-  (unless (zcpkg-installed? info)
-    (define install-path (zcpkg-info->install-path info))
-    (if (path? variant)
-        (begin (make-directory* (path-only install-path))
-               (make-file-or-directory-link variant install-path))
-        (unpack (download-artifact source)
-                #:to install-path)))
+(define (install-package state info package-path)
+  (define install-path (zcpkg-info->install-path info))
+  (make-directory* (path-only install-path))
+
+  ; These paths are equal if the package was downloaded,
+  ; since download-package extracts the archive to the
+  ; install location.
+  (unless (equal? package-path install-path)
+    (make-file-or-directory-link package-path install-path))
+
+  (make-zcpkg-links (zcpkg-info-dependencies info) install-path)
   (state ($on-package-installed info))
+  (state ($on-idle (workstate-id state))))
+
+
+(define (download-package state info catalog-url-string)
+  (define install-path (zcpkg-info->install-path info))
+  (define artifact-path (download-artifact (string->url catalog-url-string) url))
+
+  (define integrous?
+    (or (equal? (make-digest artifact-path)
+                (zcpkg-info-integrity info))
+        (ZCPKG_TRUST_BAD_DIGEST)))
+
+  (define signature
+    (zcpkg-info-signature info))
+
+  (define authenticated?
+    (if signature
+        (or (verify-signature (zcpkg-info-integrity info)
+                              signature
+                              (void))
+            (ZCPKG_TRUST_BAD_SIGNATURE))
+        (ZCPKG_TRUST_UNSIGNED)))
+
+  (unless integrous?
+    (state ($on-bad-digest info)))
+
+  (unless authenticated?
+    (state ((if signature
+                $on-bad-signature
+                $on-missing-signature)
+            info)))
+
+  (when (and integrous? authenticated?)
+    (unpack artifact-path #:to install-path)
+    (state ($add-job ($install-package info install-path))))
+
   (state ($on-idle (workstate-id state))))
 
 
@@ -74,8 +112,9 @@
   (exit 0)
   state)
 
-(define-message-pump (handle-message workstate?)
+(define-message-pump (handle-message workstate? default-message-handler)
   assign-id
   stop
   install-package
+  download-package
   uninstall-package)
