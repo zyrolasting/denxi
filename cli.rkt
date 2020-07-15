@@ -20,7 +20,6 @@
          "download.rkt"
          "file.rkt"
          "message.rkt"
-         "metadata.rkt"
          "setting.rkt"
          "source.rkt"
          "string.rkt"
