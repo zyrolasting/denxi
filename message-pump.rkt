@@ -3,10 +3,12 @@
 ; Define a means to process async messages.
 
 (provide (all-defined-out)
-         (all-from-out racket/contract))
+         (all-from-out racket/contract
+                       racket/promise))
 
 (require racket/contract
          racket/place
+         racket/promise
          "logging.rkt"
          (for-syntax racket/base
                      racket/syntax
@@ -29,14 +31,14 @@
      (with-syntax ([(predicate ...) (stx-map (λ (s) (format-id stx "$~a?" s)) #'(handler ...))])
        #'(define/contract id
            (-> cnt $message? cnt)
-           (let ([handlers (list (cons predicate handler)
-                                 ...
-                                 (cons (λ _ #t) default-handler))])
+           (let ([handlers (delay (list (cons predicate handler)
+                                        ...
+                                        (cons (λ _ #t) default-handler)))])
              (λ (state message)
                (apply (ormap (λ (pair)
                                (and ((car pair) message)
                                     (cdr pair)))
-                             handlers)
+                             (force handlers))
                       state
                       (cdr (vector->list (struct->vector message))))))))]))
 
@@ -48,16 +50,16 @@
   (define-message $mmul (v))
   (define state (example-state #f))
 
+  (define-message-pump (foo example-state? default-message-handler)
+    mset
+    mmul)
+
   (define (mset s v)
     (example-state v))
 
   (define (mmul s v)
     (example-state (* (example-state-v s)
                       v)))
-
-  (define-message-pump (foo example-state? default-message-handler)
-    mset
-    mmul)
 
   (test-exn "Require an instance of a state object"
             exn:fail:contract?
