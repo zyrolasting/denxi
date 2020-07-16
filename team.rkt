@@ -110,6 +110,11 @@
                [jobs
                 (if no-jobs? null (cdr jobs))]))
 
+(define (on-fatal team id exn-string)
+  (raise (exn:fail:user
+          (format "A worker crashed. Please report this to the developer:~n~a~n"
+                  exn-string)
+          (current-continuation-marks))))
 
 (define (on-bad-digest team info)
   team)
@@ -125,6 +130,7 @@
   add-job
   backlog-job
   on-idle
+  on-fatal
   on-bad-digest
   on-bad-signature
   on-missing-signature)

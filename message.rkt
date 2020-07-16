@@ -6,7 +6,7 @@
 (require "message-pump.rkt")
 
 (define-message $assign-id (id))
-(define-message $on-error (message))
+(define-message $on-fatal (id message))
 (define-message $before-making-orphans (dependents dependency))
 (define-message $backlog-job (message))
 (define-message $add-job (message))

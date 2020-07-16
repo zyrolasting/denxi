@@ -37,7 +37,9 @@
 
 (define (worker-main pch [state (workstate #f pch)])
   (with-handlers ([exn:break? void]
-                  [exn? (λ (e) (state ($on-error (exn->string e))))]
+                  [exn? (λ (e)
+                          (state ($on-fatal (workstate-id state)
+                                            (exn->string e))))]
                   [place-message-allowed? state]
                   [(const #t) (λ (v) (state (~s v)))])
     (worker-main pch
