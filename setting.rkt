@@ -92,6 +92,14 @@
           help-strs)))
 
 
+(define (setting->short-flag s)
+ (caar (setting->flag-spec s)))
+
+
+(define (setting->long-flag s)
+ (cadar (setting->flag-spec s)))
+
+
 (define (setting->flag-spec s)
   ((setting-make-flag-spec s) s))
 
@@ -137,9 +145,13 @@
              (and (eq? (setting-id ZCPKG_VERBOSE) 'ZCPKG_VERBOSE)
                   (eq? (setting-id PUMP_LEVEL) 'PUMP_LEVEL)))
 
-  (test-equal? "ZCPKG_VERBOSE CLI flags are derived from macro"
-               (car (setting->flag-spec ZCPKG_VERBOSE))
-               '("-v" "--verbose"))
+  (test-equal? "Allow user to define short flags"
+               (setting->short-flag ZCPKG_VERBOSE)
+               "-v")
+
+  (test-equal? "Derive long flags from macro"
+               (setting->long-flag ZCPKG_VERBOSE)
+               "--verbose")
 
   (test-equal? "PUMP_LEVEL CLI flags are derived from macro"
                (car (setting->flag-spec PUMP_LEVEL))
