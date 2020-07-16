@@ -99,7 +99,7 @@
   ; Controls network and file I/O permissions for sandboxed installers.
   {ZCPKG_INSTALLER_ALLOWED_HOSTS
    "-H"
-   ("Hosts an installer may contact." "(listof string?)")
+   ("Hosts an installer may contact." "string-list")
    (listof string?)
    null}
 
@@ -151,8 +151,8 @@
   ; Where to install packages.
   {ZCPKG_INSTALL_RELATIVE_PATH
    "-I"
-   ("Workspace-relative path for installed packages")
-   path-string?
+   ("Workspace-relative path for installed packages" "relative-path-string")
+   (and/c path-string? (not/c complete-path?))
    "usr/lib/racket"}
 
   ; A list of catalogs to try.
@@ -183,7 +183,7 @@
 
   {ZCPKG_DOWNLOAD_MAX_REDIRECTS
    "-r"
-   ("Maximum redirects to follow when downloading an artifact")
+   ("Maximum redirects to follow when downloading an artifact" "exact-nonnegative-integer")
    exact-nonnegative-integer?
    2}
 
