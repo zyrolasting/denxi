@@ -458,4 +458,21 @@ EOF
                        (λ (exit-code stdout stderr)
                          (check-eq? exit-code 0)
                          (check-equal? ((current-zcpkg-config) 'get-value config-key)
-                                       (read stdout)))))))
+                                       (read stdout)))))
+
+    (test-case "Save a (write)able config value"
+      (run-entry-point (vector "config" "get" "ZCPKG_VERBOSE")
+                       (λ _
+                         ; This confirms that a new workspace has different results
+                         ; than a workspace that saves configuration to disk.
+                         (check-false (ZCPKG_VERBOSE))
+                         (check-false (file-exists? (get-zcpkg-settings-path)))))
+
+      (run-entry-point (vector "config" "set" "ZCPKG_VERBOSE" "#t")
+                       (λ (exit-code stdout stderr)
+                         (check-eq? exit-code 0)
+                         (check-true (ZCPKG_VERBOSE))
+                         (check-true (file-exists? (get-zcpkg-settings-path)))
+                         ; Reload just for good measure.
+                         (load-zcpkg-settings!)
+                         (check-true (ZCPKG_VERBOSE)))))))
