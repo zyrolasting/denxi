@@ -31,11 +31,15 @@
 
 
 (module+ main
-  (define config (load-zcpkg-settings!))
-  (define maybe-exit (top-level-cli (current-command-line-arguments)))
-  (exit (if (exact-nonnegative-integer? maybe-exit)
-            maybe-exit
-            0)))
+  (exit (entry-point)))
+
+; Keep seperate for functional tests.
+(define (entry-point [args (current-command-line-arguments)])
+  (load-zcpkg-settings!)
+  (define maybe-exit (top-level-cli args))
+  (if (exact-nonnegative-integer? maybe-exit)
+      maybe-exit
+      0))
 
 (define (top-level-cli args)
   (run-command-line
