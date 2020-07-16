@@ -406,3 +406,50 @@ EOF
                           (printf "~a~n~a"
                                   help-str
                                   help-suffix)))))
+
+; Functional tests follow. Use to detect changes in the interface and
+; verify high-level impact.
+(module+ test
+  (require racket/port
+           racket/random
+           rackunit)
+
+  (define (run-entry-point #:stdin [stdin (open-input-bytes #"")] args after)
+    (define stdout (open-output-bytes))
+    (define stderr (open-output-bytes))
+    (parameterize ([current-input-port stdin]
+                   [current-output-port stdout]
+                   [current-error-port stderr])
+      (define exit-code (entry-point args))
+      (flush-output stdout)
+      (flush-output stderr)
+      (close-input-port stdin)
+      (after exit-code
+             (open-input-bytes (get-output-bytes stdout #t))
+             (open-input-bytes (get-output-bytes stderr #t)))))
+
+  (test-case "Configure zcpkg"
+    (test-case "Respond to an incomplete command with help"
+      (run-entry-point #("config")
+                       (λ (exit-code stdout stderr)
+                         (check-eq? exit-code 1)
+                         (check-true (andmap (λ (patt) (regexp-match? (regexp patt) stdout))
+                                             '("given 0 arguments"
+                                               "set"
+                                               "get"
+                                               "dump"))))))
+    (test-case "Dump all (read)able configuration on request"
+      (run-entry-point #("config" "dump")
+                       (λ (exit-code stdout stderr)
+                         (check-eq? exit-code 0)
+                         (check-equal? ((current-zcpkg-config) 'dump)
+                                       (read stdout)))))
+
+    (test-case "Return a (read)able config value"
+      (define config-key (random-ref (in-hash-keys ZCPKG_SETTINGS)))
+      (define config-key/str (symbol->string config-key))
+      (run-entry-point (vector "config" "get" config-key/str)
+                       (λ (exit-code stdout stderr)
+                         (check-eq? exit-code 0)
+                         (check-equal? ((current-zcpkg-config) 'get-value config-key)
+                                       (read stdout)))))))
