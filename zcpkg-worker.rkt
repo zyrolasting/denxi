@@ -48,7 +48,7 @@
                                        (format "Value raised: ~s~n" e))))])
     (define job (sync state))
     (define next-state (handle-message state job))
-    (next-state ($finish-job id job))
+    (next-state ($finish-job (workstate-id next-state) job))
     (worker-main pch next-state)))
 
 
