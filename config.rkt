@@ -12,6 +12,7 @@
           (-> symbol? flat-contract? failure-result/c any/c)))
 
 (require racket/place
+         racket/path
          "contract.rkt")
 
 (provide
@@ -85,6 +86,9 @@
 
 (define (save-local-config! closure path)
   (define lockfile (make-lock-file-name path))
+  (define leading/ (path-only path))
+  (when leading/
+    (make-directory* leading/))
   (call-with-file-lock/timeout
    path 'exclusive
    (λ ()
