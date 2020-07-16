@@ -242,7 +242,7 @@ EOF
                 (λ ()
                   (define (<< k v)
                     (printf "~s ~s~n" k v))
-                  (<< '#:provider gethostname)
+                  (<< '#:provider (gethostname))
                   (<< '#:package name)
                   (<< '#:edition name)
                   (<< '#:revision-number 0)
