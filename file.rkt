@@ -11,6 +11,7 @@
          racket/sequence
          "config.rkt"
          "dependency.rkt"
+         "setting.rkt"
          "string.rkt"
          "workspace.rkt"
          "zcpkg-info.rkt"
@@ -193,23 +194,16 @@
 
 
   (temp-fs [dir #:inst [>> #:a] [dir #:nested [>> #:b]]]
-           [dir #:other [>> #:should-not-appear]]
-           (parameterize ([workspace-directory (current-directory)]
-                          [ZCPKG_INSTALL_RELATIVE_PATH "inst"])
-             (test-equal? "Provide all paths in install directory"
-                          (apply set (sequence->list (in-workspace)))
-                          (apply set (map (λ (p)
-                                            (build-path (current-directory) p))
-                                          '("inst/a"
-                                            "inst/nested"
-                                            "inst/nested/b"))))))
-
-  (temp-fs [dir #:inst [dir #:pkgA [>> #:info.rkt "#lang info"]] [dir #:pkgB [>> #:info.rkt "#lang info"]]]
-           (parameterize ([workspace-directory (current-directory)]
-                          [ZCPKG_INSTALL_RELATIVE_PATH "inst"])
-             (test-equal? "Provide all paths to installed info.rkt files"
-                          (apply set (sequence->list (in-workspace)))
-                          (apply set (map (λ (p)
-                                            (build-path (current-directory) p))
-                                          '("inst/pkgA/info.rkt"
-                                            "inst/pkgB/info.rkt")))))))
+           [dir #:other [>> #:file]]
+           (assume-settings ([ZCPKG_INSTALL_RELATIVE_PATH "inst"])
+             (parameterize ([workspace-directory (current-directory)])
+               (test-equal? "Provide all paths in workspace"
+                            (apply set (sequence->list (in-workspace)))
+                            (apply set (map (λ (p)
+                                              (build-path (current-directory) p))
+                                            '("inst"
+                                              "inst/a"
+                                              "inst/nested"
+                                              "inst/nested/b"
+                                              "other"
+                                              "other/file"))))))))
