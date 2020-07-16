@@ -25,7 +25,8 @@
          define-setting
          define-setting-group
          current-setting-value-lookup
-         settings->flag-specs)
+         settings->flag-specs
+         assume-settings)
 
 (require "contract.rkt"
          "string.rkt"
@@ -68,6 +69,15 @@
       self
       (invariant-assertion (or/c void? (setting-valid? self)) v))
      self]))
+
+
+(define-syntax-rule (assume-settings ([id val] ...) body ...)
+  (let* ([settings (list id ...)]
+         [originals (map (λ (s) (s)) settings)])
+    (dynamic-wind (λ () (id val) ...)
+                  (λ () body ...)
+                  (λ () (for ([s (in-list settings)] [v (in-list originals)]) (s v))))))
+
 
 (define (flag-names short id)
   (let ([long (setting-id->cli-flag-string id)])
@@ -185,6 +195,13 @@
   (test-exn "Guard against reading invalid values from elsewhere"
             exn:fail:contract?
             (λ () (PUMP_LEVEL)))
+
+  (void (putenv "PUMP_LEVEL" ""))
+  (test-case "Override settings in dynamic extent"
+    (assume-settings ([PUMP_LEVEL 1])
+                     (assume-settings ([PUMP_LEVEL 2])
+                                      (check-eq? (PUMP_LEVEL) 2))
+                     (check-eq? (PUMP_LEVEL) 1)))
 
   (define-setting-group GROUP
     [GROUP_A "-a" ("Fuh") boolean? #f]
