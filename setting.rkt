@@ -86,7 +86,7 @@
 (define (make-flag-spec-closure cnt help-strs flags)
   (λ (s)
     (list flags
-          (if (cnt boolean?)
+          (if (eq? cnt boolean?)
               (λ (flag) (s #t))
               (λ (flag v) (s (read (open-input-string v)))))
           help-strs)))
@@ -148,6 +148,14 @@
   (test-eq? "The default value comes before all other sources"
             (PUMP_LEVEL)
             100)
+
+  (test-eq? "Define the ZCPKG_VERBOSE flag handler as arity 1, for handling a boolean flag"
+            (procedure-arity (cadr (setting->flag-spec ZCPKG_VERBOSE)))
+            1)
+
+  (test-eq? "Define the PUMP_LEVEL flag handler as arity 2, for handling a flag bound to an option"
+            (procedure-arity (cadr (setting->flag-spec PUMP_LEVEL)))
+            2)
 
   (void (putenv "PUMP_LEVEL" "20"))
   (test-eq? "A readable envvar value overrides the default value." (PUMP_LEVEL) 20)
