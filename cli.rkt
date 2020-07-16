@@ -489,4 +489,11 @@ EOF
                        (define pkg-dir (build-path (current-directory) package-name))
                        (check-eq? exit-code 0)
                        (check-pred directory-exists? pkg-dir)
-                       (check-pred zcpkg-info? (read-zcpkg-info pkg-dir))))))
+                       (check-pred zcpkg-info? (read-zcpkg-info pkg-dir)))))
+
+  (test-workspace "Install a local package with no dependencies"
+    (define package-name "foo")
+    (run-entry-point (vector "new" "foo") void)
+    (run-entry-point (vector "install" "./foo")
+                     (λ (exit-code stdout stderr)
+                       (check-eq? exit-code 0)))))
