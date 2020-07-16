@@ -374,7 +374,7 @@
   (test-case "Convert between dependency instances and their representations"
     (define target (dependency "joe" "pkg" "edition" #f "8" #f "8"))
     (define str-repr "joe:pkg:edition:i:8:i:8")
-    (define info-repr (zcpkg-info "joe" "pkg" "edition" "8" #f #f #f #f #f #f))
+    (define info-repr (zcpkg-info "joe" "pkg" "edition" "8" #f #f #f #f #f))
     (check-equal? target (string->dependency str-repr))
     (check-equal? target (coerce-dependency str-repr))
     (check-equal? target (zcpkg-info->dependency info-repr))
@@ -420,7 +420,7 @@
 
   (test-pred "Use zcpkg-info instances to produce exact dependencies"
              exact-dependency?
-             (zcpkg-info->dependency (zcpkg-info "joe" "pkg" "edition" "8" #f #f #f #f #f #f)))
+             (zcpkg-info->dependency (zcpkg-info "joe" "pkg" "edition" "8" #f #f #f #f #f)))
 
 
   (test-true "Match a dependency using a revision range"
@@ -494,7 +494,7 @@
 
   (test-case "Metadata search"
     (define (zpi pr pk ed num names)
-      (zcpkg-info pr pk ed num names #f null #"" #"" 0))
+      (zcpkg-info pr pk ed num names #f null #"" #""))
 
     (define infos
       (list (zpi "alice" "wonderland" "mad" 0 '("initial"))
