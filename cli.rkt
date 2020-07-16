@@ -177,8 +177,9 @@ EOF
         (run-command-line #:args args
                           #:program "config-dump"
                           #:arg-help-strings '()
-                          (pretty-write #:newline? #t
-                                        (controller 'dump)))]
+                          (λ (flags)
+                            (pretty-write #:newline? #t
+                                          (controller 'dump))))]
 
        ["set"
         (run-command-line #:args args
