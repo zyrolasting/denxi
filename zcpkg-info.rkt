@@ -7,7 +7,8 @@
 (require "contract.rkt"
          "config.rkt"
          "string.rkt"
-         "workspace.rkt")
+         "workspace.rkt"
+         "zcpkg-settings.rkt")
 
 (struct zcpkg-info
   (provider-name     ; The name of the package provider
@@ -45,14 +46,14 @@
                         (zcpkg-info->relative-path info)))
 
 (define (read-zcpkg-info dir)
+  (define lookup (load-config (build-path dir CONVENTIONAL_PACKAGE_INFO_FILE_NAME)))
   (apply zcpkg-info
-         (get-metadata (build-path dir CONVENTIONAL_PACKAGE_INFO_DIRECTORY_NAME)
-                       (list (list #f name-string? "provider-name")
-                             (list #f name-string? "package-name")
-                             (list #f name-string? "edition-name")
-                             (list #f exact-nonnegative-integer? "revision-number")
-                             (list #t (listof name-string?) "revision-names")
-                             (list #t path-string? "installer")
-                             (list #t (listof string?) "dependencies")
-                             (list #t bytes? "integrity")
-                             (list #t bytes? "signature")))))
+         (lookup 'provider name-string?)
+         (lookup 'package name-string?)
+         (lookup 'edition name-string?)
+         (lookup 'revision-number exact-nonnegative-integer?)
+         (lookup 'revision-names (listof name-string?) null)
+         (lookup 'setup-module (or/c #f path-string?) #f)
+         (lookup 'dependencies (listof string?) null)
+         (lookup 'integrity (or/c #f bytes?) #f)
+         (lookup 'signature (or/c #f bytes?) #f)))

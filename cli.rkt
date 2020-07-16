@@ -26,10 +26,12 @@
          "team.rkt"
          "url.rkt"
          "workspace.rkt"
-         "zcpkg-info.rkt")
+         "zcpkg-info.rkt"
+         "zcpkg-settings.rkt")
 
 
 (module+ main
+  (define config (load-zcpkg-settings!))
   (define maybe-exit (top-level-cli (current-command-line-arguments)))
   (exit (if (exact-nonnegative-integer? maybe-exit)
             maybe-exit
@@ -41,10 +43,10 @@
    #:arg-help-strings '("action" "args")
    #:args args
    #:flags
-   (list (option "-E" ZCPKG_SERVICE_ENDPOINTS)
-         (switch "-c" ZCPKG_COLORIZE_OUTPUT)
-         (switch "-v" ZCPKG_VERBOSE))
-
+   (settings->flag-specs
+    ZCPKG_SERVICE_ENDPOINTS
+    ZCPKG_COLORIZE_OUTPUT
+    ZCPKG_VERBOSE)
    (λ (flags action . args)
      (define proc
        (match action
@@ -112,16 +114,16 @@ EOF
    #:args args
    #:arg-help-strings '("package-source")
    #:flags
-   (list (option "-E" ZCPKG_SERVICE_ENDPOINTS)
-         (option "-m" ZCPKG_DOWNLOAD_MAX_REDIRECTS)
-         (option "-r" ZCPKG_INSTALL_RELATIVE_PATH)
-         (switch #f ZCPKG_TRUST_BAD_DIGEST)
-         (switch #f ZCPKG_TRUST_BAD_SIGNATURE)
-         (switch "-U" ZCPKG_TRUST_UNSIGNED)
-         (switch "-i" ZCPKG_VERIFY_POST_INSTALL_INTEGRITY)
-         (switch "-o" ZCPKG_INSTALL_ORPHAN)
-         (switch "-y" ZCPKG_INSTALL_CONSENT)
-         (switch "-x" ZCPKG_DOWNLOAD_IGNORE_CACHE))
+   (settings->flag-specs
+    ZCPKG_SERVICE_ENDPOINTS
+    ZCPKG_DOWNLOAD_MAX_REDIRECTS
+    ZCPKG_INSTALL_RELATIVE_PATH
+    ZCPKG_TRUST_BAD_DIGEST
+    ZCPKG_TRUST_BAD_SIGNATURE
+    ZCPKG_TRUST_UNSIGNED
+    ZCPKG_INSTALL_ORPHAN
+    ZCPKG_INSTALL_CONSENT
+    ZCPKG_DOWNLOAD_IGNORE_CACHE)
 
    (λ (flags . package-sources)
      (define team (make-company (map $resolve-source package-sources)))
@@ -152,6 +154,8 @@ EOF
       (eprintf "There is no setting called ~a.~n" str)
       (exit 1)))
 
+  (define controller (current-zcpkg-config))
+
   (run-command-line
    #:program "config"
    #:args args
@@ -165,25 +169,25 @@ EOF
                           #:arg-help-strings '("key")
                           (λ (flags key)
                             (pretty-write #:newline? #t
-                                          ((hash-ref (dump-configuration)
-                                                     (string->symbol key)
-                                                     (make-fail-thunk key))))))]
+                                          (controller
+                                           'get-value
+                                           (string->symbol key)
+                                           (make-fail-thunk key)))))]
        ["dump"
         (run-command-line #:args args
                           #:program "config-dump"
                           #:arg-help-strings '()
                           (pretty-write #:newline? #t
-                                        (for/hash ([(k v) (dump-configuration)])
-                                          (values k (v)))))]
+                                        (controller 'dump)))]
 
        ["set"
         (run-command-line #:args args
                           #:program "config-set"
                           #:arg-help-strings '("key" "value")
                           (λ (flags key value)
-                            (define dump (dump-configuration))
                             (define sym (string->symbol key))
-                            (define param (hash-ref dump sym (make-fail-thunk key)))
+                            (define picked-setting
+                              (controller 'get-setting sym (make-fail-thunk key)))
 
                             (define to-write
                               (with-handlers ([exn:fail?
@@ -192,14 +196,11 @@ EOF
                                                   "Rejecting invalid value for ~a.~n"
                                                   sym)
                                                  (raise e))])
-                                (param (read (open-input-string value)))
-                                (param)))
+                                (picked-setting (read (open-input-string value)))
+                                (picked-setting)))
 
-                            (define target (build-workspace-path "etc/zcpkg" key))
-                            (make-directory* (path-only target))
-                            (write-to-file #:exists 'truncate/replace
-                                           (param) target)
-                            (printf "Saved ~a~n" target)))]
+                            (controller 'save!)
+                            (printf "Saved ~a~n" (controller 'get-path))))]
 
        [_ (printf "Unrecognized command: ~s. Run with -h for usage information.~n"
                   action)
@@ -222,47 +223,25 @@ EOF
    #:arg-help-strings '("package-name")
    #:args args
    (λ (flags name)
-     ; We want to error out if the directories exist.
+     ; We want to error out if the directory exists.
      (make-directory name)
-     (make-directory (build-path name CONVENTIONAL_PACKAGE_INFO_DIRECTORY_NAME))
-
-     (define (write-info cnt info-name val . preamble-lines)
-       (set-metadatum! cnt val
-                       #:preamble preamble-lines
-                       (build-path name
-                                   CONVENTIONAL_PACKAGE_INFO_DIRECTORY_NAME
-                                   info-name)))
 
      (define (make-file file-name proc)
        (call-with-output-file (build-path name file-name)
          (λ (o) (parameterize ([current-output-port o])
                   (proc)))))
 
-     (write-info name-string? "provider-name" (gethostname)
-                 (~a "This is the identity of the party meant to distribute " name)
-                 "Provided it belongs to the distributing party,"
-                 "a domain name is a safe cross-catalog name.")
-
-     (write-info name-string? "package-name" name
-                 "This is your package's name.")
-
-     (write-info name-string? "edition-name" "draft"
-                 (~a "This is " name "'s edition."))
-
-     (write-info revision-number? "revision-number" 0
-                 "This is the revision number for your current edition.")
-
-     (write-info (listof name-string?) "revision-names" null
-                 "This is a list of names used as aliases for your revision number."
-                 "BE SURE to update this with the revision number.")
-
-     (write-info (or/c #f path-string?) "setup-module" "setup.rkt"
-                 (~a "This is a path relative to the root of " name)
-                 "It points to an interactive Racket module"
-                 "meant to set up userspace for " name)
-
-     (write-info list? "dependencies" null
-                 "This is a list of your package's dependencies.")
+     (make-file CONVENTIONAL_PACKAGE_INFO_FILE_NAME
+                (λ ()
+                  (define (<< k v)
+                    (printf "~s ~s~n" k v))
+                  (<< '#:provider gethostname)
+                  (<< '#:package name)
+                  (<< '#:edition name)
+                  (<< '#:revision-number 0)
+                  (<< '#:revision-names null)
+                  (<< '#:setup-module "setup.rkt")
+                  (<< '#:dependencies null)))
 
      (make-file "setup.rkt"
                 (λ ()
@@ -270,7 +249,8 @@ EOF
                    '("#lang racket/base"
                      ""
                      "; This module is for setting up dependencies in userspace outside of Racket,"
-                     "; like an isolated Python installation or a C library."
+                     "; like an isolated Python installation, a C library, or even another Racket"
+                     "; installation."
                      ";"
                      "; For security, `zcpkg` asks the user to run (show-help) in a zero-trust sandbox"
                      "; to learn what EXACTLY your package will do to their system if they consent "
@@ -418,28 +398,3 @@ EOF
                           (printf "~a~n~a"
                                   help-str
                                   help-suffix)))))
-
-
-(define (make-boolean-flag flag-spec param)
-  (list flag-spec
-        (λ (flag) (param #t))
-        (list " ")))
-
-(define (make-value-flag flag-spec param)
-  (list flag-spec
-        (λ (flag v) (param (read (open-input-string v))))
-        (list " " " ")))
-
-(define-syntax (flag-names stx)
-  (syntax-case stx ()
-    [(_ short name)
-     #'(let ([long (setting-id->cli-flag-string 'name)])
-         (if short
-             (list short long)
-             (list long)))]))
-
-(define-syntax-rule (switch short name)
-  (make-boolean-flag (flag-names short name) name))
-
-(define-syntax-rule (option short name)
-  (make-value-flag (flag-names short name) name))

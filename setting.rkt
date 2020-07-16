@@ -24,7 +24,8 @@
 (provide (struct-out setting)
          define-setting
          define-setting-group
-         current-setting-value-lookup)
+         current-setting-value-lookup
+         settings->flag-specs)
 
 (require "contract.rkt"
          "string.rkt"

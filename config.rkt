@@ -16,6 +16,7 @@
 
 (provide
  (contract-out
+  [READ_ORDER symbol?]
   [save-config!
    (->* (config-closure/c (or/c path-string? url? output-port?)) void?)]
   [load-config
@@ -178,7 +179,8 @@
            (get-by-key key any/c))]
       [(key c)
        (get-by-key key c
-                   (λ () (error 'get-metadata "No value for key" key)))]
+                   (λ () (error 'make-config-closure
+                                "No value for key" key)))]
       [(key c f)
        (invariant-assertion c
                             (hash-ref hash-table key f))]))

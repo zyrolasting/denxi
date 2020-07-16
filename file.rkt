@@ -12,8 +12,9 @@
          "config.rkt"
          "dependency.rkt"
          "string.rkt"
+         "workspace.rkt"
          "zcpkg-info.rkt"
-         "workspace.rkt")
+         "zcpkg-settings.rkt")
 
 (define (path-cycles? path [previous #f] [encountered (set)])
   ; Do not let simplify-path consult filesystem, because that would

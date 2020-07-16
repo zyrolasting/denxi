@@ -24,7 +24,8 @@
          "url.rkt"
          "verify.rkt"
          "workspace.rkt"
-         "zcpkg-info.rkt")
+         "zcpkg-info.rkt"
+         "zcpkg-settings.rkt")
 
 (struct workstate (id pch)
   #:property prop:evt (struct-field-index pch)

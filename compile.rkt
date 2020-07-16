@@ -8,7 +8,8 @@
          setup/parallel-build
          "config.rkt"
          "file.rkt"
-         "zcpkg-info.rkt")
+         "zcpkg-info.rkt"
+         "zcpkg-settings.rkt")
 
 (define (compile-installed [compile? (const #t)])
   (for ([info (in-installed-info)])

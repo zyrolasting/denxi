@@ -11,7 +11,8 @@
          "team.rkt"
          "verify.rkt"
          "config.rkt"
-         "workspace.rkt")
+         "workspace.rkt"
+         "zcpkg-settings.rkt")
 
 (define (capture-workspace)
   (call-with-output-file "capture.rktd"

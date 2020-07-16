@@ -15,7 +15,8 @@
          "url.rkt"
          "verify.rkt"
          "workspace.rkt"
-         "zcpkg-info.rkt")
+         "zcpkg-info.rkt"
+         "zcpkg-settings.rkt")
 
 
 (define (get-cache-directory)
