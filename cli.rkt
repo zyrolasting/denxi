@@ -36,7 +36,9 @@
 ; Keep seperate for functional tests.
 (define (entry-point [args (current-command-line-arguments)])
   (load-zcpkg-settings!)
-  (define maybe-exit (top-level-cli args))
+  (define maybe-exit
+    (with-handlers ([exact-nonnegative-integer? values])
+      (top-level-cli args)))
   (if (exact-nonnegative-integer? maybe-exit)
       maybe-exit
       0))
@@ -391,7 +393,8 @@ EOF
                      (if (and (regexp-match? #px"given 0 arguments" (exn-message e))
                               suffix-is-index?
                               (not help-requested?))
-                         (printf "~a~n~a" (exn-message e) help-suffix)
+                         (begin (printf "~a~n~a" (exn-message e) help-suffix)
+                                (raise 1))
                          (raise e)))])
     (parse-command-line program argv
                         (if (null? flags)
