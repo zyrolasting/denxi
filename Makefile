@@ -1,5 +1,6 @@
+.PHONY: all test clean
+
 all: exe docs
-.PHONY: all
 
 test:
 	raco test .
