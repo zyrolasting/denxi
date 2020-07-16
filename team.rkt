@@ -72,7 +72,8 @@
     (define ch (worker-channel w))
     (place-channel-put ch ($stop))
     (or (sync/timeout 0.5 (place-dead-evt ch))
-        (place-kill ch))))
+        (place-kill ch)))
+  (company null null null))
 
 (define (update-company team)
   (let ([variant (sync team)])
