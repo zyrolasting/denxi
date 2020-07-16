@@ -40,18 +40,21 @@
                   [exn? (λ (e)
                           (state ($on-fatal (workstate-id state)
                                             (exn->string e))))]
-                  [place-message-allowed? state]
-                  [(const #t) (λ (v) (state (~s v)))])
-    (worker-main pch
-                 (handle-message state (sync state)))))
+                  [(const #t)
+                   (λ (e)
+                     (state ($on-fatal (workstate-id state)
+                                       (format "Value raised: ~s~n" e))))])
+    (define job (sync state))
+    (define next-state (handle-message state job))
+    (next-state ($finish-job id job))
+    (worker-main pch next-state)))
 
 
 (define (assign-id state id)
-  (define next (struct-copy workstate state [id id]))
-  (next ($on-idle id)))
+  (struct-copy workstate state [id id]))
 
 
-(define (install-package state info package-path)
+(define (install-package state info package-path source)
   (define install-path (zcpkg-info->install-path info))
   (make-directory* (path-only install-path))
 
@@ -61,9 +64,7 @@
   (unless (equal? package-path install-path)
     (make-file-or-directory-link package-path install-path))
 
-  (make-zcpkg-links (zcpkg-info-dependencies info) install-path)
-  (state ($on-package-installed info))
-  (state ($on-idle (workstate-id state))))
+  (make-zcpkg-links (zcpkg-info-dependencies info) install-path))
 
 
 (define (download-package state info catalog-url-string)
@@ -97,17 +98,13 @@
 
   (when (and integrous? authenticated?)
     (unpack artifact-path #:to install-path)
-    (state ($add-job ($install-package info install-path))))
-
-  (state ($on-idle (workstate-id state))))
+    (state ($add-job ($install-package info install-path)))))
 
 
 (define (uninstall-package state dependency-variant)
   (define target-info (find-exactly-one-info dependency-variant))
   (define install-path (zcpkg-info->install-path target-info))
-  (delete-directory/files/empty-parents install-path)
-  (state ($on-package-uninstalled target-info))
-  (state ($on-idle (workstate-id state))))
+  (delete-directory/files/empty-parents install-path))
 
 
 (define (resolve-source state source requesting-directory order)
