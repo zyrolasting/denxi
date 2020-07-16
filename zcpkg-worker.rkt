@@ -34,6 +34,8 @@
     (place-channel-put (workstate-pch self) v)
     self))
 
+(define (make-zcpkg-worker-place)
+  (place pch (worker-main pch)))
 
 (define (worker-main pch [state (workstate #f pch)])
   (with-handlers ([exn:break? void]
