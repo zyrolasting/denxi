@@ -42,7 +42,7 @@
    valid?
    make-flag-spec
    default-value
-   override-value)
+   [override-value #:mutable])
   #:property
   prop:procedure
   (case-lambda
@@ -64,9 +64,9 @@
               (and (not (void? v)) v))
             (setting-default-value self))))]
     [(self v)
-     (struct-copy setting self
-                  [override-value
-                   (invariant-assertion (setting-valid? self) v)])]))
+     (set-setting-override-value!
+      self
+      (invariant-assertion (setting-valid? self) v))]))
 
 
 (define (flag-names short id)
