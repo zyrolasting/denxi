@@ -417,16 +417,22 @@ EOF
   (define (run-entry-point #:stdin [stdin (open-input-bytes #"")] args after)
     (define stdout (open-output-bytes))
     (define stderr (open-output-bytes))
-    (parameterize ([current-input-port stdin]
-                   [current-output-port stdout]
-                   [current-error-port stderr])
-      (define exit-code (entry-point args))
-      (flush-output stdout)
-      (flush-output stderr)
-      (close-input-port stdin)
-      (after exit-code
-             (open-input-bytes (get-output-bytes stdout #t))
-             (open-input-bytes (get-output-bytes stderr #t)))))
+
+    ; A temporary directory ensures we always start with a
+    ; fresh workspace directory.
+    (call-with-temporary-directory #:cd? #t
+     (λ (tmp-dir)
+       (parameterize ([workspace-directory tmp-dir]
+                      [current-input-port stdin]
+                      [current-output-port stdout]
+                      [current-error-port stderr])
+         (define exit-code (entry-point args))
+         (flush-output stdout)
+         (flush-output stderr)
+         (close-input-port stdin)
+         (after exit-code
+                (open-input-bytes (get-output-bytes stdout #t))
+                (open-input-bytes (get-output-bytes stderr #t)))))))
 
   (test-case "Configure zcpkg"
     (test-case "Respond to an incomplete command with help"
