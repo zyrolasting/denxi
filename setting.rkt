@@ -26,6 +26,8 @@
          define-setting-group
          current-setting-value-lookup
          settings->flag-specs
+         setting->short-flag
+         setting->long-flag
          assume-settings)
 
 (require "contract.rkt"
