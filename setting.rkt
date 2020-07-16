@@ -66,8 +66,8 @@
     [(self v)
      (set-setting-override-value!
       self
-      (invariant-assertion (setting-valid? self) v))]))
-
+      (invariant-assertion (setting-valid? self) v))
+     self]))
 
 (define (flag-names short id)
   (let ([long (setting-id->cli-flag-string id)])
