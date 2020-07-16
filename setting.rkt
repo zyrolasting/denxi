@@ -66,7 +66,7 @@
     [(self v)
      (set-setting-override-value!
       self
-      (invariant-assertion (setting-valid? self) v))
+      (invariant-assertion (or/c void? (setting-valid? self)) v))
      self]))
 
 (define (flag-names short id)
@@ -181,7 +181,7 @@
             exn:fail:contract?
             (λ () (ZCPKG_VERBOSE 'blah)))
 
-  (void (putenv "PUMP_LEVEL" "wooooo"))
+  (void (putenv "PUMP_LEVEL" "wooooo") (PUMP_LEVEL (void)))
   (test-exn "Guard against reading invalid values from elsewhere"
             exn:fail:contract?
             (λ () (PUMP_LEVEL)))
