@@ -38,3 +38,13 @@ subdirectory and a new executable called `zcpkg`. If you see an error
 relating to a missing Racket dependency, then you might be using a
 trimmed down Racket installation. In that case, try `make racket-deps
 && make`.
+
+## How to read the code
+
+Start in `zcpkg.rkt`. That implements the command line.
+
+Next, read the `zcpkg-*.rkt` modules. They are higher-level libraries
+that commands using the semantics of the project. The
+modules lacking the `zcpkg-` prefix are less opinionated and are
+geared towards making Racket objects behave a certain way. They are
+isolated for testing purposes.
