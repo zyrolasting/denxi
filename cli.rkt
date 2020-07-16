@@ -414,28 +414,33 @@ EOF
            racket/random
            rackunit)
 
+  (define-syntax-rule (test-workspace message body ...)
+    (test-case message
+      (call-with-temporary-directory
+       #:cd? #t
+       (λ (tmp-dir)
+         (parameterize ([workspace-directory tmp-dir])
+           body ...)))))
+
   (define (run-entry-point #:stdin [stdin (open-input-bytes #"")] args after)
+    (define nout (current-output-port))
     (define stdout (open-output-bytes))
     (define stderr (open-output-bytes))
+    (parameterize ([current-output-port stdout]
+                   [current-error-port stderr]
+                   [current-input-port stdin])
+      (define exit-code (entry-point args))
+      (flush-output stdout)
+      (flush-output stderr)
+      (close-input-port stdin)
+      (define outbytes (get-output-bytes stdout #t))
+      (after exit-code
+             (open-input-bytes outbytes)
+             (open-input-bytes (get-output-bytes stderr #t)))))
 
-    ; A temporary directory ensures we always start with a
-    ; fresh workspace directory.
-    (call-with-temporary-directory #:cd? #t
-     (λ (tmp-dir)
-       (parameterize ([workspace-directory tmp-dir]
-                      [current-input-port stdin]
-                      [current-output-port stdout]
-                      [current-error-port stderr])
-         (define exit-code (entry-point args))
-         (flush-output stdout)
-         (flush-output stderr)
-         (close-input-port stdin)
-         (after exit-code
-                (open-input-bytes (get-output-bytes stdout #t))
-                (open-input-bytes (get-output-bytes stderr #t)))))))
 
   (test-case "Configure zcpkg"
-    (test-case "Respond to an incomplete command with help"
+    (test-workspace "Respond to an incomplete command with help"
       (run-entry-point #("config")
                        (λ (exit-code stdout stderr)
                          (check-eq? exit-code 1)
@@ -444,14 +449,15 @@ EOF
                                                "set"
                                                "get"
                                                "dump"))))))
-    (test-case "Dump all (read)able configuration on request"
+
+    (test-workspace "Dump all (read)able configuration on request"
       (run-entry-point #("config" "dump")
                        (λ (exit-code stdout stderr)
                          (check-eq? exit-code 0)
                          (check-equal? ((current-zcpkg-config) 'dump)
                                        (read stdout)))))
 
-    (test-case "Return a (read)able config value"
+    (test-workspace "Return a (read)able config value"
       (define config-key (random-ref (in-hash-keys ZCPKG_SETTINGS)))
       (define config-key/str (symbol->string config-key))
       (run-entry-point (vector "config" "get" config-key/str)
@@ -460,11 +466,10 @@ EOF
                          (check-equal? ((current-zcpkg-config) 'get-value config-key)
                                        (read stdout)))))
 
-    (test-case "Save a (write)able config value"
+    (test-workspace "Save a (write)able config value"
       (run-entry-point (vector "config" "get" "ZCPKG_VERBOSE")
                        (λ _
-                         ; This confirms that a new workspace has different results
-                         ; than a workspace that saves configuration to disk.
+                         ; This confirms that a new workspace has different results.
                          (check-false (ZCPKG_VERBOSE))
                          (check-false (file-exists? (get-zcpkg-settings-path)))))
 
@@ -475,4 +480,13 @@ EOF
                          (check-true (file-exists? (get-zcpkg-settings-path)))
                          ; Reload just for good measure.
                          (load-zcpkg-settings!)
-                         (check-true (ZCPKG_VERBOSE)))))))
+                         (check-true (ZCPKG_VERBOSE))))))
+
+  (test-workspace "Create a new package"
+    (define package-name "foo")
+    (run-entry-point (vector "new" "foo")
+                     (λ (exit-code stdout stderr)
+                       (define pkg-dir (build-path (current-directory) package-name))
+                       (check-eq? exit-code 0)
+                       (check-pred directory-exists? pkg-dir)
+                       (check-pred zcpkg-info? (read-zcpkg-info pkg-dir))))))
