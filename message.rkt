@@ -1,14 +1,30 @@
 #lang racket/base
 
-; Define relevant async events as messages.
+; Define an async message type and any related operations.
 
 (provide (all-defined-out))
-(require "message-pump.rkt")
 
-(define-message $start (id config))
-(define-message $schedule (dependent dependencies))
-(define-message $frontlog (schedule))
-(define-message $backlog  (schedule))
-(define-message $crash (id message))
-(define-message $done (id message))
-(define-message $stop ())
+(require racket/string
+         "logging.rkt"
+         (for-syntax racket/base))
+
+; Make prefab for use on place channels.
+(struct $message () #:prefab)
+
+(define-syntax-rule (define-message id (fields ...))
+  (struct id $message (fields ...) #:prefab))
+
+(define (destructure-message message)
+  (let ([message (vector->list (struct->vector message))])
+    (values (car message)
+            (cdr message))))
+
+(module+ test
+  (require rackunit)
+
+  (define-message $derived (a b c))
+
+  (test-case "Destructure a $message"
+    (define-values (key args) (destructure-message ($derived 1 2 3)))
+    (check-eq? key 'struct:$derived)
+    (check-equal? args '(1 2 3))))

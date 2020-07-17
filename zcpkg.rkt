@@ -14,7 +14,6 @@
          (for-syntax racket/base)
          "server.rkt"
          "capture.rkt"
-         "company.rkt"
          "config.rkt"
          "contract.rkt"
          "dependency.rkt"
@@ -26,6 +25,7 @@
          "string.rkt"
          "url.rkt"
          "workspace.rkt"
+         "zcpkg-actor.rkt"
          "zcpkg-info.rkt"
          "zcpkg-settings.rkt")
 
@@ -112,7 +112,7 @@ EOF
                                    ($download-package-info job)))
                        jobs))
 
-  (define (show-report team)
+  (define (show-report output)
     (void))
 
   (run-command-line
@@ -132,20 +132,17 @@ EOF
     ZCPKG_DOWNLOAD_IGNORE_CACHE)
 
    (λ (flags . package-sources)
-     (define team (make-company (map $resolve-source package-sources)))
-     (define knows-scope-of-work (process-jobs team))
-     (define no-repeated-work (remove-redundant-work (company-backlog team)))
+     ; Start a team... of CPU cores.
+     (define-values (work stop) (zcpkg-start-team!))
+     (define discovered-tasks (work (map $resolve-source package-sources)))
 
-     (dynamic-wind
-       void
-       (λ ()
-         (show-report
-          (process-jobs
-           (struct-copy company knows-scope-of-work
-                        [jobs no-repeated-work]
-                        [backlog null]))))
-       (λ () (stop-company no-repeated-work))))))
+     (writeln discovered-tasks)
 
+     (if (ZCPKG_INSTALL_CONSENT)
+         (show-report (work discovered-tasks))
+         (displayln "To consent to these changes, run again with -y"))
+
+     0)))
 
 (define (capture-command args)
   (run-command-line
@@ -317,9 +314,9 @@ EOF
    #:arg-help-strings '("urns")
    #:args args
    (λ (flags . urns)
-     (process-jobs
-      (for/list ([ds (in-list urns)])
-        ($uninstall-package ds))))))
+     (define-values (work stop) (zcpkg-start-team!))
+     (define backlog (work (map $uninstall-package urns)))
+     (work backlog))))
 
 (define (restore-command args)
   (run-command-line
