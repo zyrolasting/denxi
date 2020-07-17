@@ -24,11 +24,13 @@
 (define actor%
   (class object%
     (abstract idle? recv)
-    (define/public-final (loop)
+
+    (define/public (loop)
       (if (idle?) this
           (let-values ([(method args) (destructure-message (sync (recv)))])
             (apply dynamic-send this method args)
             (loop))))
+
     (super-new)))
 
 
@@ -90,6 +92,13 @@
               (send w start!)
               w)))
 
+    (define/override (loop)
+      (if (idle?) this
+          (let*-values ([(id message) (sync (recv))]
+                        [(method args) (destructure-message message)])
+            (apply dynamic-send this method id args)
+            (loop))))
+
     (define/public-final (stop!)
       (for ([w (in-list workers)])
         (send w stop!))
@@ -97,8 +106,9 @@
 
     (define/override (recv)
       (apply choice-evt
-             (map (λ (w) (send w recv))
-                  workers)))
+             (for/list ([(w id) (in-indexed (in-list workers))])
+               (handle-evt (send w recv)
+                           (λ ($) (values id $))))))
 
     (define/override (idle?)
       (andmap (λ (w) (send w idle?)) workers))))
@@ -225,6 +235,7 @@
 
 
   (test-case "Manage team lifecycle"
+    (define-message $num (v))
     (define counter 0)
     (define recvd (mutable-set))
     (define recv-count 0)
@@ -241,15 +252,22 @@
         (define/public (stop!)
           (set! stopped #t))
         (define/override (idle?)
-          (> recv-count 10))
+          (> recv-count 50))
         (define/override (recv)
           (handle-evt always-evt
                       (λ _
                         (set! recv-count (add1 recv-count))
                         (set-add! recvd id)
-                        id)))))
+                        ($num id))))))
 
-    (define team (new team%))
+    (define mock-team%
+      (class team%
+        (super-new)
+        (define/public ($num id v)
+          (test-eq? "Unpack message and match with identifier"
+                    id v))))
+
+    (define team (new mock-team%))
 
     (send team start! (λ () (new mock-worker%)))
     (define workers (get-field workers team))
@@ -257,14 +275,11 @@
                (andmap (λ (w) (get-field started w))
                        workers))
 
-    (test-= "Created the requested number of workers"
-            counter
-            suggested-worker-count
-            0)
+    (test-eq? "Created the requested number of workers"
+              counter
+              suggested-worker-count)
 
-    (for ([i (in-range 100)])
-      (sync (send team recv)))
-
+    (send team loop)
 
     (test-true "Pulled from more than one worker"
                (> (set-count recvd) 1))
