@@ -31,16 +31,20 @@
      (with-syntax ([(predicate ...) (stx-map (λ (s) (format-id stx "$~a?" s)) #'(handler ...))])
        #'(define/contract id
            (-> cnt $message? cnt)
-           (let ([handlers (delay (list (cons predicate handler)
-                                        ...
-                                        (cons (λ _ #t) default-handler)))])
+           ; delay allows (define-message-pump (...) a b c) to appear before
+           ; identifiers a, b, and c.
+           (let ([handlers (delay (list (cons predicate handler) ...))])
              (λ (state message)
-               (apply (ormap (λ (pair)
-                               (and ((car pair) message)
-                                    (cdr pair)))
-                             (force handlers))
-                      state
-                      (cdr (vector->list (struct->vector message))))))))]))
+               (define maybe-handler
+                 (ormap (λ (pair)
+                          (and ((car pair) message)
+                               (cdr pair)))
+                        (force handlers)))
+               (if maybe-handler
+                   (apply maybe-handler
+                          state
+                          (cdr (vector->list (struct->vector message))))
+                   (default-handler state message))))))]))
 
 
 (module+ test
