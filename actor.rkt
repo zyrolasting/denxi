@@ -21,14 +21,20 @@
          "string.rkt")
 
 
+(define (message-id->method-id message-id)
+  (string->symbol
+   (string-replace
+    (symbol->string message-id)
+    "struct:" "handle-")))
+
 (define actor%
   (class object%
     (abstract idle? recv)
 
     (define/public (loop)
       (if (idle?) this
-          (let-values ([(method args) (destructure-message (sync (recv)))])
-            (apply dynamic-send this method args)
+          (let-values ([(message-id args) (destructure-message (sync (recv)))])
+            (apply dynamic-send this (message-id->method-id message-id) args)
             (loop))))
 
     (super-new)))
@@ -95,8 +101,8 @@
     (define/override (loop)
       (if (idle?) this
           (let*-values ([(id message) (sync (recv))]
-                        [(method args) (destructure-message message)])
-            (apply dynamic-send this method id args)
+                        [(message-id args) (destructure-message message)])
+            (apply dynamic-send this (message-id->method-id message-id) id args)
             (loop))))
 
     (define/public-final (stop!)
@@ -138,11 +144,11 @@
                   (let ([v (car messages)])
                     (set! messages (cdr messages))
                     v)))))
-        (define/public ($start a)
+        (define/public (handle-$start a)
           (test-eq? "Got $start value" a 1))
-        (define/public ($doing a)
+        (define/public (handle-$doing a)
           (test-eq? "Got $doing value" a 2))
-        (define/public ($done a)
+        (define/public (handle-$done a)
           (test-eq? "Got $done value" a 3))
         (super-new)))
 
@@ -161,11 +167,11 @@
       (new (class outside-place%
              (super-new)
              (inherit stop!)
-             (define/public ($start a)
+             (define/public (handle-$start a)
                (test-eq? "Got $start value" a 1))
-             (define/public ($doing a)
+             (define/public (handle-$doing a)
                (test-eq? "Got $doing value" a 2))
-             (define/public ($done a)
+             (define/public (handle-$done a)
                (test-eq? "Got $done value" a 3)
                (stop!)))
            [make-place (λ () outside-place)]
@@ -263,7 +269,7 @@
     (define mock-team%
       (class team%
         (super-new)
-        (define/public ($num id v)
+        (define/public (handle-$num id v)
           (test-eq? "Unpack message and match with identifier"
                     id v))))
 
