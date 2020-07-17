@@ -14,6 +14,7 @@
          (for-syntax racket/base)
          "server.rkt"
          "capture.rkt"
+         "company.rkt"
          "config.rkt"
          "contract.rkt"
          "dependency.rkt"
@@ -23,7 +24,6 @@
          "setting.rkt"
          "source.rkt"
          "string.rkt"
-         "team.rkt"
          "url.rkt"
          "workspace.rkt"
          "zcpkg-info.rkt"

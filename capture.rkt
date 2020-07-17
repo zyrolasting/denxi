@@ -8,7 +8,6 @@
          racket/port
          "file.rkt"
          "message.rkt"
-         "team.rkt"
          "verify.rkt"
          "config.rkt"
          "workspace.rkt"
@@ -95,9 +94,10 @@
   (make-directory* (path-only path))
   (make-file-or-directory-link repro path))
 
+; TODO: refactor to defer side effects, and pass to company.
 (define (reproduce-workspace entries [commands null])
   (if (null? entries)
-      (process-jobs commands)
+      commands
       (reproduce-workspace
        (cdr entries)
        (let* ([entry (car entries)]
