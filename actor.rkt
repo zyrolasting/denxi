@@ -12,6 +12,7 @@
 (provide actor%
          outside-place%
          team%
+         message-id->method-id
          (all-from-out racket/class))
 
 (require racket/class
