@@ -12,6 +12,7 @@
          "download.rkt"
          "file.rkt"
          "message.rkt"
+         "sentry.rkt"
          "source.rkt"
          "string.rkt"
          "url.rkt"
@@ -36,6 +37,7 @@
 (define zcpkg-worker%
   (class actor%
     (super-new)
+    (inherit pump)
     (init-field pch)
 
     (define/public (send-up v)
@@ -44,7 +46,7 @@
     (define/public (send-output v)
       (send-up ($output v)))
 
-    (define/override (loop)
+    (define/public (loop)
       (pump (sync pch))
       (loop))
 
@@ -111,8 +113,8 @@
               ($install-package info (url->string catalog-url)))))
 
       (for ([dependency-source (in-list (zcpkg-info-dependencies ($install-package-info job)))])
-        (resolve-source dependency-source
-                        (if local? variant (current-directory))))
+        (handle-$resolve-source dependency-source
+                                (if local? variant (current-directory))))
 
       (send-output job))))
 
