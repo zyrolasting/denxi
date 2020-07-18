@@ -23,6 +23,7 @@
          "zcpkg-team.rkt")
 
 ; Output messages
+(define-message $start (workspace-dir))
 (define-message $before-making-orphans (dependents dependency))
 (define-message $resolve-source (source requesting-directory))
 (define-message $on-bad-digest (info))

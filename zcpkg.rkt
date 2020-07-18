@@ -93,26 +93,6 @@ EOF
 
 
 (define (install-command args)
-  (define (format-dependencies dependencies)
-    (apply ~a*
-           (sort (for/list ([job dependencies])
-                   (cond [($install-package? job)
-                          ($install-package-source job)]
-                         [($download-package? job)
-                          ($download-package-source job)]))
-                 string<?)))
-
-
-  ; Multiple dependents may each want the same dependencies.  A
-  ; package metadata structure is unique, so removing duplicate
-  ; instances means removing redundant work.
-  (define (remove-redundant-work jobs)
-    (remove-duplicates #:key (λ (job)
-                               (if ($install-package? job)
-                                   ($install-package-info job)
-                                   ($download-package-info job)))
-                       jobs))
-
   (define (show-report output)
     (void))
 
@@ -133,17 +113,20 @@ EOF
     ZCPKG_DOWNLOAD_IGNORE_CACHE)
 
    (λ (flags . package-sources)
-     ; Start a team... of CPU cores.
-     (define-values (work stop) (zcpkg-start-team!))
-     (define discovered-tasks (work (map $resolve-source package-sources)))
+     (define controller (zcpkg-start-team!))
+     (dynamic-wind void
+                   (λ ()
+                     (controller ($start (workspace-directory)))
 
-     (writeln discovered-tasks)
+                     (define discovered-tasks
+                       (controller (map (λ (s) ($resolve-source s (current-directory)))
+                                        package-sources)))
 
-     (if (ZCPKG_INSTALL_CONSENT)
-         (show-report (work discovered-tasks))
-         (displayln "To consent to these changes, run again with -y"))
-
-     0)))
+                     (if (ZCPKG_INSTALL_CONSENT)
+                         (show-report (controller discovered-tasks))
+                         (displayln "To consent to these changes, run again with -y"))
+                     0)
+                   (λ () (controller #f))))))
 
 (define (capture-command args)
   (run-command-line
