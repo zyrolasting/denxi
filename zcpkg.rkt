@@ -23,9 +23,9 @@
          "setting.rkt"
          "source.rkt"
          "string.rkt"
+         "team.rkt"
          "url.rkt"
          "workspace.rkt"
-         "zcpkg-team.rkt"
          "zcpkg-info.rkt"
          "zcpkg-settings.rkt"
          "zcpkg-worker.rkt")
@@ -480,4 +480,5 @@ EOF
     (run-entry-point (vector "new" "foo") void)
     (run-entry-point (vector "install" "./foo")
                      (λ (exit-code stdout stderr)
+                       (copy-port stdout (current-output-port))
                        (check-eq? exit-code 0)))))

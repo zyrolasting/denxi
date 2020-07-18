@@ -15,12 +15,12 @@
          "sentry.rkt"
          "source.rkt"
          "string.rkt"
+         "team.rkt"
          "url.rkt"
          "verify.rkt"
          "workspace.rkt"
          "zcpkg-info.rkt"
-         "zcpkg-settings.rkt"
-         "zcpkg-team.rkt")
+         "zcpkg-settings.rkt")
 
 ; Output messages
 (define-message $start (workspace-dir))
