@@ -2,11 +2,13 @@
 
 (provide clear-download-cache!
          download-info
-         download-artifact)
+         download-artifact
+         current-url->response-values)
 
 (require racket/list
          racket/path
          racket/port
+         net/head
          "config.rkt"
          "dependency.rkt"
          "file.rkt"
@@ -73,20 +75,10 @@
 
 (define (download-file u [cached-path (url->cache-path u)])
   (if (file-exists? cached-path)
+      cached-path
       (begin
-        (printf "cache: ~a~n" (url->string u))
-        cached-path)
-      (begin
-        (printf "download: ~a~n" (url->string u))
         (make-directory* (path-only cached-path))
-        (let*-values ([(in headers)
-                       (get-pure-port/headers u
-                                              #:status? #t
-                                              #:redirections
-                                              (ZCPKG_DOWNLOAD_MAX_REDIRECTS))]
-
-                      [(status)
-                       (string->number (car (regexp-match #px"(\\d\\d\\d)" headers)))])
+        (let*-values ([(status headers in) ((current-url->response-values) u)])
           (and (= status 200)
                (call-with-output-file
                  #:exists 'truncate/replace
@@ -94,3 +86,48 @@
                  (λ (out)
                    (copy-port in out)
                    cached-path)))))))
+
+(define (get-status headers)
+  (string->number (car (regexp-match #px"(\\d\\d\\d)" headers))))
+
+(define current-url->response-values
+  (make-parameter
+   (λ (u)
+     (define-values (in headers)
+       (get-pure-port/headers u
+                              #:status? #t
+                              #:redirections 3))
+     (values (get-status headers)
+             (for/hash ([pair (extract-all-fields headers)])
+               (values (car pair)
+                       (cdr pair)))
+             in))))
+
+(module+ test
+  (require rackunit
+           (submod "file.rkt" test))
+
+  (test-workspace "Download a file"
+      (define data #"chookie")
+      (define (make-response u)
+        (values 200 (hash) (open-input-bytes data)))
+
+      (parameterize ([current-url->response-values make-response])
+        (define u (string->url "https://example.com/blah/foo/blah"))
+        (define cache-file (url->cache-path u))
+
+        (test-false "Cached file does not yet exist"
+                    (file-exists? cache-file))
+
+        (define path (download-file u))
+
+        (test-true "Cached file now exists"
+                   (file-exists? cache-file))
+
+        (test-equal? "Cached file has given data"
+                     (file->bytes cache-file)
+                     data)
+
+        (test-equal? "Return path to cache file"
+                     path
+                     cache-file))))
