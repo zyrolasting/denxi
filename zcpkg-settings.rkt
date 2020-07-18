@@ -48,9 +48,7 @@
        (save-config!
         (make-config-closure (controller 'dump)
                              (lookup READ_ORDER))
-        path)]
-
-      [_ ((apply hash-ref ZCPKG_SETTINGS args))]))
+        path)]))
 
   (current-zcpkg-config controller)
   controller)
