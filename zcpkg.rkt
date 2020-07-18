@@ -27,7 +27,8 @@
          "workspace.rkt"
          "zcpkg-team.rkt"
          "zcpkg-info.rkt"
-         "zcpkg-settings.rkt")
+         "zcpkg-settings.rkt"
+         "zcpkg-worker.rkt")
 
 
 (module+ main
