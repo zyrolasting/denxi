@@ -393,15 +393,8 @@ EOF
 (module+ test
   (require racket/port
            racket/random
-           rackunit)
-
-  (define-syntax-rule (test-workspace message body ...)
-    (test-case message
-      (call-with-temporary-directory
-       #:cd? #t
-       (λ (tmp-dir)
-         (parameterize ([workspace-directory tmp-dir])
-           body ...)))))
+           rackunit
+           (submod "file.rkt" test))
 
   (define (run-entry-point #:stdin [stdin (open-input-bytes #"")] args after)
     (define nout (current-output-port))

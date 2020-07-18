@@ -154,10 +154,19 @@
    (λ (tmp-dir) body ...)))
 
 (module+ test
-  (provide temp-fs dir >>)
+  (provide temp-fs dir >> test-workspace)
   (require rackunit
            racket/set
            (for-syntax racket/base))
+
+
+  (define-syntax-rule (test-workspace message body ...)
+    (test-case message
+      (call-with-temporary-directory
+       #:cd? #t
+       (λ (tmp-dir)
+         (parameterize ([workspace-directory tmp-dir])
+           body ...)))))
 
   (define (display-to-temp-file content)
     (define path (make-temporary-file "~a"))
