@@ -7,7 +7,9 @@
          make-signature
          digest=?
          verify-signature
-         validate-zcpkg-info)
+         validate-zcpkg-info
+         integrous-artifact?
+         authenticated-provider?)
 
 (require racket/file
          racket/function
@@ -18,6 +20,7 @@
          "string.rkt"
          "url.rkt"
          "zcpkg-info.rkt"
+         "zcpkg-settings.rkt"
          "dependency.rkt")
 
 (define openssl (find-executable-path "openssl"))
@@ -122,3 +125,20 @@
            "a byte string"))
 
   (reverse errors))
+
+
+(define (integrous-artifact? artifact-path info)
+  (or (equal? (make-digest artifact-path)
+              (zcpkg-info-integrity info))
+      (ZCPKG_TRUST_BAD_DIGEST)))
+
+(define (authenticated-provider? info public-key)
+  (define signature
+    (zcpkg-info-signature info))
+
+  (if signature
+      (or (verify-signature (zcpkg-info-integrity info)
+                            signature
+                            public-key)
+          (ZCPKG_TRUST_BAD_SIGNATURE))
+      (ZCPKG_TRUST_UNSIGNED)))

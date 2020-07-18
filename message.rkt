@@ -19,6 +19,13 @@
     (values (car message)
             (cdr message))))
 
+
+(define (message-id->method-id message-id)
+  (string->symbol
+   (string-replace
+    (symbol->string message-id)
+    "struct:" "handle-")))
+
 (module+ test
   (require rackunit)
 

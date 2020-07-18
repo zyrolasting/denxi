@@ -25,7 +25,7 @@
          "string.rkt"
          "url.rkt"
          "workspace.rkt"
-         "zcpkg-actor.rkt"
+         "zcpkg-team.rkt"
          "zcpkg-info.rkt"
          "zcpkg-settings.rkt")
 
