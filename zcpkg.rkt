@@ -423,18 +423,21 @@ EOF
     (define nout (current-output-port))
     (define stdout (open-output-bytes))
     (define stderr (open-output-bytes))
-    (parameterize ([current-output-port stdout]
-                   [current-error-port stderr]
-                   [current-input-port stdin])
-      (define exit-code (entry-point args))
-      (flush-output stdout)
-      (flush-output stderr)
-      (close-input-port stdin)
-      (define outbytes (get-output-bytes stdout #t))
-      (after exit-code
-             (open-input-bytes outbytes)
-             (open-input-bytes (get-output-bytes stderr #t)))))
+    (define-values (exit-code outbytes errbytes)
+      (parameterize ([current-output-port stdout]
+                     [current-error-port stderr]
+                     [current-input-port stdin])
+        (define code (entry-point args))
+        (flush-output stdout)
+        (flush-output stderr)
+        (close-input-port stdin)
+        (values code
+                (open-input-bytes (get-output-bytes stdout #t))
+                (open-input-bytes (get-output-bytes stderr #t)))))
 
+    (after exit-code
+           outbytes
+           errbytes))
 
   (test-case "Configure zcpkg"
     (test-workspace "Respond to an incomplete command with help"
