@@ -113,15 +113,10 @@
   (unless (null? dependencies)
     (define links-dir (build-path where CONVENTIONAL_DEPENDENCY_DIRECTORY_NAME))
     (for/list ([variant (in-list dependencies)])
-      (define info
-        (if search?
-            (find-exactly-one-info variant)
-            variant))
-
+      (define info (if search? (find-exactly-one-info variant) variant))
       (make-link/clobber (zcpkg-info->install-path info)
                          (build-path links-dir
-                                       (zcpkg-info-provider-name info)
-                                       (zcpkg-info-package-name info))))))
+                                     (zcpkg-info->relative-path info #:abbrev 2))))))
 
 
 (define (zcpkg-installed? info)
