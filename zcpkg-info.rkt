@@ -38,7 +38,7 @@
           (zcpkg-info-revision-number b))))
 
 (define (zcpkg-info->relative-path info #:abbrev [remove-num 0])
-  (if (= remove-num 3)
+  (if (>= remove-num 3)
       (build-path (zcpkg-info-package-name info))
       (apply build-path
              (drop-right
@@ -46,7 +46,7 @@
                     (zcpkg-info-package-name info)
                     (zcpkg-info-edition-name info)
                     (~a (zcpkg-info-revision-number info)))
-              (min 3 remove-num)))))
+              (min 3 (max 0 remove-num))))))
 
 (define (zcpkg-info->install-path info)
   (build-workspace-path (ZCPKG_INSTALL_RELATIVE_PATH)
@@ -117,6 +117,35 @@
                 '("gravity" "dumb-coyote")
                 #f
                 #f))
+
+  (test-equal? "Create unabbreviated paths"
+               (zcpkg-info->relative-path dummy-zcpkg-info)
+               (build-path "acme" "anvil" "heavy" "0"))
+
+  (test-equal? "Create unabbreviated paths by default"
+               (zcpkg-info->relative-path dummy-zcpkg-info)
+               (zcpkg-info->relative-path dummy-zcpkg-info #:abbrev 0))
+
+
+  (test-equal? "Create slightly abbreviated paths"
+               (zcpkg-info->relative-path dummy-zcpkg-info #:abbrev 1)
+               (build-path "acme" "anvil" "heavy"))
+
+  (test-equal? "Create moderately abbreviated paths"
+               (zcpkg-info->relative-path dummy-zcpkg-info #:abbrev 2)
+               (build-path "acme" "anvil"))
+
+  (test-equal? "Create heavily abbreviated paths"
+               (zcpkg-info->relative-path dummy-zcpkg-info #:abbrev 3)
+               (build-path "anvil"))
+
+  (test-equal? "Prevent over-abbreviation"
+               (zcpkg-info->relative-path dummy-zcpkg-info #:abbrev 10000)
+               (zcpkg-info->relative-path dummy-zcpkg-info #:abbrev 3))
+
+  (test-equal? "Cap negative abbreviation"
+               (zcpkg-info->relative-path dummy-zcpkg-info #:abbrev -12)
+               (zcpkg-info->relative-path dummy-zcpkg-info #:abbrev 0))
 
   (test-case "zcpkg-info I/O"
     (define-values (i o) (make-pipe))
