@@ -5,14 +5,16 @@
 
 (require racket/class
          racket/place
+         racket/runtime-path
          "sentry.rkt"
          "workspace.rkt")
 
 (define suggested-worker-count
   (max 1 (sub1 (processor-count))))
 
+(define-runtime-path worker.rkt "zcpkg-worker.rkt")
 
-(define (zcpkg-start-team! #:make-place [make-place (λ () (dynamic-place "zcpkg-worker.rkt" 'main))]
+(define (zcpkg-start-team! #:make-place [make-place (λ () (dynamic-place worker.rkt 'main))]
                            #:worker-count [worker-count suggested-worker-count])
   (define t (new team%
                  [make-place make-place]
