@@ -5,6 +5,7 @@
 (provide (all-defined-out))
 
 (require racket/file
+         (only-in racket/list drop-right)
          "contract.rkt"
          "config.rkt"
          "string.rkt"
@@ -36,11 +37,16 @@
        (- (zcpkg-info-revision-number a)
           (zcpkg-info-revision-number b))))
 
-(define (zcpkg-info->relative-path info)
-  (build-path (zcpkg-info-provider-name info)
-              (zcpkg-info-package-name info)
-              (zcpkg-info-edition-name info)
-              (~a (zcpkg-info-revision-number info))))
+(define (zcpkg-info->relative-path info #:abbrev [remove-num 0])
+  (if (= remove-num 3)
+      (build-path (zcpkg-info-package-name info))
+      (apply build-path
+             (drop-right
+              (list (zcpkg-info-provider-name info)
+                    (zcpkg-info-package-name info)
+                    (zcpkg-info-edition-name info)
+                    (~a (zcpkg-info-revision-number info)))
+              (min 3 remove-num)))))
 
 (define (zcpkg-info->install-path info)
   (build-workspace-path (ZCPKG_INSTALL_RELATIVE_PATH)
