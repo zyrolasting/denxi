@@ -4,7 +4,8 @@
 
 (provide (all-defined-out))
 
-(require "contract.rkt"
+(require racket/file
+         "contract.rkt"
          "config.rkt"
          "string.rkt"
          "workspace.rkt"
@@ -70,6 +71,12 @@
         'dependencies (zcpkg-info-dependencies info)
         'integrity (zcpkg-info-integrity info)
         'signature (zcpkg-info-signature info)))
+
+(define (write-zcpkg-info-to-directory info dir)
+  (make-directory* dir)
+  (call-with-output-file #:exists 'truncate/replace
+    (build-path dir CONVENTIONAL_PACKAGE_INFO_FILE_NAME)
+    (λ (o) (write-zcpkg-info info o))))
 
 (define (write-zcpkg-info info o)
   (save-config!
