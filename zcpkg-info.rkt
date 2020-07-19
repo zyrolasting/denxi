@@ -93,12 +93,28 @@
       signature))
    o))
 
+(define-syntax-rule (copy-zcpkg-info i fields ...)
+  (struct-copy zcpkg-info i
+               fields ...))
+
 (module+ test
+  (provide dummy-zcpkg-info)
   (require rackunit)
+
+  (define dummy-zcpkg-info
+    (zcpkg-info "acme"
+                "anvil"
+                "heavy"
+                0
+                '("certified")
+                "setup.rkt"
+                '("gravity" "dumb-coyote")
+                #f
+                #f))
+
   (test-case "zcpkg-info I/O"
-    (define instance (zcpkg-info "pr" "pk" "ed" 10 '("h" "a") "setup" '("d1" "d2") #"int" #"sig"))
     (define-values (i o) (make-pipe))
-    (write-zcpkg-info instance o)
+    (write-zcpkg-info dummy-zcpkg-info o)
     (flush-output o)
     (close-output-port o)
-    (check-equal? (read-zcpkg-info i) instance)))
+    (check-equal? (read-zcpkg-info i) dummy-zcpkg-info)))
