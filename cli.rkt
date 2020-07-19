@@ -103,19 +103,34 @@ EOF
             #:key (λ (info) (dependency->string (zcpkg-info->dependency info)))
             string<?))
 
-    (printf "Installing:~n~a~n"
-            (string-join package-sources "\n"))
+    (printf "~nSources:~n~a~n~n"
+            (string-join (map (λ (s) (~a "  " s)) package-sources) "\n"))
 
-    (printf "Dependencies:~n")
-    (for ([info (in-list infos)])
-      (printf "~a:~a ~a edition, rev. ~a (~a)~n"
-              (zcpkg-info-provider-name info)
-              (zcpkg-info-package-name info)
-              (zcpkg-info-edition-name info)
-              (zcpkg-info-revision-number info)
-              (if (null? (zcpkg-info-revision-names info))
-                  ""
-                  (string-join (zcpkg-info-revision-names info) ", "))))
+    (define (get-cell-printer strs)
+      (define min-width (apply max (map string-length strs)))
+      (λ args (apply ~a #:min-width min-width args)))
+
+
+    (define print-provider-name (get-cell-printer (map zcpkg-info-provider-name infos)))
+    (define print-package-name  (get-cell-printer (map zcpkg-info-package-name infos)))
+    (define print-edition-name  (get-cell-printer (map zcpkg-info-edition-name infos)))
+    (define print-revision-num  (get-cell-printer (map (compose ~a zcpkg-info-revision-number) infos)))
+
+    (define row-fmt "~a\t~a\t~a\t~a")
+    (printf (~a (format row-fmt
+                        (print-package-name "Package")
+                        (print-provider-name "Provider")
+                        (print-edition-name "Edition")
+                        (print-revision-num "Revision"))
+                "~n~a~n~n")
+            (string-join
+             (for/list ([info (in-list infos)])
+               (format row-fmt
+                       (print-package-name (zcpkg-info-package-name info))
+                       (print-provider-name (zcpkg-info-provider-name info))
+                       (print-edition-name (zcpkg-info-edition-name info))
+                       (print-revision-num (zcpkg-info-revision-number info))))
+             "\n"))
 
     (displayln "To consent to these changes, run again with -y"))
 
