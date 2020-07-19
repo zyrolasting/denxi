@@ -25,6 +25,7 @@
 ; Output messages
 (define-message $start (workspace-dir))
 (define-message $before-making-orphans (dependents dependency))
+(define-message $already-installed (info))
 (define-message $on-bad-digest (info))
 (define-message $on-bad-signature (info))
 (define-message $on-missing-signature (info))
@@ -99,9 +100,11 @@
 
 
     (define/public (handle-$install-package info url-or-path)
-      (if (directory-exists? url-or-path)
-          (install-local-package info url-or-path)
-          (install-remote-package info url-or-path)))
+      (if (zcpkg-installed? info)
+          (send-output ($already-installed info))
+          (if (directory-exists? url-or-path)
+              (install-local-package info url-or-path)
+              (install-remote-package info url-or-path))))
 
 
     (define/public (handle-$uninstall-package dependency-variant)
