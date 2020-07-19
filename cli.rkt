@@ -140,7 +140,12 @@ EOF
       void
       (λ ()
         (controller ($start (workspace-directory)))
-        (show-report (controller sow)))
+
+        (define tasks
+          (for/list ([(url-or-path info) (in-hash sow)])
+            ($install-package info url-or-path)))
+
+        (show-report (controller tasks)))
       (λ () (controller #f))))
 
   (run-command-line
