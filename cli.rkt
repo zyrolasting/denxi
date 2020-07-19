@@ -94,7 +94,7 @@ EOF
 
 (define (install-command args)
   (define (show-report output)
-    (void))
+    (writeln output))
 
 
   (define (review-work package-sources sow)
