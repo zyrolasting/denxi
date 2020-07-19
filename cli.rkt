@@ -249,59 +249,79 @@ EOF
 
 
 (define (new-command args)
+  (define (make-file dir file-name proc)
+    (call-with-output-file (build-path dir file-name)
+      (λ (o) (parameterize ([current-output-port o])
+               (proc)))))
+
+
+  (define (make-package name)
+    (make-directory name)
+
+    (make-file name CONVENTIONAL_PACKAGE_INFO_FILE_NAME
+               (λ ()
+                 (define (<< k v)
+                   (printf "~s ~s~n" k v))
+                 (<< '#:provider (gethostname))
+                 (<< '#:package name)
+                 (<< '#:edition "draft")
+                 (<< '#:revision-number 0)
+                 (<< '#:revision-names null)
+                 (<< '#:setup-module "setup.rkt")
+                 (<< '#:dependencies null)))
+
+    (make-file name "setup.rkt"
+               (λ ()
+                 (display-lines
+                  '("#lang racket/base"
+                    ""
+                    "; This module is for setting up dependencies in userspace outside of Racket,"
+                    "; like an isolated Python installation, a C library, or even another Racket"
+                    "; installation."
+                    ";"
+                    "; For security, `zcpkg` asks the user to run (show-help) in a zero-trust sandbox"
+                    "; to learn what EXACTLY your package will do to their system if they consent "
+                    "; to extra automated setup."
+                    ";"
+                    "; Write (show-help) to explain the bindings in this module, and the permissions"
+                    "; you need for them to work."
+                    ";"
+                    "; To build trust:"
+                    ";   1. Ask for as little as possible."
+                    ";   2. Be specific. \"I need write permission for /etc\" is too broad,"
+                    ";      and that can come off as suspicious."
+                    ";   3. Do exactly what you say you will do, and nothing else."
+                    ";"
+                    "; Finally, be mindful that other versions of your package may have"
+                    "; already modified the user's system. Look for evidence of your impact,"
+                    "; and react accordingly."
+                    ""
+                    "(define (show-help)"
+                    "  (displayln \"I need write permission for...\"))")))))
+
   (run-command-line
    #:program "new"
-   #:arg-help-strings '("package-name")
+   #:arg-help-strings '("package-name" "package-names")
    #:args args
-   (λ (flags name)
-     ; We want to error out if the directory exists.
-     (make-directory name)
+   (λ (flags name . names)
+     (call/cc
+      (λ (k)
+        (define targets (cons name names))
+        (define existing
+          (filter-map (λ (t)
+                        (and (or (file-exists? t)
+                                 (directory-exists? t)
+                                 (link-exists? t))
+                             t))
+                      targets))
 
-     (define (make-file file-name proc)
-       (call-with-output-file (build-path name file-name)
-         (λ (o) (parameterize ([current-output-port o])
-                  (proc)))))
+        (unless (null? existing)
+          (printf "Cannot make new package(s). The following files or directories already exist:~n~a~n"
+                  (apply ~a* existing))
+          (k 1))
 
-     (make-file CONVENTIONAL_PACKAGE_INFO_FILE_NAME
-                (λ ()
-                  (define (<< k v)
-                    (printf "~s ~s~n" k v))
-                  (<< '#:provider (gethostname))
-                  (<< '#:package name)
-                  (<< '#:edition "draft")
-                  (<< '#:revision-number 0)
-                  (<< '#:revision-names null)
-                  (<< '#:setup-module "setup.rkt")
-                  (<< '#:dependencies null)))
-
-     (make-file "setup.rkt"
-                (λ ()
-                  (display-lines
-                   '("#lang racket/base"
-                     ""
-                     "; This module is for setting up dependencies in userspace outside of Racket,"
-                     "; like an isolated Python installation, a C library, or even another Racket"
-                     "; installation."
-                     ";"
-                     "; For security, `zcpkg` asks the user to run (show-help) in a zero-trust sandbox"
-                     "; to learn what EXACTLY your package will do to their system if they consent "
-                     "; to extra automated setup."
-                     ";"
-                     "; Write (show-help) to explain the bindings in this module, and the permissions"
-                     "; you need for them to work."
-                     ";"
-                     "; To build trust:"
-                     ";   1. Ask for as little as possible."
-                     ";   2. Be specific. \"I need write permission for /etc\" is too broad,"
-                     ";      and that can come off as suspicious."
-                     ";   3. Do exactly what you say you will do, and nothing else."
-                     ";"
-                     "; Finally, be mindful that other versions of your package may have"
-                     "; already modified the user's system. Look for evidence of your impact,"
-                     "; and react accordingly."
-                     ""
-                     "(define (show-help)"
-                     "  (displayln \"I need write permission for...\"))")))))))
+        (for ([t (in-list targets)])
+          (make-package t)))))))
 
 
 (define (serve-command args)
