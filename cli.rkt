@@ -96,6 +96,38 @@ EOF
   (define (show-report output)
     (void))
 
+
+  (define (review-work package-sources sow)
+    (define infos
+      (sort (hash-values sow)
+            #:key (λ (info) (dependency->string (zcpkg-info->dependency info)))
+            string<?))
+
+    (printf "Installing:~n~a~n"
+            (string-join package-sources "\n"))
+
+    (printf "Dependencies:~n")
+    (for ([info (in-list infos)])
+      (printf "~a:~a ~a edition, rev. ~a (~a)~n"
+              (zcpkg-info-provider-name info)
+              (zcpkg-info-package-name info)
+              (zcpkg-info-edition-name info)
+              (zcpkg-info-revision-number info)
+              (if (null? (zcpkg-info-revision-names info))
+                  ""
+                  (string-join (zcpkg-info-revision-names info) ", "))))
+
+    (displayln "To consent to these changes, run again with -y"))
+
+  (define (do-work sow)
+    (define controller (zcpkg-start-team!))
+    (dynamic-wind
+      void
+      (λ ()
+        (controller ($start (workspace-directory)))
+        (show-report (controller sow)))
+      (λ () (controller #f))))
+
   (run-command-line
    #:program "install"
    #:args args
@@ -113,20 +145,11 @@ EOF
     ZCPKG_DOWNLOAD_IGNORE_CACHE)
 
    (λ (flags . package-sources)
-     (define controller (zcpkg-start-team!))
-     (dynamic-wind void
-                   (λ ()
-                     (controller ($start (workspace-directory)))
+     (define sow (find-scope-of-work package-sources))
 
-                     (define discovered-tasks
-                       (controller (map (λ (s) ($resolve-source s (current-directory)))
-                                        package-sources)))
-
-                     (if (ZCPKG_INSTALL_CONSENT)
-                         (show-report (controller discovered-tasks))
-                         (displayln "To consent to these changes, run again with -y"))
-                     0)
-                   (λ () (controller #f))))))
+     (if (ZCPKG_INSTALL_CONSENT)
+         (do-work sow)
+         (review-work package-sources sow)))))
 
 (define (capture-command args)
   (run-command-line
