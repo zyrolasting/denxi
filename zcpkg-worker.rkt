@@ -47,15 +47,24 @@
       (send-up ($output v)))
 
     (define/public (loop)
-      (pump (sync pch))
-      (loop))
+      (with-handlers ([(const #t) (λ (e) (fail e))])
+        (let again ()
+          (pump (sync pch))
+          (again))))
+
+    (define/public (fail e)
+      (send-up ($fail (if (exn? e) (exn->string e) (~s e))))
+      (exit 1))
 
     (define/public (handle-$start workspace-dir)
       (workspace-directory workspace-dir)
       (load-zcpkg-settings!))
 
-    (define/public (handle-$stop state)
+    (define/public (handle-$stop)
       (exit 0))
+
+    (define/public (handle-$sentinel)
+      (send-up ($sentinel)))
 
     (define/public (install-local-package info package-path)
       (define install-path (zcpkg-info->install-path info))
@@ -104,9 +113,4 @@
 
 
 (define (main pch)
-  (with-handlers ([exn:break? void]
-                  [(const #t)
-                   (λ (e)
-                     (place-channel-put pch
-                                        ($fail (if (exn? e) (exn->string e) (~s e)))))])
-    (send (new zcpkg-worker% [pch pch]) loop)))
+  (send (new zcpkg-worker% [pch pch]) loop))

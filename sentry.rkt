@@ -63,6 +63,11 @@
     (define/public (handle-$output v)
       (add-output v))
 
+    (define/public (handle-$fail v)
+      (add-output v)
+      (set! counter 0)
+      (stop!))
+
     (define/public (get-balance)
       counter)
 
@@ -120,6 +125,15 @@
     (test-eq? "Restore sentry balance" (send op get-balance) 0)
     (test-true "Make balanced? an alias for (= balance 0)"
                (send op balanced?))
+
+    (send op value ($sentinel))
+    (check-false (send op balanced?))
+    (place-channel-put inside-place ($fail "crash!"))
+    (send op pump (sync (send op get-evt)))
+    (test-true "On failure, rebalance automatically." (send op balanced?))
+    (test-equal? "Keep failures as part of the output"
+                 (car output)
+                 "crash!")
 
     (define tmp-file (make-temporary-file))
 
