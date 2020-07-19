@@ -87,9 +87,6 @@
                    (copy-port in out)
                    cached-path)))))))
 
-(define (get-status headers)
-  (string->number (car (regexp-match #px"(\\d\\d\\d)" headers))))
-
 (define current-url->response-values
   (make-parameter
    (λ (u)
@@ -97,7 +94,7 @@
        (get-pure-port/headers u
                               #:status? #t
                               #:redirections 3))
-     (values (get-status headers)
+     (values (string->number (car (regexp-match #px"(\\d\\d\\d)" headers)))
              (for/hash ([pair (extract-all-fields headers)])
                (values (car pair)
                        (cdr pair)))
