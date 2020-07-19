@@ -4,7 +4,7 @@
 
 (require racket/contract)
 
-(provide (all-defined-out))
+(provide find-scope-of-work)
 
 (require racket/path
          racket/set
@@ -18,7 +18,7 @@
          "zcpkg-info.rkt")
 
 
-(define (source->variant v [requesting-path (current-directory)])
+(define (source->variant v requesting-path)
   (or (source->maybe-path v requesting-path)
       (source->maybe-dependency v)
       (string->url v)))
@@ -54,11 +54,72 @@
          dep)))
 
 
+(define (resolve-source-iter id info requesting-directory seen)
+  (unless (set-member? seen id)
+    (set-add! seen id)
+    (for ([dependency-source (in-list (zcpkg-info-dependencies info))])
+      (resolve-source dependency-source
+                      requesting-directory
+                      seen))))
+
+(define (resolve-source source requesting-directory seen)
+  (define variant (source->variant source requesting-directory))
+  (if (path? variant)
+      (resolve-source-iter (path->directory-path (simplify-path variant))
+                           (read-zcpkg-info-from-directory variant)
+                           variant
+                           seen)
+      (resolve-source-iter source
+                           (download-info variant)
+                           requesting-directory
+                           seen)))
+
+
+(define (find-scope-of-work package-sources)
+  (define seen (mutable-set))
+  (for ([source (in-list package-sources)])
+    (resolve-source source (current-directory) seen))
+  seen)
+
+
+
 (module+ test
   (require rackunit
-           racket/runtime-path)
+           racket/runtime-path
+           (submod "file.rkt" test)
+           (submod "zcpkg-info.rkt" test))
 
   (define-runtime-path ./ ".")
+
+  (define (build-path* el)
+    (path->directory-path (build-path (current-directory) el)))
+
+
+  (test-workspace "Find scope of work for a given package source"
+    ; To make it interesting: Give every package a dependency cycle.
+    (write-zcpkg-info-to-directory
+     (copy-zcpkg-info dummy-zcpkg-info [dependencies '("." "../bar")]) "foo")
+    (write-zcpkg-info-to-directory
+     (copy-zcpkg-info dummy-zcpkg-info [dependencies '("../foo" "acme:anvil:heavy:0")]) "bar")
+
+    (define mock-remote-info
+      (let ([buffer (open-output-bytes)])
+        (write-zcpkg-info
+         (copy-zcpkg-info dummy-zcpkg-info
+                          [provider-name "acme"]
+                          [package-name "anvil"]
+                          [edition-name "heavy"]
+                          [dependencies '("acme:anvil:heavy:0")]
+                          [integrity #"blah"])
+         buffer)
+        (get-output-bytes buffer #t)))
+
+    (parameterize ([current-url->response-values
+                    (λ (u) (values 200 (hash) (open-input-bytes mock-remote-info)))])
+      (check-equal? (mutable-set (build-path* "foo")
+                                 (build-path* "bar")
+                                 "acme:anvil:heavy:0")
+                    (find-scope-of-work '("./foo" "./bar")))))
 
   (parameterize ([current-directory ./])
     (test-false "If it looks like a file path, then it doesn't count"
