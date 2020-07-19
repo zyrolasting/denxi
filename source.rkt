@@ -55,8 +55,8 @@
 
 
 (define (resolve-source-iter id info requesting-directory seen)
-  (unless (set-member? seen id)
-    (set-add! seen id)
+  (unless (hash-has-key? seen id)
+    (hash-set! seen id info)
     (for ([dependency-source (in-list (zcpkg-info-dependencies info))])
       (resolve-source dependency-source
                       requesting-directory
@@ -76,7 +76,7 @@
 
 
 (define (find-scope-of-work package-sources)
-  (define seen (mutable-set))
+  (define seen (make-hash))
   (for ([source (in-list package-sources)])
     (resolve-source source (current-directory) seen))
   seen)
@@ -97,29 +97,32 @@
 
   (test-workspace "Find scope of work for a given package source"
     ; To make it interesting: Give every package a dependency cycle.
-    (write-zcpkg-info-to-directory
-     (copy-zcpkg-info dummy-zcpkg-info [dependencies '("." "../bar")]) "foo")
-    (write-zcpkg-info-to-directory
-     (copy-zcpkg-info dummy-zcpkg-info [dependencies '("../foo" "acme:anvil:heavy:0")]) "bar")
 
-    (define mock-remote-info
-      (let ([buffer (open-output-bytes)])
-        (write-zcpkg-info
-         (copy-zcpkg-info dummy-zcpkg-info
-                          [provider-name "acme"]
-                          [package-name "anvil"]
-                          [edition-name "heavy"]
-                          [dependencies '("acme:anvil:heavy:0")]
-                          [integrity #"blah"])
-         buffer)
-        (get-output-bytes buffer #t)))
+   (define foo-info (copy-zcpkg-info dummy-zcpkg-info [dependencies '("." "../bar")]))
+   (define bar-info (copy-zcpkg-info dummy-zcpkg-info [dependencies '("../foo" "acme:anvil:heavy:0")]))
+   (define acme-info
+     (copy-zcpkg-info dummy-zcpkg-info
+                      [provider-name "acme"]
+                      [package-name "anvil"]
+                      [edition-name "heavy"]
+                      [dependencies '("acme:anvil:heavy:0")]
+                      [integrity #"blah"]))
 
-    (parameterize ([current-url->response-values
-                    (λ (u) (values 200 (hash) (open-input-bytes mock-remote-info)))])
-      (check-equal? (mutable-set (build-path* "foo")
-                                 (build-path* "bar")
-                                 "acme:anvil:heavy:0")
-                    (find-scope-of-work '("./foo" "./bar")))))
+   (write-zcpkg-info-to-directory foo-info "foo")
+   (write-zcpkg-info-to-directory bar-info "bar")
+
+   (define mock-remote-info
+     (let ([buffer (open-output-bytes)])
+       (write-zcpkg-info acme-info buffer)
+       (get-output-bytes buffer #t)))
+
+   (parameterize ([current-url->response-values
+                   (λ (u) (values 200 (hash) (open-input-bytes mock-remote-info)))])
+     (check-equal? (make-hash
+                    `((,(build-path* "foo") . ,foo-info)
+                      (,(build-path* "bar") . ,bar-info)
+                      ("acme:anvil:heavy:0" . ,acme-info)))
+                   (find-scope-of-work '("./foo" "./bar")))))
 
   (parameterize ([current-directory ./])
     (test-false "If it looks like a file path, then it doesn't count"
