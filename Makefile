@@ -2,8 +2,8 @@
 
 all: exe docs
 
-test:
-	raco test .
+test: compile
+	raco test -j 8 *.rkt
 
 racket-deps:
 	raco pkg install web-server-lib rackunit-lib
