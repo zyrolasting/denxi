@@ -225,7 +225,7 @@ EOF
                     (printf "~s ~s~n" k v))
                   (<< '#:provider (gethostname))
                   (<< '#:package name)
-                  (<< '#:edition name)
+                  (<< '#:edition "draft")
                   (<< '#:revision-number 0)
                   (<< '#:revision-names null)
                   (<< '#:setup-module "setup.rkt")
