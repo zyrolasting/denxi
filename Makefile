@@ -12,7 +12,7 @@ compile:
 	raco make *.rkt
 
 exe: compile test
-	raco exe -o zcpkg cli.rkt
+	raco exe -o zcpkg ++lang racket/base ++lib racket ++lib rackunit cli.rkt
 
 doc:
 	raco make *.scrbl

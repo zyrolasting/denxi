@@ -94,32 +94,34 @@
 
 ; Note that these links form cycles. Users won't be able to recurse
 ; all directories without first removing or breaking the links.
-(define (make-zcpkg-links dependencies [where (current-directory)])
+(define (make-zcpkg-links #:search? search? variant-list [where (current-directory)])
   (make-zcpkg-workspace-link where)
-  (make-zcpkg-dependency-links dependencies where))
+  (make-zcpkg-dependency-links #:search? search? variant-list where))
+
+(define (make-link/clobber to link-path)
+  (make-directory* (path-only link-path))
+  (when (link-exists? link-path)
+    (delete-file link-path))
+  (make-file-or-directory-link to link-path)
+  link-path)
+
 
 (define (make-zcpkg-workspace-link [where (current-directory)])
-  (define ws-link (build-path where CONVENTIONAL_WORKSPACE_NAME))
-  (when (link-exists? ws-link)
-    (delete-file ws-link))
-  (make-file-or-directory-link (workspace-directory) ws-link)
-  ws-link)
+  (make-link/clobber (workspace-directory) (build-path where CONVENTIONAL_WORKSPACE_NAME)))
 
-(define (make-zcpkg-dependency-links dependencies [where (current-directory)])
+(define (make-zcpkg-dependency-links #:search? search? dependencies [where (current-directory)])
   (unless (null? dependencies)
     (define links-dir (build-path where CONVENTIONAL_DEPENDENCY_DIRECTORY_NAME))
-    (make-directory* links-dir)
-    (for/list ([dep-variant (in-list dependencies)])
-      (define available (search-zcpkg-infos dep-variant (in-installed-info)))
-      (define info (sequence-ref available 0))
-      (define install-path (zcpkg-info->install-path info))
-      (define link-path (build-path links-dir
-                                    (zcpkg-info-provider-name info)
-                                    (zcpkg-info-package-name info)))
-      (when (link-exists? link-path)
-        (delete-file link-path))
-      (make-file-or-directory-link install-path link-path)
-      link-path)))
+    (for/list ([variant (in-list dependencies)])
+      (define info
+        (if search?
+            (find-exactly-one-info variant)
+            variant))
+
+      (make-link/clobber (zcpkg-info->install-path info)
+                         (build-path links-dir
+                                       (zcpkg-info-provider-name info)
+                                       (zcpkg-info-package-name info))))))
 
 
 (define (zcpkg-installed? info)

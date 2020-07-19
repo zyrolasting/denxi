@@ -32,7 +32,7 @@
 (define-message $on-unverified-host (host))
 (define-message $on-package-installed (info))
 (define-message $on-package-uninstalled (info))
-(define-message $install-package (info url-or-path))
+(define-message $install-package (infos url-or-path))
 (define-message $uninstall-package (dependency-string))
 
 (define zcpkg-worker%
@@ -67,18 +67,18 @@
     (define/public (handle-$sentinel)
       (send-up ($sentinel)))
 
-    (define/public (install-local-package info package-path)
+    (define/public (install-local-package info dependency-infos package-path)
       (define install-path (zcpkg-info->install-path info))
 
       (unless (equal? package-path install-path)
         (make-directory* (path-only install-path))
         (make-file-or-directory-link package-path install-path))
 
-      (make-zcpkg-links (zcpkg-info-dependencies info) install-path)
+      (make-zcpkg-links #:search? #f dependency-infos install-path)
       (send-output ($on-package-installed info)))
 
 
-    (define/public (install-remote-package info catalog-url-string)
+    (define/public (install-remote-package info dependency-infos catalog-url-string)
       (define install-path   (zcpkg-info->install-path info))
       (define artifact-path  (download-artifact (string->url catalog-url-string) url))
       (define integrous?     (integrous-artifact? artifact-path info))
@@ -96,15 +96,17 @@
       (when (and integrous? authenticated?)
         (make-directory* (path-only install-path))
         (unpack artifact-path #:to install-path)
-        (install-local-package info install-path)))
+        (install-local-package info dependency-infos install-path)))
 
 
-    (define/public (handle-$install-package info url-or-path)
-      (if (zcpkg-installed? info)
-          (send-output ($already-installed info))
+    (define/public (handle-$install-package infos url-or-path)
+      (define target (car infos))
+      (define dependency-infos (cdr infos))
+      (if (zcpkg-installed? target)
+          (send-output ($already-installed target))
           (if (directory-exists? url-or-path)
-              (install-local-package info url-or-path)
-              (install-remote-package info url-or-path))))
+              (install-local-package target dependency-infos url-or-path)
+              (install-remote-package target dependency-infos url-or-path))))
 
 
     (define/public (handle-$uninstall-package dependency-variant)

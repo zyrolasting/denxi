@@ -98,8 +98,11 @@ EOF
 
 
   (define (review-work package-sources sow)
+    (define targets
+      (map car (hash-values sow)))
+
     (define infos
-      (sort (hash-values sow)
+      (sort targets
             #:key (λ (info) (dependency->string (zcpkg-info->dependency info)))
             string<?))
 
@@ -142,8 +145,8 @@ EOF
         (controller ($start (workspace-directory)))
 
         (define tasks
-          (for/list ([(url-or-path info) (in-hash sow)])
-            ($install-package info url-or-path)))
+          (for/list ([(url-or-path infos) (in-hash sow)])
+            ($install-package infos url-or-path)))
 
         (show-report (controller tasks)))
       (λ () (controller #f))))
