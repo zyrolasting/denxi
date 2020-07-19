@@ -40,12 +40,12 @@
 
 (define (download-info variant)
   (if (url? variant)
-      (values variant (assert-valid-info (read-zcpkg-info (download-file variant))))
+      (assert-valid-info variant (read-zcpkg-info (download-file variant)))
       (let* ([dep (coerce-dependency variant)]
              [dep-string (dependency->string dep)])
-        (for/fold ([u #f] [p #f])
+        (for/fold ([maybe-info #f])
                   ([name&string-url (in-list (ZCPKG_SERVICE_ENDPOINTS))])
-          #:break p
+          #:break maybe-info
           (define catalog-string-url (cdr name&string-url))
           (define catalog-url (string->url catalog-string-url))
           (download-info (dependency->url catalog-url "info" dep))))))
