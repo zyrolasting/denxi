@@ -250,9 +250,9 @@
          (dependency-package-name d)
          (dependency-edition-name d)
          (bool->exclusive-flag (dependency-revision-min-exclusive? d))
-         (dependency-revision-min d)
+         (~a (dependency-revision-min d))
          (bool->exclusive-flag (dependency-revision-max-exclusive? d))
-         (dependency-revision-max d))
+         (~a (dependency-revision-max d)))
    ":"))
 
 (define (exclusive-flag->bool flag name)
