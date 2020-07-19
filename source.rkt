@@ -30,9 +30,21 @@
 
 (define (source->maybe-path v [relative-path-root (current-directory)])
   (cond [(path? v)
-         (and (directory-exists? v)
-              (simplify-path (if (complete-path? v) v
-                                 (build-path relative-path-root v))))]
+         (define pkg-path
+           (simplify-path (if (complete-path? v) v
+                              (build-path relative-path-root v))))
+
+         (if (directory-exists? pkg-path) pkg-path
+             (raise (exn:fail:user
+                     (format (~a "Package not found: ~a~n~n"
+                                 "Assuming your command is correct, a package~n"
+                                 "may have an incorrect relative path as a dependency.~n~n"
+                                 "Base path: ~a~n"
+                                 "Relative path: ~a~n")
+                             pkg-path
+                             relative-path-root
+                             (find-relative-path relative-path-root pkg-path))
+                     (current-continuation-marks))))]
 
         [(url? v)
          (and (or (not (url-scheme v))
