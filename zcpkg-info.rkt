@@ -45,8 +45,8 @@
   (build-workspace-path (ZCPKG_INSTALL_RELATIVE_PATH)
                         (zcpkg-info->relative-path info)))
 
-(define (read-zcpkg-info dir)
-  (define lookup (load-config (build-path dir CONVENTIONAL_PACKAGE_INFO_FILE_NAME)))
+(define (read-zcpkg-info in)
+  (define lookup (load-config in))
   (zcpkg-info (lookup 'provider name-string?)
               (lookup 'package name-string?)
               (lookup 'edition name-string?)
@@ -56,3 +56,42 @@
               (lookup 'dependencies (listof string?) null)
               (lookup 'integrity (or/c #f bytes?) #f)
               (lookup 'signature (or/c #f bytes?) #f)))
+
+(define (read-zcpkg-info-from-directory dir)
+  (read-zcpkg-info (build-path dir CONVENTIONAL_PACKAGE_INFO_FILE_NAME)))
+
+(define (zcpkg-info->hash info)
+  (hash 'provider (zcpkg-info-provider-name info)
+        'package (zcpkg-info-package-name info)
+        'edition (zcpkg-info-edition-name info)
+        'revision-number (zcpkg-info-revision-number info)
+        'revision-names (zcpkg-info-revision-names info)
+        'setup-module (zcpkg-info-setup-module info)
+        'dependencies (zcpkg-info-dependencies info)
+        'integrity (zcpkg-info-integrity info)
+        'signature (zcpkg-info-signature info)))
+
+(define (write-zcpkg-info info o)
+  (save-config!
+   (make-config-closure
+    (zcpkg-info->hash info)
+    '(provider
+      package
+      edition
+      revision-number
+      revision-names
+      setup-module
+      dependencies
+      integrity
+      signature))
+   o))
+
+(module+ test
+  (require rackunit)
+  (test-case "zcpkg-info I/O"
+    (define instance (zcpkg-info "pr" "pk" "ed" 10 '("h" "a") "setup" '("d1" "d2") #"int" #"sig"))
+    (define-values (i o) (make-pipe))
+    (write-zcpkg-info instance o)
+    (flush-output o)
+    (close-output-port o)
+    (check-equal? (read-zcpkg-info i) instance)))

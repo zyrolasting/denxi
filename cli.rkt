@@ -466,7 +466,7 @@ EOF
                        (define pkg-dir (build-path (current-directory) package-name))
                        (check-eq? exit-code 0)
                        (check-pred directory-exists? pkg-dir)
-                       (check-pred zcpkg-info? (read-zcpkg-info pkg-dir)))))
+                       (check-pred zcpkg-info? (read-zcpkg-info-from-directory pkg-dir)))))
 
   (test-workspace "Install a local package with no dependencies"
     (define package-name "foo")
