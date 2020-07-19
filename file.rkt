@@ -32,11 +32,15 @@
 (define (build-install-path . args)
   (apply build-workspace-path (ZCPKG_INSTALL_RELATIVE_PATH) args))
 
-(define (in-workspace)
-  (in-directory (build-workspace-path)
+(define (in-acyclic-directory start-dir [use-dir? (λ _ #t)])
+  (in-directory start-dir
                 (λ (p) (if (link-exists? p)
                            (not (path-cycles? p))
-                           (not (member (path->string (file-name-from-path p)) '(".git")))))))
+                           (use-dir? p)))))
+
+(define (in-workspace)
+  (in-acyclic-directory (build-workspace-path)
+                        (λ (p) (not (member (path->string (file-name-from-path p)) '(".git"))))))
 
 (define (ls path)
   (map path->string (directory-list path)))

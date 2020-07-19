@@ -6,6 +6,8 @@
          racket/exn
          racket/path
          racket/place
+         racket/sequence
+         compiler/cm
          "actor.rkt"
          "archiving.rkt"
          "config.rkt"
@@ -26,6 +28,7 @@
 (define-message $start (workspace-dir))
 (define-message $before-making-orphans (dependents dependency))
 (define-message $already-installed (info))
+(define-message $on-compilation-error (message))
 (define-message $on-bad-digest (info))
 (define-message $on-bad-signature (info))
 (define-message $on-missing-signature (info))
@@ -67,6 +70,21 @@
     (define/public (handle-$sentinel)
       (send-up ($sentinel)))
 
+    (define/public (compile-racket-modules install-path)
+      (for ([module-path
+             (sequence-filter (λ (p)
+                                (and (not (link-exists? p))
+                                     (not (member (path->string (file-name-from-path p))
+                                                  (list CONVENTIONAL_WORKSPACE_NAME
+                                                        CONVENTIONAL_DEPENDENCY_DIRECTORY_NAME)))
+                                     (file-exists? p)
+                                     (member (path-get-extension p)
+                                             '(#".rkt" #".ss" #".scrbl"))))
+                              (in-acyclic-directory install-path))])
+        (with-handlers ([exn? (λ (e) (send-output ($on-compilation-error (exn->string e))))])
+          (managed-compile-zo module-path))))
+
+
     (define/public (install-local-package info dependency-infos package-path)
       (define install-path (zcpkg-info->install-path info))
 
@@ -75,6 +93,7 @@
         (make-file-or-directory-link package-path install-path))
 
       (make-zcpkg-links #:search? #f dependency-infos install-path)
+      (compile-racket-modules install-path)
       (send-output ($on-package-installed info)))
 
 
