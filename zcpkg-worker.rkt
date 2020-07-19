@@ -25,7 +25,6 @@
 ; Output messages
 (define-message $start (workspace-dir))
 (define-message $before-making-orphans (dependents dependency))
-(define-message $resolve-source (source requesting-directory))
 (define-message $on-bad-digest (info))
 (define-message $on-bad-signature (info))
 (define-message $on-missing-signature (info))
@@ -100,24 +99,8 @@
       (define target-info (find-exactly-one-info dependency-variant))
       (define install-path (zcpkg-info->install-path target-info))
       (delete-directory/files/empty-parents install-path)
-      (send-output ($on-package-uninstalled target-info)))
+      (send-output ($on-package-uninstalled target-info)))))
 
-
-    (define/public (handle-$resolve-source source requesting-directory)
-      (define variant (source->variant source requesting-directory))
-      (define local? (path? variant))
-
-      (define job
-        (if local?
-            ($install-package (read-zcpkg-info variant) variant)
-            (let-values ([(catalog-url info) (download-info variant)])
-              ($install-package info (url->string catalog-url)))))
-
-      (for ([dependency-source (in-list (zcpkg-info-dependencies ($install-package-info job)))])
-        (handle-$resolve-source dependency-source
-                                (if local? variant (current-directory))))
-
-      (send-output job))))
 
 
 (define (main pch)
