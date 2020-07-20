@@ -1,6 +1,6 @@
 .PHONY: all test clean
 
-all: exe docs
+all: exe doc
 
 test: compile
 	raco test -j 8 *.rkt
