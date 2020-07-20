@@ -42,7 +42,8 @@
        (find-files for-archive? #:skip-filtered-directory? #f)))
 
 (define (for-archive? p)
-  (and (file-exists? p)
+  (and (not (link-exists? p))
+       (file-exists? p)
        (not (member (path->string (file-name-from-path p))
                     '(".git" ".travis.yml" ".gitignore" "compiled" "doc")))))
 
