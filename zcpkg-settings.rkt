@@ -184,7 +184,7 @@
    "-o"
    ("Leave orphaned packages on the system")
    boolean?
-   #t}
+   #f}
 
   {ZCPKG_DOWNLOAD_MAX_REDIRECTS
    "-r"
