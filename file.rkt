@@ -88,11 +88,12 @@
     [(0) (error 'find-exactly-one-info "~a is not installed" dependency-variant)]
     [(1) (void)]
     [else
-     (error 'find-exactly-one-info
-            "~s is ambiguous. Which of these did you mean?~n~s"
-            (string-join (map (compose dependency->string coerce-dependency)
-                              infos)
-                         "\n"))])
+     (raise (exn:fail:user
+             (format "~s is ambiguous. Which of these did you mean?~n~s"
+                     (string-join (map (compose dependency->string coerce-dependency)
+                                       infos)
+                                  "\n"))
+             (current-continuation-marks)))])
   (sequence-ref infos 0))
 
 
