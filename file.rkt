@@ -97,10 +97,7 @@
   (sequence-ref infos 0))
 
 
-; Note that these links form cycles. Users won't be able to recurse
-; all directories without first removing or breaking the links.
 (define (make-zcpkg-links #:search? search? variant-list [where (current-directory)])
-  (make-zcpkg-workspace-link where)
   (make-zcpkg-dependency-links #:search? search? variant-list where))
 
 (define (make-link/clobber to link-path)
@@ -115,9 +112,6 @@
   (build-path base-path
               CONVENTIONAL_DEPENDENCY_DIRECTORY_NAME
               (zcpkg-info->relative-path info #:abbrev 2)))
-
-(define (make-zcpkg-workspace-link [where (current-directory)])
-  (make-link/clobber (workspace-directory) (build-path where CONVENTIONAL_WORKSPACE_NAME)))
 
 (define (make-zcpkg-dependency-links #:search? search? dependencies [where (current-directory)])
   (unless (null? dependencies)
