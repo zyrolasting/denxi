@@ -98,7 +98,7 @@
 
 
 (define (make-link/clobber to link-path)
-  (make-directory* (path-only link-path))
+  (make-directory* (or (path-only link-path) (current-directory)))
   (when (link-exists? link-path)
     (delete-file link-path))
   (make-file-or-directory-link to link-path)
