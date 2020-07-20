@@ -9,13 +9,8 @@
 (provide (all-defined-out))
 (require racket/place
          "actor.rkt"
-         "message.rkt")
-
-(define-message $sentinel ())
-(define-message $start    (workspace-directory))
-(define-message $fail     (to-display))
-(define-message $output   (v))
-(define-message $stop     ())
+         "message.rkt"
+         "zcpkg-messages.rkt")
 
 ; Communicate only on place channel. Avoid ports for simplicity.
 (define sentry%

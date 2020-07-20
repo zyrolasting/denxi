@@ -29,6 +29,7 @@
          "url.rkt"
          "workspace.rkt"
          "zcpkg-info.rkt"
+         "zcpkg-messages.rkt"
          "zcpkg-settings.rkt"
          "zcpkg-worker.rkt")
 
