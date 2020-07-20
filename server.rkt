@@ -4,6 +4,7 @@
 
 (require racket/exn
          racket/runtime-path
+         racket/sequence
          web-server/dispatch
          web-server/http
          web-server/web-server
@@ -14,10 +15,13 @@
                     web-server/dispatchers/dispatch-log)
          (prefix-in lift:
                     web-server/dispatchers/dispatch-lift)
-         "dependency.rkt"
-         "workspace.rkt"
          "config.rkt"
-         "url.rkt")
+         "dependency.rkt"
+         "file.rkt"
+         "url.rkt"
+         "workspace.rkt"
+         "zcpkg-info.rkt")
+
 
 (define (start-server)
   (serve #:port 8080
@@ -41,14 +45,17 @@
 (define-values (promo-dispatcher promo-url promo-applies?)
   (dispatch-rules+applies
    [("") landing-page]
-   [("info") #:method (or "get" "put") send/recv-info]
-   [("artifact") #:method (or "get" "put") send/recv-artifact]))
+   [((string-arg) "info") #:method (or "get" "put") send/recv-info]
+   [((string-arg) "artifact") #:method (or "get" "put") send/recv-artifact]))
 
 
 (define (response/text #:code [code 200] fmt-string . a)
   (response/output #:code code
                    #:mime-type #"text/plain; charset=utf-8"
                    (λ (out) (apply fprintf out fmt-string a))))
+
+(define (echo req a)
+  (response/text "~s" a))
 
 (define (landing-page req)
   (response/xexpr
@@ -65,23 +72,25 @@
                         "~s is not a valid dependency string.~n"
                         urn)]
 
-        [(equal? (request-method req) "get")
-         (define info.rkt "")
+        [(equal? (request-method req) #"GET")
+         (define info (sequence-ref (search-zcpkg-infos urn (in-installed-info)) 0))
          (response/output #:code 200
                           #:mime-type #"text/plain; charset=utf-8"
                           (λ (out)
-                            (call-with-input-file info.rkt
-                              (λ (in) (copy-port in out)))))]
+                            (write-zcpkg-info info out)))]
 
-        [(equal? (request-method req) "put")
+        [(equal? (request-method req) #"PUT")
          (define data (request-post-data/raw req))
-
 
          ; Can info be written or replaced?
          ;  - Does artifact already exist with the info?
          ;  - Does the info have any errors?
          ;  - Does the info occupy the next available slot for the provider?
-         (response/empty #:code 200)]))
+         (response/empty #:code 200)]
+
+        [else (response/text #:code 400
+                             "Invalid request")]))
+
 
 (define (send/recv-artifact req urn)
   (define package.tgz "")
