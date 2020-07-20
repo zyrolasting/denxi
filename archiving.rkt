@@ -5,8 +5,8 @@
 
 (require racket/contract)
 
-(provide (contract-out [pack   (-> directory-exists? path?)]
-                       [unpack (-> archive-path? path?)]
+(provide (contract-out [pack   (->* (directory-exists?) (#:to path-string?) path?)]
+                       [unpack (->* (archive-path?) (#:to path-string?) path?)]
                        [archive-path? predicate/c]))
 
 (require "file.rkt"
