@@ -13,6 +13,7 @@
          "config.rkt"
          "download.rkt"
          "file.rkt"
+         "format.rkt"
          "message.rkt"
          "sentry.rkt"
          "source.rkt"

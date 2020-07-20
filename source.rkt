@@ -12,6 +12,7 @@
          "dependency.rkt"
          "download.rkt"
          "file.rkt"
+         "format.rkt"
          "message.rkt"
          "string.rkt"
          "url.rkt"

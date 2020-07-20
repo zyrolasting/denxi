@@ -12,6 +12,7 @@
          "config.rkt"
          "dependency.rkt"
          "file.rkt"
+         "format.rkt"
          "logging.rkt"
          "string.rkt"
          "url.rkt"

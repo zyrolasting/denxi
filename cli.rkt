@@ -19,6 +19,7 @@
          "dependency.rkt"
          "download.rkt"
          "file.rkt"
+         "format.rkt"
          "message.rkt"
          "setting.rkt"
          "setup.rkt"

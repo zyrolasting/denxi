@@ -3,6 +3,7 @@
 (provide (all-defined-out))
 
 (require racket/port
+         "format.rkt"
          "string.rkt"
          "config.rkt")
 

@@ -5,6 +5,7 @@
 (provide (all-defined-out))
 
 (require racket/file
+         (only-in racket/format ~a)
          (only-in racket/list drop-right)
          "contract.rkt"
          "config.rkt"
