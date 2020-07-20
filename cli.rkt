@@ -344,11 +344,42 @@ EOF
   (run-command-line
    #:program "uninstall"
    #:arg-help-strings '("urns")
+   #:flags
+   (settings->flag-specs
+    ZCPKG_LEAVE_ORPHANS
+    ZCPKG_CONSENT)
    #:args args
    (λ (flags . urns)
-     (define controller (zcpkg-start-team!))
-     (define backlog (controller (map $uninstall-package urns)))
-     (controller backlog))))
+     (define to-uninstall (mutable-set))
+     (define will-be-orphaned (mutable-set))
+
+     ; Determine impact to the system
+     (for ([urn (in-list urns)])
+       (define info (find-exactly-one-info urn))
+       (define target-install-path (zcpkg-info->install-path info))
+
+       (for ([install-path (in-installed-package-paths)])
+         (define link-path (build-dependency-path install-path info))
+         (when (and (link-exists? link-path)
+                    (eq? (file-or-directory-identity link-path)
+                         (file-or-directory-identity target-install-path)))
+           (define orphan-info (read-zcpkg-info-from-directory install-path))
+           (set-add! will-be-orphaned orphan-info)
+           (unless (ZCPKG_LEAVE_ORPHANS)
+             (set-add! to-uninstall orphan-info)))))
+
+     (if (ZCPKG_CONSENT)
+         (for ([info (in-set to-uninstall)])
+           (define install-path (zcpkg-info->install-path info))
+           (printf "Deleting ~a~n" install-path)
+           (delete-directory/files/empty-parents install-path))
+         (begin (printf "The following packages will be removed:~n")
+                (print-zcpkg-info-table (set->list to-uninstall))
+                (printf "To consent to these changes, run again with ~a~n"
+                        (setting->short-flag ZCPKG_CONSENT)))))))
+
+
+
 
 (define (upload-command args)
   (run-command-line
