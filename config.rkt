@@ -184,7 +184,8 @@
       [(key c)
        (get-by-key key c
                    (λ () (error 'make-config-closure
-                                "No value for key" key)))]
+                                "No value for key ~a"
+                                key)))]
       [(key c f)
        (invariant-assertion c
                             (hash-ref hash-table key f))]))
