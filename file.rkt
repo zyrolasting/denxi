@@ -111,17 +111,20 @@
   link-path)
 
 
+(define (build-dependency-path base-path info)
+  (build-path base-path
+              CONVENTIONAL_DEPENDENCY_DIRECTORY_NAME
+              (zcpkg-info->relative-path info #:abbrev 2)))
+
 (define (make-zcpkg-workspace-link [where (current-directory)])
   (make-link/clobber (workspace-directory) (build-path where CONVENTIONAL_WORKSPACE_NAME)))
 
 (define (make-zcpkg-dependency-links #:search? search? dependencies [where (current-directory)])
   (unless (null? dependencies)
-    (define links-dir (build-path where CONVENTIONAL_DEPENDENCY_DIRECTORY_NAME))
     (for/list ([variant (in-list dependencies)])
       (define info (if search? (find-exactly-one-info variant) variant))
       (make-link/clobber (zcpkg-info->install-path info)
-                         (build-path links-dir
-                                     (zcpkg-info->relative-path info #:abbrev 2))))))
+                         (build-dependency-path where info)))))
 
 
 (define (zcpkg-installed? info)
