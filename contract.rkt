@@ -1,10 +1,15 @@
 #lang racket/base
 
-(provide (all-from-out racket/contract)
-         (all-defined-out))
-
 (require racket/contract)
 
+(provide (all-from-out racket/contract)
+         (contract-out
+          [passes-invariant-assertion?
+           (-> flat-contract? any/c boolean?)]
+          [rewrite-contract-error-message
+           (-> exn:fail:contract? symbol? exn:fail:contract?)]))
+
+; TODO: Flat contracts can be used as predicates. Remove?
 (define (passes-invariant-assertion? c v)
   (with-handlers ([exn:fail:contract? (λ (e) #f)])
     (invariant-assertion c v)
