@@ -3,14 +3,14 @@
 ; Pack and unpack archives containing packages.
 ; Hide the algorithms responsible from the user.
 
-(require idiocket/contract)
+(require racket/contract)
 
 (provide (contract-out [pack   (-> directory-exists? path?)]
                        [unpack (-> archive-path? path?)]
                        [archive-path? predicate/c]))
 
-(require idiocket/file
-         idiocket/path
+(require "file.rkt"
+         racket/path
          file/tar
          file/gzip
          file/untgz)
