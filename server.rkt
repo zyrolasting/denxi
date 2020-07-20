@@ -25,11 +25,16 @@
 (define (get-server-directory)
   (build-workspace-path "var/zcpkg"))
 
+(define (get-log-directory)
+  (build-workspace-path "var/log/zcpkg"))
+
+
 (define (start-server)
   (serve #:port 8080
          #:dispatch
          (seq:make
-          (logged:make #:format logged:extended-format #:log-path "server.log")
+          (logged:make #:format logged:extended-format
+                       #:log-path (build-path (get-log-directory) "server.log"))
           (lift:make promo-dispatcher)
           (lift:make not-found))
          #:safety-limits
