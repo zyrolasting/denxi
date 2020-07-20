@@ -22,6 +22,8 @@
          "workspace.rkt"
          "zcpkg-info.rkt")
 
+(define (get-server-directory)
+  (build-workspace-path "var/zcpkg"))
 
 (define (start-server)
   (serve #:port 8080
