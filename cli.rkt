@@ -358,6 +358,7 @@ EOF
      (for ([urn (in-list urns)])
        (define info (find-exactly-one-info urn))
        (define target-install-path (zcpkg-info->install-path info))
+       (set-add! to-uninstall info)
 
        (for ([install-path (in-installed-package-paths)])
          (define link-path (build-dependency-path install-path info))
