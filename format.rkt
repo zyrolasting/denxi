@@ -28,7 +28,6 @@
     (define min-width (apply max (map string-length strs)))
     (λ args (apply ~a #:min-width min-width args)))
 
-
   (define print-provider-name (get-cell-printer (map zcpkg-info-provider-name infos)))
   (define print-package-name  (get-cell-printer (map zcpkg-info-package-name infos)))
   (define print-edition-name  (get-cell-printer (map zcpkg-info-edition-name infos)))
