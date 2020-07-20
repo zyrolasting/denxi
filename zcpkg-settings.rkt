@@ -24,8 +24,6 @@
   (current-setting-value-lookup
    (λ (k) (lookup k any/c (void))))
 
-  ; A reinvented class, yes. I'm trying to avoid
-  ; a (primary) racket/class dependency by this point.
   (define (controller . args)
     (match args
       [(list 'get-path)
