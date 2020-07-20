@@ -44,9 +44,8 @@
 
 (define-values (promo-dispatcher promo-url promo-applies?)
   (dispatch-rules+applies
-   [("") landing-page]
-   [((string-arg) "info") #:method (or "get" "put") send/recv-info]
-   [((string-arg) "artifact") #:method (or "get" "put") send/recv-artifact]))
+   [((string-arg) "info") send-info]
+   [((string-arg) "file") send-file]))
 
 
 (define (response/text #:code [code 200] fmt-string . a)
@@ -57,16 +56,8 @@
 (define (echo req a)
   (response/text "~s" a))
 
-(define (landing-page req)
-  (response/xexpr
-   `(html (head (title "zcpkg"))
-          (body (h1 "Zero-Collection Racket Package Index")
-                (p "This is a prototype registry for the "
-                   (a ((href "https://github.com/zyrolasting/zcpkg")) "zcpkg")
-                   " package manager.")))))
 
-
-(define (send/recv-info req urn)
+(define (send-info req urn)
   (cond [(not (dependency-string? urn))
          (response/text #:code 400
                         "~s is not a valid dependency string.~n"
@@ -92,7 +83,7 @@
                              "Invalid request")]))
 
 
-(define (send/recv-artifact req urn)
+(define (send-file req urn)
   (define package.tgz "")
   (response/output #:code 200
                    #:mime-type #"application/octet-stream"

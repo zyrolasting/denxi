@@ -83,9 +83,7 @@
   config     Configure the package manager
   capture    Create a capture file
   sandbox    Start sandboxed REPL for package's setup module.
-  register   Register an account on a configured catalog
   serve      Serve package artifacts
-  upload     Upload packages and metadata
 
 EOF
 ))
@@ -381,32 +379,6 @@ EOF
                                                           (in-mutable-set will-be-orphaned))))
                 (printf "To consent to these changes, run again with ~a~n"
                         (setting->short-flag ZCPKG_CONSENT)))))))
-
-
-
-
-(define (upload-command args)
-  (run-command-line
-   #:program "upload"
-   #:arg-help-strings '("info-file" "package-directory")
-   #:args args
-   (λ (flags kind u)
-     (void))
-   #<<EOF
-
-=====================================================================
-                       /!\   WARNING   /!\
-=====================================================================
-
-Be sure that you did not leave any confidential information in your
-package.
-
-Once you upload your package, you may upload replacements within a
-grace period set by the server. After that, it can only be removed by
-an administrator.
-
-EOF
-))
 
 
 
