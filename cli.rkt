@@ -376,7 +376,9 @@ EOF
            (printf "Deleting ~a~n" install-path)
            (delete-directory/files/empty-parents install-path))
          (begin (printf "The following packages will be removed:~n")
-                (print-zcpkg-info-table (set->list to-uninstall))
+                (print-zcpkg-info-table (sequence->list
+                                         (sequence-append (in-mutable-set to-uninstall)
+                                                          (in-mutable-set will-be-orphaned))))
                 (printf "To consent to these changes, run again with ~a~n"
                         (setting->short-flag ZCPKG_CONSENT)))))))
 
