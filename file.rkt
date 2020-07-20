@@ -66,7 +66,7 @@
      (yield (build-install-path provider package edition revision)))))
 
 (define (in-installed-info)
-  (sequence-map read-zcpkg-info
+  (sequence-map read-zcpkg-info-from-directory
                 (in-installed-package-paths)))
 
 (define (in-abstract-dependency-declarations)
