@@ -1,110 +1,103 @@
 #lang racket/base
 
 (provide capture-workspace
-         restore-workspace)
+         CONVENTIONAL_CAPTURE_FILE_NAME)
 
-(require racket/match
+(require racket/format
+         racket/match
          racket/path
          racket/port
+         racket/pretty
+         "config.rkt"
+         "dependency.rkt"
          "file.rkt"
          "message.rkt"
+         "setting.rkt"
          "verify.rkt"
-         "config.rkt"
          "workspace.rkt"
+         "zcpkg-info.rkt"
          "zcpkg-settings.rkt")
 
+(define CONVENTIONAL_CAPTURE_FILE_NAME "capture.rkt")
+
 (define (capture-workspace)
-  (call-with-output-file "capture.rktd"
-    (λ (o)
-      (parameterize ([current-directory (workspace-directory)])
-        (write-to-file (make-capture) o)))))
+  (call-with-output-file CONVENTIONAL_CAPTURE_FILE_NAME
+    write-workspace-capture))
 
-(define (restore-workspace path)
-  (rename-file-or-directory (workspace-directory)
-                            (path-replace-extension (workspace-directory) ".bak"))
-  (call-with-temporary-directory
-   (λ (tmp-dir)
-     (parameterize ([workspace-directory tmp-dir])
-       (reproduce-workspace (file->value path))
-       (copy-directory/files tmp-dir (workspace-directory))))))
+(define (zcpkg-workspace-data->module-datum config install-targets)
+  `(module capture racket/base
+     (require racket/system)
+     (define zcpkg (find-executable-path "zcpkg"))
+     (define (run . args)
+       (define code (apply system*/exit-code zcpkg args))
+       (unless (= code 0)
+         (eprintf "~s failed with exit code ~a~n"
+                  (string-join (cons (~a zcpkg) args) " ")
+                  code)))
+     (define (set-config! k v) (run "config" "set" k v))
+     (define (install! . pkgs) (apply run "install" pkgs))
+     ,@(for/list ([(k v) (in-hash config)])
+         `(set-config! ',k ,(~s v)))
+     (install! . ,install-targets)))
 
+(define (generate-workspace-reproduction-module)
+  (zcpkg-workspace-data->module-datum
+   ((load-zcpkg-settings!) 'dump)
+   (capture-install-targets)))
 
-(struct capture-entry (path digest reproduction) #:prefab)
-(struct fs-entry (id kind make-digest) #:transparent)
+(define (capture-install-targets)
+  (for/list ([info (in-installed-info)])
+    (dependency->string (zcpkg-info->dependency info))))
 
+(define (write-workspace-capture [o (current-output-port)])
+  (pretty-write #:newline? #t (generate-workspace-reproduction-module) o))
 
-(define (capture-directory? d)
-  (member d (map build-path (list "etc" (ZCPKG_INSTALL_RELATIVE_PATH)))))
+(module+ test
+  (require racket/list
+           rackunit
+           (submod "file.rkt" test)
+           (submod "zcpkg-info.rkt" test))
 
-(define (make-fstab)
-  (for/hash ([p (in-directory)])
-    (define kind
-      (cond [(link-exists? p) 'link]
-            [(directory-exists? p) 'directory]
-            [(file-exists? p) 'file]))
-    (values p
-            (fs-entry (file-or-directory-identity p (eq? kind 'link))
-                      kind
-                      (λ () (and (eq? kind 'file)
-                                 (let-values ([(exit-code dig) (make-digest p)])
-                                   dig)))))))
+  (test-workspace
+   "Read and write a module to reproduce a workspace"
+   (make-directory* (build-workspace-path (ZCPKG_INSTALL_RELATIVE_PATH)))
 
-(define (make-capture)
-  (define fstab (make-fstab))
-  (append (capture-rcfiles fstab)
-          (capture-links fstab)
-          (capture-commands fstab)))
+   (define foo-info
+     (copy-zcpkg-info dummy-zcpkg-info
+                      [provider-name "fooby"]
+                      [package-name "foo"]
+                      [dependencies '()]))
 
-(define (capture-rcfiles fstab)
-  (parameterize ([current-directory (workspace-directory)])
-    (for/hash ([p (in-directory "etc")])
-      (define entry (hash-ref fstab p))
-      (capture-entry (path->string p)
-                     #f
-                     (file->bytes p)))))
+   (write-zcpkg-info-to-directory foo-info (zcpkg-info->install-path foo-info))
 
-(define (capture-links fstab)
-  (define-values (by-id links-only)
-    (for/fold ([lookup (hash)]
-               [links null])
-              ([(path entry) (in-hash fstab)])
-      (values (hash-set lookup (fs-entry-id entry) path)
-              (if (eq? (fs-entry-kind entry) 'link)
-                  (cons path links)
-                  links))))
+   (define buffer (open-output-bytes))
+   (write-workspace-capture buffer)
 
-  (for/list ([link-path (in-list links-only)])
-    (capture-entry (path->string link-path)
-                   #f
-                   (hash-ref by-id (file-or-directory-identity link-path)))))
+   (define reread (read (open-input-bytes (get-output-bytes buffer #t))))
 
-(define (capture-commands fstab)
-  ; TODO: Seek out info.rkt files with source information.
-  (list))
+   (check-equal? reread
+                 (generate-workspace-reproduction-module))
 
-(define (restore-file entry)
-  (match-define (capture-entry path _ repro) entry)
-  (make-directory* (path-only path))
-  (call-with-output-file path
-    (λ (out)
-      (copy-port (open-input-bytes repro) out))))
+   (define depstring (dependency->string (zcpkg-info->dependency foo-info)))
+   (define command `(install! ,depstring))
 
-(define (restore-link entry)
-  (match-define (capture-entry path _ repro) entry)
-  (make-directory* (path-only path))
-  (make-file-or-directory-link repro path))
+   (test-equal? "Installed package is captured as a command"
+                (member command reread)
+                (list command))
 
-; TODO: refactor to defer side effects, and pass to company.
-(define (reproduce-workspace entries [commands null])
-  (if (null? entries)
-      commands
-      (reproduce-workspace
-       (cdr entries)
-       (let* ([entry (car entries)]
-              [repro (capture-entry-reproduction entry)])
-         (cond [(bytes? repro)
-                (restore-file entry)]
-               [(string? repro)
-                (restore-link entry)]
-               [(vector? repro)
-                (cons repro commands)])))))
+   (define configs
+     (filter-map (λ (v)
+                   (and (list? v)
+                        (eq? (car v) 'set-config!)
+                        (cdr v)))
+                 reread))
+
+   (test-true "Represent an entire zcpkg configuration in a capture"
+              (andmap (λ (set-config!-args)
+                        (define config-key (cadr (car set-config!-args))) ; Symbol is in (quote) form
+                        (define config-val (cadr set-config!-args))
+                        (and (hash-has-key? ZCPKG_SETTINGS config-key)
+                             (let ([setting-instance (hash-ref ZCPKG_SETTINGS config-key)])
+                               ((setting-valid? setting-instance)
+                                (read (open-input-string config-val))))))
+                      configs))))

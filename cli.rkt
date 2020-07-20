@@ -64,7 +64,6 @@
          ["config" config-command]
          ["show" show-command]
          ["capture" capture-command]
-         ["restore" restore-command]
          ["download" download-command]
          ["upload" upload-command]
          [_ (printf "Unrecognized command: ~s. Run with -h for usage information.~n"
@@ -80,8 +79,6 @@
   show       Print helpful information
   config     Configure the package manager
   capture    Create a capture file
-  restore    Reproduce files via a capture
-  diff       Compare files to a capture
   sandbox    Start sandboxed REPL for package's setup module.
   register   Register an account on a catalog
   serve      Serve installed packages
@@ -178,8 +175,8 @@ EOF
   (run-command-line
    #:program "install"
    #:args args
-   #:arg-help-strings '("package-source")
-   (capture-workspace)))
+   #:arg-help-strings null
+   (λ (flags) (capture-workspace))))
 
 (define (config-command args)
   (define (make-fail-thunk str)
@@ -364,17 +361,9 @@ EOF
    #:arg-help-strings '("urns")
    #:args args
    (λ (flags . urns)
-     (define-values (work stop) (zcpkg-start-team!))
-     (define backlog (work (map $uninstall-package urns)))
-     (work backlog))))
-
-(define (restore-command args)
-  (run-command-line
-   #:program "restore"
-   #:arg-help-strings '("capture-file")
-   #:args args
-   (λ (flags capture-file)
-     (restore-workspace capture-file))))
+     (define controller (zcpkg-start-team!))
+     (define backlog (controller (map $uninstall-package urns)))
+     (controller backlog))))
 
 (define (download-command args)
   (run-command-line
