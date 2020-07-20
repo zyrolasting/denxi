@@ -128,13 +128,13 @@ EOF
     ZCPKG_TRUST_BAD_SIGNATURE
     ZCPKG_TRUST_UNSIGNED
     ZCPKG_INSTALL_ORPHAN
-    ZCPKG_INSTALL_CONSENT
+    ZCPKG_CONSENT
     ZCPKG_DOWNLOAD_IGNORE_CACHE)
 
    (λ (flags . package-sources)
      (define sow (find-scope-of-work package-sources))
 
-     (if (ZCPKG_INSTALL_CONSENT)
+     (if (ZCPKG_CONSENT)
          (do-work sow)
          (review-work package-sources sow)))))
 

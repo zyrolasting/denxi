@@ -174,9 +174,9 @@
    boolean?
    #f}
 
-  {ZCPKG_INSTALL_CONSENT
+  {ZCPKG_CONSENT
    "-y"
-   ("Proceed with installation")
+   ("Proceed with operation")
    boolean?
    #f}
 
