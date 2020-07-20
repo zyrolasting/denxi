@@ -93,46 +93,12 @@ EOF
   (define (show-report output)
     (writeln output))
 
-
   (define (review-work package-sources sow)
-    (define targets
-      (map car (hash-values sow)))
-
-    (define infos
-      (sort targets
-            #:key (λ (info) (dependency->string (zcpkg-info->dependency info)))
-            string<?))
-
-    (printf "~nSources:~n~a~n~n"
-            (string-join (map (λ (s) (~a "  " s)) package-sources) "\n"))
-
-    (define (get-cell-printer strs)
-      (define min-width (apply max (map string-length strs)))
-      (λ args (apply ~a #:min-width min-width args)))
-
-
-    (define print-provider-name (get-cell-printer (map zcpkg-info-provider-name infos)))
-    (define print-package-name  (get-cell-printer (map zcpkg-info-package-name infos)))
-    (define print-edition-name  (get-cell-printer (map zcpkg-info-edition-name infos)))
-    (define print-revision-num  (get-cell-printer (map (compose ~a zcpkg-info-revision-number) infos)))
-
-    (define row-fmt "~a\t~a\t~a\t~a")
-    (printf (~a (format row-fmt
-                        (print-package-name "Package")
-                        (print-provider-name "Provider")
-                        (print-edition-name "Edition")
-                        (print-revision-num "Revision"))
-                "~n~a~n~n")
-            (string-join
-             (for/list ([info (in-list infos)])
-               (format row-fmt
-                       (print-package-name (zcpkg-info-package-name info))
-                       (print-provider-name (zcpkg-info-provider-name info))
-                       (print-edition-name (zcpkg-info-edition-name info))
-                       (print-revision-num (zcpkg-info-revision-number info))))
-             "\n"))
-
-    (displayln "To consent to these changes, run again with -y"))
+    (define targets (map car (hash-values sow)))
+    (printf "~nSources:~n~a~n~n" (join-lines (indent-lines package-sources)))
+    (print-zcpkg-info-table targets)
+    (printf "To consent to these changes, run again with ~a~n"
+            (setting->short-flag ZCPKG_CONSENT)))
 
   (define (do-work sow)
     (define controller (zcpkg-start-team!))
