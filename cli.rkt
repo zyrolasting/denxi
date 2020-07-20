@@ -68,7 +68,6 @@
          ["capture" capture-command]
          ["sandbox" sandbox-command]
          ["serve" serve-command]
-         ["upload" upload-command]
          [_ (printf "Unrecognized command: ~s. Run with -h for usage information.~n"
                     action)
             1]))
