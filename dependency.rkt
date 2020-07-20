@@ -22,7 +22,7 @@
           [dependency->string (-> dependency? string?)]
           [string->dependency (-> string? dependency?)]
           [zcpkg-info->dependency (-> zcpkg-info? dependency?)]
-          [search-zcpkg-infos (-> dependency? (sequence/c zcpkg-info?) zcpkg-info?)]
+          [search-zcpkg-infos (-> dependency-variant? (sequence/c zcpkg-info?) (sequence/c zcpkg-info?))]
           [dependency-match? (-> dependency-variant? dependency-variant? boolean?)]))
 
 
