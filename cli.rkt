@@ -392,10 +392,12 @@ EOF
                        /!\   WARNING   /!\
 =====================================================================
 
-Do not leak confidential information in your payload.  If this
-happens, you may upload replacements within a grace period set by the
-server. After that, the artifact can only be removed by an
-administrator.
+Be sure that you did not leave any confidential information in your
+package.
+
+Once you upload your package, you may upload replacements within a
+grace period set by the server. After that, it can only be removed by
+an administrator.
 
 EOF
 ))
