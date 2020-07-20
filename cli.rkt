@@ -81,9 +81,8 @@
   config     Configure the package manager
   capture    Create a capture file
   sandbox    Start sandboxed REPL for package's setup module.
-  register   Register an account on a catalog
-  serve      Serve installed packages
-  download   Download packages and metadata
+  register   Register an account on a configured catalog
+  serve      Serve package artifacts
   upload     Upload packages and metadata
 
 EOF
@@ -383,20 +382,6 @@ EOF
      (define controller (zcpkg-start-team!))
      (define backlog (controller (map $uninstall-package urns)))
      (controller backlog))))
-
-(define (download-command args)
-  (run-command-line
-   #:program "download"
-   #:arg-help-strings '("kind" "target")
-   #:args args
-   (λ (flags kind u)
-     (void))
-   #<<EOF
-where <kind> is one of
-  info     Download package metadata. <target> is a URL
-  package  A package. <target> is a downloaded info file.
-EOF
-))
 
 (define (upload-command args)
   (run-command-line
