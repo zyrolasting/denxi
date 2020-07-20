@@ -21,6 +21,7 @@
          "file.rkt"
          "message.rkt"
          "setting.rkt"
+         "setup.rkt"
          "source.rkt"
          "string.rkt"
          "team.rkt"
@@ -60,11 +61,11 @@
          ["install" install-command]
          ["uninstall" uninstall-command]
          ["new" new-command]
-         ["serve" serve-command]
          ["config" config-command]
          ["show" show-command]
          ["capture" capture-command]
-         ["download" download-command]
+         ["sandbox" sandbox-command]
+         ["serve" serve-command]
          ["upload" upload-command]
          [_ (printf "Unrecognized command: ~s. Run with -h for usage information.~n"
                     action)
@@ -334,6 +335,24 @@ EOF
      (printf "Service up. ^C to stop~n")
      (with-handlers ([exn:break? (λ (e) (displayln "bye"))])
        (sync/enable-break never-evt)))))
+
+
+(define (sandbox-command args)
+  (run-command-line
+   #:program "sandbox"
+   #:arg-help-strings '("query")
+
+   #:flags
+   (settings->flag-specs
+    ZCPKG_SANDBOX_MEMORY_LIMIT_MB
+    ZCPKG_SANDBOX_TIME_LIMIT_SECONDS
+    ZCPKG_SANDBOX_ALLOWED_HOSTS
+    ZCPKG_SANDBOX_PATH_PERMISSIONS)
+
+   #:args args
+   (λ (flags query)
+     (enter-setup-module (find-exactly-one-info query)))))
+
 
 (define (show-command args)
   (run-command-line

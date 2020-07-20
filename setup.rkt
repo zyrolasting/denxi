@@ -15,22 +15,28 @@
          "logging.rkt"
          "dependency.rkt"
          "url.rkt"
-         "zcpkg-info.rkt")
+         "zcpkg-info.rkt"
+         "zcpkg-settings.rkt")
 
 
-(define (enter-setup-module zcpkg-path info)
-  (define name (dependency->string (zcpkg-info->dependency info)))
-  (define setup-module-path (get-setup-module-path zcpkg-path name info))
+
+(define (enter-setup-module info)
+  (define setup-module-path (get-setup-module-path info))
   (when setup-module-path
     (parameterize ([sandbox-output (current-output-port)]
                    [sandbox-input (current-input-port)]
-                   [sandbox-error-output (current-error-port)])
+                   [sandbox-error-output (current-error-port)]
+                   [sandbox-memory-limit (ZCPKG_SANDBOX_MEMORY_LIMIT_MB)]
+                   [sandbox-eval-limits (list (ZCPKG_SANDBOX_EVAL_TIME_LIMIT_SECONDS)
+                                              (ZCPKG_SANDBOX_EVAL_MEMORY_LIMIT_MB))]
+                   [sandbox-path-permissions (ZCPKG_SANDBOX_PATH_PERMISSIONS)])
       (parameterize ([current-eval (make-module-evaluator #:language 'racket/base setup-module-path)])
         (read-eval-print-loop)))
     void))
 
-
-(define (get-setup-module-path zcpkg-path name info)
+(define (get-setup-module-path info)
+  (define name (dependency->string (zcpkg-info->dependency info)))
+  (define zcpkg-path (zcpkg-info->install-path info))
   (define setup-module-path (zcpkg-info-setup-module info))
   (define path-to-verify (simplify-path (build-path zcpkg-path setup-module-path)))
   (and setup-module-path

@@ -80,26 +80,35 @@
     [(unix) 1024]
     [else #f])}
 
-  {ZCPKG_INSTALLER_MEMORY_LIMIT_MB
+  {ZCPKG_SANDBOX_MEMORY_LIMIT_MB
    "-M"
-   ("Installer memory quota" "mibibytes")
+   ("Total memory quota for a sandbox" "mibibytes")
    (>=/c 0)
    30}
 
-  {ZCPKG_INSTALLER_TIME_LIMIT_SECONDS
+  {ZCPKG_SANDBOX_EVAL_MEMORY_LIMIT_MB
+   "-e"
+   ("Memory quota for each sandboxed expression" "mibibytes")
+   (>=/c 0)
+   10}
+
+  {ZCPKG_SANDBOX_EVAL_TIME_LIMIT_SECONDS
    "-S"
-   ("Installer time limit" "seconds")
+   ("Time limit for each sandboxed expression" "seconds")
    (>=/c 0)
    (* 5 60)}
 
   ; Controls network and file I/O permissions for sandboxed installers.
-  {ZCPKG_INSTALLER_ALLOWED_HOSTS
-   "-H"
-   ("Hosts an installer may contact." "string-list")
-   (listof string?)
-   null}
+  {ZCPKG_SANDBOX_NETWORK_PERMISSIONS
+   "-N"
+   ("Regex patterns permissions" "string-list")
+   (list/c (or/c #f string?)
+           (or/c #f string?)
+           (or/c #f string?)
+           (or/c #f string?))
+   '(#f #f #f #f)}
 
-  {ZCPKG_INSTALLER_PATH_PERMISSIONS
+  {ZCPKG_SANDBOX_PATH_PERMISSIONS
    "-P"
    ("A value for sandbox-path-permissions" "racket-value")
    (listof (list/c (or/c 'execute 'write 'delete
