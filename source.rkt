@@ -6,7 +6,8 @@
 
 (provide find-scope-of-work)
 
-(require racket/path
+(require (only-in racket/list remove-duplicates)
+         racket/path
          racket/set
          "config.rkt"
          "dependency.rkt"
@@ -97,8 +98,9 @@
   (define seen (make-hash))
   (for ([source (in-list package-sources)])
     (resolve-source source (current-directory) seen))
-  seen)
 
+  (for/hash ([(k v) (in-hash seen)])
+    (values k (remove-duplicates v))))
 
 
 (module+ test
@@ -144,11 +146,10 @@
 
    (parameterize ([current-url->response-values
                    (λ (u) (values 200 (hash) (open-input-bytes mock-remote-info)))])
-     (check-equal? (find-scope-of-work '("./foo" "./bar"))
-                   (make-hash
-                    `((,(build-path* "foo") . (,foo-info ,foo-info ,bar-info))
-                      (,(build-path* "bar") . (,bar-info ,foo-info ,acme-info))
-                      ("acme:anvil:heavy:0" . (,acme-info ,acme-info)))))))
+     (define h (find-scope-of-work '("./foo" "./bar")))
+     (check-equal? (hash-ref h (build-path* "foo")) (list foo-info bar-info))
+     (check-equal? (hash-ref h (build-path* "bar")) (list bar-info foo-info acme-info))
+     (check-equal? (hash-ref h "acme:anvil:heavy:0") (list acme-info))))
 
   (parameterize ([current-directory ./])
     (test-false "If it looks like a file path, then it doesn't count"
