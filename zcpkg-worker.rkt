@@ -80,7 +80,9 @@
         (make-directory* (path-only install-path))
         (make-file-or-directory-link package-path install-path))
 
-      (make-zcpkg-links #:search? #f dependency-infos install-path)
+      (make-zcpkg-dependency-links #:search? #f dependency-infos install-path)
+      (make-zcpkg-revision-links info)
+
       (compile-racket-modules install-path)
       (send-output ($on-package-installed info)))
 

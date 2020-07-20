@@ -15,7 +15,7 @@
          file/gzip
          file/untgz)
 
-(define (pack dir #:to [dest (path-only dir)])
+(define (pack dir #:to [dest (or (path-only dir) (current-directory))])
   (define archive-path (build-path dest (make-archive-name dir)))
   (parameterize ([current-directory dir])
     (apply tar-gzip

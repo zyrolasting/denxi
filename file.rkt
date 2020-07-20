@@ -97,9 +97,6 @@
   (sequence-ref infos 0))
 
 
-(define (make-zcpkg-links #:search? search? variant-list [where (current-directory)])
-  (make-zcpkg-dependency-links #:search? search? variant-list where))
-
 (define (make-link/clobber to link-path)
   (make-directory* (path-only link-path))
   (when (link-exists? link-path)
@@ -113,12 +110,25 @@
               CONVENTIONAL_DEPENDENCY_DIRECTORY_NAME
               (zcpkg-info->relative-path info #:abbrev 2)))
 
+
 (define (make-zcpkg-dependency-links #:search? search? dependencies [where (current-directory)])
   (unless (null? dependencies)
     (for/list ([variant (in-list dependencies)])
-      (define info (if search? (find-exactly-one-info variant) variant))
-      (make-link/clobber (zcpkg-info->install-path info)
-                         (build-dependency-path where info)))))
+      (define dependency-info (if search? (find-exactly-one-info variant) variant))
+      (make-link/clobber (zcpkg-info->install-path dependency-info)
+                         (build-dependency-path where dependency-info)))))
+
+
+(define (make-zcpkg-revision-links info #:newest? [newest? #f])
+  (define install-path (zcpkg-info->install-path info))
+  (parameterize ([current-directory (path-only install-path)])
+    (define user-specified
+      (for/list ([revision-name (in-list (zcpkg-info-revision-names info))])
+        (make-link/clobber install-path revision-name)))
+    (if newest?
+        (cons (make-link/clobber install-path CONVENTIONAL_NEWEST_REVISION_NAME)
+              user-specified)
+        user-specified)))
 
 
 (define (zcpkg-installed? info)
