@@ -2,7 +2,7 @@
 
 all: exe doc
 
-test: compile
+test:
 	raco test -j 8 *.rkt
 
 racket-deps:
