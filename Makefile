@@ -12,12 +12,7 @@ compile:
 	raco make -j 8 -v *.rkt
 
 exe: compile test
-	raco exe -o zcpkg \
-	++lang racket/base \
-	++lib racket \
-	++lib rackunit \
-	++lib compiler/cm \
-	cli.rkt
+	raco exe -l cli.rkt
 
 doc:
 	raco make *.scrbl
