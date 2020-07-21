@@ -3,35 +3,24 @@
 @title{A Zero-Collection Package Management System}
 @author[(author+email "Sage L. Gerard" "sage@sagegerard.com" #:obfuscate? #t)]
 
-
-@section{Abstract}
-
-Racket projects have unique distribution challenges. This paper
-presents a model that is tailored for private interests, making it
-resistant to the distribution problems facing Racket's existing
-package management systems. The objective of this paper is to
-summarize a freemium zero-collection package management system, where
-distributors do not have to worry about work interruptions on account
-of another party's actions.
-
+This paper presents a better package management system for Racket.
 
 @section{Problem Statement}
 
 Collections group modules in Racket. Racket packages define at least
 one collection, and no two packages are allowed to create conflicting
-collection paths. If packages conflict in this way and you want to use
-all conflicting packages in a project, then you need to reconfigure
-Racket to use both packages on the same system. One method is to use a
-tethered installation, which adds a new package scope and a new place
-to specify search paths and package catalogs.
+collection paths. If you want to use conflicting packages, then you
+need to prepare a Racket installation or executable that searches for
+collections in a specified order (See @secref["config-file" #:doc
+'(lib "scribblings/raco/raco.scrbl")]).
 
-While Racket installations provide tools to help users resolve package
-conflicts in this way, these tools might need to be used reactively.
-If you publish a software package using Racket, then it's easy for
-anyone to cause package conflicts that prevent your users from
-experiencing your work as intended. Specifically, users discover that
-they are expected to read and apply @secref["config-file" #:doc '(lib
-"scribblings/raco/raco.scrbl")].
+While this works, it's not fun to ask users to reactively tinker with
+Racket for the sake of some libraries.
+
+To make matters worse, it's easy for anyone to cause package conflicts
+that prevent your users from experiencing your work as intended. You
+can publish a package that takes down links to someone else's online
+documentation.
 
 I'll paraphrase an old joke: A physicist, an engineer, and a
 mathematician were jolted awake in a burning hotel.  The engineer
@@ -45,12 +34,11 @@ solution to the fire, he went back to sleep.
 
 The solution to Racket's difficult package management experience does
 cannot be the equivalent of a bucket, a bathtub, and the sleepy
-mathematician's attitude to your experience of a fire.
-
-Businesses and active developers cannot rely on a system where
-strangers and new ideas break distribution. There is an oppurtunity to
-offer a solution to dependency hell with @italic{any given} Racket
-installation and configuration.
+mathematician's attitude to your experience of a fire. Businesses and
+active developers cannot rely on a system where strangers and new
+ideas break distribution. There is an oppurtunity to offer a solution
+to dependency hell with @italic{any given} Racket installation and
+configuration.
 
 
 @section{High-Level Solution}
