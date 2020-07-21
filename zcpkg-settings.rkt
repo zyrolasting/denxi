@@ -51,6 +51,11 @@
   (current-zcpkg-config controller)
   controller)
 
+; Reset each setting's override value
+(define (reset-zcpkg-setting-overrides!)
+  (for ([(k v) (in-hash ZCPKG_SETTINGS)])
+    (v (void))))
+
 ; The path length budget helps the package manager decide if it should use
 ; a custom addressing scheme when installs packages in a sufficiently-nested
 ; directory.

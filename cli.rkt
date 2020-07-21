@@ -39,6 +39,7 @@
 
 ; Keep seperate for functional tests.
 (define (entry-point [args (current-command-line-arguments)])
+  (reset-zcpkg-setting-overrides!)
   (load-zcpkg-settings!)
   (define maybe-exit
     (with-handlers ([exact-nonnegative-integer? values])
@@ -504,8 +505,40 @@ EOF
 
   (test-workspace "Install a local package with no dependencies"
     (define package-name "foo")
-    (run-entry-point (vector "new" "foo") void)
-    (run-entry-point (vector "install" "./foo")
+    (run-entry-point (vector "new" package-name) void)
+
+    (define info (read-zcpkg-info-from-directory package-name))
+    (define install-path (zcpkg-info->install-path info))
+
+    ; Without explicit consent, the workspace filesystem does not change.
+    ; The user is only alerted to what would happen if they gave consent.
+    (run-entry-point (vector "install" package-name)
                      (λ (exit-code stdout stderr)
-                       (copy-port stdout (current-output-port))
+                       ; Make sure the output mentions the package by name.
+                       (check-true (regexp-match? (regexp package-name) stdout))
+                       (check-false (directory-exists? install-path))
+                       (check-eq? exit-code 0)))
+
+    (run-entry-point (vector "install" (setting->short-flag ZCPKG_CONSENT) package-name)
+                     (λ (exit-code stdout stderr)
+                       (check-equal?
+                        (file-or-directory-identity install-path)
+                        (file-or-directory-identity package-name))
+                       (check-eq? exit-code 0)))
+
+    ; Uninstallation has the same workflow. By default it does nothing but state its intentions.
+    (run-entry-point (vector "uninstall" (dependency->string (zcpkg-info->dependency info)))
+                     (λ (exit-code stdout stderr)
+                       (check-true (regexp-match? (regexp package-name) stdout))
+                       (check-equal?
+                        (file-or-directory-identity install-path)
+                        (file-or-directory-identity package-name))
+                       (check-eq? exit-code 0)))
+
+    (run-entry-point (vector "uninstall"
+                             (setting->short-flag ZCPKG_CONSENT)
+                             (dependency->string (zcpkg-info->dependency info)))
+                     (λ (exit-code stdout stderr)
+                       (check-false (directory-exists? install-path))
+                       (check-true (directory-exists? package-name))
                        (check-eq? exit-code 0)))))
