@@ -57,3 +57,9 @@
                             url-path
                             url-query
                             url-fragment))))
+
+(module+ test
+  (require rackunit)
+
+  (check-equal? (get-leading-path-element (string->url "https://example.com/blah;uh/foo?a=b#baz"))
+                "blah"))
