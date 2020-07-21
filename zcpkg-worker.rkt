@@ -115,14 +115,7 @@
           (send-output ($already-installed target))
           (if (directory-exists? url-or-path)
               (install-local-package target dependency-infos url-or-path)
-              (install-remote-package target dependency-infos url-or-path))))
-
-
-    (define/public (handle-$uninstall-package dependency-variant)
-      (define target-info (find-exactly-one-info dependency-variant))
-      (define install-path (zcpkg-info->install-path target-info))
-      (delete-directory/files/empty-parents install-path)
-      (send-output ($on-package-uninstalled target-info)))))
+              (install-remote-package target dependency-infos url-or-path))))))
 
 
 

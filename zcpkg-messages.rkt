@@ -16,6 +16,4 @@
 (define-message $on-missing-signature (info))
 (define-message $on-unverified-host (host))
 (define-message $on-package-installed (info))
-(define-message $on-package-uninstalled (info))
 (define-message $install-package (infos url-or-path))
-(define-message $uninstall-package (dependency-string))
