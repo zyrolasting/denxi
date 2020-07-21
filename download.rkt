@@ -10,7 +10,7 @@
          racket/port
          net/head
          "config.rkt"
-         "dependency.rkt"
+         "zcpkg-query.rkt"
          "file.rkt"
          "format.rkt"
          "logging.rkt"
@@ -30,11 +30,11 @@
   (delete-directory/files (get-cache-directory)))
 
 
-(define (dependency->url catalog-url path-prefix dep)
+(define (zcpkg-query->url catalog-url path-prefix dep)
   (merge-urls
    (url #f #f #f #f #f
         (list (path/param path-prefix null)
-              (path/param (dependency->string dep) null))
+              (path/param (zcpkg-query->string dep) null))
         null #f)
    catalog-url))
 
@@ -42,14 +42,14 @@
 (define (download-info variant)
   (if (url? variant)
       (assert-valid-info variant (read-zcpkg-info (download-file variant)))
-      (let* ([dep (coerce-dependency variant)]
-             [dep-string (dependency->string dep)])
+      (let* ([dep (coerce-zcpkg-query variant)]
+             [dep-string (zcpkg-query->string dep)])
         (for/fold ([maybe-info #f])
                   ([name&string-url (in-list (ZCPKG_SERVICE_ENDPOINTS))])
           #:break maybe-info
           (define catalog-string-url (cdr name&string-url))
           (define catalog-url (string->url catalog-string-url))
-          (download-info (dependency->url catalog-url "info" dep))))))
+          (download-info (zcpkg-query->url catalog-url "info" dep))))))
 
 
 (define (assert-valid-info source-url info)
@@ -63,7 +63,7 @@
 
 
 (define (download-artifact catalog-url dep info)
-  (download-file (dependency->url catalog-url "artifact" dep)))
+  (download-file (zcpkg-query->url catalog-url "artifact" dep)))
 
 
 ; Works if only the URL host and path matter.

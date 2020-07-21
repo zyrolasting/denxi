@@ -9,7 +9,7 @@
          racket/port
          racket/pretty
          "config.rkt"
-         "dependency.rkt"
+         "zcpkg-query.rkt"
          "file.rkt"
          "message.rkt"
          "setting.rkt"
@@ -47,7 +47,7 @@
 
 (define (capture-install-targets)
   (for/list ([info (in-installed-info)])
-    (dependency->string (zcpkg-info->dependency info))))
+    (zcpkg-query->string (zcpkg-info->zcpkg-query info))))
 
 (define (write-workspace-capture [o (current-output-port)])
   (pretty-write #:newline? #t (generate-workspace-reproduction-module) o))
@@ -78,7 +78,7 @@
    (check-equal? reread
                  (generate-workspace-reproduction-module))
 
-   (define depstring (dependency->string (zcpkg-info->dependency foo-info)))
+   (define depstring (zcpkg-query->string (zcpkg-info->zcpkg-query foo-info)))
    (define command `(install! ,depstring))
 
    (test-equal? "Installed package is captured as a command"

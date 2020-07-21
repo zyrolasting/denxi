@@ -10,7 +10,7 @@
          racket/set
          racket/sequence
          "config.rkt"
-         "dependency.rkt"
+         "zcpkg-query.rkt"
          "setting.rkt"
          "string.rkt"
          "workspace.rkt"
@@ -82,15 +82,15 @@
         (cons dep wip)
         wip)))
 
-(define (find-exactly-one-info dependency-variant)
-  (define infos (search-zcpkg-infos dependency-variant (in-installed-info)))
+(define (find-exactly-one-info zcpkg-query-variant)
+  (define infos (search-zcpkg-infos zcpkg-query-variant (in-installed-info)))
   (case (sequence-length infos)
-    [(0) (error 'find-exactly-one-info "~a is not installed" dependency-variant)]
+    [(0) (error 'find-exactly-one-info "~a is not installed" zcpkg-query-variant)]
     [(1) (void)]
     [else
      (raise (exn:fail:user
              (format "~s is ambiguous. Which of these did you mean?~n~s"
-                     (string-join (map (compose dependency->string coerce-dependency)
+                     (string-join (map (compose zcpkg-query->string coerce-zcpkg-query)
                                        infos)
                                   "\n"))
              (current-continuation-marks)))])

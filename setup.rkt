@@ -13,7 +13,7 @@
          "workspace.rkt"
          "config.rkt"
          "logging.rkt"
-         "dependency.rkt"
+         "zcpkg-query.rkt"
          "url.rkt"
          "zcpkg-info.rkt"
          "zcpkg-settings.rkt")
@@ -35,7 +35,7 @@
     void))
 
 (define (get-setup-module-path info)
-  (define name (dependency->string (zcpkg-info->dependency info)))
+  (define name (zcpkg-query->string (zcpkg-info->zcpkg-query info)))
   (define zcpkg-path (zcpkg-info->install-path info))
   (define setup-module-path (zcpkg-info-setup-module info))
   (define path-to-verify (simplify-path (build-path zcpkg-path setup-module-path)))

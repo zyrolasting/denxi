@@ -16,7 +16,7 @@
          "capture.rkt"
          "config.rkt"
          "contract.rkt"
-         "dependency.rkt"
+         "zcpkg-query.rkt"
          "download.rkt"
          "file.rkt"
          "format.rkt"
@@ -527,7 +527,7 @@ EOF
                        (check-eq? exit-code 0)))
 
     ; Uninstallation has the same workflow. By default it does nothing but state its intentions.
-    (run-entry-point (vector "uninstall" (dependency->string (zcpkg-info->dependency info)))
+    (run-entry-point (vector "uninstall" (zcpkg-query->string (zcpkg-info->zcpkg-query info)))
                      (λ (exit-code stdout stderr)
                        (check-true (regexp-match? (regexp package-name) stdout))
                        (check-equal?
@@ -537,7 +537,7 @@ EOF
 
     (run-entry-point (vector "uninstall"
                              (setting->short-flag ZCPKG_CONSENT)
-                             (dependency->string (zcpkg-info->dependency info)))
+                             (zcpkg-query->string (zcpkg-info->zcpkg-query info)))
                      (λ (exit-code stdout stderr)
                        (check-false (directory-exists? install-path))
                        (check-true (directory-exists? package-name))

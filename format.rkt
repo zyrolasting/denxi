@@ -5,7 +5,7 @@
          (all-from-out racket/format))
 
 (require racket/format
-         "dependency.rkt"
+         "zcpkg-query.rkt"
          "string.rkt"
          "zcpkg-info.rkt")
 
@@ -21,7 +21,7 @@
 (define (print-zcpkg-info-table unsorted-infos)
   (define infos
     (sort unsorted-infos
-          #:key (λ (info) (dependency->string (zcpkg-info->dependency info)))
+          #:key (λ (info) (zcpkg-query->string (zcpkg-info->zcpkg-query info)))
           string<?))
 
   (define (get-cell-printer strs)

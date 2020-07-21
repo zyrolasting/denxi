@@ -10,7 +10,7 @@
          racket/path
          racket/set
          "config.rkt"
-         "dependency.rkt"
+         "zcpkg-query.rkt"
          "download.rkt"
          "file.rkt"
          "format.rkt"
@@ -22,12 +22,12 @@
 
 (define (source->variant v requesting-path)
   (or (source->maybe-path v requesting-path)
-      (source->maybe-dependency v)
+      (source->maybe-zcpkg-query v)
       (string->url v)))
 
 (define (variant->source v)
   (cond [(url? v) (url->string v)]
-        [(dependency? v) (dependency->string v)]
+        [(zcpkg-query? v) (zcpkg-query->string v)]
         [(path? v) (path->string v)]))
 
 (define (source->maybe-path #:must-exist? [must-exist? #t] v [relative-path-root (current-directory)])
@@ -64,10 +64,10 @@
         [else #f]))
 
 
-(define (source->maybe-dependency v)
+(define (source->maybe-zcpkg-query v)
   (with-handlers ([exn? (λ _ #f)])
-    (define dep (coerce-dependency v))
-    (and (well-formed-dependency? dep)
+    (define dep (coerce-zcpkg-query v))
+    (and (well-formed-zcpkg-query? dep)
          dep)))
 
 
@@ -170,13 +170,13 @@
     (test-false "Don't make paths out of things that don't exist."
                 (source->maybe-path #:must-exist? #f "weeee.erk")))
 
-  (test-true "All valid dependency strings are valid sources"
-             (andmap (λ (s) (dependency? (source->maybe-dependency s)))
+  (test-true "All valid zcpkg-query strings are valid sources"
+             (andmap (λ (s) (zcpkg-query? (source->maybe-zcpkg-query s)))
                      (list "provider:package"
                            "provider:package:draft"
                            "provider:package:draft:newest"
                            "provider:package:draft:oldest:newest"
                            "provider:package:draft:i:oldest:e:newest")))
 
-  (test-false "Invalid dependency strings are not valid sources"
-              (dependency? (source->maybe-dependency "fsdfhbsdfj"))))
+  (test-false "Invalid zcpkg-query strings are not valid sources"
+              (zcpkg-query? (source->maybe-zcpkg-query "fsdfhbsdfj"))))

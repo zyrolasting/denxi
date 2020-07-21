@@ -16,7 +16,7 @@
          (prefix-in lift:
                     web-server/dispatchers/dispatch-lift)
          "config.rkt"
-         "dependency.rkt"
+         "zcpkg-query.rkt"
          "file.rkt"
          "url.rkt"
          "workspace.rkt"
@@ -65,9 +65,9 @@
 
 
 (define (send-info req urn)
-  (cond [(not (dependency-string? urn))
+  (cond [(not (zcpkg-query-string? urn))
          (response/text #:code 400
-                        "~s is not a valid dependency string.~n"
+                        "~s is not a valid zcpkg-query string.~n"
                         urn)]
 
         [(equal? (request-method req) #"GET")

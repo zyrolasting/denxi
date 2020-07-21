@@ -21,7 +21,7 @@
          "url.rkt"
          "zcpkg-info.rkt"
          "zcpkg-settings.rkt"
-         "dependency.rkt")
+         "zcpkg-query.rkt")
 
 (define openssl (find-executable-path "openssl"))
 
@@ -111,11 +111,11 @@
          zcpkg-info-setup-module
          "a path string, or #f")
 
-  (check (listof (or/c dependency-string?
+  (check (listof (or/c zcpkg-query-string?
                        path-string?
                        url-string?))
          zcpkg-info-dependencies
-         "a list containing dependency URNs, URLs, or paths")
+         "a list containing zcpkg-query URNs, URLs, or paths")
 
   (when for-server?
     (check non-empty-bytes? zcpkg-info-integrity
