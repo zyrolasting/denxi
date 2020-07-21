@@ -1,4 +1,4 @@
-.PHONY: all test clean
+.PHONY: all test clean doc
 
 all: exe doc
 
