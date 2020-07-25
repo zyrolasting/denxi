@@ -1,5 +1,16 @@
 A better package manager for Racket.
 
+## Project Status
+
+Unfinished. The server-side remains incomplete. The client side is
+useable, albiet subject to change. Another branch, `racket-minimal` is
+ongoing to adapt the existing code for use on a minimal Racket
+distribution.
+
+My goal is to get the project to an alpha status by August 1st,
+but that is unlikely in the minimal Racket case.
+
+
 ## Benefits
 
 * You can install the _exact_ code you asked for.
