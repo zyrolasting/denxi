@@ -8,7 +8,8 @@ ongoing to adapt the existing code for use on a minimal Racket
 distribution.
 
 My goal is to get the project to an alpha status by August 1st,
-but that is unlikely in the minimal Racket case.
+but that is unlikely in the minimal Racket case. Long term, I would
+hope this project will be a Racket-flavor of Guix or Nix.
 
 
 ## Benefits
