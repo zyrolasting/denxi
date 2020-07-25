@@ -3,7 +3,7 @@ A better package manager for Racket.
 ## Project Status
 
 Unfinished. The server-side remains incomplete. The client side is
-useable, albiet subject to change. Another branch, `racket-minimal` is
+useable, albiet subject to change. Another branch, `minimal-racket` is
 ongoing to adapt the existing code for use on a minimal Racket
 distribution.
 
