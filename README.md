@@ -24,7 +24,7 @@ A flexible package manager for Racket.
 Yes, and it's fine. `zcpkg` complements `raco pkg`, and is not meant
 to provide redundant functionality.
 
-To borrow [Sam Boyer's terms][boyer], `raco pkg` is an **Language
+To borrow [Sam Boyer's terms][boyer], `raco pkg` is a **Language
 Package Manager**, or LPM.  It fetches and builds packages of Racket
 source code. `raco pkg` further presumes that Racket packages define
 at least one collection to include in a Racket installation. This
