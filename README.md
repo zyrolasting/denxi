@@ -25,7 +25,7 @@ Yes, and it's fine. `zcpkg` draws different boundaries on what
 constitutes a package, and how it impacts a surrounding system.
 
 To borrow [Sam Boyer's terms][boyer], `raco pkg` is an **Language Package
-Manager**, or LDM.  It fetches and builds packages of Racket source
+Manager**, or LPM.  It fetches and builds packages of Racket source
 code. `raco pkg` further presumes that Racket packages define at least
 one collection to include in a Racket installation, which creates
 scenarios specific to Racket.
