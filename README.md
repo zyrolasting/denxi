@@ -27,11 +27,11 @@ to provide redundant functionality.
 To borrow [Sam Boyer's terms][boyer], `raco pkg` is an **Language
 Package Manager**, or LPM.  It fetches and builds packages of Racket
 source code. `raco pkg` further presumes that Racket packages define
-at least one collection to include in a Racket installation, which
-creates scenarios specific to Racket. For example, a conflict in
-collection paths can force a user to create a custom configuration
-for Racket. These custom configurations are difficult to manage
-if you intend to use several conflicting packages at once.
+at least one collection to include in a Racket installation. This
+creates scenarios specific to Racket. For example, if two packages
+define conflicting collection paths, users may need to create a custom
+Racket configuration if they want to use both packages at once. These
+configurations can be painful to maintain on a case-by-case basis.
 
 The command `zcpkg` is short for "Zero-Collection Package," which
 means it manages packages under the assumption they define no
