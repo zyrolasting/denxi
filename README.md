@@ -1,15 +1,4 @@
-A better package manager for Racket.
-
-## Project Status
-
-Unfinished. The server-side remains incomplete. The client side is
-useable, albiet subject to change. Another branch, `minimal-racket` is
-ongoing to adapt the existing code for use on a minimal Racket
-distribution.
-
-My goal is to get the project to an alpha status by August 1st,
-but that is unlikely in the minimal Racket case. Long term, I would
-hope this project will be a Racket-flavor of Guix or Nix.
+A flexible package manager for Racket.
 
 
 ## Benefits
@@ -29,6 +18,50 @@ hope this project will be a Racket-flavor of Guix or Nix.
 * Dependencies are installed side-by-side ("SxS", for the hopelessly curt). This means added disk usage.
 * Dependency management is less opinionated, hence more involved if you have highly-specific needs.
 * Package development does not involve `raco setup` or `raco pkg`. The workflow is different.
+
+## Wait, we already have `raco pkg`
+
+Yes, and it's fine. `zcpkg` draws different boundaries on what
+constitutes a package, and how it impacts a surrounding system.
+
+To borrow [Sam Boyer's terms][boyer], `raco pkg` is an **Language Package
+Manager**, or LDM.  It fetches and builds packages of Racket source
+code. `raco pkg` further presumes that Racket packages define at least
+one collection to include in a Racket installation, which creates
+scenarios specific to Racket.
+
+However, a Racket program is not fully "contextualized" (for lack of a
+better term) until it is launched. To customize around things like
+package conflicts or search paths, you need to create custom executables
+and/or tethered Racket installations.
+
+`zcpkg` started when I wondered what would happen if a Racket package
+defined zero collections (The command `zcpkg` is short for
+"Zero-Collection Package").  Removing collections from the equation is
+a radical departure that severs the relationship between an arbitrary
+group of files and a Racket installation. No `raco setup`, no
+collection paths. For that reason, `zcpkg` concerns itself with
+(re)producing files that extend a given Racket installation without
+modifying it. From that end, you could call it a **Project/Application
+Dependency Manager**, or PDM. There are elements of system-level
+dependencies at work, but that's out of scope for this section.
+
+All you need to know up front is that `zcpkg` handles cases to
+compliment `raco pkg`.
+
+
+[boyer]: https://medium.com/@sdboyer/so-you-want-to-write-a-package-manager-4ae9c17d9527
+
+
+## Project Status
+
+Unfinished. The server-side remains incomplete. The client side is
+useable, but subject to change.
+
+My goal is to get the project to an alpha status by August 1st,
+but that is unlikely in the minimal Racket case. Long term, I would
+hope this project will be a Racket-flavor of Guix or Nix.
+
 
 ## Setup
 
