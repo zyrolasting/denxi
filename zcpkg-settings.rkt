@@ -158,6 +158,12 @@
    boolean?
    #f}
 
+  {ZCPKG_PRIVATE_KEY_PATH
+   "-q"
+   ("The location of a private key")
+   (or/c #f path-string?)
+   #f}
+
   ; Where to install packages.
   {ZCPKG_INSTALL_RELATIVE_PATH
    "-I"

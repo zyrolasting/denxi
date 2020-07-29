@@ -12,7 +12,7 @@
          racket/set
          racket/vector
          (for-syntax racket/base)
-         "server.rkt"
+         "archiving.rkt"
          "capture.rkt"
          "config.rkt"
          "contract.rkt"
@@ -24,9 +24,11 @@
          "resolve.rkt"
          "setting.rkt"
          "setup.rkt"
+         "server.rkt"
          "string.rkt"
          "team.rkt"
          "url.rkt"
+         "verify.rkt"
          "workspace.rkt"
          "zcpkg-info.rkt"
          "zcpkg-messages.rkt"
@@ -69,6 +71,7 @@
          ["capture" capture-command]
          ["sandbox" sandbox-command]
          ["serve" serve-command]
+         ["bundle" bundle-command]
          [_ (printf "Unrecognized command: ~s. Run with -h for usage information.~n"
                     action)
             1]))
@@ -84,6 +87,7 @@
   capture    Create a capture file
   sandbox    Start sandboxed REPL for package's setup module.
   serve      Serve package artifacts
+  bundle     Prepare package for distribution
 
 EOF
 ))
@@ -211,6 +215,30 @@ EOF
 
 EOF
 ))
+
+
+(define (bundle-command args)
+  (run-command-line
+   #:program "bundle"
+   #:arg-help-strings '("package-directory")
+   #:flags
+   (settings->flag-specs ZCPKG_PRIVATE_KEY_PATH)
+   #:args args
+   (λ (flags zcpkg-directory)
+     (define info (read-zcpkg-info-from-directory zcpkg-directory))
+     (define archive (pack zcpkg-directory))
+     (define digest (make-digest archive))
+
+     (define signature
+       (and (ZCPKG_PRIVATE_KEY_PATH)
+            (make-signature digest (ZCPKG_PRIVATE_KEY_PATH))))
+
+     (save-config! (make-config-closure
+                    (zcpkg-info->hash
+                     (struct-copy zcpkg-info info
+                                  [signature signature]
+                                  [integrity digest])))
+                   "bundle.rktd"))))
 
 
 
