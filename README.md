@@ -41,12 +41,12 @@ I wondered what would happen if a Racket package defined zero
 collections (The command `zcpkg` is short for "Zero-Collection
 Package").  Removing collections from the equation severs the
 relationship between an arbitrary group of files and a Racket
-installation. No `raco setup`, no collection paths. For that reason,
-`zcpkg` concerns itself with (re)producing files as a
-**Project/Application Dependency Manager**, or PDM. System-
-dependencies matter too, but that is out of scope for this
-section. All you need to know up front is that `zcpkg` handles cases
-to compliment `raco pkg`.
+installation. Meaning, you cannot directly target these files using
+`raco setup` or collection paths. For that reason, `zcpkg` concerns
+itself with (re)producing files as a **Project/Application Dependency
+Manager**, or PDM. System- dependencies matter too, but that is out of
+scope for this section. All you need to know up front is that `zcpkg`
+handles cases to compliment `raco pkg`.
 
 
 [boyer]: https://medium.com/@sdboyer/so-you-want-to-write-a-package-manager-4ae9c17d9527
