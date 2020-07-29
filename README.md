@@ -32,22 +32,21 @@ scenarios specific to Racket.
 
 However, a Racket program is not fully "contextualized" (for lack of a
 better term) until it is launched. To customize around things like
-package conflicts or search paths, you need to create custom executables
-and/or tethered Racket installations.
+package conflicts or search paths, you need to create custom
+executables and/or tethered Racket installations. The fact that
+package conflicts might call for that kind of work served as the
+primary motivation for this project.
 
-`zcpkg` started when I wondered what would happen if a Racket package
-defined zero collections (The command `zcpkg` is short for
-"Zero-Collection Package").  Removing collections from the equation is
-a radical departure that severs the relationship between an arbitrary
-group of files and a Racket installation. No `raco setup`, no
-collection paths. For that reason, `zcpkg` concerns itself with
-(re)producing files that extend a given Racket installation without
-modifying it. From that end, you could call it a **Project/Application
-Dependency Manager**, or PDM. There are elements of system-level
-dependencies at work, but that's out of scope for this section.
-
-All you need to know up front is that `zcpkg` handles cases to
-compliment `raco pkg`.
+I wondered what would happen if a Racket package defined zero
+collections (The command `zcpkg` is short for "Zero-Collection
+Package").  Removing collections from the equation severs the
+relationship between an arbitrary group of files and a Racket
+installation. No `raco setup`, no collection paths. For that reason,
+`zcpkg` concerns itself with (re)producing files as a
+**Project/Application Dependency Manager**, or PDM. System-
+dependencies matter too, but that is out of scope for this
+section. All you need to know up front is that `zcpkg` handles cases
+to compliment `raco pkg`.
 
 
 [boyer]: https://medium.com/@sdboyer/so-you-want-to-write-a-package-manager-4ae9c17d9527
