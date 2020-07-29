@@ -227,17 +227,29 @@ EOF
    (λ (flags zcpkg-directory)
      (define info (read-zcpkg-info-from-directory zcpkg-directory))
      (define archive (pack zcpkg-directory))
-     (define digest (make-digest archive))
 
-     (define signature
-       (and (ZCPKG_PRIVATE_KEY_PATH)
-            (make-signature digest (ZCPKG_PRIVATE_KEY_PATH))))
+     (define-values (exit-code/digest digest)
+       (make-digest archive))
+
+     (unless (= exit-code/digest 0)
+       (printf "OpenSSL exited with code ~s when creating a digest~n" exit-code/digest)
+       (raise 1))
+
+     (define-values (exit-code/signature signature)
+       (if (ZCPKG_PRIVATE_KEY_PATH)
+           (make-signature digest (ZCPKG_PRIVATE_KEY_PATH))
+           (values 0 #f)))
+
+     (unless (= exit-code/signature 0)
+       (printf "OpenSSL exited with code ~s when creating a signature~n" exit-code/signature)
+       (raise 1))
 
      (save-config! (make-config-closure
                     (zcpkg-info->hash
                      (struct-copy zcpkg-info info
                                   [signature signature]
-                                  [integrity digest])))
+                                  [integrity digest]))
+                    null)
                    "bundle.rktd"))))
 
 

@@ -160,7 +160,7 @@
 
   {ZCPKG_PRIVATE_KEY_PATH
    "-q"
-   ("The location of a private key")
+   ("The location of a private key" "path")
    (or/c #f path-string?)
    #f}
 
