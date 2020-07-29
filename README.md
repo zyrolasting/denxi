@@ -34,15 +34,15 @@ Racket configuration if they want to use both packages at once. These
 configurations can be painful to maintain on a case-by-case basis.
 
 The command `zcpkg` is short for "Zero-Collection Package," which
-means it manages packages under the assumption they define no
-collections.  Removing collections from the equation severs the
-relationship between an arbitrary group of files and a Racket
-installation. Meaning, you cannot directly target these files using
-`raco setup` or collection paths. The benefit is that you are free to
-integrate the files as you wish. For that reason, `zcpkg` concerns
-itself with (re)producing files as a **Project/Application Dependency
-Manager**, or PDM. System-level dependencies matter too, but they are
-out of scope for this section.
+means it manages packages that define no collections.  Removing
+collections from the equation severs the relationship between an
+arbitrary group of files and a Racket installation. Meaning, you
+cannot directly target these files using `raco setup` or collection
+paths. The benefit is that you are free to integrate the files as you
+wish. For that reason, `zcpkg` concerns itself with (re)producing
+files as a **Project/Application Dependency Manager**, or
+PDM. System-level dependencies matter too, but they are out of scope
+for this section.
 
 
 [boyer]: https://medium.com/@sdboyer/so-you-want-to-write-a-package-manager-4ae9c17d9527
