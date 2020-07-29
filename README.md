@@ -21,32 +21,28 @@ A flexible package manager for Racket.
 
 ## Wait, we already have `raco pkg`
 
-Yes, and it's fine. `zcpkg` draws different boundaries on what
-constitutes a package, and how it impacts a surrounding system.
+Yes, and it's fine. `zcpkg` complements `raco pkg`, and is not meant
+to provide redundant functionality.
 
-To borrow [Sam Boyer's terms][boyer], `raco pkg` is an **Language Package
-Manager**, or LPM.  It fetches and builds packages of Racket source
-code. `raco pkg` further presumes that Racket packages define at least
-one collection to include in a Racket installation, which creates
-scenarios specific to Racket.
+To borrow [Sam Boyer's terms][boyer], `raco pkg` is an **Language
+Package Manager**, or LPM.  It fetches and builds packages of Racket
+source code. `raco pkg` further presumes that Racket packages define
+at least one collection to include in a Racket installation, which
+creates scenarios specific to Racket. For example, a conflict in
+collection paths can force a user to create a custom configuration
+for Racket. These custom configurations are difficult to manage
+if you intend to use several conflicting packages at once.
 
-However, a Racket program is not fully "contextualized" (for lack of a
-better term) until it is launched. To customize around things like
-package conflicts or search paths, you need to create custom
-executables and/or tethered Racket installations. The fact that
-package conflicts might call for that kind of work served as the
-primary motivation for this project.
-
-I wondered what would happen if a Racket package defined zero
-collections (The command `zcpkg` is short for "Zero-Collection
-Package").  Removing collections from the equation severs the
+The command `zcpkg` is short for "Zero-Collection Package," which
+means it manages packages under the assumption they define no
+collections.  Removing collections from the equation severs the
 relationship between an arbitrary group of files and a Racket
 installation. Meaning, you cannot directly target these files using
-`raco setup` or collection paths. For that reason, `zcpkg` concerns
+`raco setup` or collection paths. The benefit is that you are free to
+integrate the files as you wish. For that reason, `zcpkg` concerns
 itself with (re)producing files as a **Project/Application Dependency
-Manager**, or PDM. System-level dependencies matter too, but they are out of
-scope for this section. All you need to know now is that `zcpkg`
-handles cases to compliment `raco pkg`.
+Manager**, or PDM. System-level dependencies matter too, but they are
+out of scope for this section.
 
 
 [boyer]: https://medium.com/@sdboyer/so-you-want-to-write-a-package-manager-4ae9c17d9527
