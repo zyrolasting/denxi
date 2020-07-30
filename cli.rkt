@@ -69,6 +69,7 @@
          ["config" config-command]
          ["show" show-command]
          ["capture" capture-command]
+         ["diff" diff-command]
          ["sandbox" sandbox-command]
          ["serve" serve-command]
          ["bundle" bundle-command]
@@ -84,7 +85,8 @@
   new        Create a new package
   show       Print helpful information
   config     Configure the package manager
-  capture    Create a capture file
+  capture    Capture integrity information for files
+  diff       Compare a capture against files on disk
   sandbox    Start sandboxed REPL for package's setup module.
   serve      Serve package artifacts
   bundle     Prepare package for distribution
@@ -143,10 +145,38 @@ EOF
 
 (define (capture-command args)
   (run-command-line
-   #:program "install"
+   #:program "capture"
    #:args args
-   #:arg-help-strings null
-   (λ (flags) (capture-workspace))))
+   #:arg-help-strings '("pregexp-strings")
+   (λ (flags . file-patterns)
+     (write-config (capture-workspace (pattern-map file-patterns))
+                   '(config packages digests)
+                   (current-output-port)))))
+
+(define (diff-command args)
+  (define (print-capture-diff ours theirs)
+    (define all-paths (apply set (append (hash-keys ours) (hash-keys theirs))))
+    (for ([path (in-set all-paths)])
+      (define sym (compare-path path ours theirs))
+      (unless (eq? sym '=)
+        (printf "~a ~a~n" sym path))))
+
+  (run-command-line
+   #:program "capture"
+   #:args args
+   #:arg-help-strings '("capture-module")
+   (λ (flags capture-path . file-patterns)
+     (define lookup (load-config (string->path capture-path)))
+     (print-capture-diff (hash-ref (capture-workspace (pattern-map file-patterns)) 'digests)
+                         (lookup 'digests)))))
+
+
+(define (pattern-map patts)
+  (map pregexp
+       (if (null? patts)
+           '("\\.(rkt|scrbl|ss|dep|zo)$")
+           patts)))
+
 
 (define (config-command args)
   (define (make-fail-thunk str)

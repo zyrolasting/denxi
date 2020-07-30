@@ -1,16 +1,18 @@
 #lang racket/base
 
-(provide capture-workspace
-         CONVENTIONAL_CAPTURE_FILE_NAME)
+(provide compare-path
+         capture-workspace)
 
-(require racket/format
-         racket/match
+(require racket/match
          racket/path
          racket/port
          racket/pretty
+         racket/set
          "config.rkt"
+         "contract.rkt"
          "zcpkg-query.rkt"
          "file.rkt"
+         "format.rkt"
          "message.rkt"
          "setting.rkt"
          "verify.rkt"
@@ -18,39 +20,51 @@
          "zcpkg-info.rkt"
          "zcpkg-settings.rkt")
 
-(define CONVENTIONAL_CAPTURE_FILE_NAME "capture.rkt")
 
-(define (capture-workspace)
-  (call-with-output-file CONVENTIONAL_CAPTURE_FILE_NAME
-    write-workspace-capture))
+(define (capture-config)
+  (for/hash ([(k v) (in-hash ((load-zcpkg-settings!) 'dump))])
+    (values k (~s v))))
 
-(define (zcpkg-workspace-data->module-datum config install-targets)
-  `(module capture racket/base
-     (require racket/system)
-     (define zcpkg (find-executable-path "zcpkg"))
-     (define (run . args)
-       (define code (apply system*/exit-code zcpkg args))
-       (unless (= code 0)
-         (eprintf "~s failed with exit code ~a~n"
-                  (string-join (cons (~a zcpkg) args) " ")
-                  code)))
-     (define (set-config! k v) (run "config" "set" k v))
-     (define (install! . pkgs) (apply run "install" pkgs))
-     ,@(for/list ([(k v) (in-hash config)])
-         `(set-config! ',k ,(~s v)))
-     (install! . ,install-targets)))
 
-(define (generate-workspace-reproduction-module)
-  (zcpkg-workspace-data->module-datum
-   ((load-zcpkg-settings!) 'dump)
-   (capture-install-targets)))
-
-(define (capture-install-targets)
+(define (capture-packages)
   (for/list ([info (in-installed-info)])
     (zcpkg-query->string (zcpkg-info->zcpkg-query info))))
 
-(define (write-workspace-capture [o (current-output-port)])
-  (pretty-write #:newline? #t (generate-workspace-reproduction-module) o))
+
+(define (capture-files patterns)
+  (parameterize ([current-directory (workspace-directory)])
+    (for/fold ([wip (hash)])
+              ([path (in-workspace)])
+      (define key (path->string (find-relative-path (current-directory) path)))
+      (if (and (file-exists? key)
+               (not (hash-has-key? wip key))
+               (ormap (λ (patt) (regexp-match? patt key)) patterns))
+          (hash-set wip key (make-digest* key))
+          wip))))
+
+
+(define (capture-workspace patterns)
+  (hash 'config (capture-config)
+        'packages `,(capture-packages)
+        'digests (capture-files patterns)))
+
+(define (compare-path path ours theirs)
+  (define we-have-it   (hash-has-key? ours path))
+  (define they-have-it (hash-has-key? theirs path))
+  (cond [(and we-have-it they-have-it)
+         (if (equal? (hash-ref ours path)
+                     (hash-ref theirs path))
+             '= '*)]
+        [(and we-have-it (not they-have-it)) '+]
+        [(and (not we-have-it) they-have-it) '-]))
+
+
+(define (make-digest* path)
+  (define-values (exit-code digest) (make-digest path))
+  (unless (= exit-code 0)
+    (raise exit-code))
+  digest)
+
 
 (module+ test
   (require racket/list
@@ -71,33 +85,23 @@
    (write-zcpkg-info-to-directory foo-info (zcpkg-info->install-path foo-info))
 
    (define buffer (open-output-bytes))
-   (write-workspace-capture buffer)
+   (writeln (capture-workspace null) buffer)
 
-   (define reread (read (open-input-bytes (get-output-bytes buffer #t))))
-
-   (check-equal? reread
-                 (generate-workspace-reproduction-module))
+   (define lookup (load-config (open-input-bytes (get-output-bytes buffer))))
 
    (define depstring (zcpkg-query->string (zcpkg-info->zcpkg-query foo-info)))
-   (define command `(install! ,depstring))
 
-   (test-equal? "Installed package is captured as a command"
-                (member command reread)
-                (list command))
+   (test-equal? "Capture files (that users select)"
+                (lookup 'digests)
+                (hash))
 
-   (define configs
-     (filter-map (λ (v)
-                   (and (list? v)
-                        (eq? (car v) 'set-config!)
-                        (cdr v)))
-                 reread))
+   (test-equal? "Capture installed package"
+                (lookup 'packages)
+                (list depstring))
 
    (test-true "Represent an entire zcpkg configuration in a capture"
-              (andmap (λ (set-config!-args)
-                        (define config-key (cadr (car set-config!-args))) ; Symbol is in (quote) form
-                        (define config-val (cadr set-config!-args))
-                        (and (hash-has-key? ZCPKG_SETTINGS config-key)
-                             (let ([setting-instance (hash-ref ZCPKG_SETTINGS config-key)])
-                               ((setting-valid? setting-instance)
-                                (read (open-input-string config-val))))))
-                      configs))))
+              (for/and ([(config-key config-val) (in-hash (lookup 'config))])
+                (and (hash-has-key? ZCPKG_SETTINGS config-key)
+                     (let ([setting-instance (hash-ref ZCPKG_SETTINGS config-key)])
+                       ((setting-valid? setting-instance)
+                        (read (open-input-string config-val)))))))))

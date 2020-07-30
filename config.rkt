@@ -13,6 +13,7 @@
 
 (require racket/place
          racket/path
+         racket/pretty
          "contract.rkt")
 
 (provide
@@ -20,6 +21,8 @@
   [READ_ORDER symbol?]
   [save-config!
    (->* (config-closure/c (or/c path-string? url? output-port?)) void?)]
+  [write-config
+   (-> hash? (listof symbol?) output-port? void?)]
   [load-config
    (->* ((or/c path? url? string? bytes? input-port?))
         config-closure/c)]
@@ -67,7 +70,7 @@
 (define (write-config hash-table read-order o)
   (define (<< k v)
     (writeln (string->keyword (symbol->string k)) o)
-    (writeln v o))
+    (pretty-write #:newline? #t v o))
 
   (define unordered
     (sequence-fold hash-remove
