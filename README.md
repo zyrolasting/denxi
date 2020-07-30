@@ -87,6 +87,7 @@ For that reason, an update command is not necessary right now.
 - [x] Print informative output on demand
 - [x] Basic operations
     - [x] Install a package (as a link) from a directory
+    - [ ] Install a package from a service
     - [x] Uninstall a package
 - [ ] Serve package artifacts
     - [x] Run server
