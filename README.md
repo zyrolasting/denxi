@@ -114,7 +114,7 @@ need to fundraise before exposing the service to a wider audience.
 - [ ] 80%+ test coverage
 
 
-## Production Release TODO
+### Production Release TODO
 
 This assumes the project is funded and able to operate on an
 ongoing basis.
