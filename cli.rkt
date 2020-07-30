@@ -149,9 +149,7 @@ EOF
    #:args args
    #:arg-help-strings '("pregexp-strings")
    (λ (flags . file-patterns)
-     (write-config (capture-workspace (pattern-map file-patterns))
-                   '(config packages digests)
-                   (current-output-port)))))
+     (write-capture (capture-workspace (pattern-map file-patterns))))))
 
 (define (diff-command args)
   (define (print-capture-diff ours theirs)

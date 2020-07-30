@@ -1,6 +1,7 @@
 #lang racket/base
 
 (provide compare-path
+         write-capture
          capture-workspace)
 
 (require racket/match
@@ -42,6 +43,8 @@
           (hash-set wip key (make-digest* key))
           wip))))
 
+(define (write-capture cap [o (current-output-port)])
+  (write-config cap '(config packages digests) o))
 
 (define (capture-workspace patterns)
   (hash 'config (capture-config)
@@ -85,7 +88,7 @@
    (write-zcpkg-info-to-directory foo-info (zcpkg-info->install-path foo-info))
 
    (define buffer (open-output-bytes))
-   (writeln (capture-workspace null) buffer)
+   (write-capture (capture-workspace null) buffer)
 
    (define lookup (load-config (open-input-bytes (get-output-bytes buffer))))
 
