@@ -50,6 +50,28 @@ for this section.
 [boyer]: https://medium.com/@sdboyer/so-you-want-to-write-a-package-manager-4ae9c17d9527
 
 
+## Setup
+
+First, make sure the following programs are available in your search paths.
+
+* Racket 7.0+. Verify with `racket -v`.
+* OpenSSL 0.9.8+. Verify with `openssl version`.
+
+Next, build the project using `make`.
+
+```console
+git clone ...
+cd zcpkg
+make
+```
+
+If everything worked, you should have HTML documentation in a `doc`
+subdirectory and a new executable called `zcpkg`. If you see an error
+relating to a missing Racket dependency, then you might be using a
+trimmed down Racket installation. In that case, try `make racket-deps
+&& make`.
+
+
 ## Release Status
 
 The server-side remains incomplete. The client side is useable, but
@@ -135,25 +157,3 @@ ongoing basis.
     - [ ] Login
     - [ ] Search results
 - [ ] 98%+ test coverage
-
-
-## Setup
-
-First, make sure the following programs are available in your search paths.
-
-* Racket 7.0+. Verify with `racket -v`.
-* OpenSSL 0.9.8+. Verify with `openssl version`.
-
-Next, build the project using `make`.
-
-```console
-git clone ...
-cd zcpkg
-make
-```
-
-If everything worked, you should have HTML documentation in a `doc`
-subdirectory and a new executable called `zcpkg`. If you see an error
-relating to a missing Racket dependency, then you might be using a
-trimmed down Racket installation. In that case, try `make racket-deps
-&& make`.
