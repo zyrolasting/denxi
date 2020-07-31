@@ -248,13 +248,13 @@ EOF
 (define (bundle-command args)
   (run-command-line
    #:program "bundle"
-   #:arg-help-strings '("package-directory")
+   #:arg-help-strings '("spec-file" "paths")
    #:flags
    (settings->flag-specs ZCPKG_PRIVATE_KEY_PATH)
    #:args args
-   (λ (flags zcpkg-directory)
-     (define info (read-zcpkg-info-from-directory zcpkg-directory))
-     (define archive (pack zcpkg-directory))
+   (λ (flags info-file . paths)
+     (define info (read-zcpkg-info (string->path info-file)))
+     (define archive (pack "archive.tgz" paths))
 
      (define-values (exit-code/digest digest)
        (make-digest archive))
