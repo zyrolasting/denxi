@@ -5,9 +5,8 @@
 
 (require racket/contract)
 
-(provide (contract-out [pack   (->* (directory-exists?) (#:to path-string?) path?)]
-                       [unpack (->* (archive-path?) (#:to path-string?) path?)]
-                       [archive-path? predicate/c]))
+(provide (contract-out [pack   (-> path-string? (listof path-string?) path-string?)]
+                       [unpack (-> path-string? path-string? path-string?)]))
 
 (require "file.rkt"
          racket/path
@@ -15,42 +14,17 @@
          file/gzip
          file/untgz)
 
-(define (pack dir #:to [dest (or (path-only dir) (current-directory))])
-  (define archive-path (build-path dest (make-archive-name dir)))
-  (parameterize ([current-directory dir])
-    (apply tar-gzip
-           archive-path
-           (find-archive-files)
-           #:path-prefix (file-name-from-path dir)
-           #:follow-links? #f
-           #:exists-ok? #t)
-    archive-path))
-
-(define (unpack path #:to [dest (path-only path)])
-  (untgz path #:dest dest)
+(define (pack dest paths)
+  (apply tar-gzip
+         dest
+         paths
+         #:follow-links? #f
+         #:exists-ok? #t)
   dest)
 
-(define (archive-path? path)
-  (equal? (path-get-extension path) #".tgz"))
-
-(define (make-archive-name dir)
-  (path-replace-extension (file-name-from-path dir)
-                          #".tgz"))
-
-(define (find-archive-files)
-  (map (λ (p) (maybe-complete-path->relative-path p))
-       (find-files for-archive? #:skip-filtered-directory? #f)))
-
-(define (for-archive? p)
-  (and (not (link-exists? p))
-       (file-exists? p)
-       (not (member (path->string (file-name-from-path p))
-                    '(".git" ".travis.yml" ".gitignore" "compiled" "doc")))))
-
-(define (maybe-complete-path->relative-path p)
-  (if (complete-path? p)
-      (find-relative-path (current-directory) p)
-      p))
+(define (unpack path [dest (path-only path)])
+  (untgz path #:dest dest)
+  dest)
 
 (module+ test
   (require rackunit)
@@ -75,9 +49,8 @@
                       (define input-a (make-file "input-dir/a"))
                       (define input-b (make-file "input-dir/sub/b"))
                       (define input-c (make-file "input-dir/very/deep/c"))
-                      (define .tgz (pack "input-dir"))
+                      (define .tgz (pack "a.tgz" (list "input-dir")))
                       (test-pred "Archive exists" file-exists? .tgz)
-                      (test-pred "Archive path is recognizeable" archive-path? .tgz)
 
                       (delete-directory/files "input-dir")
                       (unpack .tgz)
