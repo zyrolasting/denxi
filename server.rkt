@@ -9,6 +9,7 @@
          web-server/http
          web-server/web-server
          web-server/safety-limits
+         web-server/dispatchers/dispatch
          (prefix-in seq:
                     web-server/dispatchers/dispatch-sequencer)
          (prefix-in logged:
@@ -28,10 +29,8 @@
 (define (get-server-directory)
   (build-workspace-path "var/zcpkg"))
 
-
 (define (get-log-directory)
   (build-workspace-path "var/log/zcpkg"))
-
 
 (define (zcpkg-info->public-file-path info)
   (build-path (get-server-directory)
@@ -41,15 +40,14 @@
   (path-replace-extension (zcpkg-info->public-file-path info)
                           #".tgz"))
 
-
-
 (define (start-server)
+  (make-directory* (get-log-directory))
   (serve #:port 8080
          #:dispatch
          (seq:make
           (logged:make #:format logged:extended-format
                        #:log-path (build-path (get-log-directory) "server.log"))
-          (lift:make promo-dispatcher)
+          (lift:make service-dispatcher)
           (lift:make not-found))
          #:safety-limits
          (make-safety-limits
@@ -63,49 +61,41 @@
           #:form-data-file-memory-threshold (* 3 1024 1024))))
 
 
-(define-values (promo-dispatcher promo-url promo-applies?)
+(define-values (service-dispatcher service-url service-applies?)
   (dispatch-rules+applies
-   [("provider" (string-arg)) send-provider]
-   [((string-arg) "info") send-info]
-   [((string-arg) "file") send-file]))
+   [("file" (string-arg) ...) send-file]))
 
+(define (send-file req contains-relative-path-elements)
+  (define relative-path-elements
+    (filter non-empty-string?
+            contains-relative-path-elements))
 
-(define (send-provider req name)
-  (define meta (build-path (get-server-directory) name "info.rktd"))
-  (if (file-exists? meta)
-      (response/file meta)
-      (response/text #:code 404
-                     "Provider ~s not found"
-                     name)))
+  (define relative-path
+    (apply build-path
+           (if (null? relative-path-elements)
+               '(".")
+               relative-path-elements)))
 
+  (define complete-path (build-path (get-server-directory) relative-path))
 
-(define (send-info req urn)
-  (cond [(not (zcpkg-query-string? urn))
-         (response/text #:code 400
-                        "~s is not a valid zcpkg-query string.~n"
-                        urn)]
+  (cond [(directory-exists? complete-path)
+         (define u (request-uri req))
+         (define normalized-path
+           (filter (λ (pp) (non-empty-string? (path/param-path pp)))
+                   (url-path u)))
 
-        [(equal? (request-method req) #"GET")
-         (define info (sequence-ref (search-zcpkg-infos urn (in-installed-info)) 0))
-         (response/output #:code 200
-                          #:mime-type #"text/plain; charset=utf-8"
-                          (λ (out)
-                            (write-zcpkg-info info out)))]
+         (redirect-to (url->string (struct-copy url u
+                                                [path (append normalized-path
+                                                              (list (path/param "index.html" null)))]))
+                      permanently)]
+        [(file-exists? complete-path)
+         (response/file #:mime-type
+                        (case (path-get-extension complete-path)
+                          [(#".html") #"text/html"]
+                          [else #"application/octect-stream"])
+                        complete-path)]
+        [else (next-dispatcher)]))
 
-        [(equal? (request-method req) #"PUT")
-         (define data (request-post-data/raw req))
-
-         ; Can info be written or replaced?
-         ;  - Does artifact already exist with the info?
-         ;  - Does the info have any errors?
-         ;  - Does the info occupy the next available slot for the provider?
-         (response/empty #:code 200)]
-
-        [else (response/text #:code 400
-                             "Invalid request")]))
-
-(define (send-file req urn)
-  (response/file (zcpkg-info->artifact-path (find-exactly-one-info urn))))
 
 (define (not-found req)
   (response/output #:code 404
@@ -119,9 +109,9 @@
                    (λ (out) (apply fprintf out fmt-string a))))
 
 
-(define (response/file path)
+(define (response/file #:mime-type mime-type path)
   (response/output #:code 200
-                   #:mime-type #"application/octet-stream"
+                   #:mime-type mime-type
                    (λ (out)
                      (call-with-input-file path
                        (λ (in) (copy-port in out))))))
