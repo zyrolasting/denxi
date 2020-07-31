@@ -40,9 +40,10 @@
   (exit (entry-point)))
 
 ; Keep seperate for functional tests.
-(define (entry-point [args (current-command-line-arguments)])
-  (reset-zcpkg-setting-overrides!)
-  (load-zcpkg-settings!)
+(define (entry-point #:reload-config? [reload-config? #t] [args (current-command-line-arguments)])
+  (when reload-config?
+    (reset-zcpkg-setting-overrides!)
+    (load-zcpkg-settings!))
   (define maybe-exit
     (with-handlers ([exact-nonnegative-integer? values])
       (top-level-cli args)))
@@ -69,6 +70,7 @@
          ["config" config-command]
          ["show" show-command]
          ["capture" capture-command]
+         ["restore" restore-command]
          ["diff" diff-command]
          ["sandbox" sandbox-command]
          ["serve" serve-command]
@@ -85,8 +87,9 @@
   new        Create a new package
   show       Print helpful information
   config     Configure the package manager
-  capture    Capture integrity information for files
-  diff       Compare a capture against files on disk
+  capture    Capture workspace
+  restore    Restore workspace
+  diff       Compare workspace to capture
   sandbox    Start sandboxed REPL for package's setup module.
   serve      Serve package artifacts
   bundle     Prepare package for distribution
@@ -150,6 +153,73 @@ EOF
    #:arg-help-strings '("pregexp-strings")
    (λ (flags . file-patterns)
      (write-capture (capture-workspace (pattern-map file-patterns))))))
+
+
+(define (restore-command args)
+  (define (run-commands cmds)
+    (for ([cmd (in-list cmds)])
+      (entry-point #:reload-config? #f cmd)))
+
+  (define (show-commands cmds)
+    (for ([cmd (in-list cmds)])
+      (displayln (string-join (vector->list cmd) " "))))
+
+  (define (do-work capture-file configure-commands install-commands)
+    (run-commands configure-commands)
+    (reset-zcpkg-setting-overrides!)
+    (load-zcpkg-settings!)
+    (run-commands install-commands)
+    (run-commands (list (vector "diff" capture-file))))
+
+  (define (show-work capture-file configure-commands install-commands)
+    (printf #<<EOS
+# These commands install packages under a specific configuration.
+# The configuration controls whether zcpkg trusts unsigned
+# packages or bad digests, so please review this carefully.
+#
+# You can adapt this output to a script on your operating system, or you can
+# run the restore command again with ~a to execute these instructions.
+
+
+EOS
+(setting->short-flag ZCPKG_CONSENT))
+    (show-commands
+      (map (λ (cmd)
+       (vector "zcpkg" "config" "set"
+               (vector-ref cmd 2)
+               (~s (vector-ref cmd 3))))
+           configure-commands))
+
+    (show-commands
+      (map (λ (cmd)
+             (vector "zcpkg" "install" (setting->short-flag ZCPKG_CONSENT)
+                     (~s (vector-ref cmd 2))))
+           install-commands))
+
+    (show-commands (list (vector "zcpkg" "diff" (~s capture-file)))))
+
+  (run-command-line
+   #:program "restore"
+   #:args args
+   #:flags
+   (settings->flag-specs ZCPKG_CONSENT)
+   #:arg-help-strings '("capture-file")
+   (λ (flags capture-file)
+     (define lookup (load-config (string->path capture-file)))
+     (define config (lookup 'config))
+     (define packages (lookup 'packages))
+
+     (define config-commands
+       (for/list ([(k v) (in-hash config)])
+         (vector "config" "set" (~a k) v)))
+
+     (define install-commands
+       (for/list ([pkg (in-list packages)])
+         (vector "install" (setting->short-flag ZCPKG_CONSENT) pkg)))
+
+     (if (ZCPKG_CONSENT)
+         (do-work capture-file config-commands install-commands)
+         (show-work capture-file config-commands install-commands)))))
 
 (define (diff-command args)
   (define (print-capture-diff ours theirs)

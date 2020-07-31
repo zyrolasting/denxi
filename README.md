@@ -90,9 +90,9 @@ For that reason, an update command is not necessary right now.
 - [x] Create a new package from a template
 - [x] Start a sandboxed REPL inside of a package
 - [x] Show a diff between a capture and a workspace
-- [ ] Reproduce a workspace from a capture
-    - [ ] Apply stored configuration
-    - [ ] Run install commands
+- [x] Reproduce a workspace from a capture
+    - [x] Apply stored configuration
+    - [x] Run install commands
 - [ ] Create a direct link to a package
 - [x] Bundle a package for use on a server
 - [x] Print informative output on demand
