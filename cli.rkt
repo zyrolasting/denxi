@@ -278,7 +278,7 @@ EOF
                                   [signature signature]
                                   [integrity digest]))
                     null)
-                   "bundle.rktd"))))
+                   "zcpkg.rktd"))))
 
 
 

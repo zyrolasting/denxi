@@ -74,20 +74,11 @@ trimmed down Racket installation. In that case, try `make racket-deps
 
 ## Release Status
 
-The server-side remains incomplete. The client side is useable, but
-subject to change.
+### Alpha
 
-My goal is to get the project to an alpha status by August 1st,
-but that is unlikely in the minimal Racket case. Long term, I
-hope this project will be a Racket-flavor of Guix or Nix.
-
-
-### Alpha Release TODO
-
-At minimum, `zcpkg` must function offline. The service is read-only,
-with no marketing materials or onboarding functionality. Administering
-the service's content is a manual process. Additionally, no database
-schema is defined yet. Flat files are fine for now.
+At minimum, `zcpkg` must function offline. The alpha service offers
+read-only access to manually-maintained files. There are no marketing
+materials, onboarding features, or databases.
 
 Package updates are defined in terms of installation and uninstallation.
 For that reason, an update command is not necessary right now.
@@ -100,25 +91,22 @@ For that reason, an update command is not necessary right now.
 - [x] Start a sandboxed REPL inside of a package
 - [x] Show a diff between a capture and a workspace
 - [ ] Reproduce a workspace from a capture
-    - [ ] Insist on empty workspace, to make behavior more predictable.
     - [ ] Apply stored configuration
-    - [ ] Run install commands (consent implied in this case)
-    - [ ] Verify files from capture
+    - [ ] Run install commands
 - [ ] Create a direct link to a package
-- [ ] Bundle a package for use on a server
+- [x] Bundle a package for use on a server
 - [x] Print informative output on demand
 - [x] Basic operations
     - [x] Install a package (as a link) from a directory
     - [ ] Install a package from a service
     - [x] Uninstall a package
-- [ ] Serve package artifacts
+- [x] Serve package artifacts
     - [x] Run server
-    - [ ] Search for artifacts by URN
-    - [ ] GET artifact by URN
-    - [ ] GET metadata by URN
+    - [x] GET file
+    - [x] GET directory listing
 
 
-### Beta Release TODO
+### Beta
 
 The beta release introduces onboarding so that others can share their
 work. Since hosting packages is a potentially expensive job, I will
@@ -136,7 +124,7 @@ need to fundraise before exposing the service to a wider audience.
 - [ ] 80%+ test coverage
 
 
-### Production Release TODO
+### Production
 
 This assumes the project is funded and able to operate on an
 ongoing basis.
