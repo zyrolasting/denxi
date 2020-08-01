@@ -48,9 +48,9 @@
       (send-up ($fail (if (exn? e) (exn->string e) (~s e))))
       (exit 1))
 
-    (define/public (handle-$start workspace-dir)
+    (define/public (handle-$start workspace-dir dump)
       (workspace-directory workspace-dir)
-      (load-zcpkg-settings!))
+      (configure-zcpkg! dump))
 
     (define/public (handle-$stop)
       (exit 0))

@@ -3,7 +3,7 @@
 (provide (all-defined-out))
 (require "message.rkt")
 
-(define-message $start (workspace-dir))
+(define-message $start (workspace-dir config))
 (define-message $sentinel ())
 (define-message $fail (to-display))
 (define-message $output (v))

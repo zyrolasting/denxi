@@ -114,7 +114,8 @@ EOF
     (dynamic-wind
       void
       (λ ()
-        (controller ($start (workspace-directory)))
+        (controller ($start (workspace-directory)
+                            ((current-zcpkg-config) 'dump)))
 
         (define tasks
           (for/list ([(url-or-path infos) (in-hash sow)])

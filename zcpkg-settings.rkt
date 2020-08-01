@@ -51,6 +51,10 @@
   (current-zcpkg-config controller)
   controller)
 
+(define (configure-zcpkg! h)
+  (for/hash ([(k v) (in-hash ZCPKG_SETTINGS)])
+    (values k (v (hash-ref h k (v))))))
+
 ; Reset each setting's override value
 (define (reset-zcpkg-setting-overrides!)
   (for ([(k v) (in-hash ZCPKG_SETTINGS)])
