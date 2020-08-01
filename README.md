@@ -93,7 +93,7 @@ For that reason, an update command is not necessary right now.
 - [x] Reproduce a workspace from a capture
     - [x] Apply stored configuration
     - [x] Run install commands
-- [ ] Create a direct link to a package
+- [x] Create a direct link to a package
 - [x] Bundle a package for use on a server
 - [x] Print informative output on demand
 - [x] Basic operations

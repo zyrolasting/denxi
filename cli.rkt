@@ -67,6 +67,7 @@
          ["install" install-command]
          ["uninstall" uninstall-command]
          ["new" new-command]
+         ["link" link-command]
          ["config" config-command]
          ["show" show-command]
          ["capture" capture-command]
@@ -86,6 +87,7 @@
   uninstall  Uninstall packages
   new        Create a new package
   show       Print helpful information
+  link       Create a symlink to an installed package
   config     Configure the package manager
   capture    Capture workspace
   restore    Restore workspace
@@ -248,6 +250,23 @@ EOS
        (if (null? patts)
            '("\\.(rkt|scrbl|ss|dep|zo)$")
            patts)))
+
+
+(define (link-command args)
+  (run-command-line
+   #:program "link"
+   #:args args
+   #:arg-help-strings '("nss" "link-path")
+   (λ (flags source link-path)
+     (define seq (search-zcpkg-infos source (in-installed-info)))
+     (if (= (sequence-length seq) 0)
+         (begin (printf "Cannot find a package using ~s.~n" source)
+                1)
+         (begin
+           (make-file-or-directory-link
+            (zcpkg-info->install-path
+             (sequence-ref seq 0))
+            link-path))))))
 
 
 (define (config-command args)
