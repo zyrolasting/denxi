@@ -2,6 +2,6 @@
 #:package "zcpkg"
 #:edition "draft"
 #:revision-number 0
-#:revision-names ()
+#:revision-names ("begin-alpha")
 #:setup-module #f
 #:dependencies ()
