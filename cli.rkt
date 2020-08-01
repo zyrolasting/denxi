@@ -608,7 +608,8 @@ EOF
                         (λ (help-str)
                           (printf "~a~n~a"
                                   help-str
-                                  help-suffix)))))
+                                  help-suffix)
+                          (raise (if help-requested? 0 1))))))
 
 ; Functional tests follow. Use to detect changes in the interface and
 ; verify high-level impact.
