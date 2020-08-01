@@ -4,7 +4,8 @@
 
 (require racket/contract)
 
-(provide find-scope-of-work)
+(provide find-scope-of-work
+         source->variant)
 
 (require (only-in racket/list remove-duplicates)
          racket/path

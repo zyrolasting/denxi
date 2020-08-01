@@ -330,14 +330,16 @@ EOF
      ; on URNs.
      (define dependencies/nonlocalized
        (map (λ (dep)
-              (define maybe-dir
-                (build-path (or (path-only info-file)
-                                (current-directory))
-                            dep))
-
-              (if (directory-exists? maybe-dir)
-                  (zcpkg-query->string (coerce-zcpkg-query (read-zcpkg-info-from-directory maybe-dir)))
-                  maybe-dir))
+              (define variant (source->variant dep))
+              (cond [(and (path? variant)
+                          (directory-exists? variant))
+                     (zcpkg-query->string (coerce-zcpkg-query (read-zcpkg-info-from-directory variant)))]
+                    [(zcpkg-query? variant)
+                     (zcpkg-query->string variant)]
+                    [else (raise (exn:fail:user (format (~a "Cannot bundle a package with a dependency on ~s.~n"
+                                                            "Use a path or a package query.~n")
+                                                        dep)
+                                                (current-continuation-marks)))]))
             (zcpkg-info-dependencies info)))
 
      (define archive
