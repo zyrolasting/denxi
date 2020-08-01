@@ -189,29 +189,29 @@
     [(list (? name-string? provider-name)
            (? name-string? package-name))
      (zcpkg-query provider-name
-                 package-name
-                 "draft"
-                 #f "newest"
-                 #f "newest")]
+                  package-name
+                  "draft"
+                  #f "newest"
+                  #f "newest")]
 
     [(list (? name-string? provider-name)
            (? name-string? package-name)
            (? name-string? edition-name))
      (zcpkg-query provider-name
-                 package-name
-                 edition-name
-                 #f "newest"
-                 #f "newest")]
+                  package-name
+                  edition-name
+                  #f "newest"
+                  #f "newest")]
 
     [(list (? name-string? provider-name)
            (? name-string? package-name)
            (? name-string? edition-name)
            (? revision-string? revision))
      (zcpkg-query provider-name
-                 package-name
-                 edition-name
-                 #f revision
-                 #f revision)]
+                  package-name
+                  edition-name
+                  #f revision
+                  #f revision)]
 
     [(list (? name-string? provider-name)
            (? name-string? package-name)
@@ -219,10 +219,10 @@
            (? revision-string? min-revision)
            (? revision-string? max-revision))
      (zcpkg-query provider-name
-                 package-name
-                 edition-name
-                 #f min-revision
-                 #f max-revision)]
+                  package-name
+                  edition-name
+                  #f min-revision
+                  #f max-revision)]
 
     [(list (? name-string? provider-name)
            (? name-string? package-name)
@@ -232,21 +232,21 @@
            max-flag
            (? revision-string? max-revision))
      (zcpkg-query provider-name
-                 package-name
-                 edition-name
-                 (exclusive-flag->bool min-flag "revision minimum flag")
-                 min-revision
-                 (exclusive-flag->bool max-flag "revision maximum flag")
-                 max-revision)]))
+                  package-name
+                  edition-name
+                  (exclusive-flag->bool min-flag "revision minimum flag")
+                  min-revision
+                  (exclusive-flag->bool max-flag "revision maximum flag")
+                  max-revision)]))
 
 (define (zcpkg-info->zcpkg-query info)
   (zcpkg-query (zcpkg-info-provider-name info)
-              (zcpkg-info-package-name info)
-              (zcpkg-info-edition-name info)
-              #f
-              (zcpkg-info-revision-number info)
-              #f
-              (zcpkg-info-revision-number info)))
+               (zcpkg-info-package-name info)
+               (zcpkg-info-edition-name info)
+               #f
+               (zcpkg-info-revision-number info)
+               #f
+               (zcpkg-info-revision-number info)))
 
 (define (zcpkg-query->string d)
   (string-join
@@ -404,19 +404,19 @@
 
   (test-true "Detect equal zcpkg-query identities"
              (zcpkg-query-identity=? (zcpkg-query "a" "b" "c" #f #f #f #f)
-                                    (zcpkg-query "a" "b" "c" #f #f #f #f)))
+                                     (zcpkg-query "a" "b" "c" #f #f #f #f)))
 
   (test-false "Detect differing provider names"
               (zcpkg-query-identity=? (zcpkg-query "a" "b" "c" #f #f #f #f)
-                                     (zcpkg-query " " "b" "c" #f #f #f #f)))
+                                      (zcpkg-query " " "b" "c" #f #f #f #f)))
 
   (test-false "Detect differing package names"
               (zcpkg-query-identity=? (zcpkg-query "a" "b" "c" #f #f #f #f)
-                                     (zcpkg-query "a" " " "c" #f #f #f #f)))
+                                      (zcpkg-query "a" " " "c" #f #f #f #f)))
 
   (test-false "Detect differing edition names"
               (zcpkg-query-identity=? (zcpkg-query "a" "b" "c" #f #f #f #f)
-                                     (zcpkg-query "a" "b" " " #f #f #f #f)))
+                                      (zcpkg-query "a" "b" " " #f #f #f #f)))
 
 
   (test-case "Use strings to produce exact and inexact dependencies"
@@ -448,51 +448,50 @@
 
   (test-true "Match a zcpkg-query using a revision range, even with string+number mixes"
              (zcpkg-query-match? (zcpkg-query "joe" "pkg" "draft" #f "0" #f 100)
-                                (zcpkg-query "joe" "pkg" "draft" #f 0 #f "0")))
+                                 (zcpkg-query "joe" "pkg" "draft" #f 0 #f "0")))
 
   (test-true "Match a zcpkg-query exactly"
              (zcpkg-query-match? "joe:pkg:draft:2:2" "joe:pkg:draft:2:2"))
 
   (test-true "Match a zcpkg-query that risks an off-by-one error (lower bound)"
              (zcpkg-query-match? "joe:pkg:draft:e:1:i:3"
-                                "joe:pkg:draft:2:2"))
+                                 "joe:pkg:draft:2:2"))
 
   (test-true "Match a zcpkg-query that risks an off-by-one error (upper bound)"
              (zcpkg-query-match? "joe:pkg:draft:i:1:e:3"
-                                "joe:pkg:draft:2:2"))
+                                 "joe:pkg:draft:2:2"))
 
   (test-false "Do not match a zcpkg-query that differs in provider name"
               (zcpkg-query-match? "joe:pkg:draft:i:1:e:3"
-                                 "je:pkg:draft:2:2"))
+                                  "je:pkg:draft:2:2"))
 
   (test-false "Do not match a zcpkg-query that differs in package name"
               (zcpkg-query-match? "joe:pkg:draft:i:1:e:3"
-                                 "joe:pg:draft:2:2"))
+                                  "joe:pg:draft:2:2"))
 
   (test-false "Do not match a zcpkg-query that differs in edition name"
               (zcpkg-query-match? "joe:pkg:draft:i:1:e:3"
-                                 "joe:pkg:drft:2:2"))
+                                  "joe:pkg:drft:2:2"))
 
   (test-exn "Raise a contract error if comparing two inexact dependencies"
             #rx"expected: An exact zcpkg-query"
             (λ () (zcpkg-query-match? "joe:pkg:draft:i:1:e:3"
-                                     "joe:pkg")))
+                                      "joe:pkg")))
 
   (test-exn "Raise a contract error if matching against an ill-formed zcpkg-query"
             #rx"expected: A concrete zcpkg-query"
             (λ () (zcpkg-query-match? (zcpkg-query #f #f #f #f #f #f #f)
-                                     "joe:pkg:draft:1:1")))
+                                      "joe:pkg:draft:1:1")))
 
   (test-exn "Raise a contract error if matching against an abstract zcpkg-query"
             #rx"expected: A concrete zcpkg-query"
             (λ () (zcpkg-query-match? "joe:pkg"
-                                     "joe:pkg:draft:1:1")))
+                                      "joe:pkg:draft:1:1")))
 
   (test-exn "Raise a special error if matching against an invalid interval"
             exn:fail:zcpkg:invalid-revision-interval?
             (λ () (zcpkg-query-match? "joe:pkg:draft:10:1"
-                                     "joe:pkg:draft:1")))
-
+                                      "joe:pkg:draft:1")))
 
   (test-true "Accept (large) positive integers"
              (revision-number-string? "87897679687236872363278692984"))
