@@ -345,7 +345,8 @@ EOF
    #:arg-help-strings '("package-path" "pregexp-pattern-strings")
    #:flags
    (settings->flag-specs ZCPKG_PRIVATE_KEY_PATH
-                         ZCPKG_BUNDLE_FOR_SERVER)
+                         ZCPKG_BUNDLE_FOR_SERVER
+                         ZCPKG_MATCH_RACKET_MODULES)
    #:args args
    (λ (flags package-path-string . pattern-strings)
      (define info
@@ -382,25 +383,25 @@ EOF
 
      (define archive-file
        (build-path archive-directory "archive.tgz"))
-
-     (define archive-files
-       (sequence->list
-        (in-matching-files
-         (map pregexp pattern-strings)
-         (current-directory))))
-
-     (when (null? archive-files)
-       (displayln "The patterns specified did not match any files.")
-       (displayln "Stopping.")
-       (raise 1))
+     (define metadata-file
+       (build-path archive-directory "zcpkg.rktd"))
 
      (define archive
        (parameterize ([current-directory package-path-string])
-         (pack archive-file
-               (sequence->list
-                (in-matching-files
-                 (map pregexp pattern-strings)
-                 (current-directory))))))
+         (define archive-files
+           (sequence->list
+            (in-matching-files
+             (map pregexp (if (ZCPKG_MATCH_RACKET_MODULES)
+                              (cons "\\.(ss|rkt|rktd|scrbl)$" pattern-strings)
+                              pattern-strings))
+             (current-directory))))
+
+         (when (null? archive-files)
+           (displayln "The patterns specified did not match any files.")
+           (displayln "Stopping.")
+           (raise 1))
+
+         (pack archive-file archive-files)))
 
      (define-values (exit-code/digest digest)
        (make-digest archive))
@@ -425,10 +426,17 @@ EOF
                                   [signature signature]
                                   [integrity digest]))
                     null)
-                   (build-path archive-directory "zcpkg.rktd"))
+                   metadata-file)
 
-     (when (ZCPKG_BUNDLE_FOR_SERVER)
-       (make-zcpkg-revision-links info #:target archive-directory)))))
+     (define links-made
+       (if (ZCPKG_BUNDLE_FOR_SERVER)
+           (make-zcpkg-revision-links info #:target archive-directory)
+           null))
+
+     (for ([created (in-list (append (list archive-file
+                                           metadata-file)
+                                     links-made))])
+       (printf "Wrote ~a~n" created)))))
 
 
 
