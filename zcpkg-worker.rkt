@@ -24,6 +24,7 @@
          "workspace.rkt"
          "zcpkg-info.rkt"
          "zcpkg-messages.rkt"
+         "zcpkg-query.rkt"
          "zcpkg-settings.rkt")
 
 (define zcpkg-worker%
@@ -87,9 +88,9 @@
       (send-output ($on-package-installed info)))
 
 
-    (define/public (install-remote-package info dependency-infos catalog-url-string)
+    (define/public (install-remote-package info dependency-infos)
       (define install-path   (zcpkg-info->install-path info))
-      (define artifact-path  (download-artifact (string->url catalog-url-string) url))
+      (define artifact-path  (download-artifact (coerce-zcpkg-query info)))
       (define integrous?     (integrous-artifact? artifact-path info))
       (define authenticated? (authenticated-provider? info (void)))
 
@@ -104,7 +105,7 @@
 
       (when (and integrous? authenticated?)
         (make-directory* (path-only install-path))
-        (unpack artifact-path #:to install-path)
+        (unpack artifact-path install-path)
         (install-local-package info dependency-infos install-path)))
 
 
@@ -115,7 +116,7 @@
           (send-output ($already-installed target))
           (if (directory-exists? url-or-path)
               (install-local-package target dependency-infos url-or-path)
-              (install-remote-package target dependency-infos url-or-path))))))
+              (install-remote-package target dependency-infos))))))
 
 
 
