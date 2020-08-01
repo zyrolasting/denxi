@@ -1,10 +1,14 @@
-#lang racket
+#lang racket/base
 
 (provide start-server)
 
 (require racket/exn
+         racket/generator
+         racket/path
+         racket/port
          racket/runtime-path
          racket/sequence
+         racket/string
          web-server/dispatch
          web-server/http
          web-server/web-server
@@ -19,12 +23,13 @@
                     web-server/dispatchers/dispatch-lift)
          "archiving.rkt"
          "config.rkt"
-         "zcpkg-query.rkt"
          "file.rkt"
+         "format.rkt"
          "url.rkt"
          "verify.rkt"
          "workspace.rkt"
-         "zcpkg-info.rkt")
+         "zcpkg-info.rkt"
+         "zcpkg-query.rkt")
 
 
 (define (get-server-directory)
