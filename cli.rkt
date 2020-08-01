@@ -318,19 +318,25 @@ EOF
 (define (bundle-command args)
   (run-command-line
    #:program "bundle"
-   #:arg-help-strings '("spec-file" "paths")
+   #:arg-help-strings '("package-path" "pregexp-pattern-strings")
    #:flags
    (settings->flag-specs ZCPKG_PRIVATE_KEY_PATH)
    #:args args
-   (λ (flags info-file . pattern-strings)
-     (define info (read-zcpkg-info (string->path info-file)))
-
+   (λ (flags package-path-string . pattern-strings)
+     (define info
+       (with-handlers ([exn:fail:filesystem?
+                        (λ (e)
+                          (printf "Could not read ~a. Double check that ~s points to a package directory.~n"
+                                  CONVENTIONAL_PACKAGE_INFO_FILE_NAME
+                                  package-path-string)
+                          (raise 1))])
+         (read-zcpkg-info-from-directory package-path-string)))
 
      ; Detach package from filesystem, leaving it only able to depend
      ; on URNs.
      (define dependencies/nonlocalized
        (map (λ (dep)
-              (define variant (source->variant dep))
+              (define variant (source->variant dep package-path-string))
               (cond [(and (path? variant)
                           (directory-exists? variant))
                      (zcpkg-query->string (coerce-zcpkg-query (read-zcpkg-info-from-directory variant)))]
@@ -342,11 +348,27 @@ EOF
                                                 (current-continuation-marks)))]))
             (zcpkg-info-dependencies info)))
 
+     (define archive-file
+       (build-path (current-directory) "archive.tgz"))
+
+     (define archive-files
+       (sequence->list
+        (in-matching-files
+         (map pregexp pattern-strings)
+         (current-directory))))
+
+     (when (null? archive-files)
+       (displayln "The patterns specified did not match any files.")
+       (displayln "Stopping.")
+       (raise 1))
+
      (define archive
-       (pack "archive.tgz"
-             (sequence->list (in-matching-files
-                              (map pregexp pattern-strings)
-                              (current-directory)))))
+       (parameterize ([current-directory package-path-string])
+         (pack archive-file
+               (sequence->list
+                (in-matching-files
+                 (map pregexp pattern-strings)
+                 (current-directory))))))
 
      (define-values (exit-code/digest digest)
        (make-digest archive))
