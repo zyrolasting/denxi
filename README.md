@@ -104,6 +104,7 @@ For that reason, an update command is not necessary right now.
     - [x] Run server
     - [x] GET file
     - [x] GET directory listing
+    - [ ] GET file from URN's NSS
 
 
 ### Beta
