@@ -8,6 +8,7 @@
 (require racket/list
          racket/path
          racket/port
+         net/base64
          net/head
          "config.rkt"
          "zcpkg-query.rkt"
@@ -71,9 +72,11 @@
 ; Works if only the URL host and path matter.
 (define (url->cache-path u)
   (build-path (get-cache-directory)
-              (apply build-path
-                     (url-host u)
-                     (map path/param-path (url-path u)))))
+              (string-replace
+               (bytes->string/utf-8
+                (base64-encode (string->bytes/utf-8 (url->string u)) #""))
+               "="
+               "")))
 
 
 (define (download-file u [cached-path (url->cache-path u)])
