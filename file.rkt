@@ -4,6 +4,7 @@
          (all-from-out racket/file))
 
 (require racket/file
+         racket/function
          racket/generator
          racket/list
          racket/path
@@ -37,6 +38,14 @@
                 (λ (p) (if (link-exists? p)
                            (not (path-cycles? p))
                            (use-dir? p)))))
+
+(define (in-matching-files patterns start-dir)
+  (in-generator
+   (for ([path (in-directory start-dir (negate link-exists?))])
+     (define rel-path (find-relative-path start-dir path))
+     (when (and (file-exists? rel-path)
+                (ormap (λ (p) (regexp-match? p rel-path)) patterns))
+       (yield rel-path)))))
 
 (define (in-workspace)
   (in-acyclic-directory (build-workspace-path)

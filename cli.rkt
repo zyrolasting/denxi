@@ -322,9 +322,29 @@ EOF
    #:flags
    (settings->flag-specs ZCPKG_PRIVATE_KEY_PATH)
    #:args args
-   (λ (flags info-file . paths)
+   (λ (flags info-file . pattern-strings)
      (define info (read-zcpkg-info (string->path info-file)))
-     (define archive (pack "archive.tgz" paths))
+
+
+     ; Detach package from filesystem, leaving it only able to depend
+     ; on URNs.
+     (define dependencies/nonlocalized
+       (map (λ (dep)
+              (define maybe-dir
+                (build-path (or (path-only info-file)
+                                (current-directory))
+                            dep))
+
+              (if (directory-exists? maybe-dir)
+                  (zcpkg-query->string (coerce-zcpkg-query (read-zcpkg-info-from-directory maybe-dir)))
+                  maybe-dir))
+            (zcpkg-info-dependencies info)))
+
+     (define archive
+       (pack "archive.tgz"
+             (sequence->list (in-matching-files
+                              (map pregexp pattern-strings)
+                              (current-directory)))))
 
      (define-values (exit-code/digest digest)
        (make-digest archive))
@@ -345,6 +365,7 @@ EOF
      (save-config! (make-config-closure
                     (zcpkg-info->hash
                      (struct-copy zcpkg-info info
+                                  [dependencies dependencies/nonlocalized]
                                   [signature signature]
                                   [integrity digest]))
                     null)
