@@ -68,10 +68,10 @@
 (define-values (service-dispatcher service-url service-applies?)
   (dispatch-rules+applies
    [("file" (string-arg) ...) send-file]
-   [("find" (string-arg)) search-packages]))
+   [("find" (string-arg) (string-arg) ...) search-packages]))
 
 
-(define (search-packages req urn)
+(define (search-packages req urn rel-file-path-elements)
   (call/cc
    (λ (respond)
      (define (cant-resolve #:code code . msg)
@@ -116,11 +116,11 @@
                        (format "Cannot resolve ~s. The ~a bound revision ~a does not exist in our records."
                                urn
                                boundary-name
-                               boundary-path)))
+                               rev-name)))
        (read-zcpkg-info-from-directory boundary-path))
 
-     (define lower-bound-info (get-interval-end-info "lower" revision-min))
-     (define upper-bound-info (get-interval-end-info "upper" revision-max))
+     (define lower-bound-info (get-interval-end-info revision-min "lower"))
+     (define upper-bound-info (get-interval-end-info revision-max "upper"))
 
      (define-values (minimum-revision-number maximum-revision-number)
        (with-handlers ([exn:fail:zcpkg:invalid-revision-interval?
@@ -140,11 +140,11 @@
                                        (zcpkg-info-revision-number lower-bound-info)
                                        (zcpkg-info-revision-number upper-bound-info))))
 
-     (for ([revno (in-range maximum-revision-number minimum-revision-number -1)])
+     (for ([revno (in-range maximum-revision-number (sub1 minimum-revision-number) -1)])
        (define candidate-path (build-server-path provider package edition (~a revno)))
        (when (directory-exists? candidate-path)
          (respond
-          (response/full
+          (response/output
            #:code 303
            #:mime-type #f
            #:headers
@@ -152,11 +152,14 @@
                          (string->bytes/utf-8
                           (url->string
                            (struct-copy url (request-uri req)
-                                        [path (list (path/param "file" null)
-                                                    (path/param provider null)
-                                                    (path/param package null)
-                                                    (path/param edition null)
-                                                    (path/param revno null))])))))
+                                        [path (append
+                                               (list (path/param "file" null)
+                                                     (path/param provider null)
+                                                     (path/param package null)
+                                                     (path/param edition null)
+                                                     (path/param (~a revno) null))
+                                               (map (λ (el) (path/param el null))
+                                                    rel-file-path-elements))])))))
            void))))
 
      (respond
@@ -209,6 +212,14 @@
                           [(#".html") #"text/html"]
                           [else #"application/octect-stream"])
                         complete-path)]
+        [(and (equal? (build-path "index.html") (file-name-from-path complete-path))
+              (directory-exists? (path-only complete-path)))
+         (response/html5
+          (html-doc `((title ,"Listing"))
+                    `(ul . ,(map (λ (rel-path)
+                                   (define href (path->string rel-path))
+                                   `(li (a ((href ,href)) ,href)))
+                                 (directory-list (path-only complete-path))))))]
         [else (next-dispatcher)]))
 
 
