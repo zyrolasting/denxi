@@ -143,7 +143,13 @@
    boolean?
    #f}
 
-; Halt when downloaded artifact does not pass integrity check
+  {ZCPKG_TRUST_UNVERIFIED_HOST
+   #f
+   ("Trust servers that do not have a valid certificate.")
+   boolean?
+   #f}
+
+  ; Halt when downloaded artifact does not pass integrity check
   {ZCPKG_TRUST_BAD_DIGEST
    "-D"
    ("Trust artifacts that don't pass an integrity check. Implies -U.")
