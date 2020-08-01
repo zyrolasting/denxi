@@ -77,7 +77,7 @@
          ["bundle" bundle-command]
          [_ (printf "Unrecognized command: ~s. Run with -h for usage information.~n"
                     action)
-            1]))
+            (λ _ 1)]))
      (proc args))
 
 #<<EOF
