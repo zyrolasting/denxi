@@ -31,15 +31,10 @@
          "zcpkg-info.rkt"
          "zcpkg-query.rkt")
 
-; Define a return-like form for dispatcher procedures.
-(define (respond resp)
-  ((current-respond-continuation) resp))
-
-(define current-respond-continuation (make-parameter #f))
-
 (define-syntax-rule (define-endpoint sig body ...)
   (define sig
-    (call/cc (λ (r) (parameterize ([current-respond-continuation r]) body ...)))))
+    (with-handlers ([response? values])
+      body ...)))
 
 ; The server uses the workspace for its files, like everything else.
 (define (get-server-directory)
@@ -83,112 +78,127 @@
 (define-values (service-dispatcher service-url service-applies?)
   (dispatch-rules+applies
    [("file" (string-arg) ...) send-file]
-   [("find" (string-arg) (string-arg) ...) search-packages]))
+   [("find" (string-arg) (string-arg) ...) search-packages]
+   [("info" (string-arg)) send-info]
+   [("artifact" (string-arg)) send-artifact]))
 
 
-(define (search-packages req urn rel-file-path-elements)
-  (call/cc
-   (λ (respond)
-     (define (cant-resolve #:code code . msg)
-       (respond (response/html5 #:code code
-                                (html-doc/minimal "Not found"
-                                                  `(p . ,msg)))))
+(define-endpoint (send-artifact req nss)
+  (define query (nss->zcpkg-query nss))
+  (for ([(candidate-path query-elements revno) (in-existing-revisions nss query)])
+    (raise (response/file #:mime-type #"application/octet-stream"
+                          (build-path candidate-path "archive.tgz")))))
 
-     (define query
-       (with-handlers
-         ([exn:fail?
-           (λ (e)
-             (cant-resolve
-              #:code 400
-              (format "~s seems to have invalid syntax. The correct syntax has one of these forms: "
-                      urn)
-              '(ul (li (code "<provider>:<package>:<edition>:<revision>")
-                       ", e.g. "
-                       (code "example.com:widget:for-teachers:5") " or "
-                       (code "example.com:widget:for-teachers:with-acknowledgements"))
-                   (li (code "<provider>:<package>:<edition>:<min-revision>:<max-revision>")
-                       ", e.g. "
-                       (code "example.com:widget:for-students:8:10"))
-                   (li (code "<provider>:<package>:<edition>:<i|e>:<min-revision>:<i|e>:<max-revision>")
-                       ", e.g. "
-                       (code "example.com:widget:for-msu:i:start-peer-review:e:for-publication")))))])
-         (coerce-zcpkg-query urn)))
+(define-endpoint (send-info req nss)
+  (define query (nss->zcpkg-query nss))
+  (for ([(candidate-path query-elements revno) (in-existing-revisions nss query)])
+    (raise (response/file #:mime-type #"text/plain"
+                          (build-path candidate-path CONVENTIONAL_PACKAGE_INFO_FILE_NAME)))))
 
-     (match-define
-       (zcpkg-query provider
-                    package
-                    edition
-                    revision-min-exclusive?
-                    revision-min
-                    revision-max-exclusive?
-                    revision-max)
-       query)
+(define-endpoint (search-packages req nss rel-file-path-elements)
+  (define query (nss->zcpkg-query nss))
+  (for ([(candidate-path query-elements revno) (in-existing-revisions nss query)])
+    (raise
+     (response/output
+      #:code 303
+      #:mime-type #f
+      #:headers
+      (list (header #"Location"
+                    (string->bytes/utf-8
+                     (url->string
+                      (struct-copy url (request-uri req)
+                                   [path (apply build-url-path
+                                                "file"
+                                                (append query-elements
+                                                        rel-file-path-elements))])))))
+      void))))
 
-     (define (get-interval-end-info rev-name boundary-name)
-       (define boundary-path (build-server-path provider package edition rev-name))
-       (unless (directory-exists? boundary-path)
-         (cant-resolve #:code 404
-                       (format "Cannot resolve ~s. The ~a bound revision ~a does not exist in our records."
-                               urn
-                               boundary-name
-                               rev-name)))
-       (read-zcpkg-info-from-directory boundary-path))
-
-     (define lower-bound-info (get-interval-end-info revision-min "lower"))
-     (define upper-bound-info (get-interval-end-info revision-max "upper"))
-
-     (define-values (minimum-revision-number maximum-revision-number)
-       (with-handlers ([exn:fail:zcpkg:invalid-revision-interval?
-                        (λ (e)
-                          (cant-resolve
-                           #:code 400
-                           (format "Can't resolve ~s. It corresponds to invalid number interval [~a, ~a]. "
-                                   (exn:fail:zcpkg:invalid-revision-interval-lo e)
-                                   (exn:fail:zcpkg:invalid-revision-interval-hi e))
-                           (format "Did you mean ~s?"
-                                   (zcpkg-query->string
-                                    (struct-copy zcpkg-query query
-                                                 [revision-min revision-max]
-                                                 [revision-max revision-min])))))])
-         (get-inclusive-revision-range revision-min-exclusive?
-                                       revision-max-exclusive?
-                                       (zcpkg-info-revision-number lower-bound-info)
-                                       (zcpkg-info-revision-number upper-bound-info))))
-
-     (for ([revno (in-range maximum-revision-number (sub1 minimum-revision-number) -1)])
-       (define candidate-path (build-server-path provider package edition (~a revno)))
-       (when (directory-exists? candidate-path)
-         (respond
-          (response/output
-           #:code 303
-           #:mime-type #f
-           #:headers
-           (list (header #"Location"
-                         (string->bytes/utf-8
-                          (url->string
-                           (struct-copy url (request-uri req)
-                                        [path (append
-                                               (list (path/param "file" null)
-                                                     (path/param provider null)
-                                                     (path/param package null)
-                                                     (path/param edition null)
-                                                     (path/param (~a revno) null))
-                                               (map (λ (el) (path/param el null))
-                                                    rel-file-path-elements))])))))
-           void))))
-
-     (respond
+(define (in-existing-revisions nss query)
+  (define-values (minimum-revision-number maximum-revision-number)
+    (resolve-revision-range query nss))
+  (in-generator #:arity 3
+   (for ([revno (in-range maximum-revision-number (sub1 minimum-revision-number) -1)])
+     (define query-elements (deconstruct-zcpkg-query query revno))
+     (define candidate-path (apply build-server-path query-elements))
+     (when (directory-exists? candidate-path)
+       (yield candidate-path query-elements revno)))
+     (raise
       (cant-resolve #:code 404
-       (format "Cannot resolve ~s. There are no files in the requested range."
-               urn))))))
+                    (format "Cannot resolve ~s. There are no files in the requested range."
+                            nss)))))
 
+(define (deconstruct-zcpkg-query query revno)
+  (list (zcpkg-query-provider-name query)
+        (zcpkg-query-package-name query)
+        (zcpkg-query-edition-name query)
+        (~a revno)))
+
+
+(define (resolve-revision-range query nss)
+  (define lower-bound-info (get-interval-end-info query nss (zcpkg-query-revision-min query) "lower"))
+  (define upper-bound-info (get-interval-end-info query nss (zcpkg-query-revision-max query) "upper"))
+  (with-handlers ([exn:fail:zcpkg:invalid-revision-interval?
+                   (λ (e)
+                     (raise
+                      (cant-resolve
+                       #:code 400
+                       (format "Can't resolve ~s. It corresponds to invalid number interval [~a, ~a]. "
+                               (exn:fail:zcpkg:invalid-revision-interval-lo e)
+                               (exn:fail:zcpkg:invalid-revision-interval-hi e))
+                       (format "Did you mean ~s?"
+                               (zcpkg-query->string
+                                (struct-copy zcpkg-query query
+                                             [revision-min (zcpkg-query-revision-max query)]
+                                             [revision-max (zcpkg-query-revision-min query)]))))))])
+    (get-inclusive-revision-range (zcpkg-query-revision-min-exclusive? query)
+                                  (zcpkg-query-revision-max-exclusive? query)
+                                  (zcpkg-info-revision-number lower-bound-info)
+                                  (zcpkg-info-revision-number upper-bound-info))))
+
+
+(define (get-interval-end-info query nss rev-name boundary-name)
+  (define boundary-path (apply build-server-path (deconstruct-zcpkg-query query rev-name)))
+  (unless (directory-exists? boundary-path)
+    (raise (cant-resolve #:code 404
+                           (format "Cannot resolve ~s. The ~a bound revision ~a does not exist in our records."
+                                   nss
+                                   boundary-name
+                                   rev-name))))
+  (read-zcpkg-info-from-directory boundary-path))
+
+
+(define (nss->zcpkg-query nss)
+  (with-handlers
+    ([exn:fail?
+      (λ (e)
+        (raise
+         (cant-resolve
+          #:code 400
+          (format "~s seems to have invalid syntax. The correct syntax has one of these forms: "
+                  nss)
+          '(ul (li (code "<provider>:<package>:<edition>:<revision>")
+                   ", e.g. "
+                   (code "example.com:widget:for-teachers:5") " or "
+                   (code "example.com:widget:for-teachers:with-acknowledgements"))
+               (li (code "<provider>:<package>:<edition>:<min-revision>:<max-revision>")
+                   ", e.g. "
+                   (code "example.com:widget:for-students:8:10"))
+               (li (code "<provider>:<package>:<edition>:<i|e>:<min-revision>:<i|e>:<max-revision>")
+                   ", e.g. "
+                   (code "example.com:widget:for-msu:i:start-peer-review:e:for-publication"))))))])
+    (coerce-zcpkg-query nss)))
+
+(define (cant-resolve #:code code . msg)
+  (response/html5 #:code code
+                  (html-doc/minimal "Not found"
+                                    `(p . ,msg))))
 
 (define (html-doc head . body)
   `(html (head . ,head)
          (body . ,body)))
 
 (define (html-doc/minimal title . body)
-  (apply html-doc '((title ,title))
+  (apply html-doc `((title ,title))
          body))
 
 (define (response/html5 #:code [code 200] xexpr)
@@ -253,13 +263,19 @@
 (define (response/file #:mime-type mime-type path)
   (response/output #:code 200
                    #:mime-type mime-type
+                   #:headers
+                   (list (header #"Content-Disposition"
+                                 (string->bytes/utf-8
+                                  (format "attachment; filename=\"~a\""
+                                          (file-name-from-path path)))))
                    (λ (out)
                      (call-with-input-file path
                        (λ (in) (copy-port in out))))))
 
 
 (module+ test
-  (require rackunit)
+  (require rackunit
+           racket/promise)
 
   (define (url->request u)
     (make-request #"GET" (string->url u) null
