@@ -31,7 +31,17 @@
          "zcpkg-info.rkt"
          "zcpkg-query.rkt")
 
+; Define a return-like form for dispatcher procedures.
+(define (respond resp)
+  ((current-respond-continuation) resp))
 
+(define current-respond-continuation (make-parameter #f))
+
+(define-syntax-rule (define-endpoint sig body ...)
+  (define sig
+    (call/cc (λ (r) (parameterize ([current-respond-continuation r]) body ...)))))
+
+; The server uses the workspace for its files, like everything else.
 (define (get-server-directory)
   (build-workspace-path "var/zcpkg"))
 
