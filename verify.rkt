@@ -128,8 +128,7 @@
 
 
 (define (integrous-artifact? artifact-path info)
-  (or (equal? (make-digest artifact-path)
-              (zcpkg-info-integrity info))
+  (or (digest=? (zcpkg-info-integrity info) artifact-path)
       (ZCPKG_TRUST_BAD_DIGEST)))
 
 (define (authenticated-provider? info public-key)
