@@ -128,19 +128,7 @@
 
 
 (define (load-local-config path)
-  (define lockfile (make-lock-file-name path))
-  (dynamic-wind
-    void
-    (λ ()
-      (call-with-file-lock/timeout
-       path 'shared
-       (λ () (call-with-input-file path read-config))
-       (λ () (error 'get-metadatum!
-                    "Failed to obtain lock for ~a"
-                    path))))
-    (λ ()
-      (when (file-exists? lockfile)
-        (delete-file lockfile)))))
+  (call-with-input-file path read-config))
 
 
 (define (read-keyword-value-pairs in [h (hasheq)] [read-order null])
