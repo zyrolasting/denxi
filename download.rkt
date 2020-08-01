@@ -30,11 +30,13 @@
   (delete-directory/files (get-cache-directory)))
 
 
-(define (zcpkg-query->url catalog-url path-prefix dep)
+(define (zcpkg-query->url catalog-url path-prefix dep . others)
   (merge-urls
    (url #f #f #f #f #f
-        (list (path/param path-prefix null)
-              (path/param (zcpkg-query->string dep) null))
+        (apply build-url-path
+               path-prefix
+               (zcpkg-query->string dep)
+               others)
         null #f)
    catalog-url))
 
