@@ -42,18 +42,24 @@
    catalog-url))
 
 
-(define (download-info variant)
+(define (download-by-catalog variant path-prefix)
   (if (url? variant)
-      (assert-valid-info variant (read-zcpkg-info (download-file variant)))
+      (download-file variant)
       (let* ([dep (coerce-zcpkg-query variant)]
              [dep-string (zcpkg-query->string dep)])
-        (for/fold ([maybe-info #f])
+        (for/fold ([maybe-path #f])
                   ([name&string-url (in-list (ZCPKG_SERVICE_ENDPOINTS))])
-          #:break maybe-info
+          #:break maybe-path
           (define catalog-string-url (cdr name&string-url))
           (define catalog-url (string->url catalog-string-url))
-          (download-info (zcpkg-query->url catalog-url "info" dep))))))
+          (download-by-catalog (zcpkg-query->url catalog-url path-prefix dep)
+                               path-prefix)))))
 
+(define (download-info dep)
+  (read-zcpkg-info (download-by-catalog dep "info")))
+
+(define (download-artifact dep)
+  (download-by-catalog dep "artifact"))
 
 (define (assert-valid-info source-url info)
   (define errors (validate-zcpkg-info info))
@@ -63,10 +69,6 @@
            (url->string source-url)
            (apply ~a (map (λ (err) (~a "  " err "\n"))))))
   info)
-
-
-(define (download-artifact catalog-url dep info)
-  (download-file (zcpkg-query->url catalog-url "artifact" dep)))
 
 
 ; Works if only the URL host and path matter.
