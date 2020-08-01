@@ -7,6 +7,7 @@
 (require "contract.rkt")
 
 (provide (struct-out zcpkg-query)
+         (struct-out exn:fail:zcpkg:invalid-revision-interval)
          (contract-out
           [CONVENTIONAL_NEWEST_REVISION_NAME string?]
           [revision-string? predicate/c]
@@ -20,6 +21,10 @@
           [zcpkg-query-identity=? (-> zcpkg-query-variant? zcpkg-query-variant? boolean?)]
           [coerce-zcpkg-query (-> zcpkg-query-variant? zcpkg-query?)]
           [zcpkg-query->string (-> zcpkg-query? string?)]
+          [get-inclusive-revision-range
+           (->* (any/c any/c revision-number? revision-number?)
+                (#:named-interval (or/c #f string?))
+                (values revision-number? revision-number?))]
           [string->zcpkg-query (-> string? zcpkg-query?)]
           [zcpkg-info->zcpkg-query (-> zcpkg-info? zcpkg-query?)]
           [search-zcpkg-infos (-> zcpkg-query-variant? (sequence/c zcpkg-info?) (sequence/c zcpkg-info?))]
@@ -122,10 +127,10 @@
   (define max-revision-number (find-revision-number (zcpkg-query-revision-max dep) sorted))
   (define-values (min-adjusted max-adjusted)
     (get-zcpkg-query-revision-range dep
-                                   #:lo min-revision-number
-                                   #:hi max-revision-number))
+                                    #:named-interval (zcpkg-query->string dep)
+                                    #:lo min-revision-number
+                                    #:hi max-revision-number))
 
-  (assert-valid-revision-range min-adjusted max-adjusted (zcpkg-query->string dep))
   (sequence-filter (λ (info)
                      (in? (zcpkg-info-revision-number info)
                           min-adjusted
@@ -153,12 +158,11 @@
                           exact-dep/variant))
 
   (define-values (l1 h1)
-    (get-zcpkg-query-revision-range exact-dep))
+    (get-zcpkg-query-revision-range #:named-interval "haystack zcpkg-query"
+                                    exact-dep))
   (define-values (l2 h2)
-    (get-zcpkg-query-revision-range to-match))
-
-  (assert-valid-revision-range l1 h1 "haystack zcpkg-query")
-  (assert-valid-revision-range l2 h2 "needle zcpkg-query")
+    (get-zcpkg-query-revision-range #:named-interval "needle zcpkg-query"
+                                    to-match))
 
   (and (zcpkg-query-identity=? exact-dep to-match)
        (revision-range-subset? l1 h1 l2 h2)))
@@ -287,16 +291,32 @@
        (in? h1 l2 h2)))
 
 (define (get-zcpkg-query-revision-range d
-                                       #:lo [lo (zcpkg-query-revision-min d)]
-                                       #:hi [hi (zcpkg-query-revision-max d)])
+                                        #:named-interval [named-interval #f]
+                                        #:lo [lo (zcpkg-query-revision-min d)]
+                                        #:hi [hi (zcpkg-query-revision-max d)])
+  (get-inclusive-revision-range #:named-interval named-interval
+                                (zcpkg-query-revision-min-exclusive? d)
+                                (zcpkg-query-revision-max-exclusive? d)
+                                lo
+                                hi))
+
+(define (get-inclusive-revision-range #:named-interval [named-interval #f]
+                                      min-exclusive?
+                                      max-exclusive?
+                                      lo hi)
   (define (add1-if do-it? low-num)
     (if do-it? (add1 low-num) low-num))
   (define (sub1-if do-it? hi-num)
     (if do-it? (sub1 hi-num) hi-num))
-  (values (add1-if (zcpkg-query-revision-min-exclusive? d)
-                   (coerce-revision-number lo))
-          (sub1-if (zcpkg-query-revision-max-exclusive? d)
-                   (coerce-revision-number hi))))
+
+  (define adjusted-lo (add1-if min-exclusive? (coerce-revision-number lo)))
+  (define adjusted-hi (sub1-if max-exclusive? (coerce-revision-number hi)))
+
+  (assert-valid-revision-range adjusted-lo adjusted-hi named-interval)
+
+  (values adjusted-lo
+          adjusted-hi))
+
 
 ; Assumes infos are sorted from newest to oldest.
 (define (find-revision-number variant infos)
@@ -491,6 +511,17 @@
 
   (test-false "Reject alphanumeric"
               (revision-number-string? "70O"))
+
+  (test-case "Create inclusive revision ranges"
+    (define (check-range expected-lo expected-hi . args)
+      (define-values (actual-lo actual-hi) (apply get-inclusive-revision-range args))
+      (check-equal? actual-lo expected-lo)
+      (check-equal? actual-hi expected-hi))
+
+    (check-range 0 0 #f #f 0 0)
+    (check-range 1 2 #t #t 0 3)
+    (check-range 1 2 #t #f 0 2)
+    (check-range 1 2 #f #t 1 3))
 
   (test-case "Metadata search"
     (define (zpi pr pk ed num names)
