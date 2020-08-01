@@ -143,6 +143,9 @@ EOF
    (λ (flags . package-sources)
      (define sow (find-scope-of-work package-sources))
 
+     (when (null? package-sources)
+       (raise (exn:fail:user "No package sources specified." (current-continuation-marks))))
+
      (if (ZCPKG_CONSENT)
          (do-work sow)
          (review-work package-sources sow)))))
