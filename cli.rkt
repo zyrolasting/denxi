@@ -67,9 +67,9 @@
          ["install" install-command]
          ["uninstall" uninstall-command]
          ["new" new-command]
+         ["show" show-command]
          ["link" link-command]
          ["config" config-command]
-         ["show" show-command]
          ["capture" capture-command]
          ["restore" restore-command]
          ["diff" diff-command]
@@ -102,7 +102,8 @@ EOF
 
 (define (install-command args)
   (define (show-report output)
-    (writeln output))
+    (for ([m (in-list output)])
+      (displayln (format-zcpkg-message m))))
 
   (define (review-work package-sources sow)
     (define targets (map car (hash-values sow)))

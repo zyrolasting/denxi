@@ -5,9 +5,13 @@
          (all-from-out racket/format))
 
 (require racket/format
-         "zcpkg-query.rkt"
+         racket/pretty
+         "setting.rkt"
          "string.rkt"
-         "zcpkg-info.rkt")
+         "zcpkg-info.rkt"
+         "zcpkg-messages.rkt"
+         "zcpkg-query.rkt"
+         "zcpkg-settings.rkt")
 
 (define (~a* . args)
   (apply ~a (map (λ (s) (~a s "\n")) args)))
@@ -48,3 +52,48 @@
                      (print-edition-name (zcpkg-info-edition-name info))
                      (print-revision-num (zcpkg-info-revision-number info))))
            "\n")))
+
+(define (format-zcpkg-message m)
+  (cond [($output? m) (format-zcpkg-message ($output-v m))]
+
+        [($already-installed? m)
+         (format "~a is already installed at ~a~n"
+                 (zcpkg-query->string (zcpkg-info->zcpkg-query ($already-installed-info m)))
+                 (zcpkg-info->install-path ($already-installed-info m)))]
+
+        [($on-compilation-error? m)
+         (format "Bytecode compilation error:~n~a~n"
+                 ($on-compilation-error-message m))]
+
+        [($on-bad-digest? m)
+         (format (~a "~a failed its integrity check.~n"
+                     "While unsafe, you can force installation using ~a.")
+                 (zcpkg-query->string (zcpkg-info->zcpkg-query ($on-bad-digest-info m)))
+                 (setting->long-flag ZCPKG_TRUST_BAD_DIGEST))]
+
+        [($on-bad-signature? m)
+         (format (~a "~a has a signature, but it does not match ~a's public key.~n"
+                     "While unsafe, you can trust bad signatures using ~a.")
+                 (zcpkg-query->string (zcpkg-info->zcpkg-query ($on-bad-signature-info m)))
+                 (zcpkg-info-provider-name ($on-bad-signature-info m))
+                 (setting->long-flag ZCPKG_TRUST_BAD_SIGNATURE))]
+
+        [($on-missing-signature? m)
+         (format (~a "~a does not have a signature. If you are testing a package, this is expected.~n"
+                     "If you got the package from the Internet, then exercise caution!~n"
+                     "To trust unsigned packages, use ~a.")
+                 (zcpkg-query->string (zcpkg-info->zcpkg-query ($on-bad-signature-info m)))
+                 (setting->long-flag ZCPKG_TRUST_UNSIGNED))]
+
+        [($on-unverified-host? m)
+         (format (~a "~a does not have a valid certificate.~n"
+                     "Connections to this server are not secure.~n"
+                     "To trust servers without valid certificates, use ~a.~n")
+                 ($on-unverified-host-host m)
+                 (setting->long-flag ZCPKG_TRUST_UNVERIFIED_HOST))]
+
+        [($on-package-installed? m)
+         (format "Installed package ~a~n"
+                 ($on-package-installed-info m))]
+
+        [else (~s m)]))
