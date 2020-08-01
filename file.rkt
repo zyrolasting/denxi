@@ -134,9 +134,9 @@
   (parameterize ([current-directory (or (path-only target) (current-directory))])
     (define user-specified
       (for/list ([revision-name (in-list (zcpkg-info-revision-names info))])
-        (make-link/clobber target revision-name)))
+        (path->complete-path (make-link/clobber target revision-name))))
     (if newest?
-        (cons (make-link/clobber target CONVENTIONAL_NEWEST_REVISION_NAME)
+        (cons (path->complete-path (make-link/clobber target CONVENTIONAL_NEWEST_REVISION_NAME))
               user-specified)
         user-specified)))
 
