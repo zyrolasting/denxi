@@ -110,7 +110,7 @@
        query)
 
      (define (get-interval-end-info rev-name boundary-name)
-       (define boundary-path (build-server-path provider package edition revision-min))
+       (define boundary-path (build-server-path provider package edition rev-name))
        (unless (directory-exists? boundary-path)
          (cant-resolve #:code 404
                        (format "Cannot resolve ~s. The ~a bound revision ~a does not exist in our records."
