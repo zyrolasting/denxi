@@ -344,7 +344,8 @@ EOF
    #:program "bundle"
    #:arg-help-strings '("package-path" "pregexp-pattern-strings")
    #:flags
-   (settings->flag-specs ZCPKG_PRIVATE_KEY_PATH)
+   (settings->flag-specs ZCPKG_PRIVATE_KEY_PATH
+                         ZCPKG_BUNDLE_FOR_SERVER)
    #:args args
    (λ (flags package-path-string . pattern-strings)
      (define info
@@ -372,8 +373,15 @@ EOF
                                                 (current-continuation-marks)))]))
             (zcpkg-info-dependencies info)))
 
+     (define archive-directory
+       (if (ZCPKG_BUNDLE_FOR_SERVER)
+           (let ([d (zcpkg-info->public-file-path info)])
+             (make-directory* d)
+             d)
+           (current-directory)))
+
      (define archive-file
-       (build-path (current-directory) "archive.tgz"))
+       (build-path archive-directory "archive.tgz"))
 
      (define archive-files
        (sequence->list
@@ -417,7 +425,10 @@ EOF
                                   [signature signature]
                                   [integrity digest]))
                     null)
-                   "zcpkg.rktd"))))
+                   (build-path archive-directory "zcpkg.rktd"))
+
+     (when (ZCPKG_BUNDLE_FOR_SERVER)
+       (make-zcpkg-revision-links info #:target archive-directory)))))
 
 
 

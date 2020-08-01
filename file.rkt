@@ -128,14 +128,15 @@
                          (build-dependency-path where dependency-info)))))
 
 
-(define (make-zcpkg-revision-links info #:newest? [newest? #f])
-  (define install-path (zcpkg-info->install-path info))
-  (parameterize ([current-directory (path-only install-path)])
+(define (make-zcpkg-revision-links info
+                                   #:newest? [newest? #f]
+                                   #:target [target (zcpkg-info->install-path info)])
+  (parameterize ([current-directory (or (path-only target) (current-directory))])
     (define user-specified
       (for/list ([revision-name (in-list (zcpkg-info-revision-names info))])
-        (make-link/clobber install-path revision-name)))
+        (make-link/clobber target revision-name)))
     (if newest?
-        (cons (make-link/clobber install-path CONVENTIONAL_NEWEST_REVISION_NAME)
+        (cons (make-link/clobber target CONVENTIONAL_NEWEST_REVISION_NAME)
               user-specified)
         user-specified)))
 

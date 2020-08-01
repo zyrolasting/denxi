@@ -117,6 +117,18 @@
            (or/c #f string?))
    '(#f #f #f #f)}
 
+  {ZCPKG_MATCH_RACKET_MODULES
+   "-r"
+   ("Match against .rkt, .ss, .scrbl, and .rktd.")
+   boolean?
+   #f}
+
+  {ZCPKG_BUNDLE_FOR_SERVER
+   "-s"
+   ("Bundle package into server directory.")
+   boolean?
+   #f}
+
   {ZCPKG_SANDBOX_PATH_PERMISSIONS
    "-P"
    ("A value for sandbox-path-permissions" "racket-value")

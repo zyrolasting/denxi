@@ -1,6 +1,8 @@
 #lang racket/base
 
-(provide start-server)
+(provide start-server
+         get-server-directory
+         zcpkg-info->public-file-path)
 
 (require racket/exn
          racket/generator
