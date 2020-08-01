@@ -115,7 +115,6 @@
   (define (build-path* el)
     (path->directory-path (build-path (current-directory) el)))
 
-
   (test-workspace "Find scope of work for a given package source"
     ; To make it interesting: Give every package a dependency cycle.
 

@@ -54,6 +54,7 @@
   (path-replace-extension (zcpkg-info->public-file-path info)
                           #".tgz"))
 
+
 (define (start-server)
   (make-directory* (get-log-directory))
   (serve #:port 8080
@@ -206,7 +207,6 @@
    (λ (o)
      (displayln "<!DOCTYPE html>" o)
      (displayln (xexpr->string xexpr) o))))
-
 
 (define (send-file req contains-relative-path-elements)
   (define relative-path-elements
