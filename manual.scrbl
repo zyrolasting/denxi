@@ -277,18 +277,18 @@ If someone asks for @tt{localhost.localdomain:my-pkg:draft:0}, they
 are going to get this package. That should clarify the role of the
 first few lines.
 
-If you set @racket[#:revision-names] to @racket[("initial" "oldest"
-"beginning")], then users can replace that @racket[0] with any of
-those strings to reference this package. Choose those names wisely:
-Once you host the package, you will not be allowed to use the same
-revision names again for the edition!
+If you set @racket[revision-names] to @racket['("initial" "oldest"
+"beginning")], then users can replace a @racket[0] with any of those
+strings in their query to reference this package. Choose revision names
+wisely: Once you host the package, you will not be allowed to use the
+same revision names again for the edition.
 
-You can set your @racket[#:dependencies] using the same strings
+You can set @racket[dependencies] using the same strings
 discussed in @secref{asking}.
 
-@racketblock[#:dependencies ("john.doe:calculator" "alice:wonderland:small")]
+@racketblock[(define dependencies '("john.doe:calculator" "alice:wonderland:small"))]
 
-@racket[#:setup-module] is a path relative to the @tech{spec file}.
+@racket[setup-module] is a path relative to the @tech{spec file}.
 It points to the other file the @tt{new} command made for us.  That
 file is a @deftech{setup module}. It automates optional tasks on
 behalf of the user, such as installing non-Racket dependencies.
