@@ -57,7 +57,7 @@ model that extends ideas from established projects in this space.
 
 @section{Competing Alternatives}
 
-@section{Racket}
+@subsection{Racket}
 
 Racket has two package management systems. The first, PLaneT, attempts
 to automatically distribute code such that each dependent module is
@@ -66,7 +66,7 @@ commands. After complications regarding multiple versions of
 dependencies in the same program, and the fact that modules implicitly
 change userspace, PLaneT was deprecated in favor of @tt{raco pkg}.
 
-@subsection{PLaneT}
+@subsubsection{PLaneT}
 
 PLaneT attempts to solve dependency hell at a per-module level.  A
 module would request another module using the @racket[planet] form,
@@ -80,7 +80,7 @@ A single program using different versions of the same package would
 suffer the consequences of conflicting change.
 
 
-@subsection{@tt{raco pkg}}
+@subsubsection{@tt{raco pkg}}
 
 Racket installations have scoping rules for packages. A package's
 scope is a function of the installation's configuration, and how
@@ -131,10 +131,8 @@ packages installed on their system.
 
 In discussing the implications with the Racket community I learned
 that the developers did not find that these problems came up enough in
-practice to warrant action. Jay McCarthy claimed that his @tt{raco
-pkg} captured the "ethos" of Racket. Ultimately it is up to the
-developers and users to adapt their code to the package manager and
-its ideas of what conflict means for an installation.
+practice to warrant action. Today, it is up to the developers and
+users to adapt their code to @tt{raco pkg}.
 
 
 @subsection{NPMv3}
