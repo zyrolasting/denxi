@@ -6,6 +6,7 @@
          "config.rkt"
          "contract.rkt"
          "setting.rkt"
+         "string.rkt"
          "url.rkt"
          "workspace.rkt")
 
@@ -126,6 +127,18 @@
   {ZCPKG_BUNDLE_FOR_SERVER
    "-s"
    ("Bundle package into server directory.")
+   boolean?
+   #f}
+
+  {ZCPKG_EDITION
+   "-e"
+   ("The name of the edition. If not set, use existing name." "name")
+   (or/c #f symbol? name-string?)
+   #f}
+
+  {ZCPKG_REVISION_ZERO
+   "-z"
+   ("Set revision number to 0.")
    boolean?
    #f}
 

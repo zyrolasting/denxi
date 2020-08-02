@@ -22,6 +22,9 @@
 (define (join-lines lines)
   (string-join lines "\n"))
 
+(define (format-zcpkg-info info)
+  (zcpkg-query->string (zcpkg-info->zcpkg-query info)))
+
 (define (print-zcpkg-info-table unsorted-infos)
   (define infos
     (sort unsorted-infos

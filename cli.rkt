@@ -75,6 +75,7 @@
          ["diff" diff-command]
          ["sandbox" sandbox-command]
          ["serve" serve-command]
+         ["chver" chver-command]
          ["bundle" bundle-command]
          [_ (printf "Unrecognized command: ~s. Run with -h for usage information.~n"
                     action)
@@ -94,6 +95,7 @@
   diff       Compare workspace to capture
   sandbox    Start sandboxed REPL for package's setup module.
   serve      Serve package artifacts
+  chver      Change package version
   bundle     Prepare package for distribution
 
 EOF
@@ -337,6 +339,59 @@ EOS
 
 EOF
 ))
+
+
+(define (chver-command args)
+  (run-command-line
+   #:program "chver"
+   #:arg-help-strings '("package-path" "revision-names")
+   #:flags
+   (settings->flag-specs
+    ZCPKG_EDITION
+    ZCPKG_REVISION_ZERO)
+   #:args args
+   (λ (flags package-path-string . revision-names)
+     (define info
+       (with-handlers ([exn:fail:filesystem?
+                        (λ (e)
+                          (printf "Could not read ~a. Double check that ~s points to a package directory.~n"
+                                  CONVENTIONAL_PACKAGE_INFO_FILE_NAME
+                                  package-path-string)
+                          (raise 1))])
+         (read-zcpkg-info-from-directory package-path-string)))
+
+     (define errors (validate-zcpkg-info info))
+     (unless (null? errors)
+       (printf (~a "Cannot change version.~n"
+                   "There are errors in the original info:~n~a~n")
+               (string-join errors "\n"))
+       (raise 1))
+
+     (define new-info
+       (struct-copy zcpkg-info info
+                    [edition-name (or (~a (ZCPKG_EDITION))
+                                      (zcpkg-info-edition-name info))]
+                    [revision-number (if (ZCPKG_REVISION_ZERO)
+                                         0
+                                         (add1 (zcpkg-info-revision-number info)))]
+                    [revision-names revision-names]))
+
+     (define new-errors (validate-zcpkg-info new-info))
+     (unless (null? errors)
+       (printf (~a "Cannot change version.~n"
+                   "There are errors in the new info:~n~a~n")
+               (string-join new-errors "\n"))
+       (raise 1))
+
+     (call-with-output-file
+       #:exists 'truncate/replace
+       (build-path package-path-string
+                   CONVENTIONAL_PACKAGE_INFO_FILE_NAME)
+       (λ (o) (write-zcpkg-info new-info o)))
+
+     (printf "~a -> ~a~n"
+             (format-zcpkg-info info)
+             (format-zcpkg-info new-info)))))
 
 
 (define (bundle-command args)
