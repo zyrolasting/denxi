@@ -258,14 +258,16 @@ $ ls my-pkg
 Inside that directory you will find a few files.
 Open up @|specfile|. It should look like this:
 
-@racketblock[
-#:provider "localhost.localdomain"
-#:package "my-pkg"
-#:edition "draft"
-#:revision-number 0
-#:revision-names ()
-#:dependencies ()
-#:setup-module "setup.rkt"
+@racketmod[
+info
+
+(define provider "localhost.localdomain")
+(define package "my-pkg")
+(define edition "draft")
+(define revision-number 0)
+(define revision-names '())
+(define dependencies '())
+(define setup-module "setup.rkt")
 ]
 
 This is your @deftech{spec file}. It defines metadata for your
@@ -347,7 +349,7 @@ to define a value:
 
 @item{A hard-coded default.}
 
-@item{A @racket[read]-able literal by the @racket[#:ZCPKG_USE_WIDGET] keyword in @tt{:/etc/zcpkg.rktd}.}
+@item{A value bound to @tt{ZCPKG_USE_WIDGET} in @tt{:/etc/zcpkg.rktd}.}
 
 @item{An environment variable named @tt{ZCPKG_USE_WIDGET}.}
 

@@ -18,7 +18,7 @@
   [save-config!
    (->* (config-closure/c (or/c path-string? url? output-port?)) void?)]
   [write-config
-   (-> hash? (listof symbol?) output-port? void?)]
+   (->* (hash? (listof symbol?) output-port?) (#:pretty? boolean?) void?)]
   [load-config
    (->* ((or/c path? url? string? bytes? input-port?))
         config-closure/c)]
@@ -72,18 +72,20 @@
 ;; Config output cases
 ;;;;;;;;;;;;;;;;;;;;;;;;
 
-(define (write-config hash-table read-order o)
+(define (write-config #:pretty? [pretty? #t] hash-table read-order o)
   (define unordered
     (let ([s (apply set read-order)])
       (sequence-filter (λ (x) (not (set-member? s x)))
                        (in-hash-keys hash-table))))
   (parameterize ([print-reader-abbreviations #t])
-    (pretty-write #:newline? #t
-                  (make-infotab-module-datum
-                   (append read-order
-                           (sequence->list unordered))
-                   hash-table)
-                  o)))
+    (define domain
+      (append read-order
+              (sequence->list unordered)))
+    (if pretty?
+        (print-info-module domain hash-table o)
+        (pretty-write #:newline? #t
+                      (make-infotab-module-datum domain hash-table)
+                      o))))
 
 (define (save-local-config! closure path)
   (define lockfile (make-lock-file-name path))
@@ -110,6 +112,12 @@
      . ,(for/list ([k (in-list domain)])
           (define v (hash-ref bindings k))
           `(define ,k ,(if (list? v) `',v v)))))
+
+(define (print-info-module domain bindings o)
+  (displayln "#lang info\n" o)
+  (for ([k (in-list domain)])
+    (define v (hash-ref bindings k))
+    (writeln `(define ,k ,(if (list? v) `',v v)) o)))
 
 
 ;; Config input cases
