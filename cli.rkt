@@ -510,13 +510,22 @@ EOF
                (λ ()
                  (define (<< k v)
                    (printf "~s ~s~n" k v))
-                 (<< '#:provider (gethostname))
-                 (<< '#:package name)
-                 (<< '#:edition "draft")
-                 (<< '#:revision-number 0)
-                 (<< '#:revision-names null)
-                 (<< '#:setup-module "setup.rkt")
-                 (<< '#:dependencies null)))
+                 (write-config
+                  (hasheq 'provider (gethostname)
+                          'package name
+                          'edition "draft"
+                          'revision-number 0
+                          'revision-names '()
+                          'setup-module "setup.rkt"
+                          'dependencies '())
+                  '(provider
+                    package
+                    edition
+                    revision-number
+                    revision-names
+                    setup-module
+                    dependencies)
+                  (current-output-port))))
 
     (make-file name "setup.rkt"
                (λ ()
@@ -768,11 +777,13 @@ EOF
                          (check-false (ZCPKG_VERBOSE))
                          (check-false (file-exists? (get-zcpkg-settings-path)))))
 
+
       (run-entry-point (vector "config" "set" "ZCPKG_VERBOSE" "#t")
                        (λ (exit-code stdout stderr)
                          (check-eq? exit-code 0)
                          (check-true (ZCPKG_VERBOSE))
                          (check-true (file-exists? (get-zcpkg-settings-path)))
+
                          ; Reload just for good measure.
                          (load-zcpkg-settings!)
                          (check-true (ZCPKG_VERBOSE))))))

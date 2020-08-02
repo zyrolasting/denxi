@@ -13,7 +13,7 @@
 (define current-zcpkg-config (make-parameter #f))
 
 (define (get-zcpkg-settings-path)
-  (build-workspace-path "etc/zcpkg.rktd"))
+  (build-workspace-path "etc/zcpkg.rkt"))
 
 (define (load-zcpkg-settings!)
   (define path (get-zcpkg-settings-path))
