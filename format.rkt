@@ -60,12 +60,12 @@
   (cond [($output? m) (format-zcpkg-message ($output-v m))]
 
         [($already-installed? m)
-         (format "~a is already installed at ~a~n"
+         (format "~a is already installed at ~a"
                  (zcpkg-query->string (zcpkg-info->zcpkg-query ($already-installed-info m)))
                  (zcpkg-info->install-path ($already-installed-info m)))]
 
         [($on-compilation-error? m)
-         (format "Bytecode compilation error:~n~a~n"
+         (format "Bytecode compilation error:~n~a"
                  ($on-compilation-error-message m))]
 
         [($on-bad-digest? m)
@@ -91,12 +91,12 @@
         [($on-unverified-host? m)
          (format (~a "~a does not have a valid certificate.~n"
                      "Connections to this server are not secure.~n"
-                     "To trust servers without valid certificates, use ~a.~n")
+                     "To trust servers without valid certificates, use ~a.")
                  ($on-unverified-host-host m)
                  (setting->long-flag ZCPKG_TRUST_UNVERIFIED_HOST))]
 
         [($on-package-installed? m)
-         (format "Installed package ~a~n"
+         (format "Installed package ~a"
                  (zcpkg-query->string (zcpkg-info->zcpkg-query ($on-package-installed-info m))))]
 
         [else (~s m)]))
