@@ -140,4 +140,5 @@
                             signature
                             public-key)
           (ZCPKG_TRUST_BAD_SIGNATURE))
-      (ZCPKG_TRUST_UNSIGNED)))
+      (or (ZCPKG_TRUST_BAD_DIGEST)
+          (ZCPKG_TRUST_UNSIGNED))))
