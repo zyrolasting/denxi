@@ -56,7 +56,11 @@
                                path-prefix)))))
 
 (define (download-info dep)
-  (read-zcpkg-info (download-by-catalog dep "info")))
+  (define maybe-info (download-by-catalog dep "info"))
+  (unless maybe-info
+    (raise-user-error "No service returned metadata for"
+                      (zcpkg-query->string (coerce-zcpkg-query dep))))
+  (read-zcpkg-info maybe-info))
 
 (define (download-artifact dep)
   (download-by-catalog dep "artifact"))
