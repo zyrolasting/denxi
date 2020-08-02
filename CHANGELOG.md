@@ -11,5 +11,5 @@ This project follows [these versioning rules](https://sagegerard.com/edition-rev
 ## [draft:alpha] - 2020-08-02
 * Met the requirements for "Alpha" specified in the README
 
-[Unreleased]: https://github.com/zyrolasting/zcpkg/alpha...HEAD
+[Unreleased]: https://github.com/zyrolasting/zcpkg/compare/alpha...HEAD
 [draft:alpha]: https://github.com/zyrolasting/zcpkg/releases/tag/alpha
