@@ -82,7 +82,7 @@
          (format (~a "~a does not have a signature. If you are testing a package, this is expected.~n"
                      "If you got the package from the Internet, then exercise caution!~n"
                      "To trust unsigned packages, use ~a.")
-                 (zcpkg-query->string (zcpkg-info->zcpkg-query ($on-bad-signature-info m)))
+                 (zcpkg-query->string (zcpkg-info->zcpkg-query ($on-missing-signature-info m)))
                  (setting->long-flag ZCPKG_TRUST_UNSIGNED))]
 
         [($on-unverified-host? m)
