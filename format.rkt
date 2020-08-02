@@ -94,6 +94,6 @@
 
         [($on-package-installed? m)
          (format "Installed package ~a~n"
-                 ($on-package-installed-info m))]
+                 (zcpkg-query->string (zcpkg-info->zcpkg-query ($on-package-installed-info m))))]
 
         [else (~s m)]))
