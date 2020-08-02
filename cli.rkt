@@ -369,7 +369,8 @@ EOF
 
      (define new-info
        (struct-copy zcpkg-info info
-                    [edition-name (or (~a (ZCPKG_EDITION))
+                    [edition-name (if (ZCPKG_EDITION)
+                                      (~a (ZCPKG_EDITION))
                                       (zcpkg-info-edition-name info))]
                     [revision-number (if (ZCPKG_REVISION_ZERO)
                                          0
