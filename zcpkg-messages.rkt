@@ -18,3 +18,4 @@
 (define-message $on-package-installed (info))
 (define-message $install-package (infos url-or-path))
 (define-message $on-request (method client-ip host-ip referer uri timestamp))
+(define-message $unrecognized-command (command))

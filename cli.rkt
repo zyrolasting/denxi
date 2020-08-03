@@ -21,6 +21,7 @@
          "file.rkt"
          "format.rkt"
          "message.rkt"
+         "output.rkt"
          "resolve.rkt"
          "setting.rkt"
          "setup.rkt"
@@ -79,8 +80,7 @@
          ["serve" serve-command]
          ["chver" chver-command]
          ["bundle" bundle-command]
-         [_ (printf "Unrecognized command: ~s. Run with -h for usage information.~n"
-                    action)
+         [_ (write-output ($unrecognized-command action))
             (λ _ 1)]))
      (proc args))
 
@@ -329,8 +329,7 @@ EOS
                             (controller 'save!)
                             (printf "Saved ~a~n" (controller 'get-path))))]
 
-       [_ (printf "Unrecognized command: ~s. Run with -h for usage information.~n"
-                  action)
+       [_ (write-output ($unrecognized-command action))
           1]))
 
    #<<EOF

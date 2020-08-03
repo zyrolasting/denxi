@@ -110,4 +110,8 @@
                  ($on-request-host-ip m)
                  ($on-request-referer m))]
 
+        [($unrecognized-command? m)
+         (format "Unrecognized command: ~s. Run with -h for usage information.~n"
+                 ($unrecognized-command-command m))]
+
         [else (~s m)]))
