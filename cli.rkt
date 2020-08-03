@@ -348,7 +348,7 @@ EOF
    #:flags
    (settings->flag-specs
     ZCPKG_EDITION
-    ZCPKG_REVISION_ZERO)
+    ZCPKG_REVISION_NUMBER)
    #:args args
    (λ (flags package-path-string . revision-names)
      (define info
@@ -372,8 +372,8 @@ EOF
                     [edition-name (if (ZCPKG_EDITION)
                                       (~a (ZCPKG_EDITION))
                                       (zcpkg-info-edition-name info))]
-                    [revision-number (if (ZCPKG_REVISION_ZERO)
-                                         0
+                    [revision-number (if (ZCPKG_REVISION_NUMBER)
+                                         (ZCPKG_REVISION_NUMBER)
                                          (add1 (zcpkg-info-revision-number info)))]
                     [revision-names revision-names]))
 
@@ -787,6 +787,29 @@ EOF
                          ; Reload just for good measure.
                          (load-zcpkg-settings!)
                          (check-true (ZCPKG_VERBOSE))))))
+
+  (test-workspace "Change a package's version"
+                  (define package-name "foo")
+                  (run-entry-point (vector "new" package-name) void)
+                  (run-entry-point (vector "chver"
+                                           (setting->short-flag ZCPKG_EDITION) "ed"
+                                           (setting->short-flag ZCPKG_REVISION_NUMBER) "8"
+                                           package-name
+                                           "a" "b" "c")
+                                   (λ (exit-code stdout stderr)
+                                     (check-eq? exit-code 0)
+                                     (check-equal? (port->string stderr) "")
+                                     (check-equal? (port->string stdout)
+                                                   (format "~a:foo:draft:i:0:i:0 -> ~a:foo:ed:i:8:i:8\n"
+                                                           (gethostname)
+                                                           (gethostname)))
+
+                                     (define info (read-zcpkg-info-from-directory package-name))
+                                     (check-equal? (zcpkg-info-edition-name info) "ed")
+                                     (check-equal? (zcpkg-info-revision-number info) 8)
+                                     (check-equal? (zcpkg-info-revision-names info)
+                                                   '("a" "b" "c")))))
+
 
   (test-workspace "Create a new package"
     (define package-name "foo")

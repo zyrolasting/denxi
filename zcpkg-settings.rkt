@@ -136,10 +136,10 @@
    (or/c #f symbol? name-string?)
    #f}
 
-  {ZCPKG_REVISION_ZERO
-   "-z"
-   ("Set revision number to 0.")
-   boolean?
+  {ZCPKG_REVISION_NUMBER
+   "-r"
+   ("Set revision number" "revision-number")
+   (or/c #f exact-nonnegative-integer?)
    #f}
 
   {ZCPKG_SANDBOX_PATH_PERMISSIONS
