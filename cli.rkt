@@ -720,8 +720,11 @@ EOF
 (module+ test
   (require racket/port
            racket/random
+           racket/runtime-path
            rackunit
            (submod "file.rkt" test))
+
+  (define-runtime-path here ".")
 
   (define (run-entry-point #:stdin [stdin (open-input-bytes #"")] args after)
     (define nout (current-output-port))
@@ -819,6 +822,11 @@ EOF
                        (check-eq? exit-code 0)
                        (check-pred directory-exists? pkg-dir)
                        (check-pred zcpkg-info? (read-zcpkg-info-from-directory pkg-dir)))))
+
+  (test-workspace "Let zcpkg install itself"
+                  (run-entry-point (vector "install" (setting->short-flag ZCPKG_CONSENT) (path->string here))
+                                   (λ (exit-code stdout stderr)
+                                     (check-eq? exit-code 0))))
 
   (test-workspace "Install a local package with no dependencies"
     (define package-name "foo")
