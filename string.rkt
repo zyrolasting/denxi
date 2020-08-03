@@ -44,10 +44,12 @@
 
 (define name-string?
   (procedure-rename
-   (negate
-    (disjoin (make-rx-predicate #:whole? #f unix-reserved-character-pattern-string)
-             (make-rx-predicate #:whole? #f windows-reserved-character-pattern-string)
-             (make-rx-predicate #:whole? #t windows-reserved-name-pattern-string)))
+   (conjoin string?
+            (negate
+             (disjoin (curry equal? "")
+                      (make-rx-predicate #:whole? #f unix-reserved-character-pattern-string)
+                      (make-rx-predicate #:whole? #f windows-reserved-character-pattern-string)
+                      (make-rx-predicate #:whole? #t windows-reserved-name-pattern-string))))
    'name-string?))
 
 (module+ test
