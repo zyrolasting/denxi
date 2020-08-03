@@ -15,7 +15,6 @@
          "zcpkg-query.rkt"
          "file.rkt"
          "format.rkt"
-         "logging.rkt"
          "string.rkt"
          "url.rkt"
          "verify.rkt"

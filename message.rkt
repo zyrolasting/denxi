@@ -5,7 +5,6 @@
 (provide (all-defined-out))
 
 (require racket/string
-         "logging.rkt"
          (for-syntax racket/base))
 
 ; Make prefab for use on place channels.

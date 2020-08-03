@@ -12,7 +12,6 @@
          racket/sandbox
          "workspace.rkt"
          "config.rkt"
-         "logging.rkt"
          "zcpkg-query.rkt"
          "url.rkt"
          "zcpkg-info.rkt"
