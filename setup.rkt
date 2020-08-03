@@ -19,7 +19,6 @@
          "zcpkg-settings.rkt")
 
 
-
 (define (enter-setup-module info)
   (define setup-module-path (get-setup-module-path info))
   (when setup-module-path
@@ -34,6 +33,7 @@
         (read-eval-print-loop)))
     void))
 
+
 (define (get-setup-module-path info)
   (define name (zcpkg-query->string (zcpkg-info->zcpkg-query info)))
   (define zcpkg-path (zcpkg-info->install-path info))
@@ -45,6 +45,7 @@
            (error 'setup
                   "~a's setup-module path reaches outside of install directory."
                   name))))
+
 
 (define (path-prefix? to-check prefix-pathy)
   (define maybe-prefixed (explode-path (simplify-path (path->complete-path to-check))))
