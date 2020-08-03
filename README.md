@@ -76,35 +76,13 @@ trimmed down Racket installation. In that case, try `make racket-deps
 
 ### Alpha
 
-At minimum, `zcpkg` must function offline. The alpha service offers
-read-only access to manually-maintained files. There are no marketing
-materials, onboarding features, or databases.
+Released here: https://github.com/zyrolasting/zcpkg/releases/tag/alpha
 
-Package updates are defined in terms of installation and uninstallation.
-For that reason, an update command is not necessary right now.
-
-- [x] Define a namespace-specific string format for packages
-- [x] Use SHA-384 for subresource integrity checking
-- [x] Verify digital signatures (No restrictions on asymmetric crypto yet. Just bring your own keys).
-- [x] Capture digests, installed packages, and `zcpkg` configuration for collaborators.
-- [x] Create a new package from a template
-- [x] Start a sandboxed REPL inside of a package
-- [x] Show a diff between a capture and a workspace
-- [x] Reproduce a workspace from a capture
-    - [x] Apply stored configuration
-    - [x] Run install commands
-- [x] Create a direct link to a package
-- [x] Bundle a package for use on a server
-- [x] Print informative output on demand
-- [x] Basic operations
-    - [x] Install a package (as a link) from a directory
-    - [x] Install a package from a service
-    - [x] Uninstall a package
-- [x] Serve package artifacts
-    - [x] Run server
-    - [x] GET file
-    - [x] GET directory listing
-    - [x] GET file from URN's NSS
+At this state `zcpkg` functions with a service that offers read-only
+access to manually-maintained files. There are no marketing materials,
+onboarding features, or databases. Package updates are defined in
+terms of installation and uninstallation.  For that reason, an update
+command is not included.
 
 
 ### Beta
