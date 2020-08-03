@@ -26,7 +26,7 @@
 (define (format-zcpkg-info info)
   (zcpkg-query->string (zcpkg-info->zcpkg-query info)))
 
-(define (print-zcpkg-info-table unsorted-infos)
+(define (format-zcpkg-info-table unsorted-infos)
   (define infos
     (sort unsorted-infos
           #:key (λ (info) (zcpkg-query->string (zcpkg-info->zcpkg-query info)))
@@ -42,7 +42,7 @@
   (define print-revision-num  (get-cell-printer (map (compose ~a zcpkg-info-revision-number) infos)))
 
   (define row-fmt "~a\t~a\t~a\t~a")
-  (printf (~a (format row-fmt
+  (format (~a (format row-fmt
                       (print-package-name "Package")
                       (print-provider-name "Provider")
                       (print-edition-name "Edition")
@@ -113,5 +113,18 @@
         [($unrecognized-command? m)
          (format "Unrecognized command: ~s. Run with -h for usage information.~n"
                  ($unrecognized-command-command m))]
+
+        [($review-installation-work? m)
+         (format "Sources:~n~a~n~n~a~n~a"
+                 (join-lines (indent-lines ($review-installation-work-package-sources m)))
+                 (format-zcpkg-info-table (map car (hash-values ($review-installation-work-sow m))))
+                 (format "To consent to these changes, run again with ~a"
+                         (setting->short-flag ZCPKG_CONSENT)))]
+
+        [($review-uninstallation-work? m)
+         (format "The following packages will be removed:~n~a~n~n~a"
+                 (format-zcpkg-info-table ($review-uninstallation-work-sow m))
+                 (format "To consent to these changes, run again with ~a"
+                         (setting->short-flag ZCPKG_CONSENT)))]
 
         [else (~s m)]))

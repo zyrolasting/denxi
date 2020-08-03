@@ -110,11 +110,7 @@ EOF
       (displayln (format-zcpkg-message m))))
 
   (define (review-work package-sources sow)
-    (define targets (map car (hash-values sow)))
-    (printf "~nSources:~n~a~n~n" (join-lines (indent-lines package-sources)))
-    (print-zcpkg-info-table targets)
-    (printf "To consent to these changes, run again with ~a~n"
-            (setting->short-flag ZCPKG_CONSENT)))
+    (write-output ($review-installation-work sow package-sources)))
 
   (define (do-work sow)
     (define controller (zcpkg-start-team!))
@@ -665,12 +661,11 @@ EOF
            (define install-path (zcpkg-info->install-path info))
            (printf "Deleting ~a~n" install-path)
            (delete-directory/files/empty-parents install-path))
-         (begin (printf "The following packages will be removed:~n")
-                (print-zcpkg-info-table (sequence->list
-                                         (sequence-append (in-mutable-set to-uninstall)
-                                                          (in-mutable-set will-be-orphaned))))
-                (printf "To consent to these changes, run again with ~a~n"
-                        (setting->short-flag ZCPKG_CONSENT)))))))
+         (write-output
+          ($review-uninstallation-work
+           (sequence->list
+            (sequence-append (in-mutable-set to-uninstall)
+                             (in-mutable-set will-be-orphaned)))))))))
 
 
 
