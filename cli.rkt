@@ -60,6 +60,8 @@
    (settings->flag-specs
     ZCPKG_SERVICE_ENDPOINTS
     ZCPKG_COLORIZE_OUTPUT
+    ZCPKG_FASL_OUTPUT
+    ZCPKG_READER_FRIENDLY_OUTPUT
     ZCPKG_VERBOSE)
    (λ (flags action . args)
      (define proc

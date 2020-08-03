@@ -181,6 +181,18 @@
    boolean?
    #f}
 
+  {ZCPKG_FASL_OUTPUT
+   "-F"
+   ("Use FASL program output")
+   boolean?
+   #f}
+
+  {ZCPKG_READER_FRIENDLY_OUTPUT
+   "-R"
+   ("Use (read)able program output")
+   boolean?
+   #f}
+
   {ZCPKG_COLORIZE_OUTPUT
    "-c"
    ("Colorize printed output")
