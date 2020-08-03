@@ -87,15 +87,25 @@ command is not included.
 
 ### Beta
 
+Ongoing.
+
 The beta release introduces onboarding so that others can share their
 work. Since hosting packages is a potentially expensive job, I will
 need to fundraise before exposing the service to a wider audience.
 
+- [ ] Add package discovery features
+  - [ ] Tags
+  - [ ] Summary
+  - [ ] Page
+- [ ] Validation
+  - [ ] Disallow duplicate revision names for an edition
+  - [ ] Disallow creating a revision number gap on upload
 - [ ] Let packages define supported Racket version ranges
     - [ ] Cap lower bound to `zcpkg`'s own minimum supported version
     - [ ] Cap upper bound to running Racket version
 - [ ] Define onboarding process for new users
     - [ ] Implement password authentication
+    - [ ] GPG-backed signatures
 - [ ] Define fundraising goals and options
 - [ ] Update command
     - [ ] Predicate update on if any dependents insist on keeping an existing version.
