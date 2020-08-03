@@ -1,21 +1,23 @@
 #lang scribble/manual
 
-@require[@for-label[racket/base "zcpkg-settings.rkt"]
-         racket/runtime-path
+@require[@for-label[racket/base racket/file "zcpkg-settings.rkt"]
          "workspace.rkt"
          "zcpkg-settings.rkt"]
 
 @title{A Zero-Collection Package Management System}
 @author[(author+email "Sage L. Gerard" "sage@sagegerard.com" #:obfuscate? #t)]
 
-@(define-runtime-path white-paper.scrbl "white-paper.scrbl")
 @(define wsdir (tt CONVENTIONAL_WORKSPACE_NAME))
 @(define depdir (tt CONVENTIONAL_DEPENDENCY_DIRECTORY_NAME))
 
 @(define binary @(tt "zcpkg"))
-@(define specfile @(tt "zcpkg.rktd"))
+@(define specfile @(tt CONVENTIONAL_PACKAGE_INFO_FILE_NAME))
 
-This is a guide for @|binary|, a package manager for Racket.
+@(define (tech/reference tag) (tech #:doc '(lib "scribblings/reference/reference.scrbl") tag))
+
+
+This is a guide for @|binary|, a package manager for Racket.  In the context of
+this manual, packages do not define collections in a Racket installation.
 
 @section{Adding and Removing Packages}
 
@@ -32,79 +34,75 @@ special @deftech{package query strings} (henceforth "@deftech{queries}"). See
 @secref{asking}.
 
 @verbatim|{
-$ zcpkg install -y sagegerard.com:polyglot:draft
+$ zcpkg install -y john.doe:calculator
 $ zcpkg uninstall -y john.doe:calculator
 }|
 
 Unless forced, @binary will not install any suspicious packages.  If
-the situation comes up, then it will go over your options.
+a situation comes up, then it will go over your options.
 
+When @binary installs a package, it adds a @|depdir| directory to the package's
+installation path. Package authors use this directory to access package modules
+using the package provider's name and the package's name.
 
-@section[#:tag "asking"]{How to Ask for a Package}
+@racketblock[
+(require (file "zcpkg-deps/john.doe/calculator/module.rkt"))
+]
 
-When you install @tt{john.doe:calculator}, what version of the package
-do you get? Where is it coming from?
+This illustrates a fundamental difference between @binary and @tt{raco pkg}:
+@binary does not define @tech/reference{collections}. It only concerns itself
+with fetching files and their dependencies safely and deterministically.
+Packages interact strictly through the filesystem.
 
+You can access the packages you installed for a specific use, outside of
+conventions set by @|binary|. To do this, use the @litchar{link} command to
+make a symbolic link to a package installed on your system.
 
-@subsection{Understanding Short Names}
+@verbatim|{
+$ zcpkg link john.doe:calculator calc
+$ ls calc
+}|
 
-You are meant to read @tt{john.doe:calculator} as "the
-@tt{calculator} package by @tt{john.doe}". This short query
-implies that you want the latest draft of the package.
-Let's add our own version information for comparison.
+@section[#:tag "asking"]{Package Queries}
 
-First, you can specify an @tech{edition}. Just add another colon and
-the name of the edition.  If you use
-@tt{john.doe:calculator:scientific}, then you're clarifying that you
-want John's scientific calculator in particular.  It turns out that
-@tt{john.doe:calculator} is actually understood as
-@tt{john.doe:calculator:draft} because the @tt{draft} edition is the
-default.
-
-But hang on, @tt{john.doe:calculator:draft} is still ambiguous.
-We need to specify a @tech{revision}, so that you get an exact
-implementation. It turns out that if you omit a revision,
-then @binary will look for the newest one. That revision
-is @italic{always called} @tt{newest}.
-
-Therefore, @tt{john.doe:calculator} is an abbreviation for
+@tt{john.doe:calculator} means "the @tt{calculator} package by
+@tt{john.doe}". What version of the package does this give you?
+It turns out that @tt{john.doe:calculator} is just an abbreviation for
 @tt{john.doe:calculator:draft:newest}.
 
+@tt{draft} is the package's @tech{edition}. If you use
+@tt{john.doe:calculator:scientific:newest}, then you're clarifying that you
+want John's scientific calculator in particular. @tt{draft} is the default
+edition for a given package.
 
-@subsection{Selecting an Exact Version}
+@tt{newest} is the edition's @tech{revision}.  @tt{newest} is the default name
+of the latest revision for a given edition.
 
-When you want to depend on a particular version of a package, you can
-just replace @tt{newest} with a @tech{revision number} or another
-@tech{revision name}.
+To request an @italic{exact} version of a package, replace @tt{newest} with a
+@tech{revision number} or another @tech{revision name}.
 
 @verbatim|{
 john.doe:calculator:scientific:288
 john.doe:calculator:scientific:with-trig
 }|
 
-You are not expected to memorize revision numbers, which is why the
-author can define revision names to help you select an implementation.
-The numbers are only there for comparing versions, or for helping you
-get a version even if there is no name for it.
+A package author can define revision names to help users avoid memorizing
+revision numbers. The numbers are there for comparing versions, and for
+providing a standard form for revisions. @tt{newest} is special: It is the only
+@tech{revision name} that might not refer to the same implementation over time.
 
-@tt{newest} is the only name that might not refer to the same package
-over time. For that reason, it is the only @tech{revision name} that
-prevents a query from specifying an exact version.
-
-
-@subsection{Selecting a Version Range}
-
-When you ask for @tt{john.doe:calculator:scientific:288}, you are
-actually asking for a range of packages that contains one member.
-In integer interval notation, you're asking for @tt|{{288 .. 288}}|.
-
-You can rewrite the query to make the interval explicit.
+What about version ranges? When you ask for
+@tt{john.doe:calculator:scientific:288}, you are actually asking for the latest
+package in a range. That range just happens to contain only one package. You
+can rewrite the query to make the interval explicit.
 
 @verbatim|{
 john.doe:calculator:scientific:288:288
 }|
 
-While redundant, this form lets us expand our search to more packages.
+From here we can change the endpoints of the interval to accept alternative
+packages.  This is useful in the event some package in the range is not
+available.
 
 @verbatim|{
 john.doe:calculator:scientific:102:288
@@ -119,35 +117,27 @@ included because of the @tt{e} right next to it.
 john.doe:calculator:scientific:i:102:e:288
 }|
 
-There's a problem: A stranger can't read this and know why this query
-is best. You can write a comment, or the package author can name their
-revisions.
-
-Let's say John developed his scientific calculator through an
-invite-only beta. John later put out a production-ready copy in
-response to feedback, along with the beta revisions for posterity. You
-can still use names in place of the numbers to express a preference
-for revisions made during the closed beta.
+There's a problem: A stranger can't read this and know why this query is
+best. You can write a comment, but let's say John developed his scientific
+calculator through an invite-only beta. John later put out a production-ready
+copy in response to feedback, along with the beta revisions for posterity. You
+can still use names in place of the numbers to express a preference for
+revisions made during the closed beta.
 
 @verbatim|{
 john.doe:calculator:scientific:i:closed-beta:e:production
 }|
 
 When resolving @tech{revision names}, @binary will reject any query
-that creates an invalid interval. Queries like those below will simply
-not work.
+that creates an invalid interval. Queries like those below will raise
+an error.
 
 @verbatim|{
 john.doe:calculator:scientific:production:closed-beta
 john.doe:calculator:scientific:9:0
 }|
 
-
-@subsection[#:tag "grammar"]{Grammar}
-
-Unless you were specifically looking for this section, you may skip it.
-
-A @tech{package query string} follows this EBNF grammar:
+Formally, a @tech{package query string} follows this EBNF grammar:
 
 @verbatim|{
 <package-query> ::= <package-identity> | <package-identity> ":" <version>
@@ -175,12 +165,12 @@ A @tech{package query string} follows this EBNF grammar:
 <name> ::= ? A string representing a legal file name ?
 }|
 
-The @tt{<name>} terminal defined in @secref{grammar} is used for directory and
-link names on file systems. For that reason, a package named @tt{aux} cannot
-appear on a Windows system.  @binary can detect reserved file names for you.
+@binary uses @tt{<name>}s for directory and link names on file systems. For
+that reason, a package named @tt{aux} cannot appear on a Windows system.
+@binary will alert you if a package uses a reserved file name.
 
 
-@section{The Workspace is Where Things Happen}
+@section{Workspace Directories}
 
 All of @binary's disk activity takes place in a @deftech{workspace
 directory} called @|wsdir|. @wsdir starts empty, but added files are
@@ -221,7 +211,7 @@ as a workspace for system-wide impact.}
 
 
 
-@section[#:tag "new-pkg"]{Creating a Package}
+@section[#:tag "new-pkg"]{Creating Packages}
 
 Use the @tt{new} command to create a package.  You should see a new
 directory with the name you provided.
@@ -231,8 +221,8 @@ $ zcpkg new my-pkg
 $ ls my-pkg
 }|
 
-Inside that directory you will find a few files.
-Open up @|specfile|. It should look like this:
+Inside that directory you should see @|specfile|. This is your @deftech{spec
+file}. It defines your package, and should look something like this:
 
 @racketmod[
 info
@@ -246,21 +236,21 @@ info
 (define setup-module "setup.rkt")
 ]
 
-This is your @deftech{spec file}. It defines metadata for your
-package.
+If the @racket[provider] name is different, don't worry about that.  It is set
+to the hostname of your machine.
 
 If someone asks for @tt{localhost.localdomain:my-pkg:draft:0}, they
 are going to get this package. That should clarify the role of the
 first few lines.
 
 If you set @racket[revision-names] to @racket['("initial" "oldest"
-"beginning")], then users can replace a @racket[0] with any of those
-strings in their query to reference this package. Choose revision names
-wisely: Once you host the package, you will not be allowed to use the
-same revision names again for the edition.
+"beginning")], then users can replace the @racket[0] in their query with any of
+those strings and still get this package. Choose revision names wisely: Once
+you host the package, you will not be allowed to use the same revision names
+again for the edition.
 
-You can set @racket[dependencies] using the same strings
-discussed in @secref{asking}.
+You can set @racket[dependencies] using the same strings discussed in
+@secref{asking}.
 
 @racketblock[(define dependencies '("john.doe:calculator" "alice:wonderland:small"))]
 
@@ -310,15 +300,43 @@ package, remember that your @tech{workspace} is a valid target for
 and helps package authors perform more helpful tasks.
 
 
+@section{Versioning}
+
+A package version consists of an @tech{edition} and a @tech{revision}.
+
+An @deftech{edition} is the name of a design. It acts as a semantic alternative
+to a major version number. A @deftech{revision} is an implementation of an
+edition.
+
+An @deftech{revision number} is a non-negative integer. Every revision is
+forever assigned the next available number in an edition.
+
+A @deftech{revision name} is a custom alias for a @tech{revision number}. It
+can be a user-defined string, but strings containing all digits, and the word
+@racket{newest} are reserved.
+
+A package must have a @tech{revision number}. When changed, a package must
+increment its @tech{revision number} if the change uses the same
+@tech{edition}. If the package starts a new edition, the @tech{revision number}
+must reset to @racket[0].
+
+The default name of an edition is @racket{draft}.
+
+By the above rules, every package starts on the zeroth revision of the
+@racket{draft} edition.
+
+Use @litchar{zcpkg chver} to @bold{ch}ange the @bold{ver}sion of a package.
+
+@itemlist[
+@item{@litchar{zcpkg chver foo}: Increments @tt{foo}'s @tech{revision number}.}
+@item{@litchar{zcpkg chver --edition nice --revision-number 0 foo fizz buzz}: Sets @tt{foo}'s edition to @racket{nice}, the @tech{revision number} to @racket[0], and the revision names to @racket['("fizz" "buzz")]}
+]
+
+
 @section{Configuration}
 
-Both the package manager and service use a configuration space derived
-from English labels of individual settings.
-
-Let a hypothetical setting be “Use Widget”, which is a boolean.
-
-In this case, the value of this setting is the last item in this list
-to define a value:
+Let a hypothetical setting be “Use Widget”, which is a boolean. The value of
+this setting is the last defined item in this list:
 
 @itemlist[#:style 'ordered
 
@@ -326,19 +344,35 @@ to define a value:
 
 @item{A value bound to @tt{ZCPKG_USE_WIDGET} in @tt{:/etc/zcpkg.rktd}.}
 
-@item{An environment variable named @tt{ZCPKG_USE_WIDGET}.}
+@item{An environment variable named @tt{ZCPKG_USE_WIDGET}, which must be set to
+a string containing a @racket[read]-able value
+(e.g. @tt{ZCPKG_USE_WIDGET="#t"}).}
 
-@item{A command-line flag named @litchar{--use-widget}. If the value is a
-boolean, the flag itself will suffice. Otherwise it is a string
-containing a @racket[read]-able value as a literal. Shortened
-command-line flags are defined independently.}
+@item{A command-line flag named @litchar{--use-widget}. Since our example is a
+boolean, the flag itself will suffice. Otherwise a string containing a
+@racket[read]-able value must follow the flag.}
 
+]
+
+Using Racket literals in strings enables consistent behavior across
+configuration sources, but it has a tradeoff: @litchar{--flag "foo"} means
+@racket['foo] in the program, and @litchar{--flag '"foo"'} means
+@racket["foo"]. @binary will account for these differences when it makes sense,
+but be sure to think in terms of stringified Racket values when configuring it
+from a command line or environment variables.
+
+Use @litchar{zcpkg config} to manage @|binary|'s configuration:
+
+@itemlist[
+@item{@litchar{zcpkg config dump}: Prints a readable hash of the active configuration.}
+@item{@litchar{zcpkg config set ZCPKG_VERBOSE "t"}: Changes a setting in @tt{/etc/zcpkg.rkt}.}
+@item{@litchar{zcpkg config get ZCPKG_VERBOSE}: Gets the value of a setting}
 ]
 
 
 @section{Hosting Packages}
 
-You can serve packages using the @tt{serve} command.
+You can serve packages using the @litchar{serve} command.
 
 @verbatim|{
 $ zcpkg serve
@@ -359,9 +393,9 @@ Currently, the service does not support uploading packages.  Adding
 packages to the service is a manual process for an administrator.
 
 
-@subsection{Bundling a Package}
+@section{Publishing Packages}
 
-To prepare a package for use on a server, use the @tt{bundle}
+To prepare a package for use on a server, use the @litchar{bundle}
 command.
 
 @verbatim|{
@@ -372,54 +406,54 @@ When you bundle a package, you specify the package's directory and
 Perl-flavor regular expressions. The file paths matching the patterns
 are included in the bundle.
 
-The @tt{bundle} command outputs an archive and an extended @tech{spec
-file} with integrity information and a signature, if you specify a
-private key.
+The @litchar{bundle} command outputs an archive and an extended @tech{spec file}.
 
-Use @litchar{-r} to use built-in patterns that match most Racket source
-modules.
+Use @litchar{-r} to use built-in patterns that match most Racket source modules.
 
 @verbatim|{
 $ zcpkg bundle -r my-pkg
 }|
 
-Use @litchar{-s} to write the output files where @litchar{zcpkg serve} can find them.
+Use @litchar{-s} to write the output files where @litchar{zcpkg serve} can find
+them.  This is to say that if you don't use @litchar{-s}, then you probably
+intend to upload your bundle as a package author.
 
 @verbatim|{
 $ zcpkg bundle -rs my-pkg
 }|
 
+Finally, you can specify a private key to sign the bundle's digest.
+
+@verbatim|{
+$ zcpkg bundle --private-key-path key.pem -rs my-pkg
+}|
+
 
 @section{Capture and Restore}
 
-Once you are satisfied with the packages installed on your system, you
-can capture a workspace for a teammate or end-user to restore.
-
-
-@subsection{Capturing a Workspace}
-
 @margin-note{Why not call it a lock file? To avoid confusion
 with the same term in other contexts, e.g. @racket[make-lock-file-name].}
-
-The @litchar{capture} command creates a @deftech{capture file}.
+The @litchar{capture} command creates a @deftech{capture file}.  Check it into
+source control or share it. It allows others to reproduce the workspace
+on your system.
 
 @verbatim|{
-$ zcpkg capture > capture.rktd
+$ zcpkg capture > capture.rkt
 }|
 
-A capture file records the current @binary configuration, all
-installed packages, and the integrity information for files.  The
-files captured must match Perl regular expressions you pass in your
-command line. If you do not specify a pattern, the @tt{capture}
-command will only record integrity information for @tt{.rkt},
-@tt{.rktd}, @tt{.ss}, @tt{.scrbl}, or @tt{.ss} files.
+A capture file records the current @binary configuration, all installed
+packages, and integrity information for files.  To capture a file, that file's
+path must match at least one Perl regular expression provided in your command
+line. If you do not specify a pattern, the @tt{capture} command will only
+record integrity information for @tt{.rkt}, @tt{.rktd}, @tt{.ss}, @tt{.scrbl},
+or @tt{.ss} files.
 
 To explicitly capture @tt{.rkt} and @tt{.rktd} files, you could
 write either of the following.
 
 @verbatim|{
-$ zcpkg capture '\.rktd?$' > capture.rktd
-$ zcpkg capture '\.rkt$' '\.rktd$' > capture.rktd
+$ zcpkg capture '\.rktd?$' > capture.rkt
+$ zcpkg capture '\.rkt$' '\.rktd$' > capture.rkt
 }|
 
 If you want to capture all integrity information for the sake of
@@ -427,26 +461,20 @@ reproducible builds, then specify an empty pattern. This trivially
 matches any path.
 
 @verbatim|{
-$ zcpkg capture '' > capture.rktd
+$ zcpkg capture '' > capture.rkt
 }|
 
-Be careful about when you capture the workspace in this case.  If you
-include Racket bytecode, then that bytecode may differ between
-workspaces in the event, say, the Racket expander embeds dates into a
-program.
+Be careful in this case.  Racket bytecode files may differ beetween builds if,
+say, a program embeds dates into generated code.
 
-
-@section{Restore from a Capture}
-
-The restore command will attempt to reproduce the workspace recorded in a
-@tech{capture file}. This may take a while if the capture is large.
-
-@litchar{restore} will not modify the filesystem unless you grant explicit consent
-in your command. If you do not consent, the @litchar{restore} command will simply
-show you what it would do if you did consent.
+The @litchar{restore} command will attempt to reproduce the workspace recorded
+in a @tech{capture file}. This may take a while if the capture is
+large. @litchar{restore} will not modify the filesystem unless you grant
+explicit consent in your command. If you do not consent, the @litchar{restore}
+command will simply show you what it would do if you did consent.
 
 @verbatim|{
-$ zcpkg restore capture.rktd
+$ zcpkg restore capture.rkt
 # These commands install packages under a specific configuration.
 # The configuration controls whether zcpkg trusts unsigned
 # packages or bad digests, so please review this carefully.
@@ -482,22 +510,20 @@ zcpkg install -y "localhost.localdomain:bar:draft:i:4:i:4"
 zcpkg install -y "localhost.localdomain:baz:draft:i:3:i:3"
 zcpkg install -y "localhost.localdomain:baz:draft:i:3:i:3"
 zcpkg install -y "localhost.localdomain:foo:draft:i:0:i:0"
-zcpkg diff "capture.rktd"
+zcpkg diff "capture.rkt"
 }|
 
 You can run the reported commands yourself to restore the workspace by hand,
 or save them in an admin-friendly script.
 
-@subsection{Verifying a Restore Operation}
-
 The last command a restore operation performs is @litchar{zcpkg diff}, which
-you can also run yourself. @litchar{diff} shows you any difference between
-a @tech{workspace} and a capture file.
+you can also run yourself. @litchar{diff} shows you any difference between a
+@tech{workspace} and a capture file.
 
 The output might look like this:
 
 @verbatim|{
-$ zcpkg diff capture.rktd
+$ zcpkg diff capture.rkt
 - usr/lib/racket/localhost.localdomain/bar/draft/4/setup.rkt
 * usr/lib/racket/localhost.localdomain/baz/draft/3/setup.rkt
 + usr/lib/racket/localhost.localdomain/foo/draft/0/zcpkg-deps/localhost.localdomain/bar/great.rkt
@@ -531,8 +557,6 @@ If the @litchar{diff} command has no output and a zero exit code,
 then your workspace's files have the same content as recorded
 in a given capture file.
 
-@subsection{Restoring on a Clean Slate}
-
 Like other commands, @litchar{restore} targets @bold{an existing
 workspace}. If you are restoring a capture, it will NOT delete files
 inside that workspace. This means that the difference between the
@@ -544,81 +568,7 @@ existing workspace, if you prefer.
 
 @verbatim|{
 $ mkdir zcpkg-workspace
-$ zcpkg restore capture.rktd
-$ zcpkg diff capture.rktd
+$ zcpkg restore capture.rkt
+$ zcpkg diff capture.rkt
 $ mv zcpkg-workspace ../other/zcpkg-workspace
 }|
-
-
-@section{Using Installed Modules in Code}
-
-As the name implies, zero-collection packages add no collection paths
-to a Racket installation. The modules are only generally accessible
-using @racket[file].
-
-Every installed package is given a directory named @|depdir|.
-Using it, you can access package modules via a provider
-name and a package name. The version information is not
-included in the path.
-
-@racketblock[
-(require (file "zcpkg-deps/john.doe/calculator/module.rkt"))
-]
-
-This is why a package cannot function without being installed in a
-@tech{workspace}.
-
-
-@section{Linking Packages}
-
-The @tt{link} command finds a package on the local system and
-makes a symbolic link pointing to it.
-
-@verbatim|{
-$ zcpkg link john.doe:calculator:scientific calc
-$ ls calc
-}|
-
-This is useful for creating a file tree that does not need to follow
-the conventions set by @|binary|. Linking packages is also a way to
-use multiple versions of the same package in a program.
-
-
-@section{Versioning}
-
-Instead of major versions and other numbers of decreasing major-ness,
-ZCP versions use @tech{editions} and @tech{revisions}.
-
-@subsection{Rules}
-
-An @deftech{edition} is a named sequence of revisions. A @deftech{revision} is
-a state of an edition at a moment in time.
-
-An @deftech{revision number} is a non-negative integer. Every revision is
-forever assigned the next available number in an edition.
-
-A @deftech{revision name} is a custom alias for a @tech{revision number}. It
-can be a user-defined string, but strings containing all digits, and the word
-@racket{newest} are reserved.
-
-A package must have a @tech{revision number}. When changed, a package must
-increment its @tech{revision number} if the change uses the same
-@tech{edition}. If the package starts a new edition, the @tech{revision number}
-must reset to @racket[0].
-
-The default name of an edition is @racket{draft}.
-
-By the above rules, every package starts on the zeroth revision of the
-@racket{draft} edition.
-
-
-@subsection{Updating Package Versions}
-
-Use @litchar{zcpkg chver} to @bold{ch}ange the @bold{ver}sion of a package.
-
-Given a package @tt{foo}:
-
-@itemlist[
-@item{@litchar{zcpkg chver foo}: Increments @tt{foo}'s @tech{revision number}.}
-@item{@litchar{zcpkg chver --edition nice --revision-number 0 foo fizz buzz}: Sets @tt{foo}'s edition to @racket{nice}, the @tech{revision number} to @racket[0], and the revision names to @racket['("fizz" "buzz")]}
-]
