@@ -4,7 +4,8 @@
 (provide (all-defined-out)
          (all-from-out racket/format))
 
-(require racket/format
+(require racket/date
+         racket/format
          racket/pretty
          "setting.rkt"
          "string.rkt"
@@ -98,5 +99,15 @@
         [($on-package-installed? m)
          (format "Installed package ~a"
                  (zcpkg-query->string (zcpkg-info->zcpkg-query ($on-package-installed-info m))))]
+
+        [($on-request? m)
+         (format "~a ~a ~a client=~a host=~a referer=~a"
+                 (parameterize ([date-display-format 'iso-8601])
+                   (date->string (seconds->date ($on-request-timestamp m)) #t))
+                 (string-upcase (bytes->string/utf-8 ($on-request-method m)))
+                 ($on-request-uri m)
+                 ($on-request-client-ip m)
+                 ($on-request-host-ip m)
+                 ($on-request-referer m))]
 
         [else (~s m)]))

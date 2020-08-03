@@ -19,18 +19,18 @@
          xml
          (prefix-in seq:
                     web-server/dispatchers/dispatch-sequencer)
-         (prefix-in logged:
-                    web-server/dispatchers/dispatch-log)
          (prefix-in lift:
                     web-server/dispatchers/dispatch-lift)
          "archiving.rkt"
          "config.rkt"
          "file.rkt"
          "format.rkt"
+         "output.rkt"
          "url.rkt"
          "verify.rkt"
          "workspace.rkt"
          "zcpkg-info.rkt"
+         "zcpkg-messages.rkt"
          "zcpkg-query.rkt")
 
 (define-syntax-rule (define-endpoint sig body ...)
@@ -45,9 +45,6 @@
 (define (build-server-path . args)
   (apply build-path (get-server-directory) args))
 
-(define (get-log-directory)
-  (build-workspace-path "var/log/zcpkg"))
-
 (define (zcpkg-info->public-file-path info)
   (build-path (get-server-directory)
               (zcpkg-info->relative-path info)))
@@ -56,14 +53,24 @@
   (path-replace-extension (zcpkg-info->public-file-path info)
                           #".tgz"))
 
+(define (log-request req)
+  (write-output
+   ($on-request (request-method req)
+                (request-client-ip req)
+                (request-host-ip req)
+                (let ([R (headers-assq*
+                          #"Referer"
+                          (request-headers/raw req))])
+                  (and R (header-value R)))
+                (url->string (request-uri req))
+                (current-seconds)))
+  (next-dispatcher))
 
 (define (start-server)
-  (make-directory* (get-log-directory))
   (serve #:port 8080
          #:dispatch
          (seq:make
-          (logged:make #:format logged:extended-format
-                       #:log-path (build-path (get-log-directory) "server.log"))
+          (lift:make log-request)
           (lift:make service-dispatcher)
           (lift:make not-found))
          #:safety-limits

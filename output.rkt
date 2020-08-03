@@ -23,7 +23,8 @@
         $on-missing-signature?
         $on-unverified-host?
         $on-package-installed?
-        $install-package?))
+        $install-package?
+        $on-request?))
 
 (define (include-output? m)
   (or (ZCPKG_VERBOSE)
