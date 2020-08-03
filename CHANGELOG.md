@@ -11,6 +11,7 @@ This project follows [these versioning rules](https://sagegerard.com/edition-rev
 - Proofread and edit documentation
 - Detect reserved file names
 - Download provider's public key along with package to verify signatures
+- Removed `prompt.rkt`
 
 ## [draft:alpha] - 2020-08-02
 
