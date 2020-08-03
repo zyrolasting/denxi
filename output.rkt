@@ -15,20 +15,12 @@
  (contract-out
   [write-output (->* ($message?) (output-port?) void?)]))
 
-(define important-messages
-  (list $already-installed?
-        $on-compilation-error?
-        $on-bad-digest?
-        $on-bad-signature?
-        $on-missing-signature?
-        $on-unverified-host?
-        $on-package-installed?
-        $install-package?
-        $on-request?))
+(define verbose-messages null)
 
 (define (include-output? m)
-  (or (ZCPKG_VERBOSE)
-      (ormap (λ (?) (? m)) important-messages)))
+  (if (ormap (λ (?) (? m)) verbose-messages)
+      (ZCPKG_VERBOSE)
+      #t))
 
 (define (write-output v [out (current-output-port)])
   (when (include-output? v)
