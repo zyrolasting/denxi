@@ -83,7 +83,8 @@
    [("file" (string-arg) ...) send-file]
    [("find" (string-arg) (string-arg) ...) search-packages]
    [("info" (string-arg)) send-info]
-   [("artifact" (string-arg)) send-artifact]))
+   [("artifact" (string-arg)) send-artifact]
+   [("public-key" (string-arg)) send-public-key]))
 
 
 (define-endpoint (send-artifact req nss)
@@ -91,6 +92,10 @@
   (for ([(candidate-path query-elements revno) (in-existing-revisions nss query)])
     (raise (response/file #:mime-type #"application/octet-stream"
                           (build-path candidate-path "archive.tgz")))))
+
+(define-endpoint (send-public-key req provider-name)
+  (response/file #:mime-type #"application/octet-stream"
+                 (build-server-path provider-name "public-key")))
 
 (define-endpoint (send-info req nss)
   (define query (nss->zcpkg-query nss))

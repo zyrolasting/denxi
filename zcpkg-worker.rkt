@@ -90,9 +90,11 @@
 
     (define/public (install-remote-package info dependency-infos)
       (define install-path   (zcpkg-info->install-path info))
-      (define artifact-path  (download-artifact (coerce-zcpkg-query info)))
+      (define query          (coerce-zcpkg-query info))
+      (define artifact-path  (download-artifact query))
+      (define public-key     (download-public-key (zcpkg-query-provider-name query)))
       (define integrous?     (integrous-artifact? artifact-path info))
-      (define authenticated? (authenticated-provider? info (void)))
+      (define authenticated? (authenticated-provider? info public-key))
 
       (unless integrous?
         (send-output ($on-bad-digest info)))

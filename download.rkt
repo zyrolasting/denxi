@@ -3,6 +3,7 @@
 (provide clear-download-cache!
          download-info
          download-artifact
+         download-public-key
          current-url->response-values)
 
 (require racket/list
@@ -64,6 +65,9 @@
 
 (define (download-artifact dep)
   (download-by-catalog dep "artifact"))
+
+(define (download-public-key provider-name)
+  (download-by-catalog provider-name "public-key"))
 
 (define (assert-valid-info source-url info)
   (define errors (validate-zcpkg-info info))

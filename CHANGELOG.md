@@ -10,7 +10,7 @@ This project follows [these versioning rules](https://sagegerard.com/edition-rev
 - Switch to `setup/infotab` and `#lang info` as canonical configuration language.
 - Proofread and edit documentation
 - Detect reserved file names
-
+- Download provider's public key along with package to verify signatures
 
 ## [draft:alpha] - 2020-08-02
 
