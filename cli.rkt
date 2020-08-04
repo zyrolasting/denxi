@@ -223,7 +223,7 @@ EOF
   (run-command-line
    #:program "capture"
    #:args args
-   #:arg-help-strings '("capture-module")
+   #:arg-help-strings '("capture-module" "file-patterns")
    (λ (flags capture-path . file-patterns)
      (define lookup (load-config (string->path capture-path)))
      (define ours (hash-ref (capture-workspace (pattern-map file-patterns)) 'digests))
