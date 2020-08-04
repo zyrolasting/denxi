@@ -52,7 +52,7 @@
     (reset-zcpkg-setting-overrides!)
     (load-zcpkg-settings!))
 
-  (define-values (maybe-exit-code output)
+  (define-values (maybe-exit-code output-variant)
     (call-with-values
      (λ ()
        (call/cc
@@ -62,11 +62,14 @@
      (case-lambda [(e) (values e null)]
                   [(e o) (values e o)])))
 
-  (cond [($message? output)
-         (write-output output)]
-        [(list? output)
-         (sequence-for-each write-output (in-list output))]
-        [else (raise output)])
+  (define output
+    (cond [($message? output-variant)
+           (list output-variant)]
+          [(list? output-variant)
+           output-variant]
+          [else (raise output-variant)]))
+
+  (sequence-for-each write-output (in-list output))
 
   (values (if (void? maybe-exit-code) 0 maybe-exit-code)
           output))
