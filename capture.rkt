@@ -29,8 +29,13 @@
 
 
 (define (capture-packages)
-  (for/list ([info (in-installed-info)])
-    (zcpkg-query->string (zcpkg-info->zcpkg-query info))))
+  (with-handlers ([exn:fail:filesystem?
+                   (λ (e)
+                     (if (regexp-match? #px"No such" (exn-message e))
+                         null
+                         (raise e)))])
+    (for/list ([info (in-installed-info)])
+      (zcpkg-query->string (zcpkg-info->zcpkg-query info)))))
 
 
 (define (capture-files patterns)
