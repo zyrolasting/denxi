@@ -101,9 +101,10 @@ need to fundraise before exposing the service to a wider audience.
 - [ ] Define onboarding process for new users
     - [ ] Authentication (SSH? Password?)
     - [ ] GPG-backed signatures
-    - [ ] PUT requests for packages and their definitions
+    - [ ] PUT requests for providers, packages, and package definitions
       - [ ] Disallow duplicate revision names in an edition
       - [ ] Disallow creating a revision number gap
+      - [ ] Define grace period for replacing uploaded data
 - [ ] Define fundraising goals and options
 - [ ] Make restore command offer rollback functionality
 - [x] Document commands
