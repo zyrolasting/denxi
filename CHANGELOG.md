@@ -12,6 +12,7 @@ This project follows [these versioning rules](https://sagegerard.com/edition-rev
 - Detect reserved file names
 - Download provider's public key along with package to verify signatures
 - Removed `prompt.rkt`
+- Route all program output through `output.rkt`
 
 ## [draft:alpha] - 2020-08-02
 

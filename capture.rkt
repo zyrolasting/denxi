@@ -19,7 +19,8 @@
          "verify.rkt"
          "workspace.rkt"
          "zcpkg-info.rkt"
-         "zcpkg-settings.rkt")
+         "zcpkg-settings.rkt"
+         "zcpkg-messages.rkt")
 
 
 (define (capture-config)
@@ -57,9 +58,12 @@
   (cond [(and we-have-it they-have-it)
          (if (equal? (hash-ref ours path)
                      (hash-ref theirs path))
-             '= '*)]
-        [(and we-have-it (not they-have-it)) '+]
-        [(and (not we-have-it) they-have-it) '-]))
+             ($diff-same-file path)
+             ($diff-different-file path))]
+        [(and we-have-it (not they-have-it))
+         ($diff-extra-file path)]
+        [(and (not we-have-it) they-have-it)
+         ($diff-missing-file path)]))
 
 
 (define (make-digest* path)

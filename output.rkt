@@ -15,7 +15,7 @@
  (contract-out
   [write-output (->* ($message?) (output-port?) void?)]))
 
-(define verbose-messages null)
+(define verbose-messages (list $diff-same-file?))
 
 (define (include-output? m)
   (if (ormap (λ (?) (? m)) verbose-messages)
@@ -82,11 +82,11 @@
   (test-case "Control verbose output"
     (assume-settings ([ZCPKG_VERBOSE #f])
                      (test-output "Opt out of verbose output"
-                                  ($fail 1)
+                                  ($diff-same-file 1)
                                   #""))
 
     (assume-settings ([ZCPKG_VERBOSE #t]
                       [ZCPKG_READER_FRIENDLY_OUTPUT #t])
                      (test-output "Opt into verbose output"
-                                  ($fail 1)
-                                  #px"\\$fail"))))
+                                  ($diff-same-file 1)
+                                  #px"\\$diff-same-file"))))

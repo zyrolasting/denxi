@@ -40,17 +40,34 @@
 (module+ main
   (exit (entry-point)))
 
+(define current-cli-continuation (make-parameter #f))
+
+(define (halt exit-code [output null])
+  ((current-cli-continuation) exit-code output))
+
 ; Keep seperate for functional tests.
 (define (entry-point #:reload-config? [reload-config? #t] [args (current-command-line-arguments)])
   (when reload-config?
     (reset-zcpkg-setting-overrides!)
     (load-zcpkg-settings!))
-  (define maybe-exit
-    (with-handlers ([exact-nonnegative-integer? values])
-      (top-level-cli args)))
-  (if (exact-nonnegative-integer? maybe-exit)
-      maybe-exit
-      0))
+
+  (define-values (maybe-exit-code output)
+    (call-with-values
+     (λ ()
+       (call/cc
+        (λ (k)
+          (parameterize ([current-cli-continuation k])
+            (top-level-cli args)))))
+     (case-lambda [(e) (values e null)]
+                  [(e o) (values e o)])))
+
+  (cond [($message? output)
+         (write-output output)]
+        [(list? output)
+         (sequence-for-each write-output (in-list output))]
+        [else (raise output)])
+
+  (if (void? maybe-exit-code) 0 maybe-exit-code))
 
 (define (top-level-cli args)
   (run-command-line
@@ -105,12 +122,8 @@ EOF
 
 
 (define (install-command args)
-  (define (show-report output)
-    (for ([m (in-list output)])
-      (displayln (format-zcpkg-message m))))
-
   (define (review-work package-sources sow)
-    (write-output ($review-installation-work sow package-sources)))
+    (values 0 ($review-installation-work sow package-sources)))
 
   (define (do-work sow)
     (define controller (zcpkg-start-team!))
@@ -124,7 +137,7 @@ EOF
           (for/list ([(url-or-path infos) (in-hash sow)])
             ($install-package infos url-or-path)))
 
-        (show-report (controller tasks)))
+        (values 0 (controller tasks)))
       (λ () (controller #f))))
 
   (run-command-line
@@ -147,7 +160,7 @@ EOF
      (define sow (find-scope-of-work package-sources))
 
      (when (null? package-sources)
-       (raise (exn:fail:user "No package sources specified." (current-continuation-marks))))
+       (halt 1 ($no-package-sources)))
 
      (if (ZCPKG_CONSENT)
          (do-work sow)
@@ -159,17 +172,13 @@ EOF
    #:args args
    #:arg-help-strings '("pregexp-strings")
    (λ (flags . file-patterns)
-     (write-capture (capture-workspace (pattern-map file-patterns))))))
+     (halt 0 (write-capture (capture-workspace (pattern-map file-patterns)))))))
 
 
 (define (restore-command args)
   (define (run-commands cmds)
     (for ([cmd (in-list cmds)])
       (entry-point #:reload-config? #f cmd)))
-
-  (define (show-commands cmds)
-    (for ([cmd (in-list cmds)])
-      (displayln (string-join (vector->list cmd) " "))))
 
   (define (do-work capture-file configure-commands install-commands)
     (run-commands configure-commands)
@@ -179,31 +188,9 @@ EOF
     (run-commands (list (vector "diff" capture-file))))
 
   (define (show-work capture-file configure-commands install-commands)
-    (printf #<<EOS
-# These commands install packages under a specific configuration.
-# The configuration controls whether zcpkg trusts unsigned
-# packages or bad digests, so please review this carefully.
-#
-# You can adapt this output to a script on your operating system, or you can
-# run the restore command again with ~a to execute these instructions.
-
-
-EOS
-(setting->short-flag ZCPKG_CONSENT))
-    (show-commands
-      (map (λ (cmd)
-       (vector "zcpkg" "config" "set"
-               (vector-ref cmd 2)
-               (~s (vector-ref cmd 3))))
-           configure-commands))
-
-    (show-commands
-      (map (λ (cmd)
-             (vector "zcpkg" "install" (setting->short-flag ZCPKG_CONSENT)
-                     (~s (vector-ref cmd 2))))
-           install-commands))
-
-    (show-commands (list (vector "zcpkg" "diff" (~s capture-file)))))
+    (halt 0 ($review-restoration-work capture-file
+                                      configure-commands
+                                      install-commands)))
 
   (run-command-line
    #:program "restore"
@@ -229,22 +216,18 @@ EOS
          (show-work capture-file config-commands install-commands)))))
 
 (define (diff-command args)
-  (define (print-capture-diff ours theirs)
-    (define all-paths (apply set (append (hash-keys ours) (hash-keys theirs))))
-    (for ([path (in-set all-paths)])
-      (define sym (compare-path path ours theirs))
-      (unless (eq? sym '=)
-        (printf "~a ~a~n" sym path))))
-
   (run-command-line
    #:program "capture"
    #:args args
    #:arg-help-strings '("capture-module")
    (λ (flags capture-path . file-patterns)
      (define lookup (load-config (string->path capture-path)))
-     (print-capture-diff (hash-ref (capture-workspace (pattern-map file-patterns)) 'digests)
-                         (lookup 'digests)))))
-
+     (define ours (hash-ref (capture-workspace (pattern-map file-patterns)) 'digests))
+     (define theirs (lookup 'digests))
+     (define all-paths (apply set (append (hash-keys ours) (hash-keys theirs))))
+     (values 0
+             (for/list ([path (in-set all-paths)])
+               (compare-path path ours theirs))))))
 
 (define (pattern-map patts)
   (map pregexp
@@ -261,20 +244,20 @@ EOS
    (λ (flags source link-path)
      (define seq (search-zcpkg-infos source (in-installed-info)))
      (if (= (sequence-length seq) 0)
-         (begin (printf "Cannot find a package using ~s.~n" source)
-                1)
+         (values 1
+                 ($link-command-no-package source))
          (begin
            (make-file-or-directory-link
             (zcpkg-info->install-path
              (sequence-ref seq 0))
-            link-path))))))
+            link-path)
+           (values 0 null))))))
 
 
 (define (config-command args)
   (define (make-fail-thunk str)
     (λ ()
-      (eprintf "There is no setting called ~a.~n" str)
-      (exit 1)))
+      (halt 1 ($config-command-nonexistant-setting str))))
 
   (define controller (current-zcpkg-config))
 
@@ -315,15 +298,12 @@ EOS
                             (define to-write
                               (with-handlers ([exn:fail?
                                                (λ (e)
-                                                 (eprintf
-                                                  "Rejecting invalid value for ~a.~n"
-                                                  sym)
-                                                 (raise e))])
+                                                 (halt 0 ($reject-user-setting sym value)))])
                                 (picked-setting (read (open-input-string value)))
                                 (picked-setting)))
 
                             (controller 'save!)
-                            (printf "Saved ~a~n" (controller 'get-path))))]
+                            (halt 0 ($after-write (controller 'get-path)))))]
 
        [_ (write-output ($unrecognized-command action))
           1]))
@@ -350,36 +330,26 @@ EOF
    (λ (flags package-path-string . revision-names)
      (define info
        (with-handlers ([exn:fail:filesystem?
-                        (λ (e)
-                          (printf "Could not read ~a. Double check that ~s points to a package directory.~n"
-                                  CONVENTIONAL_PACKAGE_INFO_FILE_NAME
-                                  package-path-string)
-                          (raise 1))])
+                        (λ (e) (halt 1 ($package-directory-has-unreadable-info package-path-string)))])
          (read-zcpkg-info-from-directory package-path-string)))
 
-     (define errors (validate-zcpkg-info info))
-     (unless (null? errors)
-       (printf (~a "Cannot change version.~n"
-                   "There are errors in the original info:~n~a~n")
-               (string-join errors "\n"))
-       (raise 1))
+     (define (assert-valid-info name info)
+       (define errors (validate-zcpkg-info info))
+       (unless (null? errors)
+         (halt 1 ($chver-command-bad-info name errors)))
+       info)
 
      (define new-info
-       (struct-copy zcpkg-info info
-                    [edition-name (if (ZCPKG_EDITION)
-                                      (~a (ZCPKG_EDITION))
-                                      (zcpkg-info-edition-name info))]
-                    [revision-number (if (ZCPKG_REVISION_NUMBER)
-                                         (ZCPKG_REVISION_NUMBER)
-                                         (add1 (zcpkg-info-revision-number info)))]
-                    [revision-names revision-names]))
-
-     (define new-errors (validate-zcpkg-info new-info))
-     (unless (null? errors)
-       (printf (~a "Cannot change version.~n"
-                   "There are errors in the new info:~n~a~n")
-               (string-join new-errors "\n"))
-       (raise 1))
+       (assert-valid-info
+        "new"
+        (struct-copy zcpkg-info (assert-valid-info "original" info)
+                     [edition-name (if (ZCPKG_EDITION)
+                                       (~a (ZCPKG_EDITION))
+                                       (zcpkg-info-edition-name info))]
+                     [revision-number (if (ZCPKG_REVISION_NUMBER)
+                                          (ZCPKG_REVISION_NUMBER)
+                                          (add1 (zcpkg-info-revision-number info)))]
+                     [revision-names revision-names])))
 
      (call-with-output-file
        #:exists 'truncate/replace
@@ -387,10 +357,8 @@ EOF
                    CONVENTIONAL_PACKAGE_INFO_FILE_NAME)
        (λ (o) (write-zcpkg-info new-info o)))
 
-     (printf "~a -> ~a~n"
-             (format-zcpkg-info info)
-             (format-zcpkg-info new-info)))))
-
+     (values 0
+             ($chver-command-updated-info info new-info)))))
 
 (define (bundle-command args)
   (run-command-line
@@ -404,11 +372,7 @@ EOF
    (λ (flags package-path-string . pattern-strings)
      (define info
        (with-handlers ([exn:fail:filesystem?
-                        (λ (e)
-                          (printf "Could not read ~a. Double check that ~s points to a package directory.~n"
-                                  CONVENTIONAL_PACKAGE_INFO_FILE_NAME
-                                  package-path-string)
-                          (raise 1))])
+                        (λ (e) (halt 1 ($package-directory-has-unreadable-info package-path-string)))])
          (read-zcpkg-info-from-directory package-path-string)))
 
      ; Detach package from filesystem, leaving it only able to depend
@@ -421,10 +385,10 @@ EOF
                      (zcpkg-query->string (coerce-zcpkg-query (read-zcpkg-info-from-directory variant)))]
                     [(zcpkg-query? variant)
                      (zcpkg-query->string variant)]
-                    [else (raise (exn:fail:user (format (~a "Cannot bundle a package with a dependency on ~s.~n"
-                                                            "Use a path or a package query.~n")
-                                                        dep)
-                                                (current-continuation-marks)))]))
+                    [else (raise-user-error
+                           (format (~a "Cannot bundle a package with a dependency on ~s.~n"
+                                       "Use a path or a package query.~n")
+                                   dep))]))
             (zcpkg-info-dependencies info)))
 
      (define archive-directory
@@ -437,7 +401,7 @@ EOF
      (define archive-file
        (build-path archive-directory "archive.tgz"))
      (define metadata-file
-       (build-path archive-directory "zcpkg.rktd"))
+       (build-path archive-directory CONVENTIONAL_PACKAGE_INFO_FILE_NAME))
 
      (define archive
        (parameterize ([current-directory package-path-string])
@@ -450,18 +414,13 @@ EOF
              (current-directory))))
 
          (when (null? archive-files)
-           (displayln "The patterns specified did not match any files.")
-           (displayln "Stopping.")
-           (raise 1))
+           (halt 1 ($no-files-match)))
 
          (pack archive-file archive-files)))
 
-     (define-values (exit-code/digest digest)
-       (make-digest archive))
-
+     (define-values (exit-code/digest digest) (make-digest archive))
      (unless (= exit-code/digest 0)
-       (printf "OpenSSL exited with code ~s when creating a digest~n" exit-code/digest)
-       (raise 1))
+       (halt 1 ($cannot-make-bundle-digest exit-code/digest)))
 
      (define-values (exit-code/signature signature)
        (if (ZCPKG_PRIVATE_KEY_PATH)
@@ -469,8 +428,7 @@ EOF
            (values 0 #f)))
 
      (unless (= exit-code/signature 0)
-       (printf "OpenSSL exited with code ~s when creating a signature~n" exit-code/signature)
-       (raise 1))
+       (halt 1 ($cannot-make-bundle-signature exit-code/signature)))
 
      (save-config! (make-config-closure
                     (zcpkg-info->hash
@@ -486,10 +444,11 @@ EOF
            (make-zcpkg-revision-links info #:target archive-directory)
            null))
 
-     (for ([created (in-list (append (list archive-file
-                                           metadata-file)
-                                     links-made))])
-       (printf "Wrote ~a~n" created)))))
+     (halt 0
+           (for/list ([created (in-list (append (list archive-file
+                                                      metadata-file)
+                                                links-made))])
+             ($after-write created))))))
 
 
 
@@ -505,8 +464,6 @@ EOF
 
     (make-file name CONVENTIONAL_PACKAGE_INFO_FILE_NAME
                (λ ()
-                 (define (<< k v)
-                   (printf "~s ~s~n" k v))
                  (write-config
                   (hasheq 'provider (gethostname)
                           'package name
@@ -558,24 +515,20 @@ EOF
    #:arg-help-strings '("package-name" "package-names")
    #:args args
    (λ (flags name . names)
-     (call/cc
-      (λ (k)
-        (define targets (cons name names))
-        (define existing
-          (filter-map (λ (t)
-                        (and (or (file-exists? t)
-                                 (directory-exists? t)
-                                 (link-exists? t))
-                             t))
-                      targets))
+     (define targets (cons name names))
+     (define existing
+       (filter-map (λ (t)
+                     (and (or (file-exists? t)
+                              (directory-exists? t)
+                              (link-exists? t))
+                          t))
+                   targets))
 
-        (unless (null? existing)
-          (printf "Cannot make new package(s). The following files or directories already exist:~n~a~n"
-                  (apply ~a* existing))
-          (k 1))
+     (unless (null? existing)
+       (halt 1 ($new-package-conflict existing)))
 
-        (for ([t (in-list targets)])
-          (make-package t)))))))
+     (for ([t (in-list targets)])
+       (make-package t)))))
 
 
 (define (serve-command args)
@@ -584,10 +537,14 @@ EOF
    #:arg-help-strings null
    #:args args
    (λ (flags)
-     (start-server)
-     (printf "Service up. ^C to stop~n")
-     (with-handlers ([exn:break? (λ (e) (displayln "bye"))])
-       (sync/enable-break never-evt)))))
+     (define stop (start-server))
+     (with-handlers ([exn:break?
+                      (λ (e) (halt 0 ($on-server-break)))])
+       (dynamic-wind void
+                     (λ ()
+                       (write-output ($on-server-up))
+                       (sync/enable-break never-evt))
+                     stop)))))
 
 
 (define (sandbox-command args)
@@ -616,10 +573,7 @@ EOF
      (match what
        ["workspace"
         (displayln (workspace-directory))]
-       [_ (printf "Unrecognized argument for show command: ~s~n"
-                  what)
-          (printf "Run with -h for valid arguments.")
-          (exit 1)]))
+       [_ (values 1 ($unrecognized-command what))]))
    #<<EOF
 where <what> is one of
   workspace  The current target workspace directory
@@ -656,12 +610,13 @@ EOF
            (unless (ZCPKG_LEAVE_ORPHANS)
              (set-add! to-uninstall orphan-info)))))
 
-     (if (ZCPKG_CONSENT)
-         (for ([info (in-set to-uninstall)])
-           (define install-path (zcpkg-info->install-path info))
-           (printf "Deleting ~a~n" install-path)
-           (delete-directory/files/empty-parents install-path))
-         (write-output
+     (values
+      0
+      (if (ZCPKG_CONSENT)
+          (for/list ([info (in-set to-uninstall)])
+            (define install-path (zcpkg-info->install-path info))
+            (delete-directory/files/empty-parents install-path)
+            ($after-delete install-path))
           ($review-uninstallation-work
            (sequence->list
             (sequence-append (in-mutable-set to-uninstall)
@@ -697,7 +652,7 @@ EOF
                               suffix-is-index?
                               (not help-requested?))
                          (begin (printf "~a~n~a" (exn-message e) help-suffix)
-                                (raise 1))
+                                (halt 1))
                          (raise e)))])
     (parse-command-line program argv
                         (if (null? flags)
@@ -709,7 +664,7 @@ EOF
                           (printf "~a~n~a"
                                   help-str
                                   help-suffix)
-                          (raise (if help-requested? 0 1))))))
+                          (halt (if help-requested? 0 1))))))
 
 ; Functional tests follow. Use to detect changes in the interface and
 ; verify high-level impact.

@@ -9,6 +9,7 @@
          racket/pretty
          "setting.rkt"
          "string.rkt"
+         "workspace.rkt"
          "zcpkg-info.rkt"
          "zcpkg-messages.rkt"
          "zcpkg-query.rkt"
@@ -126,5 +127,102 @@
                  (format-zcpkg-info-table ($review-uninstallation-work-sow m))
                  (format "To consent to these changes, run again with ~a"
                          (setting->short-flag ZCPKG_CONSENT)))]
+
+        [($link-command-no-package? m)
+         (format "Cannot find a package using ~s."
+                 ($link-command-no-package-query-string m))]
+
+        [($config-command-nonexistant-setting? m)
+         (format "There is no setting called ~a.~n"
+                 ($config-command-nonexistant-setting-name m))]
+
+        [($chver-command-bad-info? m)
+         (format "Cannot change version due to errors in the ~a info:~n~a"
+                 ($chver-command-bad-info-name m)
+                 ($chver-command-bad-info-errors m))]
+
+        [($package-directory-has-unreadable-info? m)
+         (format "Could not read ~a. Double check that ~s points to a package directory."
+                 CONVENTIONAL_PACKAGE_INFO_FILE_NAME
+                 ($package-directory-has-unreadable-info-package-path m))]
+
+        [($no-package-sources? m)
+         "No package sources specified."]
+
+        [($chver-command-updated-info? m)
+         (format "~a -> ~a"
+                 (format-zcpkg-info ($chver-command-updated-info-old-info m))
+                 (format-zcpkg-info ($chver-command-updated-info-new-info m)))]
+
+        [($review-restoration-work? m)
+         (string-join
+          (append
+           (list
+            "# These commands install packages under a specific configuration."
+            "# The configuration controls whether zcpkg trusts unsigned"
+            "# packages or bad digests, so please review this carefully."
+            "#"
+            "# You can adapt this output to a script on your operating system, or you can"
+            (format "# run the restore command again with ~a to execute these instructions."
+                    (setting->short-flag ZCPKG_CONSENT))
+            ""
+            "")
+           (map (λ (cmd)
+                  (string-join
+                   (list "zcpkg" "config" "set"
+                         (vector-ref cmd 2)
+                         (~s (vector-ref cmd 3)))
+                   " "))
+                ($review-restoration-work-configure-commands m))
+           (map (λ (cmd)
+                  (string-join
+                   (list "zcpkg" "install" (setting->short-flag ZCPKG_CONSENT)
+                         (~s (vector-ref cmd 2)))
+                   " "))
+                ($review-restoration-work-install-commands m))
+           (list (~a "zcpkg diff" (~s ($review-restoration-work-capture-file-path m)))))
+          "\n")]
+
+        [($diff-extra-file? m)
+         (format "+ ~a" ($diff-extra-file-path m))]
+
+        [($diff-missing-file? m)
+         (format "- ~a" ($diff-missing-file-path m))]
+
+        [($diff-different-file? m)
+         (format "* ~a" ($diff-different-file-path m))]
+
+        [($after-write? m)
+         (format "Wrote ~a" ($after-write-path m))]
+
+        [($no-files-match? m)
+         "The patterns specified did not match any files."]
+
+        [($cannot-make-bundle-digest? m)
+         (format "OpenSSL exited with code ~s when creating a digest"
+                 ($cannot-make-bundle-digest-openssl-exit-code m))]
+
+        [($cannot-make-bundle-signature? m)
+         (format "OpenSSL exited with code ~s when creating a signature"
+                 ($cannot-make-bundle-signature-openssl-exit-code m))]
+
+        [($after-delete? m)
+         (format "Deleting ~a" m)]
+
+        [($reject-user-setting? m)
+         (format "Invalid value for ~a: ~s"
+                 ($reject-user-setting-name m)
+                 ($reject-user-setting-value m))]
+
+        [($new-package-conflict? m)
+         (format "Cannot make new package(s). The following files or directories already exist:~n~a"
+                 (apply ~a* ($new-package-conflict-existing m)))]
+
+        [($on-server-up? m)
+         (format "Server up at ~a. ^C to stop~n"
+                 ($on-server-up-address m))]
+
+        [($on-server-break? m)
+         "Shut down server due to user break."]
 
         [else (~s m)]))
