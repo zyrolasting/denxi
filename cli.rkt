@@ -823,4 +823,71 @@ EOF
                      (λ (exit-code stdout stderr output)
                        (check-false (directory-exists? install-path))
                        (check-true (directory-exists? package-name))
-                       (check-eq? exit-code 0)))))
+                       (check-eq? exit-code 0))))
+
+  (test-workspace "Capture, Restore, and Diff workspace"
+    (run-entry-point #("new" "foo") void)
+    (run-entry-point `#("install" ,(setting->short-flag ZCPKG_CONSENT) "./foo") void)
+
+    (call-with-output-file #:exists 'truncate/replace "other.rkt"
+      (λ (o) (displayln "new!" o)))
+
+    (run-entry-point #("capture" "\\.rkt$")
+                     (λ (exit-code stdout stderr output)
+                       (check-eq? exit-code 0)
+                       (check-eqv? (length output) 1)
+                       (check-pred $on-workspace-capture? (car output))
+                       (call-with-output-file "cap.rkt"
+                         (λ (to-capture-file) (copy-port stdout to-capture-file)))))
+
+    (call-with-output-file #:exists 'truncate/replace "other.rkt"
+      (λ (o) (displayln "change!" o)))
+
+    (delete-file "foo/setup.rkt")
+
+    (assume-settings ([ZCPKG_VERBOSE #t])
+      (run-entry-point #("diff" "cap.rkt") #:reload-config? #f
+                       (λ (exit-code stdout stderr output)
+                         (check-eq? exit-code 0)
+                         (check-equal? (set-subtract
+                                        (set ($diff-different-file "other.rkt")
+                                             ($diff-extra-file "cap.rkt")
+                                             ($diff-missing-file "foo/setup.rkt")
+                                             ($diff-same-file "foo/zcpkg.rkt"))
+                                        (apply set output))
+                                       (set))
+                         (check-equal? (set-subtract
+                                        (set "* other.rkt"
+                                             "+ cap.rkt"
+                                             "- foo/setup.rkt"
+                                             "= foo/zcpkg.rkt")
+                                        (apply set (string-split (port->string stdout) "\n")))
+                                       (set))
+                         (check-equal? (port->bytes stderr) #""))))
+
+    (run-entry-point #("restore" "cap.rkt") #:reload-config? #f
+                     (λ (exit-code stdout stderr output)
+                       (check-equal? (port->bytes stderr) #"")
+                       (check-eqv? (length output) 1)
+                       (define review (car output))
+
+                       (test-pred "Emit $review-restoration-work in output"
+                                  $review-restoration-work? review)
+
+                       (test-equal? "Include capture file path in $restore-restoration-work"
+                                    ($review-restoration-work-capture-file-path review)
+                                    "cap.rkt")
+
+                       (for ([sym (in-hash-keys ZCPKG_SETTINGS)])
+                         (test-true (format "Include ~a setting in scope for restoration" sym)
+                                    (and (ormap (λ (v) (vector-member (~a sym) v))
+                                                ($review-restoration-work-configure-commands review))
+                                         (regexp-match? (pregexp (format "config set ~a" sym))
+                                                        stdout))))
+                       (test-equal? "Include installed package in scope for restoration"
+                                    ($review-restoration-work-install-commands review)
+                                    `(#("install"
+                                        ,(setting->short-flag ZCPKG_CONSENT)
+                                        ,(zcpkg-query->string
+                                          (coerce-zcpkg-query
+                                           (read-zcpkg-info-from-directory "foo"))))))))))

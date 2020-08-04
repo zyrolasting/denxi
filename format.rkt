@@ -193,6 +193,9 @@
         [($diff-different-file? m)
          (format "* ~a" ($diff-different-file-path m))]
 
+        [($diff-same-file? m)
+         (format "= ~a" ($diff-same-file-path m))]
+
         [($after-write? m)
          (format "Wrote ~a" ($after-write-path m))]
 
