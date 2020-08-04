@@ -360,6 +360,13 @@
           (zcpkg-query "provider" "package" "edition" #t "0" #t #f)
           (zcpkg-query #f #f #f #f #f #f #f)))
 
+  (define (zpi pr pk ed n rns)
+    (make-zcpkg-info #:provider-name pr
+                     #:package-name pk
+                     #:edition-name ed
+                     #:revision-number n
+                     #:revision-names rns))
+
 
   (define (test-true* p seq)
     (for ([args (in-values-sequence seq)])
@@ -394,7 +401,7 @@
   (test-case "Convert between zcpkg-query instances and their representations"
     (define target (zcpkg-query "joe" "pkg" "edition" #f "8" #f "8"))
     (define str-repr "joe:pkg:edition:i:8:i:8")
-    (define info-repr (zcpkg-info "joe" "pkg" "edition" "8" #f #f #f #f #f))
+    (define info-repr (zpi "joe" "pkg" "edition" "8" null))
     (check-equal? target (string->zcpkg-query str-repr))
     (check-equal? target (coerce-zcpkg-query str-repr))
     (check-equal? target (zcpkg-info->zcpkg-query info-repr))
@@ -440,7 +447,7 @@
 
   (test-pred "Use zcpkg-info instances to produce exact dependencies"
              exact-zcpkg-query?
-             (zcpkg-info->zcpkg-query (zcpkg-info "joe" "pkg" "edition" "8" #f #f #f #f #f)))
+             (zcpkg-info->zcpkg-query (zpi "joe" "pkg" "edition" "8" null)))
 
 
   (test-true "Match a zcpkg-query using a revision range"
@@ -523,9 +530,6 @@
     (check-range 1 2 #f #t 1 3))
 
   (test-case "Metadata search"
-    (define (zpi pr pk ed num names)
-      (zcpkg-info pr pk ed num names #f null #"" #""))
-
     (define infos
       (list (zpi "alice" "wonderland" "mad" 0 '("initial"))
             (zpi "bob"   "rob"        "sob" 2 null)

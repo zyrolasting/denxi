@@ -468,21 +468,22 @@ EOF
 
     (make-file name CONVENTIONAL_PACKAGE_INFO_FILE_NAME
                (λ ()
+                 (define defn
+                   `((package . ,name)
+                     (description . "Describe this package in a sentence.")
+                     (tags . ())
+                     (home-page . "https://example.com")
+                     (edition . "draft")
+                     (revision-number . 0)
+                     (revision-names . ())
+                     (provider . ,(gethostname))
+                     (setup-module . "setup.rkt")
+                     (dependencies . ())
+                     (racket-versions . (("6.0" . ,(version))))))
+
                  (write-config
-                  (hasheq 'provider (gethostname)
-                          'package name
-                          'edition "draft"
-                          'revision-number 0
-                          'revision-names '()
-                          'setup-module "setup.rkt"
-                          'dependencies '())
-                  '(provider
-                    package
-                    edition
-                    revision-number
-                    revision-names
-                    setup-module
-                    dependencies)
+                  (make-immutable-hasheq defn)
+                  (map car defn)
                   (current-output-port))))
 
     (make-file name "setup.rkt"

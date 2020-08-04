@@ -5,25 +5,61 @@
 (provide (all-defined-out))
 
 (require racket/file
+         version/utils
          (only-in racket/format ~a)
          (only-in racket/list drop-right)
          "contract.rkt"
          "config.rkt"
          "string.rkt"
+         "url.rkt"
          "workspace.rkt"
          "zcpkg-settings.rkt")
 
 (struct zcpkg-info
-  (provider-name     ; The name of the package provider
-   package-name      ; The name of the package itself
-   edition-name      ; The name of a design used in the package
-   revision-number   ; The number of a design's implementation.
-   revision-names    ; Aliases for the revision-number.
-   setup-module      ; A Racket module responsible for userspace changes.
-   dependencies      ; A list of dependency queries.
-   integrity         ; A digest used to verify package contents
-   signature)        ; A signature used to authenticate the provider
+  (provider-name      ; The name of the package provider
+   package-name       ; The name of the package itself
+   edition-name       ; The name of a design used in the package
+   revision-number    ; The number of a design's implementation.
+   revision-names     ; Aliases for the revision-number.
+   setup-module       ; A Racket module responsible for userspace changes.
+   dependencies       ; A list of dependency queries.
+   integrity          ; A digest used to verify package contents
+   signature          ; A signature used to authenticate the provider
+   racket-versions    ; A list of supported Racket version ranges
+   tags               ; A list of strings for discovery purposes
+   description        ; A string describing the package
+   home-page)         ; A related link to a project's home page
   #:prefab)
+
+(define (make-zcpkg-info
+         #:provider-name provider-name
+         #:package-name package-name
+         #:edition-name [edition-name "draft"]
+         #:revision-number [revision-number 0]
+         #:revision-names [revision-names null]
+         #:setup-module [setup-module #f]
+         #:dependencies [dependencies null]
+         #:integrity [integrity #f]
+         #:signature [signature #f]
+         #:racket-versions [racket-versions null]
+         #:tags [tags null]
+         #:description [description #f]
+         #:home-page [home-page #f])
+  (zcpkg-info
+   provider-name
+   package-name
+   edition-name
+   revision-number
+   revision-names
+   setup-module
+   dependencies
+   integrity
+   signature
+   racket-versions
+   tags
+   description
+   home-page))
+
 
 (define (zcpkg-non-revision-identity=? info provider package edition)
   (and (equal? (zcpkg-info-provider-name info) provider)
@@ -63,7 +99,12 @@
               (lookup 'setup-module (or/c #f path-string?) #f)
               (lookup 'dependencies (listof string?) null)
               (lookup 'integrity (or/c #f bytes?) #f)
-              (lookup 'signature (or/c #f bytes?) #f)))
+              (lookup 'signature (or/c #f bytes?) #f)
+              (lookup 'racket-versions (listof (cons/c valid-version? valid-version?)) null)
+              (lookup 'tags (listof string?) null)
+              (lookup 'description (or/c #f string?) #f)
+              (lookup 'home-page (or/c #f url-string?) #f)))
+
 
 (define (read-zcpkg-info-from-directory dir)
   (read-zcpkg-info (build-path dir CONVENTIONAL_PACKAGE_INFO_FILE_NAME)))
@@ -77,7 +118,11 @@
         'setup-module (zcpkg-info-setup-module info)
         'dependencies (zcpkg-info-dependencies info)
         'integrity (zcpkg-info-integrity info)
-        'signature (zcpkg-info-signature info)))
+        'signature (zcpkg-info-signature info)
+        'racket-versions (zcpkg-info-racket-versions info)
+        'tags (zcpkg-info-tags info)
+        'description (zcpkg-info-description info)
+        'home-page (zcpkg-info-home-page info)))
 
 (define (write-zcpkg-info-to-directory info dir)
   (make-directory* dir)
@@ -89,15 +134,19 @@
   (save-config!
    (make-config-closure
     (zcpkg-info->hash info)
-    '(provider
-      package
+    '(package
+      tags
+      description
+      home-page
+      provider
       edition
       revision-number
       revision-names
       setup-module
       dependencies
       integrity
-      signature))
+      signature
+      racket-versions))
    o))
 
 (define-syntax-rule (copy-zcpkg-info i fields ...)
@@ -109,15 +158,13 @@
   (require rackunit)
 
   (define dummy-zcpkg-info
-    (zcpkg-info "acme"
-                "anvil"
-                "heavy"
-                0
-                '("certified")
-                "setup.rkt"
-                '("gravity" "dumb-coyote")
-                #f
-                #f))
+    (make-zcpkg-info
+     #:provider-name "acme"
+     #:package-name "anvil"
+     #:edition-name "heavy"
+     #:revision-names '("certified")
+     #:setup-module "setup.rkt"
+     #:dependencies '("gravity" "dumb-coyote")))
 
   (test-equal? "Create unabbreviated paths"
                (zcpkg-info->relative-path dummy-zcpkg-info)
