@@ -448,7 +448,7 @@ EOF
            (for/list ([created (in-list (append (list archive-file
                                                       metadata-file)
                                                 links-made))])
-             ($after-write created))))))
+             ($after-write (path->string created)))))))
 
 
 
