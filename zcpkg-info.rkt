@@ -174,7 +174,6 @@
                (zcpkg-info->relative-path dummy-zcpkg-info)
                (zcpkg-info->relative-path dummy-zcpkg-info #:abbrev 0))
 
-
   (test-equal? "Create slightly abbreviated paths"
                (zcpkg-info->relative-path dummy-zcpkg-info #:abbrev 1)
                (build-path "acme" "anvil" "heavy"))
