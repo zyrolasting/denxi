@@ -93,23 +93,20 @@ The beta release introduces onboarding so that others can share their
 work. Since hosting packages is a potentially expensive job, I will
 need to fundraise before exposing the service to a wider audience.
 
-- [ ] Add package discovery features
-  - [ ] Tags
-  - [ ] Summary
-  - [ ] Page
-- [ ] Validation
-  - [ ] Disallow duplicate revision names for an edition
-  - [ ] Disallow creating a revision number gap on upload
-- [ ] Let packages define supported Racket version ranges
-    - [ ] Cap lower bound to `zcpkg`'s own minimum supported version
-    - [ ] Cap upper bound to running Racket version
+- [x] Extend package definition
+  - [x] Tags
+  - [x] Summary
+  - [x] Page
+  - [x] Supported Racket version ranges
 - [ ] Define onboarding process for new users
-    - [ ] Implement password authentication
+    - [ ] Authentication (SSH? Password?)
     - [ ] GPG-backed signatures
+    - [ ] PUT requests for packages and their definitions
+      - [ ] Disallow duplicate revision names in an edition
+      - [ ] Disallow creating a revision number gap
 - [ ] Define fundraising goals and options
-- [ ] Update command
-    - [ ] Predicate update on if any dependents insist on keeping an existing version.
-- [ ] Document critical bindings and commands
+- [ ] Make restore command offer rollback functionality
+- [x] Document commands
 - [ ] 80%+ test coverage
 
 
