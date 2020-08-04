@@ -4,7 +4,8 @@
          write-capture
          capture-workspace)
 
-(require racket/match
+(require racket/format
+         racket/match
          racket/path
          racket/port
          racket/pretty
@@ -13,7 +14,6 @@
          "contract.rkt"
          "zcpkg-query.rkt"
          "file.rkt"
-         "format.rkt"
          "message.rkt"
          "setting.rkt"
          "verify.rkt"
