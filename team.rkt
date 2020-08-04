@@ -33,15 +33,18 @@
                 worker-count)
 
     (field [output null]
+           [cust (make-custodian)]
            [workers
-            (for/list ([id (in-range worker-count)])
-              (new sentry%
-                   [pch (make-place)]
-                   [add-output (λ (v) (set! output (cons v output)))]))])
+            (parameterize ([current-custodian cust])
+              (for/list ([id (in-range worker-count)])
+                (new sentry%
+                     [pch (make-place)]
+                     [add-output (λ (v) (set! output (cons v output)))])))])
 
     (define/public-final (stop!)
       (for ([w (in-list workers)])
         (send w stop!))
+      (custodian-shutdown-all cust)
       (set! workers null))
 
     (define/public (broadcast! v)
