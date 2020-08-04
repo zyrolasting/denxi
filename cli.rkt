@@ -38,7 +38,8 @@
 
 
 (module+ main
-  (exit (entry-point)))
+  (define-values (exit-code output) (entry-point))
+  (exit exit-code))
 
 (define current-cli-continuation (make-parameter #f))
 
@@ -67,7 +68,8 @@
          (sequence-for-each write-output (in-list output))]
         [else (raise output)])
 
-  (if (void? maybe-exit-code) 0 maybe-exit-code))
+  (values (if (void? maybe-exit-code) 0 maybe-exit-code)
+          output))
 
 (define (top-level-cli args)
   (run-command-line
@@ -681,26 +683,28 @@ EOF
     (define nout (current-output-port))
     (define stdout (open-output-bytes))
     (define stderr (open-output-bytes))
-    (define-values (exit-code outbytes errbytes)
+    (define-values (exit-code outbytes errbytes output)
       (parameterize ([current-output-port stdout]
                      [current-error-port stderr]
                      [current-input-port stdin])
-        (define code (entry-point args))
+        (define-values (code output) (entry-point args))
         (flush-output stdout)
         (flush-output stderr)
         (close-input-port stdin)
         (values code
                 (open-input-bytes (get-output-bytes stdout #t))
-                (open-input-bytes (get-output-bytes stderr #t)))))
+                (open-input-bytes (get-output-bytes stderr #t))
+                output)))
 
     (after exit-code
            outbytes
-           errbytes))
+           errbytes
+           output))
 
   (test-case "Configure zcpkg"
     (test-workspace "Respond to an incomplete command with help"
       (run-entry-point #("config")
-                       (λ (exit-code stdout stderr)
+                       (λ (exit-code stdout stderr output)
                          (check-eq? exit-code 1)
                          (check-true (andmap (λ (patt) (regexp-match? (regexp patt) stdout))
                                              '("given 0 arguments"
@@ -710,7 +714,7 @@ EOF
 
     (test-workspace "Dump all (read)able configuration on request"
       (run-entry-point #("config" "dump")
-                       (λ (exit-code stdout stderr)
+                       (λ (exit-code stdout stderr output)
                          (check-eq? exit-code 0)
                          (check-equal? ((current-zcpkg-config) 'dump)
                                        (read stdout)))))
@@ -719,7 +723,7 @@ EOF
       (define config-key (random-ref (in-hash-keys ZCPKG_SETTINGS)))
       (define config-key/str (symbol->string config-key))
       (run-entry-point (vector "config" "get" config-key/str)
-                       (λ (exit-code stdout stderr)
+                       (λ (exit-code stdout stderr output)
                          (check-eq? exit-code 0)
                          (check-equal? ((current-zcpkg-config) 'get-value config-key)
                                        (read stdout)))))
@@ -733,7 +737,7 @@ EOF
 
 
       (run-entry-point (vector "config" "set" "ZCPKG_VERBOSE" "#t")
-                       (λ (exit-code stdout stderr)
+                       (λ (exit-code stdout stderr output)
                          (check-eq? exit-code 0)
                          (check-true (ZCPKG_VERBOSE))
                          (check-true (file-exists? (get-zcpkg-settings-path)))
@@ -750,7 +754,7 @@ EOF
                                            (setting->short-flag ZCPKG_REVISION_NUMBER) "8"
                                            package-name
                                            "a" "b" "c")
-                                   (λ (exit-code stdout stderr)
+                                   (λ (exit-code stdout stderr output)
                                      (check-eq? exit-code 0)
                                      (check-equal? (port->string stderr) "")
                                      (check-equal? (port->string stdout)
@@ -768,7 +772,7 @@ EOF
   (test-workspace "Create a new package"
     (define package-name "foo")
     (run-entry-point (vector "new" "foo")
-                     (λ (exit-code stdout stderr)
+                     (λ (exit-code stdout stderr output)
                        (define pkg-dir (build-path (current-directory) package-name))
                        (check-eq? exit-code 0)
                        (check-pred directory-exists? pkg-dir)
@@ -776,7 +780,7 @@ EOF
 
   (test-workspace "Let zcpkg install itself"
                   (run-entry-point (vector "install" (setting->short-flag ZCPKG_CONSENT) (path->string here))
-                                   (λ (exit-code stdout stderr)
+                                   (λ (exit-code stdout stderr output)
                                      (check-eq? exit-code 0))))
 
   (test-workspace "Install a local package with no dependencies"
@@ -789,14 +793,14 @@ EOF
     ; Without explicit consent, the workspace filesystem does not change.
     ; The user is only alerted to what would happen if they gave consent.
     (run-entry-point (vector "install" package-name)
-                     (λ (exit-code stdout stderr)
+                     (λ (exit-code stdout stderr output)
                        ; Make sure the output mentions the package by name.
                        (check-true (regexp-match? (regexp package-name) stdout))
                        (check-false (directory-exists? install-path))
                        (check-eq? exit-code 0)))
 
     (run-entry-point (vector "install" (setting->short-flag ZCPKG_CONSENT) package-name)
-                     (λ (exit-code stdout stderr)
+                     (λ (exit-code stdout stderr output)
                        (check-equal?
                         (file-or-directory-identity install-path)
                         (file-or-directory-identity package-name))
@@ -804,7 +808,7 @@ EOF
 
     ; Uninstallation has the same workflow. By default it does nothing but state its intentions.
     (run-entry-point (vector "uninstall" (zcpkg-query->string (zcpkg-info->zcpkg-query info)))
-                     (λ (exit-code stdout stderr)
+                     (λ (exit-code stdout stderr output)
                        (check-true (regexp-match? (regexp package-name) stdout))
                        (check-equal?
                         (file-or-directory-identity install-path)
@@ -814,7 +818,7 @@ EOF
     (run-entry-point (vector "uninstall"
                              (setting->short-flag ZCPKG_CONSENT)
                              (zcpkg-query->string (zcpkg-info->zcpkg-query info)))
-                     (λ (exit-code stdout stderr)
+                     (λ (exit-code stdout stderr output)
                        (check-false (directory-exists? install-path))
                        (check-true (directory-exists? package-name))
                        (check-eq? exit-code 0)))))
