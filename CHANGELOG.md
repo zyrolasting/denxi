@@ -14,6 +14,7 @@ This project follows [these versioning rules](https://sagegerard.com/edition-rev
 - Removed `prompt.rkt`
 - Route all program output through `output.rkt`
 - Add `tags`, `home-page`, `racket-versions`, and `description` fields to package definition
+- Add edition information to help the server validate new package definitions
 
 ## [draft:alpha] - 2020-08-02
 
