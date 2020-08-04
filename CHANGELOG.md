@@ -13,6 +13,7 @@ This project follows [these versioning rules](https://sagegerard.com/edition-rev
 - Download provider's public key along with package to verify signatures
 - Removed `prompt.rkt`
 - Route all program output through `output.rkt`
+- Add `tags`, `home-page`, `racket-versions`, and `description` fields to package definition
 
 ## [draft:alpha] - 2020-08-02
 
