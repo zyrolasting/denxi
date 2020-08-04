@@ -681,7 +681,7 @@ EOF
 
   (define-runtime-path here ".")
 
-  (define (run-entry-point #:stdin [stdin (open-input-bytes #"")] args after)
+  (define (run-entry-point #:reload-config? [reload-config? #t] #:stdin [stdin (open-input-bytes #"")] args after)
     (define nout (current-output-port))
     (define stdout (open-output-bytes))
     (define stderr (open-output-bytes))
@@ -689,7 +689,7 @@ EOF
       (parameterize ([current-output-port stdout]
                      [current-error-port stderr]
                      [current-input-port stdin])
-        (define-values (code output) (entry-point args))
+        (define-values (code output) (entry-point #:reload-config? reload-config? args))
         (flush-output stdout)
         (flush-output stderr)
         (close-input-port stdin)
