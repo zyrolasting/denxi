@@ -7,6 +7,7 @@
 (require racket/date
          racket/format
          racket/pretty
+         "capture.rkt"
          "setting.rkt"
          "string.rkt"
          "workspace.rkt"
@@ -224,5 +225,10 @@
 
         [($on-server-break? m)
          "Shut down server due to user break."]
+
+        [($on-workspace-capture? m)
+         (define buf (open-output-string))
+         (write-capture ($on-workspace-capture-datum m) buf)
+         (get-output-string buf)]
 
         [else (~s m)]))

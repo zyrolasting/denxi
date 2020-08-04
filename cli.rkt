@@ -173,7 +173,7 @@ EOF
    #:args args
    #:arg-help-strings '("pregexp-strings")
    (λ (flags . file-patterns)
-     (halt 0 (write-capture (capture-workspace (pattern-map file-patterns)))))))
+     (halt 0 ($on-workspace-capture (capture-workspace (pattern-map file-patterns)))))))
 
 
 (define (restore-command args)

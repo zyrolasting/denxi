@@ -41,3 +41,4 @@
 (define-message $new-package-conflict (existing))
 (define-message $on-server-up (address))
 (define-message $on-server-break ())
+(define-message $on-workspace-capture (datum))
