@@ -211,7 +211,7 @@
                  ($cannot-make-bundle-signature-openssl-exit-code m))]
 
         [($after-delete? m)
-         (format "Deleting ~a" m)]
+         (format "Deleting ~a" ($after-delete-path m))]
 
         [($reject-user-setting? m)
          (format "Invalid value for ~a: ~s"
