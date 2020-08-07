@@ -10,6 +10,7 @@
 (require (only-in racket/list remove-duplicates)
          racket/path
          racket/set
+         racket/sequence
          "config.rkt"
          "zcpkg-query.rkt"
          "download.rkt"
@@ -90,9 +91,14 @@
                            variant
                            seen)
       (resolve-source-iter source
-                           (download-info variant)
+                           (find-info variant)
                            requesting-directory
                            seen)))
+
+(define (find-info variant)
+  (with-handlers ([exn:fail? (λ (e) (download-info variant))])
+    (sequence-ref (search-zcpkg-infos variant (in-installed-info))
+                  0)))
 
 (define (find-scope-of-work package-sources)
   (define seen (make-hash))
