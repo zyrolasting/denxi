@@ -237,7 +237,9 @@
                   (exclusive-flag->bool min-flag "revision minimum flag")
                   min-revision
                   (exclusive-flag->bool max-flag "revision maximum flag")
-                  max-revision)]))
+                  max-revision)]
+
+    [_ (raise-user-error (format "~s is not a valid package query string." s))]))
 
 (define (zcpkg-info->zcpkg-query info)
   (zcpkg-query (zcpkg-info-provider-name info)
