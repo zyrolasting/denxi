@@ -97,12 +97,11 @@
     [(0) (error 'find-exactly-one-info "~a is not installed" zcpkg-query-variant)]
     [(1) (void)]
     [else
-     (raise (exn:fail:user
-             (format "~s is ambiguous. Which of these did you mean?~n~s"
-                     (string-join (map (compose zcpkg-query->string coerce-zcpkg-query)
-                                       infos)
-                                  "\n"))
-             (current-continuation-marks)))])
+     (raise-user-error
+      (format "~s is ambiguous. Which of these did you mean?~n~s"
+              (string-join (map (compose zcpkg-query->string coerce-zcpkg-query)
+                                infos)
+                           "\n")))])
   (sequence-ref infos 0))
 
 

@@ -39,16 +39,15 @@
 
          (if (directory-exists? pkg-path) pkg-path
              (and must-exist?
-                  (raise (exn:fail:user
-                          (format (~a "Package not found: ~a~n~n"
-                                      "Assuming your command is correct, a package~n"
-                                      "may have an incorrect relative path as a dependency.~n~n"
-                                      "Base path: ~a~n"
-                                      "Relative path: ~a~n")
-                                  pkg-path
-                                  relative-path-root
-                                  (find-relative-path relative-path-root pkg-path))
-                          (current-continuation-marks)))))]
+                  (raise-user-error
+                   (format (~a "Package not found: ~a~n~n"
+                               "Assuming your command is correct, a package~n"
+                               "may have an incorrect relative path as a dependency.~n~n"
+                               "Base path: ~a~n"
+                               "Relative path: ~a~n")
+                           pkg-path
+                           relative-path-root
+                           (find-relative-path relative-path-root pkg-path)))))]
 
         [(url? v)
          (and (or (not (url-scheme v))
