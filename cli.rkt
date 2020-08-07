@@ -93,6 +93,7 @@
          ["new" new-command]
          ["show" show-command]
          ["link" link-command]
+         ["setup" setup-command]
          ["config" config-command]
          ["capture" capture-command]
          ["restore" restore-command]
@@ -112,6 +113,7 @@
   new        Create a new package
   show       Print helpful information
   link       Create a symlink to an installed package
+  setup      Integrate a package
   config     Configure the package manager
   capture    Capture workspace
   restore    Restore workspace
@@ -256,6 +258,28 @@ EOF
              (sequence-ref seq 0))
             link-path)
            (values 0 null))))))
+
+
+(define (setup-command args)
+  (define (do-work info exprs)
+    (define controller (zcpkg-start-team!))
+    (dynamic-wind
+      void
+      (λ ()
+        (controller ($start (workspace-directory)
+                            ((current-zcpkg-config) 'dump)))
+        (values 0 (controller (list ($setup-package info exprs)))))
+      (λ () (controller #f))))
+
+  (run-command-line
+   #:program "setup"
+   #:args args
+   #:arg-help-strings '("query" "expr")
+   (λ (flags query . exprs)
+     (define infos (search-zcpkg-infos query (in-installed-info)))
+     (if (= (sequence-length infos) 0)
+         (values 1 ($setup-command-no-package query))
+         (do-work (sequence-ref infos 0) exprs)))))
 
 
 (define (config-command args)

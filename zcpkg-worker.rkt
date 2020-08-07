@@ -17,6 +17,7 @@
          "message.rkt"
          "resolve.rkt"
          "sentry.rkt"
+         "setup.rkt"
          "string.rkt"
          "team.rkt"
          "url.rkt"
@@ -109,6 +110,14 @@
         (make-directory* (path-only install-path))
         (unpack artifact-path install-path)
         (install-local-package info dependency-infos install-path)))
+
+    (define/public (handle-$setup-package info exprs)
+      (define install-path (zcpkg-info->install-path info))
+      (compile-racket-modules install-path)
+      (for ([output (load-in-setup-module info (in-list exprs))])
+        (send-output ($setup-module-output
+                      (zcpkg-query->string (zcpkg-info->zcpkg-query info))
+                      (~s output)))))
 
 
     (define/public (handle-$install-package infos url-or-path)

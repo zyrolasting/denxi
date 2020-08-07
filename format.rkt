@@ -152,6 +152,10 @@
          (format "Cannot find a package using ~s."
                  ($link-command-no-package-query-string m))]
 
+        [($setup-command-no-package? m)
+         (format "Cannot find a package using ~s."
+                 ($setup-command-no-package-query-string m))]
+
         [($config-command-nonexistant-setting? m)
          (format "There is no setting called ~a.~n"
                  ($config-command-nonexistant-setting-name m))]
@@ -253,4 +257,7 @@
          (write-capture ($on-workspace-capture-datum m) buf)
          (get-output-string buf)]
 
-        [else (~s m)]))
+        [($setup-module-output? m)
+         (format "[~a]: ~a"
+                 ($setup-module-output-source m)
+                 ($setup-module-output-v m))]))

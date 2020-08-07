@@ -3,7 +3,8 @@
 ; Define a configurable sandbox evaluator that allows a user to pass
 ; control to a package's installer.
 
-(provide enter-setup-module)
+(provide enter-setup-module
+         load-in-setup-module)
 
 (require racket/exn
          racket/format
@@ -19,18 +20,28 @@
 
 
 (define (enter-setup-module info)
+  (call-in-setup-module info read-eval-print-loop))
+
+(define (load-in-setup-module info exprs)
+  (call-in-setup-module info
+   (λ ()
+     (for/list ([expr exprs])
+       ((current-eval) expr)))))
+
+(define (call-in-setup-module info proc)
   (define setup-module-path (get-setup-module-path info))
-  (when setup-module-path
-    (parameterize ([sandbox-output (current-output-port)]
-                   [sandbox-input (current-input-port)]
-                   [sandbox-error-output (current-error-port)]
-                   [sandbox-memory-limit (ZCPKG_SANDBOX_MEMORY_LIMIT_MB)]
-                   [sandbox-eval-limits (list (ZCPKG_SANDBOX_EVAL_TIME_LIMIT_SECONDS)
-                                              (ZCPKG_SANDBOX_EVAL_MEMORY_LIMIT_MB))]
-                   [sandbox-path-permissions (ZCPKG_SANDBOX_PATH_PERMISSIONS)])
-      (parameterize ([current-eval (make-module-evaluator #:language 'racket/base setup-module-path)])
-        (read-eval-print-loop)))
-    void))
+  (if setup-module-path
+      (parameterize ([sandbox-output (current-output-port)]
+                     [sandbox-input (current-input-port)]
+                     [sandbox-error-output (current-error-port)]
+                     [sandbox-memory-limit (ZCPKG_SANDBOX_MEMORY_LIMIT_MB)]
+                     [sandbox-eval-limits (list (ZCPKG_SANDBOX_EVAL_TIME_LIMIT_SECONDS)
+                                                (ZCPKG_SANDBOX_EVAL_MEMORY_LIMIT_MB))]
+                     [sandbox-path-permissions (ZCPKG_SANDBOX_PATH_PERMISSIONS)])
+        (parameterize ([current-eval (make-module-evaluator #:language 'racket/base setup-module-path)])
+          (proc)))
+      (void)))
+
 
 
 (define (get-setup-module-path info)

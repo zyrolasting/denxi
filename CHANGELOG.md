@@ -7,15 +7,16 @@ This project follows [these versioning rules](https://sagegerard.com/edition-rev
 
 ## [Unreleased]
 
+- Add `tags`, `home-page`, `racket-versions`, and `description` fields to package definition
+- Add edition information to help the server validate new package definitions
+- Add `setup` command
+- Remove `prompt.rkt`
+- Remove packages that are already installed from scope of work reports
+- Route all program output through `output.rkt`
 - Switch to `setup/infotab` and `#lang info` as canonical configuration language.
 - Proofread and edit documentation
 - Detect reserved file names
 - Download provider's public key along with package to verify signatures
-- Removed `prompt.rkt`
-- Route all program output through `output.rkt`
-- Add `tags`, `home-page`, `racket-versions`, and `description` fields to package definition
-- Add edition information to help the server validate new package definitions
-- Removed packages that are already installed from scope of work reports
 
 ## [draft:alpha] - 2020-08-02
 
