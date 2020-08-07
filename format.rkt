@@ -6,8 +6,10 @@
 
 (require racket/date
          racket/format
+         racket/list
          racket/pretty
          "capture.rkt"
+         "file.rkt"
          "setting.rkt"
          "string.rkt"
          "workspace.rkt"
@@ -30,26 +32,43 @@
 
 (define (format-zcpkg-info-table unsorted-infos)
   (define infos
-    (sort unsorted-infos
-          #:key (λ (info) (zcpkg-query->string (zcpkg-info->zcpkg-query info)))
-          string<?))
+    (filter-not zcpkg-installed?
+                (sort unsorted-infos
+                      #:key (λ (info) (zcpkg-query->string (zcpkg-info->zcpkg-query info)))
+                      string<?)))
 
   (define (get-cell-printer strs)
     (define min-width (apply max (map string-length strs)))
-    (λ args (apply ~a #:min-width min-width args)))
+    (λ (#:pad-string [pad-string " "] . args)
+      (apply ~a
+             #:pad-string pad-string
+             #:min-width min-width
+             args)))
 
-  (define print-provider-name (get-cell-printer (map zcpkg-info-provider-name infos)))
-  (define print-package-name  (get-cell-printer (map zcpkg-info-package-name infos)))
-  (define print-edition-name  (get-cell-printer (map zcpkg-info-edition-name infos)))
-  (define print-revision-num  (get-cell-printer (map (compose ~a zcpkg-info-revision-number) infos)))
+  (define package-heading "Package")
+  (define provider-heading "Provider")
+  (define edition-heading "Edition")
+  (define revision-heading "Revision")
 
-  (define row-fmt "~a\t~a\t~a\t~a")
+  (define print-provider-name (get-cell-printer (cons provider-heading (map zcpkg-info-provider-name infos))))
+  (define print-package-name  (get-cell-printer (cons package-heading (map zcpkg-info-package-name infos))))
+  (define print-edition-name  (get-cell-printer (cons edition-heading (map zcpkg-info-edition-name infos))))
+  (define print-revision-num  (get-cell-printer (cons revision-heading (map (compose ~a zcpkg-info-revision-number) infos))))
+
+  (define row-fmt "~a  ~a  ~a  ~a")
   (format (~a (format row-fmt
-                      (print-package-name "Package")
-                      (print-provider-name "Provider")
-                      (print-edition-name "Edition")
-                      (print-revision-num "Revision"))
-              "~n~a~n~n")
+                      (print-package-name package-heading)
+                      (print-provider-name provider-heading)
+                      (print-edition-name edition-heading)
+                      (print-revision-num revision-heading))
+              "~n~a~n~a~n")
+          (string-append (print-package-name  #:pad-string "=" "")
+                         "=="
+                         (print-provider-name #:pad-string "=" "")
+                         "=="
+                         (print-edition-name  #:pad-string "=" "")
+                         "=="
+                         (print-revision-num  #:pad-string "=" ""))
           (string-join
            (for/list ([info (in-list infos)])
              (format row-fmt
@@ -117,7 +136,7 @@
                  ($unrecognized-command-command m))]
 
         [($review-installation-work? m)
-         (format "Sources:~n~a~n~n~a~n~a"
+         (format "Requested:~n~a~n~nTo install:~n~n~a~n~a"
                  (join-lines (indent-lines ($review-installation-work-package-sources m)))
                  (format-zcpkg-info-table (map car (hash-values ($review-installation-work-sow m))))
                  (format "To consent to these changes, run again with ~a"
