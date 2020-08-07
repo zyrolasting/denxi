@@ -1,5 +1,11 @@
 A flexible package manager for Racket.
 
+## Goals
+
+* Smooth the learning curve for dependency management
+* Give users as much control over distribution as possible
+* Support secure, reliable code exchange.
+
 
 ## Benefits
 
