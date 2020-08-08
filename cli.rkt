@@ -160,6 +160,7 @@ EOF
     ZCPKG_TRUST_UNSIGNED
     ZCPKG_INSTALL_ORPHAN
     ZCPKG_CONSENT
+    ZCPKG_LINK
     ZCPKG_DOWNLOAD_IGNORE_CACHE)
 
    (λ (flags . package-sources)
@@ -822,11 +823,15 @@ EOF
     (run-entry-point (vector "install" package-name)
                      (λ (exit-code stdout stderr output)
                        ; Make sure the output mentions the package by name.
+
                        (check-true (regexp-match? (regexp package-name) stdout))
                        (check-false (directory-exists? install-path))
                        (check-eq? exit-code 0)))
 
-    (run-entry-point (vector "install" (setting->short-flag ZCPKG_CONSENT) package-name)
+    (run-entry-point (vector "install"
+                             (setting->short-flag ZCPKG_CONSENT)
+                             (setting->short-flag ZCPKG_LINK)
+                             package-name)
                      (λ (exit-code stdout stderr output)
                        (check-equal?
                         (file-or-directory-identity install-path)

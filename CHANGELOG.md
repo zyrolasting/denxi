@@ -10,6 +10,7 @@ This project follows [these versioning rules](https://sagegerard.com/edition-rev
 - Add `tags`, `home-page`, `racket-versions`, and `description` fields to package definition
 - Add edition information to help the server validate new package definitions
 - Add `setup` command
+- Add `ZCPKG_LINK` setting
 - Remove `prompt.rkt`
 - Remove packages that are already installed from scope of work reports
 - Route all program output through `output.rkt`

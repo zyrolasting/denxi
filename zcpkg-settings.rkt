@@ -232,6 +232,12 @@
    boolean?
    #f}
 
+  {ZCPKG_LINK
+   "-l"
+   ("When installing a package on the filesystem, create a symlink to the source directory.")
+   boolean?
+   #f}
+
   {ZCPKG_CONSENT
    "-y"
    ("Proceed with operation")

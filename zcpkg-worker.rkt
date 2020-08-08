@@ -80,7 +80,9 @@
 
       (unless (equal? package-path install-path)
         (make-directory* (path-only install-path))
-        (make-file-or-directory-link package-path install-path))
+        (if (ZCPKG_LINK)
+            (make-file-or-directory-link package-path install-path)
+            (copy-directory/files package-path install-path)))
 
       (make-zcpkg-dependency-links #:search? #f dependency-infos install-path)
       (make-zcpkg-revision-links info)
