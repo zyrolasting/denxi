@@ -257,8 +257,8 @@
    2}
 
   ; Guarentee a cache miss when downloading artifacts, if #t.
-  {ZCPKG_DOWNLOAD_IGNORE_CACHE
-   "-D"
+  {ZCPKG_IGNORE_DOWNLOAD_CACHE
+   #f
    ("If set, ignore the download cache.")
    boolean?
    #f})

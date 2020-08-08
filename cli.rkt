@@ -161,7 +161,7 @@ EOF
     ZCPKG_INSTALL_ORPHAN
     ZCPKG_CONSENT
     ZCPKG_LINK
-    ZCPKG_DOWNLOAD_IGNORE_CACHE)
+    ZCPKG_IGNORE_DOWNLOAD_CACHE)
 
    (λ (flags . package-sources)
      (define sow (find-scope-of-work package-sources))
