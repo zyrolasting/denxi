@@ -614,19 +614,19 @@ EOF
 (define (uninstall-command args)
   (run-command-line
    #:program "uninstall"
-   #:arg-help-strings '("urns")
+   #:arg-help-strings '("queries")
    #:flags
    (settings->flag-specs
     ZCPKG_LEAVE_ORPHANS
     ZCPKG_CONSENT)
    #:args args
-   (λ (flags . urns)
+   (λ (flags . queries)
      (define to-uninstall (mutable-set))
      (define will-be-orphaned (mutable-set))
 
      ; Determine impact to the system
-     (for ([urn (in-list urns)])
-       (define info (find-exactly-one-info urn))
+     (for ([query (in-list queries)])
+       (define info (find-exactly-one-info query))
        (define target-install-path (zcpkg-info->install-path info))
        (set-add! to-uninstall info)
 
@@ -648,9 +648,7 @@ EOF
             (delete-directory/files/empty-parents install-path)
             ($after-delete install-path))
           ($review-uninstallation-work
-           (sequence->list
-            (sequence-append (in-mutable-set to-uninstall)
-                             (in-mutable-set will-be-orphaned)))))))))
+           (sequence->list (in-mutable-set to-uninstall))))))))
 
 
 
