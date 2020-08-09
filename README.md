@@ -113,7 +113,7 @@ need to fundraise before exposing the service to a wider audience.
       - [ ] Disallow creating a revision number gap
       - [ ] Define grace period for replacing uploaded data
 - [ ] Define fundraising goals and options
-- [ ] Make restore command offer rollback functionality
+- [ ] Make restore command strict (for rollback)
 - [x] Document commands
 - [ ] 80%+ test coverage
 
