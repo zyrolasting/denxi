@@ -59,7 +59,7 @@
       (add-output v))
 
     (define/public (handle-$fail v)
-      (add-output v)
+      (add-output ($fail v))
       (set! counter 0)
       (stop!))
 
@@ -128,7 +128,7 @@
     (test-true "On failure, rebalance automatically." (send op balanced?))
     (test-equal? "Keep failures as part of the output"
                  (car output)
-                 "crash!")
+                 ($fail "crash!"))
 
     (define tmp-file (make-temporary-file))
 

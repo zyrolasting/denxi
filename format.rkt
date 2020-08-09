@@ -85,6 +85,8 @@
 (define (format-zcpkg-message m)
   (cond [($output? m) (format-zcpkg-message ($output-v m))]
 
+        [($fail? m) ($fail-to-display m)]
+
         [($already-installed? m)
          (format "~a is already installed at ~a"
                  (zcpkg-query->string (zcpkg-info->zcpkg-query ($already-installed-info m)))
