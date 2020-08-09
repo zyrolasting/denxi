@@ -214,7 +214,7 @@ EOF
 
 (define (diff-command args)
   (run-command-line
-   #:program "capture"
+   #:program "diff"
    #:args args
    #:arg-help-strings '("capture-module" "file-patterns")
    (λ (flags capture-path . file-patterns)
