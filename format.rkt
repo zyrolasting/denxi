@@ -265,6 +265,12 @@
          (write-capture ($on-workspace-capture-datum m) buf)
          (get-output-string buf)]
 
+        [($invalid-launcher-spec? m)
+         (format "~s has invalid launcher definition for ~s:~n~a"
+                 (format-zcpkg-info ($invalid-launcher-spec-info m))
+                 ($invalid-launcher-spec-name m)
+                 (join-lines (indent-lines ($invalid-launcher-spec-errors m))))]
+
         [($setup-module-output? m)
          (format "[~a]: ~a"
                  ($setup-module-output-source m)
