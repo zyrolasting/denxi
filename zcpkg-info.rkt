@@ -28,7 +28,8 @@
    racket-versions    ; A list of supported Racket version ranges
    tags               ; A list of strings for discovery purposes
    description        ; A string describing the package
-   home-page)         ; A related link to a project's home page
+   home-page          ; A related link to a project's home page
+   launchers)         ; A list of launcher specifications
   #:prefab)
 
 (define (make-zcpkg-info
@@ -44,7 +45,8 @@
          #:racket-versions [racket-versions null]
          #:tags [tags null]
          #:description [description #f]
-         #:home-page [home-page #f])
+         #:home-page [home-page #f]
+         #:launchers [launchers null])
   (zcpkg-info
    provider-name
    package-name
@@ -58,7 +60,8 @@
    racket-versions
    tags
    description
-   home-page))
+   home-page
+   launchers))
 
 
 (define (zcpkg-non-revision-identity=? info provider package edition)
@@ -103,7 +106,8 @@
               (lookup 'racket-versions (listof (cons/c valid-version? valid-version?)) null)
               (lookup 'tags (listof string?) null)
               (lookup 'description (or/c #f string?) #f)
-              (lookup 'home-page (or/c #f url-string?) #f)))
+              (lookup 'home-page (or/c #f url-string?) #f)
+              (lookup 'launchers (listof hash?) null)))
 
 
 (define (read-zcpkg-info-from-directory dir)
@@ -122,7 +126,8 @@
         'racket-versions (zcpkg-info-racket-versions info)
         'tags (zcpkg-info-tags info)
         'description (zcpkg-info-description info)
-        'home-page (zcpkg-info-home-page info)))
+        'home-page (zcpkg-info-home-page info)
+        'launchers (zcpkg-info-launchers info)))
 
 (define (write-zcpkg-info-to-directory info dir)
   (make-directory* dir)
