@@ -120,6 +120,12 @@
    boolean?
    #f}
 
+  {ZCPKG_MATCH_COMPILED_RACKET
+   "-b"
+   ("Match against .zo and .dep.")
+   boolean?
+   #f}
+
   {ZCPKG_BUNDLE_FOR_SERVER
    "-s"
    ("Bundle package into server directory.")
