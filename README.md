@@ -104,6 +104,7 @@ need to fundraise before exposing the service to a wider audience.
   - [x] Summary
   - [x] Page
   - [x] Supported Racket version ranges
+  - [ ] (G)Racket Launchers
 - [ ] Define onboarding process for new users
     - [ ] Authentication (SSH? Password?)
     - [ ] GPG-backed signatures
