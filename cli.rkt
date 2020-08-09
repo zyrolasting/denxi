@@ -38,7 +38,8 @@
 
 
 (module+ main
-  (exit (entry-point)))
+  (define-values (exit-code output) (entry-point))
+  (exit exit-code))
 
 (define current-cli-continuation (make-parameter #f))
 
