@@ -66,13 +66,14 @@
 (define (get-installed-edition-revisions provider package edition)
   (ls (build-install-path provider package edition)))
 
-(define (in-installed-package-paths)
+(define (in-installed-package-paths [use? (λ _ #t)])
   (in-generator
    (for* ([provider (in-list (get-installed-providers))]
           [package (in-list (get-installed-provider-packages provider))]
           [edition (in-list (get-installed-package-editions provider package))]
           [revision (in-list (get-installed-edition-revisions provider package edition))])
-     (yield (build-install-path provider package edition revision)))))
+     (when (use? provider package edition revision)
+       (yield (build-install-path provider package edition revision))))))
 
 (define (in-installed-info)
   (sequence-map read-zcpkg-info-from-directory
