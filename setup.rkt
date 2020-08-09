@@ -1,7 +1,7 @@
 #lang racket/base
 
-; Define a configurable sandbox evaluator that allows a user to pass
-; control to a package's installer.
+; Define operations for package setup, assuming all package files are
+; present on the system.
 
 (provide enter-setup-module
          load-in-setup-module)
