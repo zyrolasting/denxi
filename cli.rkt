@@ -603,6 +603,11 @@ EOF
      (match what
        ["workspace"
         (displayln (workspace-directory))]
+       ["installed"
+        (for ([info (in-installed-info)])
+          (printf "~a: ~a~n"
+                  (format-zcpkg-info info)
+                  (zcpkg-info->install-path info)))]
        [_ (values 1 ($unrecognized-command what))]))
    #<<EOF
 where <what> is one of
