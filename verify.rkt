@@ -9,7 +9,8 @@
          verify-signature
          validate-zcpkg-info
          integrous-artifact?
-         authenticated-provider?)
+         authenticated-provider?
+         make-error-message-accumulator)
 
 (require racket/file
          racket/function
@@ -79,6 +80,11 @@
   (and (bytes? b)
        (> (bytes-length b) 0)))
 
+(define (make-error-message-accumulator)
+  (define errors null)
+  (case-lambda [() (reverse errors)]
+               [(v msg) (unless v (set! errors (cons msg errors)))]))
+
 (define (validate-zcpkg-info info #:for-server? [for-server? #f])
   (define errors null)
   (define (proc->string p) (symbol->string (object-name p)))
@@ -142,3 +148,17 @@
           (ZCPKG_TRUST_BAD_SIGNATURE))
       (or (ZCPKG_TRUST_BAD_DIGEST)
           (ZCPKG_TRUST_UNSIGNED))))
+
+(module+ test
+  (require rackunit)
+
+  (test-case "Accumulate error messages to report later"
+    (define e (make-error-message-accumulator))
+    (check-pred procedure? e)
+    (check-equal? (e) null)
+    (check-pred void? (e #t "something"))
+    (check-equal? (e) null)
+    (check-pred void? (e #f "something"))
+    (check-pred void? (e #f "or"))
+    (check-pred void? (e #f "other"))
+    (check-equal? (e) '("something" "or" "other"))))
