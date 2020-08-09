@@ -11,11 +11,12 @@
          racket/path
          racket/function
          racket/sandbox
-         "workspace.rkt"
          "config.rkt"
-         "zcpkg-query.rkt"
+         "file.rkt"
          "url.rkt"
+         "workspace.rkt"
          "zcpkg-info.rkt"
+         "zcpkg-query.rkt"
          "zcpkg-settings.rkt")
 
 
