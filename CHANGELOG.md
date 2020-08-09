@@ -20,6 +20,7 @@ This project follows [these versioning rules](https://sagegerard.com/edition-rev
 - Detect reserved file names
 - Download provider's public key along with package to verify signatures
 
+
 ## [draft:alpha] - 2020-08-02
 
 - Define a namespace-specific string format for packages
