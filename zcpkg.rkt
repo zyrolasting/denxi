@@ -10,5 +10,4 @@
 (define launchers
   '(#hash((name . "zcpkg")
           (gracket? . #f)
-          (collects . #f)
           (args . ()))))
