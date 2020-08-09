@@ -4,7 +4,8 @@
 ; present on the system.
 
 (provide enter-setup-module
-         load-in-setup-module)
+         load-in-setup-module
+         make-collects-expression)
 
 (require racket/exn
          racket/format
@@ -19,6 +20,14 @@
          "zcpkg-query.rkt"
          "zcpkg-settings.rkt")
 
+; Generate a Racket expression that would tell the module resolver to
+; look for particular packages when given specific collection names.
+(define (make-collects-expression collects)
+  `(let ([old (current-library-collection-links)])
+     (current-library-collection-links
+      (cons ,(for/hash ([(sym query) (in-hash collects)])
+               (values sym (list (path->string (zcpkg-info->install-path (find-latest-info query))))))
+            old))))
 
 (define (enter-setup-module info)
   (call-in-setup-module info read-eval-print-loop))
