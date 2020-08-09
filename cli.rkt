@@ -357,7 +357,9 @@ EOF
    (λ (flags package-path-string . revision-names)
      (define info
        (with-handlers ([exn:fail:filesystem?
-                        (λ (e) (halt 1 ($package-directory-has-unreadable-info package-path-string)))])
+                        (λ (e)
+                          (write-output ($package-directory-has-unreadable-info package-path-string))
+                          (halt 1))])
          (read-zcpkg-info-from-directory package-path-string)))
 
      (define (assert-valid-info name info)
