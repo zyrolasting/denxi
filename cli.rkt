@@ -125,14 +125,12 @@ EOF
       (λ ()
         (controller ($start (workspace-directory)
                             (dump-zcpkg-settings)))
-
-        (define subprogram-output
-          (controller
-           (for/list ([(url-or-path infos) (in-hash sow)])
-             ($install-package infos url-or-path))))
-
-        (for ([o (in-list subprogram-output)])
-          (write-output o)))
+        (controller
+         (for/list ([(url-or-path infos) (in-hash sow)])
+           ($install-package (car infos) (cdr infos) url-or-path)))
+        (controller
+         (for/list ([infos (in-hash-values sow)])
+           ($setup-package (car infos) (cdr infos) null))))
       (λ ()
         (halt (controller #f)))))
 
@@ -299,14 +297,16 @@ EOF
 
 (define (setup-command args)
   (define (do-work info exprs)
+    (define sow (find-scope-of-work info))
     (define controller (zcpkg-start-team!))
     (dynamic-wind
       void
       (λ ()
         (controller ($start (workspace-directory)
                             (dump-zcpkg-settings)))
-        (for ([o (in-list (controller (list ($setup-package info exprs))))])
-          (write-output o)))
+        (controller
+         (for/list ([infos (in-hash-values sow)])
+           ($setup-package (car infos) (cdr infos) null))))
       (λ () (halt (controller #f)))))
 
   (run-command-line

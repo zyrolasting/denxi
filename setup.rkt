@@ -5,18 +5,23 @@
 
 (provide enter-setup-module
          load-in-setup-module
-         make-collects-expression)
+         create-launcher)
 
 (require racket/exn
          racket/format
          racket/path
          racket/function
          racket/sandbox
+         launcher/launcher
          "config.rkt"
+         "contract.rkt"
          "file.rkt"
+         "string.rkt"
          "url.rkt"
+         "verify.rkt"
          "workspace.rkt"
          "zcpkg-info.rkt"
+         "zcpkg-messages.rkt"
          "zcpkg-query.rkt"
          "zcpkg-settings.rkt")
 
@@ -28,6 +33,45 @@
       (cons ,(for/hash ([(sym query) (in-hash collects)])
                (values sym (list (path->string (zcpkg-info->install-path (find-latest-info query))))))
             old))))
+
+(define (create-launcher info install-path
+                         #:args args
+                         #:name name
+                         #:collects collects
+                         #:aux-path aux-path
+                         #:gracket? gracket?)
+  (call/cc
+   (λ (return)
+     (define accum (make-error-message-accumulator))
+     (accum ((listof string?) args) "'args' is not a list of strings")
+     (accum (name-string? name) "'name' is not a valid file name")
+     (accum ((and/c path-string? (not/c complete-path?)) aux-path)
+            "'aux-path' is not a relative path")
+
+     (if (hash? collects)
+         (for ([(maybe-sym maybe-query) (in-hash collects)])
+           (accum (symbol? maybe-sym)
+                  (format "~s is not a valid collection name in 'collects'."
+                          maybe-sym))
+           (accum (zcpkg-query-string? maybe-query)
+                  (format "~s is not a valid package query in 'collects'."
+                          maybe-query)))
+         (accum #f "'collects' is not a hash table"))
+
+     (define errors (accum))
+     (unless (null? errors)
+       (return ($invalid-launcher-spec info name errors)))
+
+     (define args-with-collections
+       (append `("-e" ,(make-collects-expression collects))
+               args))
+
+     (define ctor (if gracket? make-gracket-launcher make-racket-launcher))
+     (define dest (build-workspace-path (ZCPKG_LAUNCHER_RELATIVE_PATH) name))
+     (make-directory* (path-only dest))
+     (ctor args-with-collections dest null #;(build-aux-from-path (build-path install-path aux-path)))
+     (return ($after-write dest)))))
+
 
 (define (enter-setup-module info)
   (call-in-setup-module info read-eval-print-loop))
