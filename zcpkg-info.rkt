@@ -109,6 +109,12 @@
               (lookup 'home-page (or/c #f url-string?) #f)
               (lookup 'launchers (listof hash?) null)))
 
+(define (add-launcher-spec-defaults spec)
+  (hasheq 'args (hash-ref spec 'args null)
+          'gracket? (hash-ref spec 'gracket? #f)
+          'name (hash-ref spec 'name #f)
+          'collects (hash-ref spec 'collects (hasheq))
+          'aux-path (hash-ref spec 'aux-path CONVENTIONAL_LAUNCHER_AUX_DIRECTORY_NAME)))
 
 (define (read-zcpkg-info-from-directory dir)
   (read-zcpkg-info (build-path dir CONVENTIONAL_PACKAGE_INFO_FILE_NAME)))
@@ -198,6 +204,19 @@
   (test-equal? "Cap negative abbreviation"
                (zcpkg-info->relative-path dummy-zcpkg-info #:abbrev -12)
                (zcpkg-info->relative-path dummy-zcpkg-info #:abbrev 0))
+
+  (test-equal? "Add default values to launcher spec"
+               (add-launcher-spec-defaults (hash))
+               (hasheq 'args null
+                       'gracket? #f
+                       'name #f
+                       'collects (hasheq)
+                       'aux-path CONVENTIONAL_LAUNCHER_AUX_DIRECTORY_NAME))
+
+  (let ([spec (hasheq 'args 1 'gracket? 2 'name 3 'collects 4 'aux-path 5)])
+    (test-equal? "Override each default value of launcher spec"
+                 (add-launcher-spec-defaults spec)
+                 spec))
 
   (test-case "zcpkg-info I/O"
     (define-values (i o) (make-pipe))
