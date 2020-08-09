@@ -24,9 +24,8 @@
 
 
 (define (capture-config)
-  (for/hash ([(k v) (in-hash ((load-zcpkg-settings!) 'dump))])
+  (for/hash ([(k v) (in-hash (dump-zcpkg-settings))])
     (values k (~s v))))
-
 
 (define (capture-packages)
   (with-handlers ([exn:fail:filesystem?

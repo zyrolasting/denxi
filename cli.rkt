@@ -123,7 +123,7 @@ EOF
       void
       (λ ()
         (controller ($start (workspace-directory)
-                            ((current-zcpkg-config) 'dump)))
+                            (dump-zcpkg-settings)))
 
         (controller
          (for/list ([(url-or-path infos) (in-hash sow)])
@@ -259,7 +259,7 @@ EOF
       void
       (λ ()
         (controller ($start (workspace-directory)
-                            ((current-zcpkg-config) 'dump)))
+                            (dump-zcpkg-settings)))
         (controller (list ($setup-package info exprs))))
       (λ () (halt (controller #f)))))
 
@@ -284,8 +284,6 @@ EOF
       (write-output ($config-command-nonexistant-setting str))
       (halt 1)))
 
-  (define controller (current-zcpkg-config))
-
   (run-command-line
    #:program "config"
    #:args args
@@ -299,8 +297,7 @@ EOF
                           #:arg-help-strings '("key")
                           (λ (flags key)
                             (pretty-write #:newline? #t
-                                          (controller
-                                           'get-value
+                                          (get-zcpkg-setting-value
                                            (string->symbol key)
                                            (make-fail-thunk key)))
                             (halt 0)))]
@@ -310,7 +307,7 @@ EOF
                           #:arg-help-strings '()
                           (λ (flags)
                             (pretty-write #:newline? #t
-                                          (controller 'dump))
+                                          (dump-zcpkg-settings))
                             (halt 0)))]
 
        ["set"
@@ -320,7 +317,7 @@ EOF
                           (λ (flags key value)
                             (define sym (string->symbol key))
                             (define picked-setting
-                              (controller 'get-setting sym (make-fail-thunk key)))
+                              (get-zcpkg-setting sym (make-fail-thunk key)))
 
                             (define to-write
                               (with-handlers ([exn:fail?
@@ -329,8 +326,8 @@ EOF
                                 (picked-setting (read (open-input-string value)))
                                 (picked-setting)))
 
-                            (controller 'save!)
-                            (write-output ($after-write (controller 'get-path)))
+                            (save-zcpkg-settings!)
+                            (write-output ($after-write (get-zcpkg-settings-path)))
                             (halt 0)))]
 
        [_ (write-output ($unrecognized-command action))
@@ -763,7 +760,7 @@ EOF
       (run-entry-point #("config" "dump")
                        (λ (exit-code stdout stderr output)
                          (check-eq? exit-code 0)
-                         (check-equal? ((current-zcpkg-config) 'dump)
+                         (check-equal? (dump-zcpkg-settings)
                                        (read stdout)))))
 
     (test-workspace "Return a (read)able config value"
@@ -772,7 +769,7 @@ EOF
       (run-entry-point (vector "config" "get" config-key/str)
                        (λ (exit-code stdout stderr output)
                          (check-eq? exit-code 0)
-                         (check-equal? ((current-zcpkg-config) 'get-value config-key)
+                         (check-equal? (get-zcpkg-setting-value config-key)
                                        (read stdout)))))
 
     (test-workspace "Save a (write)able config value"

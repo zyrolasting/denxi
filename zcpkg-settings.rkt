@@ -10,8 +10,6 @@
          "url.rkt"
          "workspace.rkt")
 
-(define current-zcpkg-config (make-parameter #f))
-
 (define (get-zcpkg-settings-path)
   (build-workspace-path "etc/zcpkg.rkt"))
 
@@ -22,35 +20,33 @@
         (load-config path)
         (make-config-closure (hasheq) null)))
 
+  ; setting.rkt has its own protocol for protecting values. This
+  ; procedure disables checks for the config closure that are
+  ; redundant in this context.
   (current-setting-value-lookup
-   (λ (k) (lookup k any/c (void))))
+   (λ (k) (if (eq? k READ_ORDER)
+              (lookup READ_ORDER)
+              (lookup k any/c (void))))))
 
-  (define (controller . args)
-    (match args
-      [(list 'get-path)
-       path]
+(define (get-zcpkg-setting . args)
+  (apply hash-ref ZCPKG_SETTINGS args))
 
-      [(list 'get-setting r ...)
-       (apply hash-ref ZCPKG_SETTINGS r)]
+(define (get-zcpkg-setting-value . args)
+  ((apply get-zcpkg-setting args)))
 
-      [(list 'get-value r ...)
-       ((apply controller 'get-setting r))]
+(define (change-zcpkg-setting! k v)
+  ((get-zcpkg-setting k) v))
 
-      [(list 'set k v)
-       ((controller 'get-setting k) v)]
+(define (dump-zcpkg-settings)
+  (for/hash ([(k v) (in-hash ZCPKG_SETTINGS)])
+    (values k (v))))
 
-      [(list 'dump)
-       (for/hash ([(k v) (in-hash ZCPKG_SETTINGS)])
-         (values k (v)))]
+(define (save-zcpkg-settings!)
+  (save-config!
+   (make-config-closure (dump-zcpkg-settings)
+                        ((current-setting-value-lookup) READ_ORDER))
+   (get-zcpkg-settings-path)))
 
-      [(list 'save!)
-       (save-config!
-        (make-config-closure (controller 'dump)
-                             (lookup READ_ORDER))
-        path)]))
-
-  (current-zcpkg-config controller)
-  controller)
 
 (define (configure-zcpkg! h)
   (for/hash ([(k v) (in-hash ZCPKG_SETTINGS)])
