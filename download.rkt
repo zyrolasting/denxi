@@ -89,7 +89,8 @@
 
 
 (define (download-file u [cached-path (url->cache-path u)])
-  (if (file-exists? cached-path)
+  (if (and (not (ZCPKG_IGNORE_DOWNLOAD_CACHE))
+           (file-exists? cached-path))
       cached-path
       (begin
         (make-directory* (path-only cached-path))
