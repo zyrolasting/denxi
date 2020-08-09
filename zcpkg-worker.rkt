@@ -98,8 +98,9 @@
 
           (define ctor (if gracket? make-gracket-launcher make-racket-launcher))
           (define dest (build-workspace-path (ZCPKG_LAUNCHER_RELATIVE_PATH) name))
+          (make-directory* (path-only dest))
           (ctor args dest null #;(build-aux-from-path (build-path install-path aux-path)))
-          ($after-write dest)))))
+          (return ($after-write dest))))))
 
     (define/public (setup-package info exprs
                                   #:install-path
@@ -110,7 +111,7 @@
       (make-zcpkg-revision-links info)
       (compile-racket-modules install-path)
 
-      #;(for ([spec (in-list (zcpkg-info-launchers info))])
+      (for ([spec (in-list (zcpkg-info-launchers info))])
         (create-launcher info install-path
                          #:args (hash-ref spec 'args null)
                          #:gracket? (hash-ref spec 'gracket? #f)
