@@ -36,13 +36,13 @@
     (for/list ([info (in-installed-info)])
       (zcpkg-query->string (zcpkg-info->zcpkg-query info)))))
 
-
 (define (capture-files patterns)
   (parameterize ([current-directory (workspace-directory)])
     (for/fold ([wip (hash)])
               ([path (in-workspace)])
       (define key (path->string (find-relative-path (current-directory) path)))
-      (if (and (file-exists? key)
+      (if (and (not (link-exists? key))
+               (file-exists? key)
                (not (hash-has-key? wip key))
                (ormap (λ (patt) (regexp-match? patt key)) patterns))
           (hash-set wip key (make-digest* key))
