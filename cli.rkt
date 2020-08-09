@@ -126,9 +126,13 @@ EOF
         (controller ($start (workspace-directory)
                             (dump-zcpkg-settings)))
 
-        (controller
-         (for/list ([(url-or-path infos) (in-hash sow)])
-           ($install-package infos url-or-path))))
+        (define subprogram-output
+          (controller
+           (for/list ([(url-or-path infos) (in-hash sow)])
+             ($install-package infos url-or-path))))
+
+        (for ([o (in-list subprogram-output)])
+          (write-output o)))
       (λ ()
         (halt (controller #f)))))
 
@@ -301,7 +305,8 @@ EOF
       (λ ()
         (controller ($start (workspace-directory)
                             (dump-zcpkg-settings)))
-        (controller (list ($setup-package info exprs))))
+        (for ([o (in-list (controller (list ($setup-package info exprs))))])
+          (write-output o)))
       (λ () (halt (controller #f)))))
 
   (run-command-line
