@@ -3,6 +3,7 @@
 (provide (all-defined-out))
 
 (require racket/match
+         (only-in racket/tcp listen-port-number?)
          "config.rkt"
          "contract.rkt"
          "setting.rkt"
@@ -206,6 +207,12 @@
    ("Show more information in program output")
    boolean?
    #f}
+
+  {ZCPKG_PORT
+   "-p"
+   ("Set listen port" "port-number")
+   listen-port-number?
+   8080}
 
   {ZCPKG_PRIVATE_KEY_PATH
    "-q"

@@ -66,8 +66,8 @@
                 (current-seconds)))
   (next-dispatcher))
 
-(define (start-server)
-  (serve #:port 8080
+(define (start-server #:port port)
+  (serve #:port port
          #:dispatch
          (seq:make
           (lift:make log-request)
