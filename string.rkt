@@ -14,6 +14,9 @@
                  (string-join opts "|")
                  ")"))
 
+(define racket-extensions-pattern-string
+  "\\.(rkt|scrbl|ss|dep|zo)$")
+
 (define unix-reserved-character-pattern-string
   "[//\x0]")
 
