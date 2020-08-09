@@ -5,7 +5,8 @@
          workspace-directory
          CONVENTIONAL_WORKSPACE_NAME
          CONVENTIONAL_DEPENDENCY_DIRECTORY_NAME
-         CONVENTIONAL_PACKAGE_INFO_FILE_NAME)
+         CONVENTIONAL_PACKAGE_INFO_FILE_NAME
+         CONVENTIONAL_LAUNCHER_AUX_DIRECTORY_NAME)
 
 (require racket/contract
          racket/path)
@@ -13,6 +14,7 @@
 (define CONVENTIONAL_WORKSPACE_NAME "zcpkg-workspace")
 (define CONVENTIONAL_DEPENDENCY_DIRECTORY_NAME "zcpkg-deps")
 (define CONVENTIONAL_PACKAGE_INFO_FILE_NAME "zcpkg.rkt")
+(define CONVENTIONAL_LAUNCHER_AUX_DIRECTORY_NAME "launcher-aux")
 
 (define (find-workspace-directory [current-dir (current-directory)])
   (define complete-current-dir (simplify-path (path->complete-path current-dir)))
