@@ -508,6 +508,7 @@ EOF
                      (provider . ,(gethostname))
                      (setup-module . "setup.rkt")
                      (dependencies . ())
+                     (launchers . ())
                      (racket-versions . (("6.0" . ,(version))))))
 
                  (write-config
