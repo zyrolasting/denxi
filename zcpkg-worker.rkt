@@ -8,9 +8,11 @@
          racket/place
          racket/sequence
          compiler/cm
+         launcher/launcher
          "actor.rkt"
          "archiving.rkt"
          "config.rkt"
+         "contract.rkt"
          "download.rkt"
          "file.rkt"
          "format.rkt"
@@ -74,6 +76,53 @@
         (with-handlers ([exn? (λ (e) (send-output ($on-compilation-error (exn->string e))))])
           (managed-compile-zo module-path))))
 
+    (define/public (create-launcher info
+                                    install-path
+                                    #:args args
+                                    #:name name
+                                    #:collects collects
+                                    #:aux-path aux-path
+                                    #:gracket? gracket?)
+      (send-output
+       (call/cc
+        (λ (return)
+          (define accum (make-error-message-accumulator))
+          (accum ((listof string?) args) "'args' is not a list of strings")
+          (accum (name-string? name) "'name' is not a valid file name")
+          (accum ((and/c path-string? (not/c complete-path?)) aux-path)
+                 "'aux-path' is not a relative path")
+
+          (define errors (accum))
+          (unless (null? errors)
+            (return ($invalid-launcher-spec info name errors)))
+
+          (define ctor (if gracket? make-gracket-launcher make-racket-launcher))
+          (define dest (build-workspace-path (ZCPKG_LAUNCHER_RELATIVE_PATH) name))
+          (ctor args dest null #;(build-aux-from-path (build-path install-path aux-path)))
+          ($after-write dest)))))
+
+    (define/public (setup-package info exprs
+                                  #:install-path
+                                  [install-path (zcpkg-info->install-path info)]
+                                  #:dependency-infos
+                                  [dependency-infos (map find-info (zcpkg-info-dependencies info))])
+      (make-zcpkg-dependency-links #:search? #f dependency-infos install-path)
+      (make-zcpkg-revision-links info)
+      (compile-racket-modules install-path)
+
+      #;(for ([spec (in-list (zcpkg-info-launchers info))])
+        (create-launcher info install-path
+                         #:args (hash-ref spec 'args null)
+                         #:gracket? (hash-ref spec 'gracket? #f)
+                         #:name (hash-ref spec 'name #f)
+                         #:collects (hash-ref spec 'collects (hasheq))
+                         #:aux-path (hash-ref spec 'aux-path "launcher-aux")))
+
+      (for ([output (load-in-setup-module info (in-list exprs))])
+        (send-output ($setup-module-output
+                      (zcpkg-query->string (zcpkg-info->zcpkg-query info))
+                      (~s output)))))
+
 
     (define/public (install-local-package info dependency-infos package-path)
       (define install-path (zcpkg-info->install-path info))
@@ -84,10 +133,10 @@
             (make-file-or-directory-link package-path install-path)
             (copy-directory/files package-path install-path)))
 
-      (make-zcpkg-dependency-links #:search? #f dependency-infos install-path)
-      (make-zcpkg-revision-links info)
+      (setup-package info null
+                     #:install-path install-path
+                     #:dependency-infos dependency-infos)
 
-      (compile-racket-modules install-path)
       (send-output ($on-package-installed info)))
 
 
@@ -114,13 +163,7 @@
         (install-local-package info dependency-infos install-path)))
 
     (define/public (handle-$setup-package info exprs)
-      (define install-path (zcpkg-info->install-path info))
-      (compile-racket-modules install-path)
-      (for ([output (load-in-setup-module info (in-list exprs))])
-        (send-output ($setup-module-output
-                      (zcpkg-query->string (zcpkg-info->zcpkg-query info))
-                      (~s output)))))
-
+      (setup-package info exprs))
 
     (define/public (handle-$install-package infos url-or-path)
       (define target (car infos))
