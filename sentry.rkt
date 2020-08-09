@@ -24,13 +24,15 @@
            [output null])
 
     (define/public (stop!)
+      (define completion-value #f)
       (when pch
         (to-place! ($stop))
         (when (place? pch) ; Place channels are not necessarily places.
           (or (sync/timeout 0.5 (place-dead-evt pch))
-              (place-kill pch)))
+              (place-kill pch))
+          (set! completion-value (place-wait pch)))
         (set! pch #f))
-      this)
+      completion-value)
 
     (define/public (wait)
       (unless (balanced?)

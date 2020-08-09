@@ -34,6 +34,7 @@
 
     (field [output null]
            [cust (make-custodian)]
+           [completion-value 0]
            [workers
             (parameterize ([current-custodian cust])
               (for/list ([id (in-range worker-count)])
@@ -43,9 +44,13 @@
 
     (define/public-final (stop!)
       (for ([w (in-list workers)])
-        (send w stop!))
+        (define subcompletion-value (send w stop!))
+        (when (and subcompletion-value
+                   (not (eq? subcompletion-value 0)))
+          (set! completion-value 1)))
       (custodian-shutdown-all cust)
-      (set! workers null))
+      (set! workers null)
+      completion-value)
 
     (define/public (broadcast! v)
       (for ([w (in-list workers)])
