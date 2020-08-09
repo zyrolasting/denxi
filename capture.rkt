@@ -2,7 +2,8 @@
 
 (provide compare-path
          write-capture
-         capture-workspace)
+         capture-workspace
+         diff-workspace)
 
 (require racket/format
          racket/match
@@ -16,12 +17,26 @@
          "file.rkt"
          "message.rkt"
          "setting.rkt"
+         "string.rkt"
          "verify.rkt"
          "workspace.rkt"
          "zcpkg-info.rkt"
          "zcpkg-settings.rkt"
          "zcpkg-messages.rkt")
 
+(define (diff-workspace lookup)
+  (define ours (hash-ref (capture-workspace (lookup 'patterns)) 'digests))
+  (define theirs (lookup 'digests))
+  (define all-paths (apply set (append (hash-keys ours) (hash-keys theirs))))
+  (for/list ([path (in-set all-paths)])
+    (compare-path path ours theirs)))
+
+(define (capture-workspace patterns)
+  (define usable-patterns (normalize-patterns patterns))
+  (hash 'config (capture-config)
+        'packages `,(capture-packages)
+        'digests (capture-files usable-patterns)
+        'patterns usable-patterns))
 
 (define (capture-config)
   (for/hash ([(k v) (in-hash (dump-zcpkg-settings))])
@@ -49,12 +64,7 @@
           wip))))
 
 (define (write-capture cap [o (current-output-port)])
-  (write-config cap '(config packages digests) o))
-
-(define (capture-workspace patterns)
-  (hash 'config (capture-config)
-        'packages `,(capture-packages)
-        'digests (capture-files patterns)))
+  (write-config cap '(patterns config packages digests) o))
 
 (define (compare-path path ours theirs)
   (define we-have-it   (hash-has-key? ours path))
@@ -76,6 +86,12 @@
     (raise exit-code))
   digest)
 
+(define (normalize-patterns patts)
+  (map (λ (variant)
+         (if (pregexp? variant)
+             variant
+             (pregexp variant)))
+       patts))
 
 (module+ test
   (require racket/list

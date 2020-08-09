@@ -14,8 +14,9 @@
                  (string-join opts "|")
                  ")"))
 
-(define racket-extensions-pattern-string
-  "\\.(rkt|scrbl|ss|dep|zo)$")
+(define (make-extension-pattern-string . exts)
+  (format "\\.(~a)$"
+          (string-join exts "|")))
 
 (define unix-reserved-character-pattern-string
   "[//\x0]")

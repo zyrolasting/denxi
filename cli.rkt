@@ -161,33 +161,65 @@ EOF
          (do-work sow)
          (review-work package-sources sow)))))
 
+
 (define (capture-command args)
   (run-command-line
    #:program "capture"
+   #:flags
+   (settings->flag-specs
+    ZCPKG_MATCH_RACKET_MODULES
+    ZCPKG_MATCH_COMPILED_RACKET)
    #:args args
    #:arg-help-strings '("pregexp-strings")
    (λ (flags . file-patterns)
-     (write-output ($on-workspace-capture (capture-workspace (pattern-map file-patterns))))
+     (define consider-modules
+       (if (ZCPKG_MATCH_RACKET_MODULES)
+           (cons (make-extension-pattern-string "rkt" "ss" "scrbl" "rktd")
+                 file-patterns)
+           file-patterns))
+
+     (define consider-compiled
+       (if (ZCPKG_MATCH_COMPILED_RACKET)
+           (cons (make-extension-pattern-string "dep" "zo")
+                 consider-modules)
+           consider-modules))
+
+     (write-output ($on-workspace-capture (capture-workspace consider-compiled)))
      (halt 0))))
 
 
 (define (restore-command args)
-  (define (run-commands cmds)
-    (for ([cmd (in-list cmds)])
-      (entry-point #:reload-config? #f cmd)))
+  (define (do-work capture-file delete-commands configure-commands install-commands)
+    (for ([cmd (in-list delete-commands)])
+      (define target ($restore-delete-file-path cmd))
+      (when (file-exists? target)
+        (delete-file target))
+      (when (directory-exists? target)
+        (delete-directory/files target)))
 
-  (define (do-work capture-file configure-commands install-commands)
-    (run-commands configure-commands)
     (reset-zcpkg-setting-overrides!)
-    (load-zcpkg-settings!)
-    (run-commands install-commands)
-    (run-commands (list (vector "diff" capture-file))))
+    (for ([cmd (in-list configure-commands)])
+      (change-zcpkg-setting! ($restore-config-name cmd)
+                             ($restore-config-value cmd)))
 
-  (define (show-work capture-file configure-commands install-commands)
+    (save-zcpkg-settings!)
+    (write-output ($after-write (get-zcpkg-settings-path)))
+
+    (entry-point (list->vector
+                  `("install"
+                    ,(setting->short-flag ZCPKG_CONSENT)
+                    . ,(map $restore-package-query install-commands)))))
+
+  (define (show-work capture-file delete-commands configure-commands install-commands)
     (write-output
      ($review-restoration-work capture-file
-                               configure-commands
-                               install-commands))
+                               (workspace-directory)))
+
+    (sequence-for-each write-output
+                       (sequence-append (in-list delete-commands)
+                                        (in-list configure-commands)
+                                        (in-list install-commands)))
+
     (halt 0))
 
   (run-command-line
@@ -198,40 +230,48 @@ EOF
    #:arg-help-strings '("capture-file")
    (λ (flags capture-file)
      (define lookup (load-config (string->path capture-file)))
+     (define diff (diff-workspace lookup))
      (define config (lookup 'config))
      (define packages (lookup 'packages))
 
      (define config-commands
        (for/list ([(k v) (in-hash config)])
-         (vector "config" "set" (~a k) v)))
+         ($restore-config k v)))
 
      (define install-commands
-       (for/list ([pkg (in-list packages)])
-         (vector "install" (setting->short-flag ZCPKG_CONSENT) pkg)))
+       (for/list ([query (in-list packages)])
+         ($restore-package query)))
 
-     (if (ZCPKG_CONSENT)
-         (do-work capture-file config-commands install-commands)
-         (show-work capture-file config-commands install-commands)))))
+     (define delete-commands
+       (for/fold ([l null])
+                 ([m (in-list packages)])
+         (define path
+           (cond [($diff-different-file? m)
+                  ($diff-different-file-path m)]
+                 [($diff-extra-file? m)
+                  ($diff-extra-file-path m)]
+                 [else #f]))
+         (if path
+             (cons ($restore-delete-file path) l)
+             l)))
+
+     ((if (ZCPKG_CONSENT) do-work show-work)
+      capture-file
+      delete-commands
+      config-commands
+      install-commands))))
+
 
 (define (diff-command args)
   (run-command-line
    #:program "diff"
    #:args args
-   #:arg-help-strings '("capture-module" "file-patterns")
-   (λ (flags capture-path . file-patterns)
-     (define lookup (load-config (string->path capture-path)))
-     (define ours (hash-ref (capture-workspace (pattern-map file-patterns)) 'digests))
-     (define theirs (lookup 'digests))
-     (define all-paths (apply set (append (hash-keys ours) (hash-keys theirs))))
-     (for ([path (in-set all-paths)])
-       (write-output (compare-path path ours theirs)))
+   #:arg-help-strings '("capture-file-path")
+   (λ (flags capture-file)
+     (define lookup (load-config (string->path capture-file)))
+     (for ([m (in-list (diff-workspace lookup))])
+       (write-output m))
      (halt 0))))
-
-(define (pattern-map patts)
-  (map pregexp
-       (if (null? patts)
-           '("\\.(rkt|scrbl|ss|dep|zo)$")
-           patts)))
 
 
 (define (link-command args)
@@ -699,12 +739,14 @@ EOF
                    ; Be sure the user gets more context if the help-suffix
                    ; holds a list of possible commands.
                    (λ (e)
-                     (if (and (regexp-match? #px"given 0 arguments" (exn-message e))
-                              suffix-is-index?
-                              (not help-requested?))
-                         (begin (printf "~a~n~a" (exn-message e) help-suffix)
-                                (halt 1))
-                         (raise e)))])
+                     (printf "~a~n~a"
+                             (exn-message e)
+                             (if (and (regexp-match? #px"given 0 arguments" (exn-message e))
+                                      suffix-is-index?
+                                      (not help-requested?))
+                                 help-suffix
+                                 ""))
+                     (halt 1))])
     (parse-command-line program argv
                         (if (null? flags)
                             null
@@ -919,7 +961,7 @@ EOF
     (run-entry-point #("restore" "cap.rkt") #:reload-config? #f
                      (λ (exit-code stdout stderr output)
                        (check-equal? (port->bytes stderr) #"")
-                       (check-eqv? (length output) 1)
+                       (check-true (> (length output) 1))
                        (define review (car output))
 
                        (test-pred "Emit $review-restoration-work in output"
@@ -929,16 +971,16 @@ EOF
                                     ($review-restoration-work-capture-file-path review)
                                     "cap.rkt")
 
-                       (for ([sym (in-hash-keys ZCPKG_SETTINGS)])
-                         (test-true (format "Include ~a setting in scope for restoration" sym)
-                                    (and (ormap (λ (v) (vector-member (~a sym) v))
-                                                ($review-restoration-work-configure-commands review))
-                                         (regexp-match? (pregexp (format "config set ~a" sym))
-                                                        stdout))))
-                       (test-equal? "Include installed package in scope for restoration"
-                                    ($review-restoration-work-install-commands review)
-                                    `(#("install"
-                                        ,(setting->short-flag ZCPKG_CONSENT)
-                                        ,(zcpkg-query->string
-                                          (coerce-zcpkg-query
-                                           (read-zcpkg-info-from-directory "foo"))))))))))
+                       (test-equal? "Plan to restore complete configuration"
+                                    (apply set (hash-keys ZCPKG_SETTINGS))
+                                    (apply set (map $restore-config-name (filter $restore-config? output))))
+
+                       (test-case "Plan to restore captured packages"
+                         (define package-work (filter $restore-package? output))
+                         (check-eqv? (length package-work) 1)
+                         (check-equal?
+                          (car package-work)
+                          ($restore-package
+                           (zcpkg-query->string
+                            (coerce-zcpkg-query
+                             (read-zcpkg-info-from-directory "foo"))))))))))

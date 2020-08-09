@@ -187,33 +187,16 @@
                  (format-zcpkg-info ($chver-command-updated-info-new-info m)))]
 
         [($review-restoration-work? m)
-         (string-join
-          (append
-           (list
-            "# These commands install packages under a specific configuration."
-            "# The configuration controls whether zcpkg trusts unsigned"
-            "# packages or bad digests, so please review this carefully."
-            "#"
-            "# You can adapt this output to a script on your operating system, or you can"
-            (format "# run the restore command again with ~a to execute these instructions."
-                    (setting->short-flag ZCPKG_CONSENT))
+         (join-lines
+          `("Please review this planned restoration work carefully."
+            "It involves reconfiguring the package manager, which"
+            "has security implications. Pay special attention to sandbox permissions!"
             ""
-            "")
-           (map (λ (cmd)
-                  (string-join
-                   (list "zcpkg" "config" "set"
-                         (vector-ref cmd 2)
-                         (~s (vector-ref cmd 3)))
-                   " "))
-                ($review-restoration-work-configure-commands m))
-           (map (λ (cmd)
-                  (string-join
-                   (list "zcpkg" "install" (setting->short-flag ZCPKG_CONSENT)
-                         (~s (vector-ref cmd 2)))
-                   " "))
-                ($review-restoration-work-install-commands m))
-           (list (~a "zcpkg diff" (~s ($review-restoration-work-capture-file-path m)))))
-          "\n")]
+            ,(format "Using capture file: ~a" ($review-restoration-work-capture-file-path m))
+            ,(format "Affecting workspace: ~a" ($review-restoration-work-workspace-path m))
+            ""
+            ,(format "Run the restore command again with ~a to carry out the below instructions."
+                     (setting->short-flag ZCPKG_CONSENT))))]
 
         [($diff-extra-file? m)
          (format "+ ~a" ($diff-extra-file-path m))]
@@ -264,6 +247,19 @@
          (define buf (open-output-string))
          (write-capture ($on-workspace-capture-datum m) buf)
          (get-output-string buf)]
+
+        [($restore-config? m)
+         (format "Set ~a to ~s"
+                 ($restore-config-name m)
+                 ($restore-config-value m))]
+
+        [($restore-delete-file? m)
+         (format "Delete ~a"
+                 ($restore-delete-file-path m))]
+
+        [($restore-package? m)
+         (format "Install ~s (unless it exists)"
+                 ($restore-package-query m))]
 
         [($invalid-launcher-spec? m)
          (format "~s has invalid launcher definition for ~s:~n~a"
