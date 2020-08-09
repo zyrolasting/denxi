@@ -76,8 +76,11 @@
        (yield (build-install-path provider package edition revision))))))
 
 (define (in-installed-info)
-  (sequence-map read-zcpkg-info-from-directory
-                (in-installed-package-paths)))
+  (sequence-map
+   read-zcpkg-info-from-directory
+   (in-installed-package-paths
+    (λ (pr pk ed rv)
+      (regexp-match? #px"^\\d+$" rv)))))
 
 (define (in-abstract-dependency-declarations)
   (sequence-fold (λ (wip info)
