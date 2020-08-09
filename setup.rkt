@@ -49,13 +49,13 @@
   (define name (zcpkg-query->string (zcpkg-info->zcpkg-query info)))
   (define zcpkg-path (zcpkg-info->install-path info))
   (define setup-module-path (zcpkg-info-setup-module info))
-  (define path-to-verify (simplify-path (build-path zcpkg-path setup-module-path)))
   (and setup-module-path
-       (if (path-prefix? path-to-verify zcpkg-path)
-           path-to-verify
-           (error 'setup
-                  "~a's setup-module path reaches outside of install directory."
-                  name))))
+       (let ([path-to-verify (simplify-path (build-path zcpkg-path setup-module-path))])
+         (if (path-prefix? path-to-verify zcpkg-path)
+             path-to-verify
+             (error 'setup
+                    "~a's setup-module path reaches outside of install directory."
+                    name)))))
 
 
 (define (path-prefix? to-check prefix-pathy)
