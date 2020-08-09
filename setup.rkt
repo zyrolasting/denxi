@@ -24,11 +24,12 @@
 
 (define (load-in-setup-module info exprs)
   (call-in-setup-module info
-   (λ ()
-     (for/list ([expr exprs])
-       ((current-eval) expr)))))
+                        (λ ()
+                          (for/list ([expr exprs])
+                            ((current-eval) expr)))
+                        (λ () null)))
 
-(define (call-in-setup-module info proc)
+(define (call-in-setup-module info proc [fail-thunk void])
   (define setup-module-path (get-setup-module-path info))
   (if setup-module-path
       (parameterize ([sandbox-output (current-output-port)]
@@ -40,7 +41,7 @@
                      [sandbox-path-permissions (ZCPKG_SANDBOX_PATH_PERMISSIONS)])
         (parameterize ([current-eval (make-module-evaluator #:language 'racket/base setup-module-path)])
           (proc)))
-      (void)))
+      (fail-thunk)))
 
 
 
