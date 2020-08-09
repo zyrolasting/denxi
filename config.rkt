@@ -117,7 +117,7 @@
   (displayln "#lang info\n" o)
   (for ([k (in-list domain)])
     (define v (hash-ref bindings k))
-    (writeln `(define ,k ,(if (list? v) `',v v)) o)))
+    (pretty-write #:newline? #t `(define ,k ,(if (list? v) `',v v)) o)))
 
 
 ;; Config input cases
