@@ -39,6 +39,18 @@
                            (not (path-cycles? p))
                            (use-dir? p)))))
 
+(define (in-racket-modules start-path)
+  (sequence-filter (λ (p)
+                     (and (not (link-exists? p))
+                          (not (member (path->string (file-name-from-path p))
+                                       (list CONVENTIONAL_WORKSPACE_NAME
+                                             CONVENTIONAL_DEPENDENCY_DIRECTORY_NAME)))
+                          (file-exists? p)
+                          (member (path-get-extension p)
+                                  '(#".rkt" #".ss" #".scrbl"))))
+                   (in-acyclic-directory start-path)))
+
+
 (define (in-matching-files patterns start-dir)
   (in-generator
    (for ([path (in-directory start-dir (negate link-exists?))])
