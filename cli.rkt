@@ -155,6 +155,7 @@ EOF
     ZCPKG_SERVICE_ENDPOINTS
     ZCPKG_DOWNLOAD_MAX_REDIRECTS
     ZCPKG_INSTALL_RELATIVE_PATH
+    ZCPKG_LAUNCHER_RELATIVE_PATH
     ZCPKG_TRUST_BAD_DIGEST
     ZCPKG_TRUST_BAD_SIGNATURE
     ZCPKG_TRUST_UNSIGNED
@@ -275,6 +276,9 @@ EOF
   (run-command-line
    #:program "setup"
    #:args args
+   #:flags
+   (settings->flag-specs
+    ZCPKG_LAUNCHER_RELATIVE_PATH)
    #:arg-help-strings '("query" "expr")
    (λ (flags query . exprs)
      (define infos (search-zcpkg-infos query (in-installed-info)))

@@ -218,6 +218,13 @@
    (and/c path-string? (not/c complete-path?))
    "usr/lib/racket"}
 
+  ; Where to place launchers
+  {ZCPKG_LAUNCHER_RELATIVE_PATH
+   "-L"
+   ("Workspace-relative path for launchers" "relative-path-string")
+   (and/c path-string? (not/c complete-path?))
+   "bin"}
+
   ; A list of catalogs to try.
   {ZCPKG_SERVICE_ENDPOINTS
    "-E"
