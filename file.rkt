@@ -95,6 +95,12 @@
         (cons dep wip)
         wip)))
 
+(define (find-latest-info zcpkg-query-variant)
+  (define infos (search-zcpkg-infos zcpkg-query-variant (in-installed-info)))
+  (when (= (sequence-length infos) 0)
+    (error 'find-latest-info "~a is not installed" zcpkg-query-variant))
+  (sequence-ref infos 0))
+
 (define (find-exactly-one-info zcpkg-query-variant)
   (define infos (search-zcpkg-infos zcpkg-query-variant (in-installed-info)))
   (case (sequence-length infos)
