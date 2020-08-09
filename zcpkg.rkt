@@ -7,3 +7,8 @@
 (define revision-names '("begin-alpha"))
 (define setup-module #f)
 (define dependencies '())
+(define launchers
+  '(#hash((name . "zcpkg")
+          (gracket? . #f)
+          (collects . #f)
+          (args . ()))))
