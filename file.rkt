@@ -103,9 +103,15 @@
     [else
      (raise-user-error
       (format "~s is ambiguous. Which of these did you mean?~n~s"
-              (string-join (map (compose zcpkg-query->string coerce-zcpkg-query)
-                                infos)
-                           "\n")))])
+              (if (string? zcpkg-query-variant)
+                  zcpkg-query-variant
+                  (zcpkg-query->string zcpkg-query-variant))
+              (string-join
+               (sequence->list
+                (sequence-map
+                 (compose zcpkg-query->string coerce-zcpkg-query)
+                 infos))
+               "\n")))])
   (sequence-ref infos 0))
 
 
