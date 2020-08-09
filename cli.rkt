@@ -38,13 +38,12 @@
 
 
 (module+ main
-  (define-values (exit-code output) (entry-point))
-  (exit exit-code))
+  (exit (entry-point)))
 
 (define current-cli-continuation (make-parameter #f))
 
-(define (halt exit-code [output null])
-  ((current-cli-continuation) exit-code output))
+(define (halt exit-code)
+  ((current-cli-continuation) exit-code))
 
 ; Keep seperate for functional tests.
 (define (entry-point #:reload-config? [reload-config? #t] [args (current-command-line-arguments)])
@@ -52,27 +51,13 @@
     (reset-zcpkg-setting-overrides!)
     (load-zcpkg-settings!))
 
-  (define-values (maybe-exit-code output-variant)
-    (call-with-values
-     (λ ()
-       (call/cc
-        (λ (k)
-          (parameterize ([current-cli-continuation k])
-            (top-level-cli args)))))
-     (case-lambda [(e) (values e null)]
-                  [(e o) (values e o)])))
+  (define exit-code
+    (call/cc
+     (λ (k)
+       (parameterize ([current-cli-continuation k])
+         (top-level-cli args)))))
 
-  (define output
-    (cond [($message? output-variant)
-           (list output-variant)]
-          [(list? output-variant)
-           output-variant]
-          [else (raise output-variant)]))
-
-  (sequence-for-each write-output (in-list output))
-
-  (values (if (void? maybe-exit-code) 0 maybe-exit-code)
-          output))
+  (values exit-code (get-output #:reset? #t)))
 
 (define (top-level-cli args)
   (run-command-line
@@ -129,7 +114,8 @@ EOF
 
 (define (install-command args)
   (define (review-work package-sources sow)
-    (values 0 ($review-installation-work sow package-sources)))
+    (write-output ($review-installation-work sow package-sources))
+    (halt 0))
 
   (define (do-work sow)
     (define controller (zcpkg-start-team!))
@@ -139,12 +125,11 @@ EOF
         (controller ($start (workspace-directory)
                             ((current-zcpkg-config) 'dump)))
 
-        (define tasks
-          (for/list ([(url-or-path infos) (in-hash sow)])
-            ($install-package infos url-or-path)))
-
-        (values 0 (controller tasks)))
-      (λ () (controller #f))))
+        (controller
+         (for/list ([(url-or-path infos) (in-hash sow)])
+           ($install-package infos url-or-path))))
+      (λ ()
+        (halt (controller #f)))))
 
   (run-command-line
    #:program "install"
@@ -168,7 +153,8 @@ EOF
      (define sow (find-scope-of-work package-sources))
 
      (when (null? package-sources)
-       (halt 1 ($no-package-sources)))
+       (write-output ($no-package-sources))
+       (halt 1))
 
      (if (ZCPKG_CONSENT)
          (do-work sow)
@@ -180,7 +166,8 @@ EOF
    #:args args
    #:arg-help-strings '("pregexp-strings")
    (λ (flags . file-patterns)
-     (halt 0 ($on-workspace-capture (capture-workspace (pattern-map file-patterns)))))))
+     (write-output ($on-workspace-capture (capture-workspace (pattern-map file-patterns))))
+     (halt 0))))
 
 
 (define (restore-command args)
@@ -196,9 +183,11 @@ EOF
     (run-commands (list (vector "diff" capture-file))))
 
   (define (show-work capture-file configure-commands install-commands)
-    (halt 0 ($review-restoration-work capture-file
-                                      configure-commands
-                                      install-commands)))
+    (write-output
+     ($review-restoration-work capture-file
+                               configure-commands
+                               install-commands))
+    (halt 0))
 
   (run-command-line
    #:program "restore"
@@ -233,9 +222,9 @@ EOF
      (define ours (hash-ref (capture-workspace (pattern-map file-patterns)) 'digests))
      (define theirs (lookup 'digests))
      (define all-paths (apply set (append (hash-keys ours) (hash-keys theirs))))
-     (values 0
-             (for/list ([path (in-set all-paths)])
-               (compare-path path ours theirs))))))
+     (for ([path (in-set all-paths)])
+       (write-output (compare-path path ours theirs)))
+     (halt 0))))
 
 (define (pattern-map patts)
   (map pregexp
@@ -252,14 +241,15 @@ EOF
    (λ (flags source link-path)
      (define seq (search-zcpkg-infos source (in-installed-info)))
      (if (= (sequence-length seq) 0)
-         (values 1
-                 ($link-command-no-package source))
+         (begin
+           (write-output ($link-command-no-package source))
+           (halt 1))
          (begin
            (make-file-or-directory-link
             (zcpkg-info->install-path
              (sequence-ref seq 0))
             link-path)
-           (values 0 null))))))
+           (halt 0))))))
 
 
 (define (setup-command args)
@@ -270,8 +260,8 @@ EOF
       (λ ()
         (controller ($start (workspace-directory)
                             ((current-zcpkg-config) 'dump)))
-        (values 0 (controller (list ($setup-package info exprs)))))
-      (λ () (controller #f))))
+        (controller (list ($setup-package info exprs))))
+      (λ () (halt (controller #f)))))
 
   (run-command-line
    #:program "setup"
@@ -283,14 +273,16 @@ EOF
    (λ (flags query . exprs)
      (define infos (search-zcpkg-infos query (in-installed-info)))
      (if (= (sequence-length infos) 0)
-         (values 1 ($setup-command-no-package query))
+         (begin (write-output ($setup-command-no-package query))
+                (halt 1))
          (do-work (sequence-ref infos 0) exprs)))))
 
 
 (define (config-command args)
   (define (make-fail-thunk str)
     (λ ()
-      (halt 1 ($config-command-nonexistant-setting str))))
+      (write-output ($config-command-nonexistant-setting str))
+      (halt 1)))
 
   (define controller (current-zcpkg-config))
 
@@ -310,14 +302,16 @@ EOF
                                           (controller
                                            'get-value
                                            (string->symbol key)
-                                           (make-fail-thunk key)))))]
+                                           (make-fail-thunk key)))
+                            (halt 0)))]
        ["dump"
         (run-command-line #:args args
                           #:program "config-dump"
                           #:arg-help-strings '()
                           (λ (flags)
                             (pretty-write #:newline? #t
-                                          (controller 'dump))))]
+                                          (controller 'dump))
+                            (halt 0)))]
 
        ["set"
         (run-command-line #:args args
@@ -336,10 +330,11 @@ EOF
                                 (picked-setting)))
 
                             (controller 'save!)
-                            (halt 0 ($after-write (controller 'get-path)))))]
+                            (write-output ($after-write (controller 'get-path)))
+                            (halt 0)))]
 
        [_ (write-output ($unrecognized-command action))
-          1]))
+          (halt 1)]))
 
    #<<EOF
 <action> is one of
@@ -369,7 +364,8 @@ EOF
      (define (assert-valid-info name info)
        (define errors (validate-zcpkg-info info))
        (unless (null? errors)
-         (halt 1 ($chver-command-bad-info name errors)))
+         (write-output ($chver-command-bad-info name errors))
+         (halt 1))
        info)
 
      (define new-info
@@ -390,8 +386,8 @@ EOF
                    CONVENTIONAL_PACKAGE_INFO_FILE_NAME)
        (λ (o) (write-zcpkg-info new-info o)))
 
-     (values 0
-             ($chver-command-updated-info info new-info)))))
+     (write-output ($chver-command-updated-info info new-info))
+     (halt 0))))
 
 (define (bundle-command args)
   (run-command-line
@@ -405,7 +401,9 @@ EOF
    (λ (flags package-path-string . pattern-strings)
      (define info
        (with-handlers ([exn:fail:filesystem?
-                        (λ (e) (halt 1 ($package-directory-has-unreadable-info package-path-string)))])
+                        (λ (e)
+                          (write-output ($package-directory-has-unreadable-info package-path-string))
+                          (halt 1))])
          (read-zcpkg-info-from-directory package-path-string)))
 
      ; Detach package from filesystem, leaving it only able to depend
@@ -447,13 +445,15 @@ EOF
              (current-directory))))
 
          (when (null? archive-files)
-           (halt 1 ($no-files-match)))
+           (write-output ($no-files-match))
+           (halt 1))
 
          (pack archive-file archive-files)))
 
      (define-values (exit-code/digest digest) (make-digest archive))
      (unless (= exit-code/digest 0)
-       (halt 1 ($cannot-make-bundle-digest exit-code/digest)))
+       (write-output ($cannot-make-bundle-digest exit-code/digest))
+       (halt 1))
 
      (define-values (exit-code/signature signature)
        (if (ZCPKG_PRIVATE_KEY_PATH)
@@ -461,7 +461,8 @@ EOF
            (values 0 #f)))
 
      (unless (= exit-code/signature 0)
-       (halt 1 ($cannot-make-bundle-signature exit-code/signature)))
+       (write-output ($cannot-make-bundle-signature exit-code/signature))
+       (halt 1))
 
      (save-config! (make-config-closure
                     (zcpkg-info->hash
@@ -477,11 +478,12 @@ EOF
            (make-zcpkg-revision-links info #:target archive-directory)
            null))
 
-     (halt 0
-           (for/list ([created (in-list (append (list archive-file
-                                                      metadata-file)
-                                                links-made))])
-             ($after-write (path->string created)))))))
+     (for ([created (in-list (append (list archive-file
+                                           metadata-file)
+                                     links-made))])
+       (write-output ($after-write (path->string created))))
+
+     (halt 0))))
 
 
 
@@ -559,10 +561,13 @@ EOF
                    targets))
 
      (unless (null? existing)
-       (halt 1 ($new-package-conflict existing)))
+       (write-output ($new-package-conflict existing))
+       (halt 1))
 
      (for ([t (in-list targets)])
-       (make-package t)))))
+       (make-package t))
+
+     (halt 0))))
 
 
 (define (serve-command args)
@@ -573,7 +578,9 @@ EOF
    (λ (flags)
      (define stop (start-server))
      (with-handlers ([exn:break?
-                      (λ (e) (halt 0 ($on-server-break)))])
+                      (λ (e)
+                        (write-output ($on-server-break))
+                        (halt 0))])
        (dynamic-wind void
                      (λ ()
                        (write-output ($on-server-up))
@@ -606,16 +613,21 @@ EOF
    (λ (flags what)
      (match what
        ["workspace"
-        (displayln (workspace-directory))]
+        (displayln (workspace-directory))
+        (halt 0)]
        ["installed"
         (for ([info (in-installed-info)])
           (printf "~a: ~a~n"
                   (format-zcpkg-info info)
-                  (zcpkg-info->install-path info)))]
-       [_ (values 1 ($unrecognized-command what))]))
+                  (zcpkg-info->install-path info)))
+        (halt 0)]
+       [_
+        (write-output ($unrecognized-command what))
+        (halt 1)]))
    #<<EOF
 where <what> is one of
   workspace  The current target workspace directory
+  installed  A list of installed packages, as queries
 
 EOF
 ))
@@ -649,15 +661,15 @@ EOF
            (unless (ZCPKG_LEAVE_ORPHANS)
              (set-add! to-uninstall orphan-info)))))
 
-     (values
-      0
-      (if (ZCPKG_CONSENT)
-          (for/list ([info (in-set to-uninstall)])
-            (define install-path (zcpkg-info->install-path info))
-            (delete-directory/files/empty-parents install-path)
-            ($after-delete install-path))
-          ($review-uninstallation-work
-           (sequence->list (in-mutable-set to-uninstall))))))))
+     (if (ZCPKG_CONSENT)
+         (for ([info (in-set to-uninstall)])
+           (define install-path (zcpkg-info->install-path info))
+           (delete-directory/files/empty-parents install-path)
+           (write-output ($after-delete install-path)))
+         (write-output ($review-uninstallation-work
+                        (sequence->list (in-mutable-set to-uninstall)))))
+
+     (halt 0))))
 
 
 

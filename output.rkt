@@ -13,9 +13,18 @@
 
 (provide
  (contract-out
-  [write-output (->* ($message?) (output-port?) void?)]))
+  [write-output (->* ($message?) (output-port?) void?)]
+  [get-output (->* () (#:reset? any/c) (listof $message?))]))
+
+(define program-output null)
 
 (define verbose-messages (list $diff-same-file?))
+
+(define (get-output #:reset? [reset? #f])
+  (define out program-output)
+  (when reset?
+    (set! program-output null))
+  (reverse out))
 
 (define (include-output? m)
   (if (ormap (λ (?) (? m)) verbose-messages)
@@ -24,6 +33,7 @@
 
 (define (write-output v [out (current-output-port)])
   (when (include-output? v)
+    (set! program-output (cons v program-output))
     (parameterize ([current-output-port out])
       (define to-send
         (if (ZCPKG_READER_FRIENDLY_OUTPUT)
