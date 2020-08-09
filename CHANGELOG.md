@@ -15,6 +15,7 @@ This project follows [these versioning rules](https://sagegerard.com/edition-rev
 - Remove packages that are already installed from scope of work reports
 - Change `ZCPKG_DOWNLOAD_IGNORE_CACHE` to `ZCPKG_IGNORE_DOWNLOAD_CACHE`
 - Route all program output through `output.rkt`
+- Route created place's completion value to the creating place's exit code
 - Switch to `setup/infotab` and `#lang info` as canonical configuration language.
 - Proofread and edit documentation
 - Detect reserved file names
