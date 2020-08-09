@@ -623,10 +623,10 @@ EOF
    #:arg-help-strings null
    #:flags
    (settings->flag-specs
-    ZCPKG_LISTEN_PORT)
+    ZCPKG_PORT)
    #:args args
    (λ (flags)
-     (define stop (start-server #:port (ZCPKG_LISTEN_PORT)))
+     (define stop (start-server #:port (ZCPKG_PORT)))
      (with-handlers ([exn:break?
                       (λ (e)
                         (write-output ($on-server-break))
