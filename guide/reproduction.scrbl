@@ -16,6 +16,9 @@ different revision numbers on different servers. @binary includes tools to
 capture files in @tech{workspace}, such that only the files you declare
 are not expected to change.
 
+
+@section{Capture a Workspace}
+
 @margin-note{Why not call it a lock file? To avoid confusion with the same term
 in other contexts, e.g. @racket[make-lock-file-name].}  The @litchar{capture}
 command creates a @deftech{capture file}.  Check this file into source control
@@ -40,6 +43,27 @@ $ zcpkg capture '\.rktd?$' > capture.rkt
 $ zcpkg capture '\.rkt$' '\.rktd$' > capture.rkt
 }|
 
+If you want to capture Racket compiler input only (Meaning @tt{.rkt},
+@tt{.rktd}, @tt{.ss} and @tt{.scrbl} files), then use @litchar{-r}. That
+switch uses the corresponding regular expression when creating the capture.
+
+@verbatim|{
+$ zcpkg capture -r > capture.rkt
+}|
+
+@margin-note{Be careful when you include compiler or other program
+output in a capture.  Racket bytecode files may differ for source code
+with no observable behavioral difference, and capturing variable data
+like logs likely won't be helpful. While you could capture everything,
+it's best to capture only the static data you absolutely need.}
+
+If you wish to capture Racket bytecode as well (@tt{.dep} and
+@tt{.zo}), then specify @litchar{-s}.
+
+@verbatim|{
+$ zcpkg capture -rs > capture.rkt
+}|
+
 If you want to capture all integrity information for the sake of
 reproducible builds, then specify an empty pattern. This trivially
 matches any path.
@@ -48,8 +72,7 @@ matches any path.
 $ zcpkg capture '' > capture.rkt
 }|
 
-Be careful in this case.  Racket bytecode files may differ beetween builds if,
-say, a program embeds dates into generated code.
+@section{Restore a Workspace}
 
 The @litchar{restore} command will attempt to reproduce the workspace recorded
 in a @tech{capture file}. This may take a while if the capture is
@@ -57,8 +80,29 @@ large. @litchar{restore} will not modify the filesystem unless you grant
 explicit consent in your command. If you do not consent, the @litchar{restore}
 command will simply show you what it would do if you did consent.
 
-The last command a restore operation performs is @litchar{zcpkg diff}, which
-you can also run yourself. @litchar{diff} shows you any difference between a
+@verbatim|{
+$ zcpkg restore capture.rkt
+}|
+
+Like other commands, @litchar{restore} targets @bold{an existing
+workspace}. If you are restoring a capture, then it will delete files
+inside that workspace. This is useful for rollbacks.
+
+If you want to limit noise when verifying results or avoid deletions,
+use an empty workspace. You can then move the created workspace to
+overwrite an existing workspace, if you prefer.
+
+@verbatim|{
+$ mkdir zcpkg-workspace
+$ zcpkg restore -y capture.rkt
+$ zcpkg diff capture.rkt
+$ mv zcpkg-workspace ../other/zcpkg-workspace
+}|
+
+
+@section{Compare a Workspace to a Capture}
+
+The @litchar{diff} command shows you any difference between a
 @tech{workspace} and a capture file.
 
 The output might look like this:
@@ -98,17 +142,19 @@ If the @litchar{diff} command has no output and a zero exit code,
 then your workspace's files have the same content as recorded
 in a given capture file.
 
-Like other commands, @litchar{restore} targets @bold{an existing
-workspace}. If you are restoring a capture, then it will delete files
-inside that workspace. This is useful for rollbacks.
 
-If you want to limit noise when verifying results or avoid deletions,
-use an empty workspace. You can then move the created workspace to
-overwrite an existing workspace, if you prefer.
+@section{Example Session}
+
+This Bash session installs a single package in a workspace, captures
+that workspace, deletes the workspace outright, and then restores it.
 
 @verbatim|{
-$ mkdir zcpkg-workspace
-$ zcpkg restore -y capture.rkt
-$ zcpkg diff capture.rkt
-$ mv zcpkg-workspace ../other/zcpkg-workspace
+$ zcpkg install john.doe:calculator
+$ zcpkg capture -r > capture.rkt
+$ zcpkg diff capture.rkt # Should show no output
+$ rm -rf $(zcpkg show workspace)
+$ zcpkg diff capture.rkt # Should complain about all files
+$ zcpkg restore capture.rkt # Should show what will be done
+$ zcpkg restore -y capture.rkt # Restore the workspace
+$ zcpkg diff capture.rkt # Should show no output
 }|
