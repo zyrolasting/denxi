@@ -70,20 +70,22 @@
   (in-acyclic-directory (build-workspace-path)
                         (λ (p) (not (member (path->string (file-name-from-path p)) '(".git"))))))
 
-(define (ls path)
-  (map path->string (directory-list path)))
+(define (loose-directory-list path)
+  (if (directory-exists? path)
+      (map path->string (directory-list path))
+      null))
 
 (define (get-installed-providers)
-  (ls (build-install-path)))
+  (loose-directory-list (build-install-path)))
 
 (define (get-installed-provider-packages provider)
-  (ls (build-install-path provider)))
+  (loose-directory-list (build-install-path provider)))
 
 (define (get-installed-package-editions provider package)
-  (ls (build-install-path provider package)))
+  (loose-directory-list (build-install-path provider package)))
 
 (define (get-installed-edition-revisions provider package edition)
-  (ls (build-install-path provider package edition)))
+  (loose-directory-list (build-install-path provider package edition)))
 
 (define (in-installed-package-paths [use? (λ _ #t)])
   (in-generator

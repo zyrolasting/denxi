@@ -125,17 +125,19 @@
   (define sorted (sort-revisions (sequence->list revisions)))
   (define min-revision-number (find-revision-number (zcpkg-query-revision-min dep) sorted))
   (define max-revision-number (find-revision-number (zcpkg-query-revision-max dep) sorted))
-  (define-values (min-adjusted max-adjusted)
-    (get-zcpkg-query-revision-range dep
-                                    #:named-interval (zcpkg-query->string dep)
-                                    #:lo min-revision-number
-                                    #:hi max-revision-number))
 
-  (sequence-filter (λ (info)
-                     (in? (zcpkg-info-revision-number info)
-                          min-adjusted
-                          max-adjusted))
-                   sorted))
+  (if (and min-revision-number max-revision-number)
+      (let-values ([(min-adjusted max-adjusted)
+                    (get-zcpkg-query-revision-range dep
+                                                    #:named-interval (zcpkg-query->string dep)
+                                                    #:lo min-revision-number
+                                                    #:hi max-revision-number)])
+        (sequence-filter (λ (info)
+                           (in? (zcpkg-info-revision-number info)
+                                min-adjusted
+                                max-adjusted))
+                         sorted))
+      empty-sequence))
 
 
 ; Check if a well-formed zcpkg-query encompasses an exact zcpkg-query.
@@ -322,7 +324,9 @@
 
 ; Assumes infos are sorted from newest to oldest.
 (define (find-revision-number variant infos)
-  (cond [(revision-number? variant) variant]
+  (cond [(= (sequence-length infos) 0)
+         #f]
+        [(revision-number? variant) variant]
         [(revision-number-string? variant)
          (string->number variant)]
         [(equal? variant CONVENTIONAL_NEWEST_REVISION_NAME)
@@ -567,6 +571,10 @@
     (test-eq? "Can look up a revision by name"
               (find-revision-number "initial" mad-wonderland)
               0)
+
+    (test-eq? "Search will fail on empty sequence"
+              (find-revision-number "initial" null)
+              #f)
 
     (test-eq? "A revision can have multiple names"
               (find-revision-number "after-patch" mad-wonderland)
