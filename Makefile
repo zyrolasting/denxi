@@ -15,8 +15,8 @@ exe: compile test
 	raco exe -o zcpkg -l cli.rkt
 
 doc:
-	raco make *.scrbl
-	raco scribble --dest doc +m *.scrbl
+	raco make guide/*.scrbl
+	raco scribble --htmls --dest doc +m guide/guide.scrbl
 
 clean:
 	git clean -fdX
