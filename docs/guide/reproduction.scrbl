@@ -36,24 +36,29 @@ or share it. It allows others to reproduce a workspace on their systems.
 $ zcpkg capture > capture.rkt
 }|
 
-A capture file records the current @binary configuration, all installed
-packages, and integrity information for files. It does NOT follow or capture
-symbolic links. To capture a file, that file's path must match at least one
-Perl regular expression provided in your command line. If you do not specify a
-pattern, the @tt{capture} command will only record the current configuration
-and any @tech{queries} for installed packages.
+A capture file records the current @binary configuration,
+@tech{queries} for all installed packages, and integrity information
+for files. It does NOT follow or capture symbolic links when capturing
+files.
+
+To capture a file, that file's path must match at least one Perl
+regular expression provided in your command line. If you do not
+specify a pattern, the @tt{capture} command will not capture any
+files.
 
 To explicitly capture @tt{.rkt} and @tt{.rktd} files, you could
-write either of the following.
+write any of the following.
 
 @verbatim|{
 $ zcpkg capture '\.rktd?$' > capture.rkt
 $ zcpkg capture '\.rkt$' '\.rktd$' > capture.rkt
+$ zcpkg capture '\.(rkt|rktd)$' > capture.rkt
 }|
 
-If you want to capture Racket compiler input only (Meaning @tt{.rkt},
-@tt{.rktd}, @tt{.ss} and @tt{.scrbl} files), then use @litchar{-r}. That
-switch uses the corresponding regular expression when creating the capture.
+If you want to capture valid Racket compiler input only (Meaning
+@tt{.rkt}, @tt{.rktd}, @tt{.ss} and @tt{.scrbl} files), then use
+@litchar{-r}. That switch uses the corresponding regular expression
+when creating the capture.
 
 @verbatim|{
 $ zcpkg capture -r > capture.rkt
@@ -109,10 +114,13 @@ $ zcpkg diff capture.rkt
 + usr/lib/racket/localhost.localdomain/foo/draft/0/fo.rkt
 }|
 
+Here, when I say “your workspace” I mean the directory in
+@racket[ZCPKG_WORKSPACE] when you run the @litchar{diff} command.
+
 @itemlist[
 @item{@tt{+} means this file exists in your workspace, and not in the captured workspace.}
 @item{@tt{-} means this file exists in the captured workspace, but not in yours.}
-@item{@tt{*} means this file exists in both workspaces, but has different content.}
+@item{@tt{*} means this file exists in both workspaces, but they are not the same.}
 ]
 
 The paths contain redundant information. For example, these two paths
