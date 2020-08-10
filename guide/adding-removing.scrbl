@@ -1,6 +1,6 @@
 #lang scribble/manual
 
-@require["shared.rkt"]
+@require["shared.rkt" @for-label[racket/base]]
 
 @title{Adding and Removing Packages}
 
