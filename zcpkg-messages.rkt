@@ -19,6 +19,7 @@
 (define-message $fail (to-display))
 (define-message $install-package (info dependency-infos url-or-path))
 (define-message $invalid-launcher-spec (info name errors))
+(define-message $invalid-workspace-envvar ())
 (define-message $link-command-no-package (query-string))
 (define-message $new-package-conflict (existing))
 (define-message $no-files-match ())

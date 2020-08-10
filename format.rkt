@@ -267,6 +267,11 @@
                  ($invalid-launcher-spec-name m)
                  (join-lines (indent-lines ($invalid-launcher-spec-errors m))))]
 
+        [($invalid-workspace-envvar? m)
+         (format "Ignoring envvar value for ZCPKG_WORKSPACE: ~a~n  falling back to ~a"
+                 (getenv "ZCPKG_WORKSPACE")
+                 (workspace-directory))]
+
         [($setup-module-output? m)
          (format "[~a]: ~a"
                  ($setup-module-output-source m)

@@ -6,7 +6,8 @@
          CONVENTIONAL_WORKSPACE_NAME
          CONVENTIONAL_DEPENDENCY_DIRECTORY_NAME
          CONVENTIONAL_PACKAGE_INFO_FILE_NAME
-         CONVENTIONAL_LAUNCHER_AUX_DIRECTORY_NAME)
+         CONVENTIONAL_LAUNCHER_AUX_DIRECTORY_NAME
+         show-workspace-envvar-error?)
 
 (require racket/contract
          racket/path)
@@ -25,19 +26,36 @@
         (and (not (equal? complete-current-dir parent))
              (find-workspace-directory parent)))))
 
+(define workspace-directory/c
+  (and/c complete-path?
+         (or/c directory-exists?
+               (and/c (not/c file-exists?)
+                      (not/c directory-exists?)
+                      (not/c link-exists?)))))
+
+
+(define (assert-workspace-directory v)
+  (invariant-assertion workspace-directory/c v))
+
+(define (get-initial-workspace-directory)
+  (or (with-handlers
+        ([exn:fail:contract? (λ (e) #f)])
+        (let ([ws (getenv "ZCPKG_WORKSPACE")])
+          (assert-workspace-directory ws)))
+      (find-workspace-directory)
+      (build-path (current-directory)
+                  CONVENTIONAL_WORKSPACE_NAME)))
+
+(define (show-workspace-envvar-error?)
+  (let ([ws (getenv "ZCPKG_WORKSPACE")])
+    (and ws
+         (with-handlers ([exn:fail:contract?
+                          (λ (e) (not (equal? ws (workspace-directory))))])
+           (assert-workspace-directory ws)))))
+
 (define workspace-directory
-  (make-parameter
-   (or (find-workspace-directory)
-       (build-path (current-directory)
-                   CONVENTIONAL_WORKSPACE_NAME))
-   (λ (v)
-     (invariant-assertion
-      (and/c complete-path?
-             (or/c directory-exists?
-                   (and/c (not/c file-exists?)
-                          (not/c directory-exists?)
-                          (not/c link-exists?))))
-      v))))
+  (make-parameter (get-initial-workspace-directory)
+                  assert-workspace-directory))
 
 (define (build-workspace-path . paths)
   (apply build-path (workspace-directory)

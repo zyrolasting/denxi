@@ -78,6 +78,9 @@
     (reset-zcpkg-setting-overrides!)
     (load-zcpkg-settings!))
 
+  (when (show-workspace-envvar-error?)
+    (write-output ($invalid-workspace-envvar)))
+
   (define exit-code
     (call/cc
      (λ (k)
