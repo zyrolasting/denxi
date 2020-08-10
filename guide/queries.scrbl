@@ -15,18 +15,24 @@ package's @tech{edition}. @tt{newest} is the edition's @tech{revision}.  Both
 So, @tt{john.doe:calculator:draft:newest} means "the latest revision of the
 draft edition of the @tt{calculator} package by @tt{john.doe}."
 
-If you prefer a scientific calculator, the package author can provide that
-design as a diferent edition. In that case you replace @tt{draft} with
-@tt{scientific}.
+
+@section{Specifying an Edition}
+
+If you prefer a scientific calculator, the package author can provide
+that design as a diferent @tech{edition}. If John Doe releases a
+@tt{scientific} edition for the @tt{calculator} package, then you can
+replace @tt{draft} with @tt{scientific}.
 
 @verbatim|{
 john.doe:calculator:scientific:newest
 }|
 
-To request an @italic{exact} version of a package, replace @tt{newest} with a
-@tech{revision number} or another @tech{revision name}. The following examples
-are @tech{exact queries} because they request specific implementations of
-John's scientific calculator.
+
+@section{Specifying a Revision}
+
+To request a specific @tech{revision} of a package, replace
+@tt{newest} with a @tech{revision number} or another @tech{revision
+name}.
 
 @verbatim|{
 john.doe:calculator:scientific:288
@@ -38,6 +44,9 @@ to comparing versions and provide a standard form for revisions. @tt{newest} is
 special for being the only @tech{revision name} that can refer to more than one
 implementation. In other words, all queries that use @tt{newest} are
 @tech{inexact queries}.
+
+
+@section{Specifying a Version Range}
 
 What about version ranges? When you ask for
 @tt{john.doe:calculator:scientific:288}, you are actually asking for the latest
@@ -55,6 +64,9 @@ packages.  This is useful if some implementations are not available.
 john.doe:calculator:scientific:102:288
 }|
 
+
+@section{Marking Inclusive and Exclusive Endpoints}
+
 You can add flags to mark the interval as inclusive or exclusive of
 each endpoint. Use the letter @tt{i} for inclusive, and @tt{e} for
 exclusive.  In the below form, revision @tt{288} will @italic{not} be
@@ -63,6 +75,9 @@ included because of the @tt{e} right next to it.
 @verbatim|{
 john.doe:calculator:scientific:i:102:e:288
 }|
+
+
+@section{Revision Names Create Human-Readable Intervals}
 
 There's a problem: Someone can't read this and know why this query makes sense
 for your project. You can write a comment, but let's say John developed his
@@ -75,6 +90,9 @@ preference for revisions made during the closed beta.
 john.doe:calculator:scientific:i:closed-beta:e:production
 }|
 
+
+@section{Catching Reversed Intervals}
+
 When resolving @tech{revision names}, @binary will reject queries
 like these because they each create an invalid interval:
 
@@ -84,7 +102,29 @@ john.doe:calculator:scientific:9:0
 john.doe:calculator:scientific:e:3:e:3
 }|
 
-Formally, a @tech{query} string follows this EBNF grammar:
+
+@section{Exact Queries in an Inexact World}
+
+Both @tt{john.doe:calculator:scientific:288} and
+@tt{john.doe:calculator:scientific:with-trig} are @tech{exact queries}
+in the context of a single server. But if @binary uses these queries
+to collect information from more than one server, it's possible that
+both servers will conflicting information.
+
+The cause of this discrepency is human behavior, which no software can
+correct. @secref{verification} covers how you can verify that a
+package is exactly what you expect it to be on your system.
+
+In practice, different answers for the same @tech{exact queries} can
+be addressed on a case-by-case basis. For example, @tt{john.doe} as a
+provider might guarentee that @tt{with-trig} will refer to the same
+revision supporting trigonometric functions, even if the revision
+numbers differ.
+
+
+@section{Query Grammar}
+
+A @tech{query} string follows this EBNF grammar:
 
 @verbatim|{
 <package-query> ::= <package-identity> | <package-identity> ":" <version>
