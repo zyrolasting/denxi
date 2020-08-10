@@ -7,19 +7,25 @@
 To keep things relatively sane, we need reproducible and deterministic builds.
 This means that for the same input, we get the exact same files.
 
-Unfortunately, this is a high bar to reach unless you keep a copy of all
-dependencies with your project. Racket bytecode files may differ even if they
-behave the same when executed, simply because they embed a changing date in
-their code. A @tech{workspace} might also contain different configurations. On
-top of that, @tech{revision names}, being provider-asserted, can refer to
-different revision numbers on different servers. @binary includes tools to
-capture files in @tech{workspace}, such that only the files you declare
-are not expected to change.
+Unfortunately, this is a high bar to reach unless you keep a copy of
+all dependencies with your project. Racket bytecode files may differ
+even if they behave the same way when executed. One way this can
+happen is if a Racket module embeds a changing value in runtime code,
+like the current date.
+
+There are other sources of variability. A @tech{workspace} can contain
+different configurations for @|binary|. Also @tech{revision names} can
+refer to different revision numbers on different servers.
+
+To give you some control, @binary includes tools to capture files in
+@tech{workspace}. When you capture files, you indicate to @binary that
+you expect them to have the exact same content, bit-for-bit. That way
+@binary will alert you of unwelcome changes in a @tech{workspace}.
 
 
 @section{Capture a Workspace}
 
-@margin-note{Why not call it a lock file? To avoid confusion with the same term
+@margin-note{Why not call a capture file a lock file? To avoid confusion with the same term
 in other contexts, e.g. @racket[make-lock-file-name].}  The @litchar{capture}
 command creates a @deftech{capture file}.  Check this file into source control
 or share it. It allows others to reproduce a workspace on their systems.
