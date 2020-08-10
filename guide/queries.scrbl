@@ -12,8 +12,8 @@ abbreviation for @tt{john.doe:calculator:draft:newest}.  @tt{draft} is the
 package's @tech{edition}. @tt{newest} is the edition's @tech{revision}.  Both
 @tt{draft} and @tt{newest} are just default values.
 
-So, @tt{john.doe:calculator:draft:newest} means "the latest revision of the
-draft edition of the @tt{calculator} package by @tt{john.doe}."
+So, @tt{john.doe:calculator:draft:newest} means "the @tt{newest} revision of the
+@tt{draft} edition of the @tt{calculator} package by @tt{john.doe}."
 
 
 @section{Specifying an Edition}
