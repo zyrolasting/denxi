@@ -239,4 +239,18 @@
 
        (test-true "Report expected error as string"
                   (regexp-match? #rx"expected a `module` declaration"
-                                 ($on-compilation-error-message compile-error)))))))
+                                 ($on-compilation-error-message compile-error))))))
+
+  (test-case "Detect packages that do not declare a supported Racket version"
+    (define info (make-zcpkg-info #:provider-name "provider"
+                                  #:package-name "pkg"
+                                  #:racket-versions null))
+    (send worker handle-$install-package info null "")
+    (expect-output ($output ($undeclared-racket-version info))))
+
+  (test-case "Detect packages that declare an unsupported Racket version"
+    (define info (make-zcpkg-info #:provider-name "provider"
+                                  #:package-name "pkg"
+                                  #:racket-versions (list "0.0")))
+    (send worker handle-$install-package info null "")
+    (expect-output ($output ($unsupported-racket-version info)))))
