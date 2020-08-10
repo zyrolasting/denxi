@@ -25,7 +25,7 @@
   "[<>\\:\"/\\\\\\|\\?\\*]")
 
 (define windows-reserved-name-pattern-string
-  (format "(?i:(~a))"
+  (format "(?i:(~a))(\\..*)?"
           (string-join '("\\.+" "com\\d" "lpt\\d" "nul" "aux" "prn" "con"
                          "CLOCK\\$" "\\$Mft" "\\$MftMirr" "\\$LogFile" "\\$Volume"
                          "\\$AttrDef" "\\$Bitmap" "\\$Boot" "\\$BadClus" "\\$Secure"
@@ -91,9 +91,11 @@
                                  "COM0" "COM1" "COM2" "COM3" "COM4" "COM5" "COM6" "COM7" "COM8" "COM9"
                                  "LPT0" "LPT1" "LPT2" "LPT3" "LPT4" "LPT5" "LPT6" "LPT7" "LPT8" "LPT9"
                                  "$Mft" "$MftMirr" "$LogFile" "$Volume" "$AttrDef" "$Bitmap" "$Boot"
-                                 "$BadClus" "$Secure" "$Upcase" "$Extend" "$Quota" "$ObjId" "$Reparse")
+                                 "$BadClus" "$Secure" "$Upcase" "$Extend" "$Quota" "$ObjId" "$Reparse"
+                                 "con.txt" "AUx.bin")
 
   (check-false (windows-reserved-name? "AuL"))
+  (check-false (windows-reserved-name? "AuL.txt"))
 
   (let ([three-digits^$ (make-rx-predicate "\\d\\d\\d")]
         [three-digits (make-rx-predicate "\\d\\d\\d" #:whole? #f)])
