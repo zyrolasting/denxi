@@ -125,7 +125,7 @@
 (define (find-exactly-one-info zcpkg-query-variant)
   (define infos (search-zcpkg-infos zcpkg-query-variant (in-installed-info)))
   (case (sequence-length infos)
-    [(0) (error 'find-exactly-one-info "~a is not installed" zcpkg-query-variant)]
+    [(0) (raise-user-error (format "~a is not installed" zcpkg-query-variant))]
     [(1) (void)]
     [else
      (raise-user-error
