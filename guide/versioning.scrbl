@@ -10,7 +10,7 @@ An @deftech{edition} is the name of a design. It acts as a semantic alternative
 to a major version number. A @deftech{revision} is an implementation of an
 edition.
 
-An @deftech{revision number} is a non-negative integer. Every revision is
+A @deftech{revision number} is a non-negative integer. Every revision is
 forever assigned the next available number in an edition.
 
 A @deftech{revision name} is a custom alias for a @tech{revision number}. It
