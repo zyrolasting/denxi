@@ -30,57 +30,52 @@
 (define (format-zcpkg-info info)
   (zcpkg-query->string (zcpkg-info->zcpkg-query info)))
 
-(define (format-zcpkg-info-table #:hide-installed? hide-installed? unsorted-infos)
-  (define all-infos
-    (sort unsorted-infos
-          #:key (λ (info) (zcpkg-query->string (zcpkg-info->zcpkg-query info)))
-          string<?))
+(define (zcpkg-info->row-data info)
+  (list (zcpkg-info-package-name info)
+        (zcpkg-info-provider-name info)
+        (zcpkg-info-edition-name info)
+        (~a (zcpkg-info-revision-number info))))
 
-  (define infos
-    (if hide-installed?
-        (filter-not zcpkg-installed? all-infos)
-        all-infos))
+(define (get-cell-formatter strs)
+  (define min-width (apply max (map string-length strs)))
+  (λ (#:pad-string [pad-string " "] . args)
+    (apply ~a
+           #:pad-string pad-string
+           #:min-width min-width
+           args)))
 
-  (define (get-cell-printer strs)
-    (define min-width (apply max (map string-length strs)))
-    (λ (#:pad-string [pad-string " "] . args)
-      (apply ~a
-             #:pad-string pad-string
-             #:min-width min-width
-             args)))
+(define (get-column data i)
+  (map (λ (row) (list-ref row i)) data))
 
-  (define package-heading "Package")
-  (define provider-heading "Provider")
-  (define edition-heading "Edition")
-  (define revision-heading "Revision")
+(define (get-row-formatter padding col-count data)
+  (define row-fmt (string-join (build-list col-count (λ _ "~a")) padding))
+  (define col-formatters (map (λ (i) (get-cell-formatter (get-column data i))) (range col-count)))
+  (λ args
+    (apply format
+           row-fmt
+           (map (λ (i) ((list-ref col-formatters i) (list-ref args i)))
+                (range (length args))))))
 
-  (define print-provider-name (get-cell-printer (cons provider-heading (map zcpkg-info-provider-name infos))))
-  (define print-package-name  (get-cell-printer (cons package-heading (map zcpkg-info-package-name infos))))
-  (define print-edition-name  (get-cell-printer (cons edition-heading (map zcpkg-info-edition-name infos))))
-  (define print-revision-num  (get-cell-printer (cons revision-heading (map (compose ~a zcpkg-info-revision-number) infos))))
 
-  (define row-fmt "~a  ~a  ~a  ~a")
-  (format (~a (format row-fmt
-                      (print-package-name package-heading)
-                      (print-provider-name provider-heading)
-                      (print-edition-name edition-heading)
-                      (print-revision-num revision-heading))
-              "~n~a~n~a~n")
-          (string-append (print-package-name  #:pad-string "=" "")
-                         "=="
-                         (print-provider-name #:pad-string "=" "")
-                         "=="
-                         (print-edition-name  #:pad-string "=" "")
-                         "=="
-                         (print-revision-num  #:pad-string "=" ""))
-          (string-join
-           (for/list ([info (in-list infos)])
-             (format row-fmt
-                     (print-package-name (zcpkg-info-package-name info))
-                     (print-provider-name (zcpkg-info-provider-name info))
-                     (print-edition-name (zcpkg-info-edition-name info))
-                     (print-revision-num (zcpkg-info-revision-number info))))
-           "\n")))
+(define (format-zcpkg-info-table unsorted-infos)
+  (define infos (sort unsorted-infos #:key format-zcpkg-info string<?))
+  (define data `(("Package" "Provider" "Edition" "Revision")
+                 . ,(map zcpkg-info->row-data infos)))
+  (define padding "  ")
+  (define col-count (length (car data)))
+  (define format-row (get-row-formatter padding col-count data))
+  (define first-row (apply format-row (car data)))
+  (define hr
+    (~a #:pad-string "="
+        #:min-width (string-length first-row)))
+
+  (join-lines
+   (list
+    (apply format-row (car data))
+    hr
+    (join-lines
+     (for/list ([row (in-list (cdr data))])
+       (apply format-row row))))))
 
 (define (format-zcpkg-message m)
   (cond [($output? m) (format-zcpkg-message ($output-v m))]
@@ -142,17 +137,22 @@
                  ($unrecognized-command-command m))]
 
         [($review-installation-work? m)
-         (format "Requested:~n~a~n~nTo install:~n~n~a~n~a"
-                 (join-lines (indent-lines ($review-installation-work-package-sources m)))
-                 (format-zcpkg-info-table #:hide-installed? #t
-                                          (map car (hash-values ($review-installation-work-sow m))))
+         (define infos (map car (hash-values ($review-installation-work-sow m))))
+         (define-values (installed to-install) (partition zcpkg-installed? infos))
+         (if (null? to-install)
+             "All requested packages are already installed."
+             (~a (if (null? installed)
+                     ""
+                     (format "Installed:~n~a~n"
+                             (format-zcpkg-info-table installed)))
+                 (format "To install:~n~a~n~n"
+                         (format-zcpkg-info-table to-install))
                  (format "To consent to these changes, run again with ~a"
-                         (setting->short-flag ZCPKG_CONSENT)))]
+                         (setting->short-flag ZCPKG_CONSENT))))]
 
         [($review-uninstallation-work? m)
-         (format "The following packages will be removed:~n~a~n~n~a"
-                 (format-zcpkg-info-table #:hide-installed? #f
-                                          ($review-uninstallation-work-sow m))
+         (format "The following packages will be removed:~n~n~a~n~n~a"
+                 (format-zcpkg-info-table ($review-uninstallation-work-sow m))
                  (format "To consent to these changes, run again with ~a"
                          (setting->short-flag ZCPKG_CONSENT)))]
 
