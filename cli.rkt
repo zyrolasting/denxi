@@ -401,6 +401,30 @@ EOF
                             (write-output ($after-write (get-zcpkg-settings-path)))
                             (halt 0)))]
 
+       ["repl"
+        (define (start-repl)
+          (with-handlers ([exn:fail:contract?
+                           (λ (e)
+                             (define m (regexp-match #px"expected:\\s+[^\n]+" (exn-message e)))
+                             (if (null? m)
+                                 (raise e)
+                                 (begin (displayln (car m))
+                                        (start-repl))))]
+                          [exn:fail?
+                           (λ (e)
+                             ((error-display-handler) e)
+                             (start-repl))]
+                          [exn:break?
+                           (λ (e)
+                             (displayln "bye"))])
+            (parameterize ([current-namespace (make-zcpkg-settings-namespace)])
+              (read-eval-print-loop))))
+
+        (run-command-line #:args args
+                          #:program "config-repl"
+                          #:arg-help-strings null
+                          (λ (flags) (start-repl)))]
+
        [_ (write-output ($unrecognized-command action))
           (halt 1)]))
 
@@ -409,6 +433,7 @@ EOF
   set   Set a new value for a setting
   get   Get the current value of a setting
   dump  Write a hash table of all settings
+  repl  Start a REPL to edit the rcfile
 
 EOF
 ))

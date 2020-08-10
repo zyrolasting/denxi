@@ -11,6 +11,13 @@
          "url.rkt"
          "workspace.rkt")
 
+(define (make-zcpkg-settings-namespace)
+  (define ns (make-base-namespace))
+  (for ([(k v) (in-hash ZCPKG_SETTINGS)])
+    (namespace-set-variable-value! k v #t ns #t))
+  (namespace-set-variable-value! 'save! save-zcpkg-settings! #t ns #t)
+  ns)
+
 (define (get-zcpkg-settings-path)
   (build-workspace-path "etc/zcpkg.rkt"))
 
