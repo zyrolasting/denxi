@@ -69,35 +69,7 @@
   (for ([(k v) (in-hash ZCPKG_SETTINGS)])
     (v (void))))
 
-; The path length budget helps the package manager decide if it should use
-; a custom addressing scheme when installs packages in a sufficiently-nested
-; directory.
 (define-setting-group ZCPKG_SETTINGS
-  {ZCPKG_PATH_LENGTH_BUDGET
-   "-P"
-  ("Maximum characters for path." "num-chars")
-  exact-positive-integer?
-  (case (system-type 'os)
-    ; To this day, Windows defaults to a max path length of 260 characters
-    ; unless the user opted into long paths via the Registry or Group
-    ; Policy Editor. Settle for checking only the Registry.
-    [(windows)
-     (local-require file/resource)
-     (define v
-       (get-resource "HKEY_LOCAL_MACHINE"
-                     "SYSTEM\\CurrentControlSet\\Control\\FileSystem\\LongPathsEnabled"))
-     (if (or (and (bytes? v) (bytes=? v #"1"))
-             (and (string? v) (string=? v "1"))
-             (equal? v 1))
-         1024
-         260)]
-    ; Not a guarentee. Inferred from limits of HFS Plus, the default
-    ; file system for OSX. The actual limit may be longer.
-    [(macosx) 1024]
-    ; Actually system-dependent. Some systems say 4096, but I'll be conservative.
-    [(unix) 1024]
-    [else #f])}
-
   {ZCPKG_SANDBOX_MEMORY_LIMIT_MB
    "-M"
    ("Total memory quota for a sandbox" "mibibytes")

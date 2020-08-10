@@ -13,7 +13,7 @@ This project follows [these versioning rules](https://sagegerard.com/edition-rev
 - Add `ZCPKG_LINK` setting
 - Add `config repl` command
 - Remove `prompt.rkt`
-- Remove `ZCPKG_COLORIZE_OUTPUT`
+- Remove `ZCPKG_COLORIZE_OUTPUT` and `ZCPKG_PATH_LENGTH_BUDGET`
 - Remove packages that are already installed from scope of work reports
 - Change `ZCPKG_DOWNLOAD_IGNORE_CACHE` to `ZCPKG_IGNORE_DOWNLOAD_CACHE`
 - Route all program output through `output.rkt`
