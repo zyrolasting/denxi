@@ -6,6 +6,7 @@
 (require racket/class
          racket/place
          racket/runtime-path
+         "output.rkt"
          "sentry.rkt"
          "workspace.rkt"
          "zcpkg-messages.rkt")
@@ -40,7 +41,9 @@
               (for/list ([id (in-range worker-count)])
                 (new sentry%
                      [pch (make-place)]
-                     [add-output (λ (v) (set! output (cons v output)))])))])
+                     [add-output (λ (v)
+                                   (write-output v)
+                                   (set! output (cons v output)))])))])
 
     (define/public-final (stop!)
       (for ([w (in-list workers)])
