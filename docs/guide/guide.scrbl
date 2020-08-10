@@ -1,7 +1,7 @@
 #lang scribble/manual
 
-@require[@for-label[racket/base racket/file "../zcpkg-settings.rkt"]
-         "shared.rkt"]
+@require[@for-label[racket/base]
+         "../shared.rkt"]
 
 @title[#:style '(toc)]{A Zero-Collection Package Management System}
 @author[(author+email "Sage L. Gerard" "sage@sagegerard.com" #:obfuscate? #t)]

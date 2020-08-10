@@ -71,7 +71,7 @@ cd zcpkg
 make
 ```
 
-If everything worked, you should have HTML documentation in a `doc`
+If everything worked, you should have HTML documentation in an `html`
 subdirectory and a new executable called `zcpkg`. If you see an error
 relating to a missing Racket dependency, then you might be using a
 trimmed down Racket installation. In that case, try `make racket-deps

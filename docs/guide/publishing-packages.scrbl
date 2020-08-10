@@ -1,6 +1,6 @@
 #lang scribble/manual
 
-@require["shared.rkt" @for-label[racket/base]]
+@require["../shared.rkt" @for-label[racket/base]]
 
 @title{Publishing Packages}
 

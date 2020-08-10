@@ -1,6 +1,6 @@
 #lang scribble/manual
 
-@require["shared.rkt" @for-label[racket/base racket/file]]
+@require["../shared.rkt" @for-label[racket/base racket/file]]
 
 @title[#:tag "verification"]{Reproducing Work}
 
