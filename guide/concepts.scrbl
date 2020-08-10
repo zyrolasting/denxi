@@ -4,11 +4,6 @@
 
 @title{Concepts}
 
-@binary concerns itself with the safe, deterministic reproduction of
-exact @tech{packages} and dependencies without any side-effect on the
-running Racket installation. In that light, it applies aspects of
-functional programming to package management.
-
 A @deftech{package} is a directory containing a @tech{package
 definition}. Packages can be installed on a local system, or bundled
 for distribution over a network. Unlike packages defined for @tt{raco
