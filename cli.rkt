@@ -1,13 +1,16 @@
 #lang racket/base
 
-(require racket/cmdline
+(require racket/class
+         racket/cmdline
          racket/path
          racket/pretty
          racket/list
          racket/match
          racket/os
          racket/path
+         racket/place
          racket/port
+         racket/runtime-path
          racket/sequence
          racket/set
          racket/vector
@@ -40,6 +43,25 @@
 (module+ main
   (define-values (exit-code output) (entry-point))
   (exit exit-code))
+
+(define-runtime-path worker.rkt "zcpkg-worker.rkt")
+
+(define (zcpkg-start-team!)
+  (define team
+    (new team%
+         [make-place (λ () (dynamic-place worker.rkt 'main))]))
+
+  ; Give each worker the same configuration
+  (send team broadcast!
+        ($start (workspace-directory)
+                (dump-zcpkg-settings)))
+
+  team)
+
+
+(define (zcpkg-stop-team! team)
+  (sequence-for-each write-output (in-list (get-field output team)))
+  (send team stop!))
 
 (define current-cli-continuation (make-parameter #f))
 
@@ -119,20 +141,20 @@ EOF
     (halt 0))
 
   (define (do-work sow)
-    (define controller (zcpkg-start-team!))
+    (define team (zcpkg-start-team!))
     (dynamic-wind
       void
       (λ ()
-        (controller ($start (workspace-directory)
-                            (dump-zcpkg-settings)))
-        (controller
+        ; Installation tasks come strictly before setup tasks.
+        (send team send-assigned-tasks!
          (for/list ([(url-or-path infos) (in-hash sow)])
            ($install-package (car infos) (cdr infos) url-or-path)))
-        (controller
+
+        (send team send-assigned-tasks!
          (for/list ([infos (in-hash-values sow)])
            ($setup-package (car infos) (cdr infos) null))))
       (λ ()
-        (halt (controller #f)))))
+        (halt (zcpkg-stop-team! team)))))
 
   (run-command-line
    #:program "install"
@@ -298,16 +320,14 @@ EOF
 (define (setup-command args)
   (define (do-work info exprs)
     (define sow (find-scope-of-work info))
-    (define controller (zcpkg-start-team!))
+    (define team (zcpkg-start-team!))
     (dynamic-wind
       void
       (λ ()
-        (controller ($start (workspace-directory)
-                            (dump-zcpkg-settings)))
-        (controller
+        (send team send-assigned-tasks!
          (for/list ([infos (in-hash-values sow)])
            ($setup-package (car infos) (cdr infos) null))))
-      (λ () (halt (controller #f)))))
+      (λ () (halt (zcpkg-stop-team! team)))))
 
   (run-command-line
    #:program "setup"

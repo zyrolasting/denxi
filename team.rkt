@@ -1,12 +1,12 @@
 #lang racket/base
 
 
-(provide zcpkg-start-team!)
+(provide team%
+         suggested-worker-count)
 
 (require racket/class
          racket/place
          racket/runtime-path
-         "output.rkt"
          "sentry.rkt"
          "workspace.rkt"
          "zcpkg-messages.rkt")
@@ -14,24 +14,11 @@
 (define suggested-worker-count
   (max 1 (sub1 (processor-count))))
 
-(define-runtime-path worker.rkt "zcpkg-worker.rkt")
-
-(define (zcpkg-start-team! #:make-place [make-place (λ () (dynamic-place worker.rkt 'main))]
-                           #:worker-count [worker-count suggested-worker-count])
-  (define t (new team%
-                 [make-place make-place]
-                 [worker-count worker-count]))
-  (λ (variant)
-    (cond [(list? variant)
-           (send t send-assigned-tasks! variant)]
-          [variant (send t broadcast! variant)]
-          [else (send t stop!)])))
-
 (define team%
   (class object%
     (super-new)
     (init-field make-place
-                worker-count)
+                [worker-count suggested-worker-count])
 
     (field [output null]
            [cust (make-custodian)]
@@ -41,9 +28,7 @@
               (for/list ([id (in-range worker-count)])
                 (new sentry%
                      [pch (make-place)]
-                     [add-output (λ (v)
-                                   (write-output v)
-                                   (set! output (cons v output)))])))])
+                     [add-output (λ (v) (set! output (cons v output)))])))])
 
     (define/public-final (stop!)
       (for ([w (in-list workers)])
@@ -105,10 +90,11 @@
     v)
 
   (define controller
-    (zcpkg-start-team! #:make-place mock-make-place
-                       #:worker-count 3))
+    (new team%
+         [make-place mock-make-place]
+         [worker-count 3]))
 
-  (controller 'hello)
+  (send controller broadcast! 'hello)
 
   (test-true "Broadcast to all workers"
              (andmap (λ (pch) (eq? (sync/timeout 0 pch) 'hello))
@@ -117,7 +103,7 @@
                            Cinner)))
 
   (test-case "Distribute tasks"
-    (define th (thread (λ () (controller '(a b c a b c a)))))
+    (define th (thread (λ () (send controller send-assigned-tasks! '(a b c a b c a)))))
 
     (check-equal? (consume Ainner 4) `(a a a ,($sentinel)))
     (check-equal? (consume Binner 3) `(b b ,($sentinel)))
@@ -147,7 +133,7 @@
     (place-channel-put Cinner ($output 6))
     (place-channel-put Cinner ($sentinel))
 
-    (check-equal? (sort (controller '(x y z)) <)
+    (check-equal? (sort (send controller send-assigned-tasks! '(x y z)) <)
                   '(1 2 3 4 5 6))
 
     (check-equal? (consume Ainner 2) `(x ,($sentinel)))
@@ -155,7 +141,7 @@
     (check-equal? (consume Cinner 2) `(z ,($sentinel))))
 
   (test-case "Shut down"
-    (controller #f)
+    (send controller stop!)
 
     ; No $sentinels follow; nothing will be around to listen
     ; for the echo.
@@ -164,17 +150,17 @@
     (check-evt-val Cinner ($stop))
 
     ; Broadcasts won't go out.
-    (controller 'hello)
+    (send controller broadcast! 'hello)
     (check-evt-val Ainner #f)
     (check-evt-val Binner #f)
     (check-evt-val Cinner #f)
 
     ; Same for tasks. Waits won't block, since there is nothing to wait on.
-    (define th (thread (λ () (controller '(a b c a b c a)))))
+    (define th (thread (λ () (send controller send-assigned-tasks! '(a b c a b c a)))))
     (define evt (thread-dead-evt th))
     (check-evt-val evt evt)
     (kill-thread th)
 
     ; Output will now repeat.
-    (check-eq? (controller '(x))
-               (controller '(y)))))
+    (check-eq? (send controller send-assigned-tasks! '(x))
+               (send controller send-assigned-tasks! '(y)))))
