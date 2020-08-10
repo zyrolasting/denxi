@@ -2,25 +2,27 @@
 
 @require["../shared.rkt" @for-label[racket/base racket/file]]
 
-@title[#:tag "verification"]{Reproducing Work}
+@title[#:tag "verification"]{Capturing and Restoring Workspaces}
 
-To keep things relatively sane, we need reproducible and deterministic builds.
-This means that for the same input, we get the exact same files.
+To protect our projects from surprises, we need a way to reproduce an
+exact @tech{workspace}.  Unless you keep a copy of your desired
+workspace with your project, there are several sources of variability:
 
-Unfortunately, this is a high bar to reach unless you keep a copy of
-all dependencies with your project. Racket bytecode files may differ
-even if they behave the same way when executed. One way this can
-happen is if a Racket module embeds a changing value in runtime code,
-like the current date.
+@itemlist[
 
-There are other sources of variability. A @tech{workspace} can contain
-different configurations for @|binary|. Also @tech{revision names} can
-refer to different revision numbers on different servers.
+@item{Racket bytecode files may change over time even if their runtime
+behavior does not. One way this can happen is if a Racket module
+embeds the current date in code.}
 
-To give you some control, @binary includes tools to capture files in
-@tech{workspace}. When you capture files, you indicate to @binary that
-you expect them to have the exact same content, bit-for-bit. That way
-@binary will alert you of unwelcome changes in a @tech{workspace}.
+@item{Two users may configure @|binary| differently.}
+
+@item{Two servers may respond with different packages for the same @tech{query}.}
+
+]
+
+To give you some control, @binary can capture up to all of the files
+in a @tech{workspace}. With a capture, @binary can alert you to
+unexpected changes and attempt to reproduce a @tech{workspace}.
 
 
 @section{Capture a Workspace}
@@ -38,8 +40,8 @@ A capture file records the current @binary configuration, all installed
 packages, and integrity information for files. It does NOT follow or capture
 symbolic links. To capture a file, that file's path must match at least one
 Perl regular expression provided in your command line. If you do not specify a
-pattern, the @tt{capture} command will only record integrity information for
-@tt{.rkt}, @tt{.rktd}, @tt{.ss}, @tt{.scrbl}, or @tt{.ss} files.
+pattern, the @tt{capture} command will only record the current configuration
+and any @tech{queries} for installed packages.
 
 To explicitly capture @tt{.rkt} and @tt{.rktd} files, you could
 write either of the following.
@@ -78,31 +80,12 @@ matches any path.
 $ zcpkg capture '' > capture.rkt
 }|
 
-@section{Restore a Workspace}
-
-The @litchar{restore} command will attempt to reproduce the workspace recorded
-in a @tech{capture file}. This may take a while if the capture is
-large. @litchar{restore} will not modify the filesystem unless you grant
-explicit consent in your command. If you do not consent, the @litchar{restore}
-command will simply show you what it would do if you did consent.
+You can prepare multiple captures for different purposes.
 
 @verbatim|{
-$ zcpkg restore capture.rkt
-}|
-
-Like other commands, @litchar{restore} targets @bold{an existing
-workspace}. If you are restoring a capture, then it will delete files
-inside that workspace. This is useful for rollbacks.
-
-If you want to limit noise when verifying results or avoid deletions,
-use an empty workspace. You can then move the created workspace to
-overwrite an existing workspace, if you prefer.
-
-@verbatim|{
-$ mkdir zcpkg-workspace
-$ zcpkg restore -y capture.rkt
-$ zcpkg diff capture.rkt
-$ mv zcpkg-workspace ../other/zcpkg-workspace
+$ zcpkg capture -r > racket-capture.rkt
+$ zcpkg capture -s > racket-bytecode-capture.rkt
+$ zcpkg capture '\.(html|css|js|web[pm])$' > web-asset-capture.rkt
 }|
 
 
@@ -147,6 +130,39 @@ what installed packages are affected by discrepencies.
 If the @litchar{diff} command has no output and a zero exit code,
 then your workspace's files have the same content as recorded
 in a given capture file.
+
+
+@section{Restore a Workspace}
+
+The @litchar{restore} command will attempt to reproduce the workspace recorded
+in a @tech{capture file}. This may take a while if the capture is
+large. @litchar{restore} will not modify the filesystem unless you grant
+explicit consent in your command. If you do not consent, the @litchar{restore}
+command will simply show you what it would do if you did consent.
+
+@verbatim|{
+$ zcpkg restore capture.rkt
+}|
+
+Like other commands, @litchar{restore} targets @bold{an existing
+workspace}. If you are restoring a capture, then @bold{it will delete
+files inside that workspace}. Specifically, it will delete any file
+that the @tt{diff} command reports with @litchar{+}, @litchar{*}.
+This is useful for rollbacks, but the @tt{restore} command assumes
+that rolling back unwanted operations entails deleting everything not
+in a capture. If manually change a workspace and do not capture your
+changes, then @tt{restore} will delete those changes. @italic{Be sure
+to capture all changes you want to keep}.
+
+One way to prevent surprises or noise is to use an empty
+workspace. You can then move the created workspace to overwrite an
+existing workspace, if you prefer.
+
+@verbatim|{
+$ ZCPKG_WORKSPACE=/tmp/ws zcpkg restore -y capture.rkt
+$ ZCPKG_WORKSPACE=/tmp/ws zcpkg diff capture.rkt
+$ mv /tmp/ws ../other/zcpkg-workspace
+}|
 
 
 @section{Example Session}
