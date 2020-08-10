@@ -59,8 +59,12 @@
   team)
 
 
+(define (process-jobs team tasks)
+  (define output (send team send-assigned-tasks! tasks))
+  (sequence-for-each write-output (in-list output))
+  output)
+
 (define (zcpkg-stop-team! team)
-  (sequence-for-each write-output (in-list (get-field output team)))
   (send team stop!))
 
 (define current-cli-continuation (make-parameter #f))
@@ -146,15 +150,15 @@ EOF
       void
       (λ ()
         ; Installation tasks come strictly before setup tasks.
-        (send team send-assigned-tasks!
-         (for/list ([(url-or-path infos) (in-hash sow)])
-           ($install-package (car infos) (cdr infos) url-or-path)))
+        (process-jobs team
+                      (for/list ([(url-or-path infos) (in-hash sow)])
+                        ($install-package (car infos) (cdr infos) url-or-path)))
 
-        (send team send-assigned-tasks!
-         (for/list ([infos (in-hash-values sow)])
-           ($setup-package (car infos) (cdr infos) null))))
-      (λ ()
-        (halt (zcpkg-stop-team! team)))))
+        (process-jobs
+         (send team send-assigned-tasks!
+               (for/list ([infos (in-hash-values sow)])
+                 ($setup-package (car infos) (cdr infos) null)))))
+      (λ () (halt (zcpkg-stop-team! team)))))
 
   (run-command-line
    #:program "install"
@@ -324,9 +328,9 @@ EOF
     (dynamic-wind
       void
       (λ ()
-        (send team send-assigned-tasks!
-         (for/list ([infos (in-hash-values sow)])
-           ($setup-package (car infos) (cdr infos) null))))
+        (process-jobs team
+                      (for/list ([infos (in-hash-values sow)])
+                        ($setup-package (car infos) (cdr infos) null))))
       (λ () (halt (zcpkg-stop-team! team)))))
 
   (run-command-line
