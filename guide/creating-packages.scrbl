@@ -12,6 +12,8 @@ $ zcpkg new my-pkg
 $ ls my-pkg
 }|
 
+@section{The Package Definition File}
+
 Inside that directory you should see @|definition|. This is your
 @deftech{package definition}, and it looks something like this:
 
@@ -35,6 +37,8 @@ info
 If the @racket[provider] name is different, then that's okay.  It is set to the
 hostname of your machine.
 
+@subsection{How a Query Matches a Package Definition}
+
 For this example, the @tech{query} @tt{localhost.localdomain:my-pkg:draft:0}
 refers to this package. You can see that a query consists of the
 @racket[provider], @racket[package], @racket[edition], and
@@ -46,14 +50,20 @@ those strings and still get this package. Choose revision names wisely: Once
 you host the package, you will not be allowed to use the same revision names
 again for the edition.
 
+@subsection{Declare Dependencies}
+
 You can set @racket[dependencies] using the same strings discussed in
 @secref{asking}.
 
 @racketblock[(define dependencies '("john.doe:calculator" "alice:wonderland:small"))]
 
+@subsection{Declare Supported Racket Versions}
+
 @racket[racket-versions] is a list of pairs, where each pair is an inclusive
 interval of Racket versions you support for this package. Gaps in versions
 are not expected, but you can express them for flexibility.
+
+@subsection{Help Others Discover This Package}
 
 @racket[tags] is a list of strings you can set for discovery purposes when
 users search for packages.
@@ -66,6 +76,8 @@ checked in user searches.
 @racketblock[(define description "A shoot-em up game built with 'universe'")]
 
 @racket[home-page] is an URL to a related web page for your package.
+
+@subsection{Make a First Impression}
 
 @racket[setup-module] is a path relative to the @tech{package definition}.
 It points to the other file the @tt{new} command made for us.  That
