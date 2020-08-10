@@ -272,7 +272,7 @@ EOF
 
      (define delete-commands
        (for/fold ([l null])
-                 ([m (in-list packages)])
+                 ([m (in-list diff)])
          (define path
            (cond [($diff-different-file? m)
                   ($diff-different-file-path m)]
