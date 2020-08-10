@@ -80,62 +80,9 @@ trimmed down Racket installation. In that case, try `make racket-deps
 
 ## Release Status
 
-### Alpha
-
-Released here: https://github.com/zyrolasting/zcpkg/releases/tag/alpha
-
-At this state `zcpkg` functions with a service that offers read-only
-access to manually-maintained files. There are no marketing materials,
-onboarding features, or databases. Package updates are defined in
-terms of installation and uninstallation.  For that reason, an update
-command is not included.
-
-
-### Beta
-
-Ongoing.
-
-The beta release introduces onboarding so that others can share their
-work. Since hosting packages is a potentially expensive job, I will
-need to fundraise before exposing the service to a wider audience.
-
-- [x] Extend package definition
-  - [x] Tags
-  - [x] Summary
-  - [x] Page
-  - [x] Supported Racket version ranges
-  - [x] (G)Racket Launchers
-- [ ] Define onboarding process for new users
-    - [ ] Authentication (SSH? Password?)
-    - [ ] GPG-backed signatures
-    - [ ] PUT requests for providers, packages, and package definitions
-      - [ ] Disallow duplicate revision names in an edition
-      - [ ] Disallow creating a revision number gap
-      - [ ] Define grace period for replacing uploaded data
-- [ ] Define fundraising goals and options
-- [x] Make restore command strict (for rollback)
-- [x] Document commands
-- [ ] 80%+ test coverage
-
-
-### Production
-
-This assumes the project is funded and able to operate on an
-ongoing basis.
-
-- [ ] Extend authentication with second-factor (Client certs or TOTP)
-- [ ] Define database
-    - [ ] Define table for provider
-    - [ ] Define table for packages
-    - [ ] Define table for revision names
-    - [ ] Define table for sessions
-    - [ ] Generate initial content based on flat files
-    - [ ] Incrementally add records
-- [ ] Enhance webpage to promotional website
-    - [ ] Home
-        - [ ] Summary
-        - [ ] Search
-    - [ ] Register
-    - [ ] Login
-    - [ ] Search results
-- [ ] 98%+ test coverage
+| Milestone   | Status                                                               |
+| =========== | ==================================================================== |
+| Alpha       | [Released](https://github.com/zyrolasting/zcpkg/releases/tag/alpha)  |
+| Closed Beta | [Ongoing](https://github.com/zyrolasting/zcpkg/milestone/1)          |
+| Open Beta   | [Not started](https://github.com/zyrolasting/zcpkg/milestone/2)      |
+| Production  | [Not started](https://github.com/zyrolasting/zcpkg/milestone/3)      |
