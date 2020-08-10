@@ -249,6 +249,18 @@
    exact-nonnegative-integer?
    2}
 
+  {ZCPKG_ALLOW_UNDECLARED_RACKET_VERSIONS
+   "-u"
+   ("Install packages even if they do not declare supported Racket versions")
+   boolean?
+   #f}
+
+  {ZCPKG_ALLOW_UNSUPPORTED_RACKET
+   #f
+   ("Install packages even if they declare that they do not support the running version of Racket.")
+   boolean?
+   #f}
+
   ; Guarentee a cache miss when downloading artifacts, if #t.
   {ZCPKG_IGNORE_DOWNLOAD_CACHE
    #f

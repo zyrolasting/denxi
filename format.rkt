@@ -10,6 +10,7 @@
          racket/pretty
          "capture.rkt"
          "file.rkt"
+         "racket-version.rkt"
          "setting.rkt"
          "string.rkt"
          "workspace.rkt"
@@ -88,7 +89,8 @@
                  (zcpkg-info->install-path ($already-installed-info m)))]
 
         [($on-compilation-error? m)
-         (format "Bytecode compilation error:~n~a"
+         (format "Bytecode compilation error in: ~a~n~a"
+                 ($on-compilation-error-module-path m)
                  ($on-compilation-error-message m))]
 
         [($on-bad-digest? m)
@@ -272,6 +274,32 @@
          (format "Ignoring envvar value for ZCPKG_WORKSPACE: ~a~n  falling back to ~a"
                  (getenv "ZCPKG_WORKSPACE")
                  (workspace-directory))]
+
+        [($undeclared-racket-version m)
+         (join-lines (format "~a does not declare a supported Racket version."
+                             (format-zcpkg-info ($undeclared-racket-version-info m)))
+                     (format "To install this package anyway, run again with ~a"
+                             (setting->short-flag ZCPKG_ALLOW_UNDECLARED_RACKET_VERSIONS)))]
+
+        [($unsupported-racket-version? m)
+         (join-lines (format "~a claims that it does not support this version of Racket (~a)."
+                             (format-zcpkg-info ($unsupported-racket-version-info m))
+                             (version))
+                     (format "Supported versions (ranges are inclusive):~n~a~n"
+                             (join-lines
+                              (map (λ (variant)
+                                     (format "  ~a"
+                                             (if (pair? variant)
+                                                 (format "~a - ~a"
+                                                         (or (car variant)
+                                                             PRESUMED_MINIMUM_RACKET_VERSION)
+                                                         (or (cdr variant)
+                                                             PRESUMED_MAXIMUM_RACKET_VERSION))
+                                                 variant))
+                                     (zcpkg-info-racket-versions ($unsupported-racket-version-info m))))))
+                     (format "To install this package anyway, run again with ~a"
+                             (setting->long-flag ZCPKG_ALLOW_UNSUPPORTED_RACKET)))]
+
 
         [($setup-module-output? m)
          (format "[~a]: ~a"

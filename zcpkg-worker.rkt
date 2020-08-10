@@ -16,6 +16,7 @@
          "file.rkt"
          "format.rkt"
          "message.rkt"
+         "racket-version.rkt"
          "resolve.rkt"
          "sentry.rkt"
          "setup.rkt"
@@ -63,7 +64,12 @@
 
     (define/public (compile-racket-modules install-path)
       (for ([module-path (in-racket-modules install-path)])
-        (with-handlers ([exn? (λ (e) (send-output ($on-compilation-error (exn->string e))))])
+        (with-handlers
+          ([exn?
+            (λ (e) (send-output
+                    ($on-compilation-error
+                     (path->string module-path)
+                     (exn->string e))))])
           (managed-compile-zo module-path))))
 
     (define/public (setup-package info dependency-infos exprs)
@@ -118,11 +124,24 @@
       (setup-package info dependency-infos exprs))
 
     (define/public (handle-$install-package info dependency-infos url-or-path)
+      (define (do-install)
+        (if (directory-exists? url-or-path)
+            (install-local-package info dependency-infos url-or-path)
+            (install-remote-package info dependency-infos)))
+
       (if (zcpkg-installed? info)
           (send-output ($already-installed info))
-          (if (directory-exists? url-or-path)
-              (install-local-package info dependency-infos url-or-path)
-              (install-remote-package info dependency-infos))))))
+          (case (check-racket-version-ranges (version) (zcpkg-info-racket-versions info))
+            [(supported) (do-install)]
+            [(unsupported)
+             (if (ZCPKG_ALLOW_UNSUPPORTED_RACKET)
+                 (do-install)
+                 (send-output ($unsupported-racket-version info)))]
+            [(undeclared)
+             (if (or (ZCPKG_ALLOW_UNSUPPORTED_RACKET)
+                     (ZCPKG_ALLOW_UNDECLARED_RACKET_VERSIONS))
+                 (do-install)
+                 (send-output ($undeclared-racket-version info)))])))))
 
 
 

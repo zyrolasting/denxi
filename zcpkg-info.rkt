@@ -10,6 +10,7 @@
          (only-in racket/list drop-right)
          "contract.rkt"
          "config.rkt"
+         "racket-version.rkt"
          "string.rkt"
          "url.rkt"
          "workspace.rkt"
@@ -103,7 +104,7 @@
               (lookup 'dependencies (listof string?) null)
               (lookup 'integrity (or/c #f bytes?) #f)
               (lookup 'signature (or/c #f bytes?) #f)
-              (lookup 'racket-versions (listof (cons/c valid-version? valid-version?)) null)
+              (lookup 'racket-versions racket-version-ranges/c null)
               (lookup 'tags (listof string?) null)
               (lookup 'description (or/c #f string?) #f)
               (lookup 'home-page (or/c #f url-string?) #f)
