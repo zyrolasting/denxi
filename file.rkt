@@ -153,41 +153,8 @@
               CONVENTIONAL_DEPENDENCY_DIRECTORY_NAME
               (zcpkg-info->relative-path info #:abbrev 2)))
 
-
-(define (make-zcpkg-dependency-links #:search? search? dependencies [where (current-directory)])
-  (unless (null? dependencies)
-    (for/list ([variant (in-list dependencies)])
-      (define dependency-info (if search? (find-exactly-one-info variant) variant))
-      (make-link/clobber (zcpkg-info->install-path dependency-info)
-                         (build-dependency-path where dependency-info)))))
-
-
-(define (make-zcpkg-revision-links info
-                                   #:newest? [newest? #f]
-                                   #:target [target (zcpkg-info->install-path info)])
-  (parameterize ([current-directory (or (path-only target) (current-directory))])
-    (define user-specified
-      (for/list ([revision-name (in-list (zcpkg-info-revision-names info))])
-        (path->complete-path (make-link/clobber target revision-name))))
-    (if newest?
-        (cons (path->complete-path (make-link/clobber target CONVENTIONAL_NEWEST_REVISION_NAME))
-              user-specified)
-        user-specified)))
-
-
-(define (delete-zcpkg-revision-links info)
-  (define edition-path (path-only (zcpkg-info->install-path info)))
-  (for/fold ([deleted null])
-            ([revision-name (in-list (cons "newest" (zcpkg-info-revision-names info)))])
-    (define target (build-path edition-path revision-name))
-    (if (delete-file* target)
-        (cons target deleted)
-        deleted)))
-
-
 (define (zcpkg-installed? info)
   (directory-exists? (zcpkg-info->install-path info)))
-
 
 (define (delete-directory/files/empty-parents path)
   (delete-directory/files path)

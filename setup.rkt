@@ -3,10 +3,7 @@
 ; Define operations for package setup, assuming all package files are
 ; present on the system.
 
-(provide enter-setup-module
-         load-in-setup-module
-         create-launcher
-         delete-launchers)
+(provide (all-defined-out))
 
 (require racket/exn
          racket/format
@@ -79,15 +76,55 @@
      (ctor args-with-collections dest null #;(build-aux-from-path (build-path install-path aux-path)))
      (return ($after-write dest)))))
 
+
+(define (create-launchers info)
+  (for/list ([spec (in-list (zcpkg-info-launchers info))])
+    (create-launcher info (add-launcher-spec-defaults spec))))
+
+(define (delete-launcher spec)
+  (define launcher-path
+    (build-workspace-path (ZCPKG_LAUNCHER_RELATIVE_PATH)
+                          (hash-ref spec 'name)))
+  (delete-file* launcher-path))
+
 (define (delete-launchers info)
   (for/fold ([deleted null])
             ([spec (in-list (zcpkg-info-launchers info))])
-    (define launcher-path
-      (build-workspace-path (ZCPKG_LAUNCHER_RELATIVE_PATH)
-                            (hash-ref spec 'name)))
-    (if (delete-file* launcher-path)
-        (cons launcher-path deleted)
+    (define maybe-launcher-path (delete-launcher spec))
+    (if maybe-launcher-path
+        (cons maybe-launcher-path deleted)
         deleted)))
+
+(define (make-zcpkg-dependency-links #:search? search? dependencies [where (current-directory)])
+  (unless (null? dependencies)
+    (for/list ([variant (in-list dependencies)])
+      (define dependency-info (if search? (find-exactly-one-info variant) variant))
+      (make-link/clobber (zcpkg-info->install-path dependency-info)
+                         (build-dependency-path where dependency-info)))))
+
+
+(define (make-zcpkg-revision-links info
+                                   #:newest? [newest? #f]
+                                   #:target [target (zcpkg-info->install-path info)])
+  (parameterize ([current-directory (or (path-only target) (current-directory))])
+    (define user-specified
+      (for/list ([revision-name (in-list (zcpkg-info-revision-names info))])
+        (path->complete-path (make-link/clobber target revision-name))))
+    (if newest?
+        (cons (path->complete-path (make-link/clobber target CONVENTIONAL_NEWEST_REVISION_NAME))
+              user-specified)
+        user-specified)))
+
+
+(define (delete-zcpkg-revision-links info)
+  (define edition-path (path-only (zcpkg-info->install-path info)))
+  (for/fold ([deleted null])
+            ([revision-name (in-list (cons "newest" (zcpkg-info-revision-names info)))])
+    (define target (build-path edition-path revision-name))
+    (if (delete-file* target)
+        (cons target deleted)
+        deleted)))
+
 
 (define (enter-setup-module info)
   (call-in-setup-module info read-eval-print-loop))
