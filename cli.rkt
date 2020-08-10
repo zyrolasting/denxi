@@ -96,7 +96,6 @@
    #:args args
    #:flags
    (settings->flag-specs
-    ZCPKG_COLORIZE_OUTPUT
     ZCPKG_FASL_OUTPUT
     ZCPKG_READER_FRIENDLY_OUTPUT
     ZCPKG_VERBOSE)

@@ -207,12 +207,6 @@
    boolean?
    #f}
 
-  {ZCPKG_COLORIZE_OUTPUT
-   "-c"
-   ("Colorize printed output")
-   boolean?
-   #f}
-
   {ZCPKG_VERBOSE
    "-v"
    ("Show more information in program output")
