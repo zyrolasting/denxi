@@ -734,8 +734,13 @@ EOF
      (if (ZCPKG_CONSENT)
          (for ([info (in-set to-uninstall)])
            (define install-path (zcpkg-info->install-path info))
+           (define deleted-revision-links (delete-zcpkg-revision-links info))
+           (define deleted-launchers (delete-launchers info))
            (delete-directory/files/empty-parents install-path)
-           (write-output ($after-delete install-path)))
+           (sequence-for-each (λ (path) (write-output ($after-delete path)))
+                              (sequence-append (in-list deleted-revision-links)
+                                               (in-list deleted-launchers)
+                                               (in-value install-path))))
          (write-output ($review-uninstallation-work
                         (sequence->list (in-mutable-set to-uninstall)))))
 

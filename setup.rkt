@@ -5,7 +5,8 @@
 
 (provide enter-setup-module
          load-in-setup-module
-         create-launcher)
+         create-launcher
+         delete-launchers)
 
 (require racket/exn
          racket/format
@@ -78,6 +79,15 @@
      (ctor args-with-collections dest null #;(build-aux-from-path (build-path install-path aux-path)))
      (return ($after-write dest)))))
 
+(define (delete-launchers info)
+  (for/fold ([deleted null])
+            ([spec (in-list (zcpkg-info-launchers info))])
+    (define launcher-path
+      (build-workspace-path (ZCPKG_LAUNCHER_RELATIVE_PATH)
+                            (hash-ref spec 'name)))
+    (if (delete-file* launcher-path)
+        (cons launcher-path deleted)
+        deleted)))
 
 (define (enter-setup-module info)
   (call-in-setup-module info read-eval-print-loop))

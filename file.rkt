@@ -30,6 +30,13 @@
                        id
                        (set-add encountered id))]))
 
+(define (delete-file* path)
+  (if (or (file-exists? path)
+          (link-exists? path))
+      (begin (delete-file path)
+             path)
+      #f))
+
 (define (build-install-path . args)
   (apply build-workspace-path (ZCPKG_INSTALL_RELATIVE_PATH) args))
 
@@ -166,6 +173,16 @@
         (cons (path->complete-path (make-link/clobber target CONVENTIONAL_NEWEST_REVISION_NAME))
               user-specified)
         user-specified)))
+
+
+(define (delete-zcpkg-revision-links info)
+  (define edition-path (path-only (zcpkg-info->install-path info)))
+  (for/fold ([deleted null])
+            ([revision-name (in-list (cons "newest" (zcpkg-info-revision-names info)))])
+    (define target (build-path edition-path revision-name))
+    (if (delete-file* target)
+        (cons target deleted)
+        deleted)))
 
 
 (define (zcpkg-installed? info)
