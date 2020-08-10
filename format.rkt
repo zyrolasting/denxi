@@ -237,7 +237,7 @@
                  (apply ~a* ($new-package-conflict-existing m)))]
 
         [($on-server-up? m)
-         (format "Server up at ~a. ^C to stop~n"
+         (format "Server up at ~a. ^C to stop"
                  ($on-server-up-address m))]
 
         [($on-server-break? m)

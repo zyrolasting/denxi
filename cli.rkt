@@ -657,7 +657,7 @@ EOF
                         (halt 0))])
        (dynamic-wind void
                      (λ ()
-                       (write-output ($on-server-up))
+                       (write-output ($on-server-up (format "[::]:~a" (ZCPKG_PORT))))
                        (sync/enable-break never-evt))
                      stop)))))
 
