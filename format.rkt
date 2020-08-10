@@ -228,9 +228,10 @@
          (format "Deleting ~a" ($after-delete-path m))]
 
         [($reject-user-setting? m)
-         (format "Invalid value for ~a: ~s"
+         (format "Invalid value for ~a: ~a~n  expected: ~a~n  (Note: (void) only applies for `zcpkg config repl` use)"
                  ($reject-user-setting-name m)
-                 ($reject-user-setting-value m))]
+                 ($reject-user-setting-value m)
+                 ($reject-user-setting-expected m))]
 
         [($new-package-conflict? m)
          (format "Cannot make new package(s). The following files or directories already exist:~n~a"

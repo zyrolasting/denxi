@@ -36,7 +36,7 @@
 (define-message $on-workspace-capture (datum))
 (define-message $output (v))
 (define-message $package-directory-has-unreadable-info (package-path))
-(define-message $reject-user-setting (name value))
+(define-message $reject-user-setting (name value expected))
 (define-message $restore-config (name value))
 (define-message $restore-delete-file (path))
 (define-message $restore-package (query))

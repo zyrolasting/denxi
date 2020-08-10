@@ -395,7 +395,12 @@ EOF
                             (define to-write
                               (with-handlers ([exn:fail?
                                                (λ (e)
-                                                 (write-output ($reject-user-setting sym value))
+                                                 (write-output
+                                                  ($reject-user-setting
+                                                   sym
+                                                   value
+                                                   (cadr (regexp-match #px"expected:\\s+([^\n]+)"
+                                                                       (exn-message e)))))
                                                  (halt 0))])
                                 (picked-setting (read (open-input-string value)))
                                 (picked-setting)))
