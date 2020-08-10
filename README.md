@@ -80,9 +80,9 @@ trimmed down Racket installation. In that case, try `make racket-deps
 
 ## Release Status
 
-| Milestone   | Status                                                               |
-| =========== | ==================================================================== |
-| Alpha       | [Released](https://github.com/zyrolasting/zcpkg/releases/tag/alpha)  |
-| Closed Beta | [Ongoing](https://github.com/zyrolasting/zcpkg/milestone/1)          |
-| Open Beta   | [Not started](https://github.com/zyrolasting/zcpkg/milestone/2)      |
-| Production  | [Not started](https://github.com/zyrolasting/zcpkg/milestone/3)      |
+| Milestone   | Status                                                                |
+| ----------- | --------------------------------------------------------------------- |
+| Alpha       | [Released](https://github.com/zyrolasting/zcpkg/releases/tag/alpha)   |
+| Closed Beta | [Ongoing](https://github.com/zyrolasting/zcpkg/milestone/1)           |
+| Open Beta   | [Not started](https://github.com/zyrolasting/zcpkg/milestone/2)       |
+| Production  | [Not started](https://github.com/zyrolasting/zcpkg/milestone/3)       |
