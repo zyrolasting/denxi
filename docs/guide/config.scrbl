@@ -61,11 +61,10 @@ boolean, the flag itself will suffice. Otherwise a string containing a
 @racket[ZCPKG_WORKSPACE] defines the directory to use as the
 @tech{workspace}.
 
-@racket[ZCPKG_WORKSPACE] does not come from multiple sources. It can
-only be set using the environment variable of the same name. This is
-because all other settings check a @tech{workspace}-specific
-configuration file, and that file cannot be known until
-@racket[ZCPKG_WORKSPACE] is set.
+@racket[ZCPKG_WORKSPACE] can only be set using the environment
+variable of the same name. This is because all other settings check a
+@tech{workspace}-specific configuration file, and that file cannot be
+known until @racket[ZCPKG_WORKSPACE] is set.
 
 @racket[ZCPKG_WORKSPACE] must be a @racket[complete-path?]. If the
 path points to an existing entry on the filesystem, then that entry
