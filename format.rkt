@@ -254,11 +254,11 @@
                  ($restore-config-value m))]
 
         [($restore-delete-file? m)
-         (format "Delete ~a"
+         (format "Will delete ~a"
                  ($restore-delete-file-path m))]
 
         [($restore-package? m)
-         (format "Install ~s (unless it exists)"
+         (format "Will install ~s, unless it exists"
                  ($restore-package-query m))]
 
         [($invalid-launcher-spec? m)
