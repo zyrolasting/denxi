@@ -118,9 +118,9 @@ Here, when I say “your workspace” I mean the directory in
 @racket[ZCPKG_WORKSPACE] when you run the @litchar{diff} command.
 
 @itemlist[
-@item{@tt{+} means this file exists in your workspace, and not in the captured workspace.}
-@item{@tt{-} means this file exists in the captured workspace, but not in yours.}
-@item{@tt{*} means this file exists in both workspaces, but they are not the same.}
+@item{@litchar{+} means this file exists in your workspace, and not in the captured workspace.}
+@item{@litchar{-} means this file exists in the captured workspace, but not in yours.}
+@item{@litchar{*} means this file exists in both workspaces, but they are not the same.}
 ]
 
 The paths contain redundant information. For example, these two paths
@@ -155,7 +155,7 @@ $ zcpkg restore capture.rkt
 Like other commands, @litchar{restore} targets @bold{an existing
 workspace}. If you are restoring a capture, then @bold{it will delete
 files inside that workspace}. Specifically, it will delete any file
-that the @tt{diff} command reports with @litchar{+}, @litchar{*}.
+that the @tt{diff} command reports with @litchar{+} or @litchar{*}.
 This is useful for rollbacks, but the @tt{restore} command assumes
 that rolling back unwanted operations entails deleting everything not
 in a capture. If manually change a workspace and do not capture your
