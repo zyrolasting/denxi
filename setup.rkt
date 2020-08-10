@@ -34,14 +34,18 @@
                (values sym (list (path->string (zcpkg-info->install-path (find-latest-info query))))))
             old))))
 
-(define (create-launcher info install-path
-                         #:args args
-                         #:name name
-                         #:collects collects
-                         #:aux-path aux-path
-                         #:gracket? gracket?)
+(define (create-launcher info install-path spec)
   (call/cc
    (λ (return)
+     (define with-defaults (add-launcher-spec-defaults spec))
+     (define (get k) (hash-ref with-defaults k))
+
+     (define args (get 'args))
+     (define name (get 'name))
+     (define aux-path (get 'aux-path))
+     (define gracket? (get 'gracket?))
+     (define collects (get 'collects))
+
      (define accum (make-error-message-accumulator))
      (accum ((listof string?) args) "'args' is not a list of strings")
      (accum (name-string? name) "'name' is not a valid file name")
@@ -63,8 +67,10 @@
        (return ($invalid-launcher-spec info name errors)))
 
      (define args-with-collections
-       (append `("-e" ,(make-collects-expression collects))
-               args))
+       (if (> (hash-count collects) 0)
+           (append `("-e" ,(~s (make-collects-expression collects)))
+                   args)
+           args))
 
      (define ctor (if gracket? make-gracket-launcher make-racket-launcher))
      (define dest (build-workspace-path (ZCPKG_LAUNCHER_RELATIVE_PATH) name))
