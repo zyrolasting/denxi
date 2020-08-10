@@ -77,10 +77,7 @@
       (compile-racket-modules install-path)
       (make-zcpkg-dependency-links #:search? #f dependency-infos install-path)
       (make-zcpkg-revision-links info)
-
-      (for ([spec (in-list (zcpkg-info-launchers info))])
-        (create-launcher info install-path spec))
-
+      (create-launchers info)
       (for ([output (load-in-setup-module info (in-list exprs))])
         (send-output ($setup-module-output
                       (zcpkg-query->string (zcpkg-info->zcpkg-query info))
