@@ -3,6 +3,7 @@
 (provide (all-defined-out))
 
 (require racket/match
+         racket/pretty
          (only-in racket/tcp listen-port-number?)
          "config.rkt"
          "contract.rkt"
@@ -16,6 +17,9 @@
   (for ([(k v) (in-hash ZCPKG_SETTINGS)])
     (namespace-set-variable-value! k v #t ns #t))
   (namespace-set-variable-value! 'save! save-zcpkg-settings! #t ns #t)
+  (namespace-set-variable-value! 'dump
+                                 (λ () (pretty-write #:newline? #t (dump-zcpkg-settings)))
+                                 #t ns #t)
   ns)
 
 (define (get-zcpkg-settings-path)
