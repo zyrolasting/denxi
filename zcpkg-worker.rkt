@@ -141,6 +141,102 @@
                  (send-output ($undeclared-racket-version info)))])))))
 
 
-
 (define (main pch)
   (send (new zcpkg-worker% [pch pch]) loop))
+
+
+(module+ test
+  (require rackunit
+           (submod "file.rkt" test))
+
+  (define-values (for-tests for-worker) (place-channel))
+
+  (define (expect-output . expected-output)
+    (for ([expected (in-list expected-output)])
+      (define actual (sync/timeout 0 for-tests))
+      (if (procedure? expected)
+          (check-pred expected actual)
+          (check-equal? actual expected)))
+    (when (sync/timeout 0 for-tests)
+      (fail "Extra output left in place channel")))
+
+  (define worker (new zcpkg-worker% [pch for-worker]))
+
+  (test-true "Created instance without incident"
+             (is-a? worker zcpkg-worker%))
+
+  (test-case "Send data on place channel"
+    (send worker send-up 1)
+    (expect-output 1))
+
+  (test-case "Send $output on place channel"
+    (send worker send-output 1)
+    (expect-output ($output 1)))
+
+  (test-case "Exit with data on failure"
+    (parameterize ([exit-handler (λ (v) (check-eq? v 1))])
+      (define e (exn:fail "blah blah" (current-continuation-marks)))
+      (send worker fail '(value 1 "cool"))
+      (send worker fail e)
+      (expect-output ($fail "(value 1 \"cool\")")
+                     ($fail (exn->string e)))))
+
+  (test-case "Echo $sentinels, and $stop"
+    (define th #f)
+    (parameterize ([exit-handler
+                    (λ (v)
+                      (expect-output ($sentinel)
+                                     ($sentinel)
+                                     ($sentinel))
+                      (check-eq? v 0)
+                      (kill-thread th))])
+      (place-channel-put for-tests ($sentinel))
+      (place-channel-put for-tests ($sentinel))
+      (place-channel-put for-tests ($sentinel))
+      (place-channel-put for-tests ($stop))
+      (set! th (thread (λ () (send worker loop))))
+
+      (define alarm
+        (alarm-evt (+ (current-inexact-milliseconds)
+                      100)))
+
+      (when (eq? alarm (sync alarm (thread-dead-evt th)))
+        (kill-thread th)
+        (fail "Infinite loop in worker"))))
+
+  (test-workspace "Initialize worker with workspace and configuration"
+    (send worker
+          handle-$start
+          (current-directory)
+          (hash 'ZCPKG_SANDBOX_EVAL_TIME_LIMIT_SECONDS 10))
+    (check-equal? (workspace-directory) (current-directory))
+    (check-eq? (ZCPKG_SANDBOX_EVAL_TIME_LIMIT_SECONDS)
+               10))
+
+  (test-workspace "Compile Racket modules"
+    (display-to-file "#lang racket/base" "a.rkt")
+    (display-to-file "#lang racket/base" "b.rkt")
+    (display-to-file "!#sd=f-*" "junk.rkt")
+    (display-to-file "(module content racket/base (void))" "c.ss")
+    (display-to-file "#lang scribble/base" "d.scrbl")
+    (send worker compile-racket-modules (current-directory))
+    (for ([name (in-list (list "a_rkt" "b_rkt" "c_ss" "d_scrbl"))])
+      (define path (build-path "compiled" name))
+      (check-pred file-exists? (path-replace-extension path #".dep"))
+      (check-pred file-exists? (path-replace-extension path #".zo")))
+    (expect-output
+     (λ (m)
+       (test-pred "Report output" $output? m)
+       (define compile-error ($output-v m))
+
+       (test-pred "Report compilation error"
+                  $on-compilation-error?
+                  compile-error)
+
+       (test-pred "Report at-fault module using a complete string path"
+                  (conjoin string? complete-path?)
+                  ($on-compilation-error-module-path compile-error))
+
+       (test-true "Report expected error as string"
+                  (regexp-match? #rx"expected a `module` declaration"
+                                 ($on-compilation-error-message compile-error)))))))
