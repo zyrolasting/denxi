@@ -546,7 +546,8 @@ EOF
            (current-directory)))
 
      (define archive-file
-       (build-path archive-directory "archive.tgz"))
+       (build-path archive-directory "archive.tar"))
+
      (define metadata-file
        (build-path archive-directory CONVENTIONAL_PACKAGE_INFO_FILE_NAME))
 
@@ -564,7 +565,10 @@ EOF
            (write-output ($no-files-match))
            (halt 1))
 
-         (pack archive-file archive-files)))
+         (call-with-output-file archive-file
+           (λ (to-archive-file)
+             (pack archive-files to-archive-file)
+             archive-file))))
 
      (define-values (exit-code/digest digest) (make-digest archive))
      (unless (= exit-code/digest 0)

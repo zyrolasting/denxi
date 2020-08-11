@@ -5,31 +5,25 @@
 
 (require racket/contract)
 
-(provide (contract-out [pack   (-> path-string? (listof path-string?) path-string?)]
-                       [unpack (-> path-string? path-string? path-string?)]))
+(provide (contract-out [pack   (-> (listof path-string?) output-port? any)]
+                       [unpack (-> input-port? void?)]))
 
 (require "file.rkt"
          racket/path
          file/tar
-         file/gzip
-         file/untgz)
+         file/untar)
 
-(define (pack dest paths)
-  (apply tar-gzip
-         dest
-         paths
-         #:follow-links? #f
-         #:exists-ok? #t)
-  dest)
+(define (pack paths out)
+  (tar->output paths out #:follow-links? #f))
 
-(define (unpack path [dest (path-only path)])
-  (untgz path #:dest dest)
-  dest)
+(define (unpack in)
+  (void (untar in)))
 
 (module+ test
   (require rackunit)
 
-  (define (make-file path)
+  (define (make-file path-string)
+    (define path (string->path path-string))
     (make-directory* (path-only path))
     (display-to-file "data" path)
     path)
@@ -45,15 +39,22 @@
     (dynamic-wind void
                   (λ ()
                     (parameterize ([current-directory working-dir])
-                      (make-directory "input-dir")
+                      (define dir/ (build-path "input-dir"))
+                      (make-directory dir/)
                       (define input-a (make-file "input-dir/a"))
                       (define input-b (make-file "input-dir/sub/b"))
                       (define input-c (make-file "input-dir/very/deep/c"))
-                      (define .tgz (pack "a.tgz" (list "input-dir")))
-                      (test-pred "Archive exists" file-exists? .tgz)
+                      (define .tar "a.tar")
 
-                      (delete-directory/files "input-dir")
-                      (unpack .tgz)
+                      (call-with-output-file .tar
+                        (λ (o) (pack (list input-a input-b input-c) o)))
+
+                      (test-pred "Archive exists" file-exists? .tar)
+
+                      (delete-directory/files dir/)
+
+                      (call-with-input-file .tar
+                        (λ (i) (unpack i)))
 
                       (test-file input-a)
                       (test-file input-b)
