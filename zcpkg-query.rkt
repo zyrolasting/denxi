@@ -82,9 +82,9 @@
              name-string?
              name-string?
              boolean?
-             revision-string?
+             (or/c revision-string? revision-number?)
              boolean?
-             revision-string?)
+             (or/c revision-string? revision-number?))
    v))
 
 ; Define a "concrete" zcpkg-query as a well-formed zcpkg-query

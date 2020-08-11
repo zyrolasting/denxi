@@ -78,8 +78,9 @@
 
 
 (define (create-launchers info)
+  (define install-path (zcpkg-info->install-path info))
   (for/list ([spec (in-list (zcpkg-info-launchers info))])
-    (create-launcher info (add-launcher-spec-defaults spec))))
+    (create-launcher info install-path (add-launcher-spec-defaults spec))))
 
 (define (delete-launcher spec)
   (define launcher-path

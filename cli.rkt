@@ -326,7 +326,7 @@ EOF
 
 (define (setup-command args)
   (define (do-work info exprs)
-    (define sow (find-scope-of-work info))
+    (define sow (find-scope-of-work (list info)))
     (define team (zcpkg-start-team!))
     (dynamic-wind
       void
