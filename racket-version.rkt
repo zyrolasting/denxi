@@ -3,27 +3,35 @@
 (require racket/contract
          version/utils)
 
-(define maybe-version/c
+(define maybe-racket-version/c
   (or/c #f valid-version?))
 
 (define current-racket-version-relationship/c
   (or/c 'supported 'unsupported 'undeclared))
 
+(define racket-version-range/c
+  (or/c valid-version?
+        (cons/c maybe-racket-version/c
+                maybe-racket-version/c)))
+
 (define racket-version-ranges/c
-  (listof (or/c valid-version?
-                (cons/c maybe-version/c
-                        maybe-version/c))))
+  (listof racket-version-range/c))
 
 (provide
  (struct-out exn:fail:zcpkg:invalid-racket-version-interval)
  (contract-out
   [PRESUMED_MINIMUM_RACKET_VERSION valid-version?]
   [PRESUMED_MAXIMUM_RACKET_VERSION valid-version?]
+  [racket-version-range/c flat-contract?]
   [racket-version-ranges/c flat-contract?]
+  [make-racket-version-interval
+   (-> maybe-racket-version/c
+       maybe-racket-version/c
+       (values exact-integer? exact-integer?))]
   [racket-version-in-range?
    (-> valid-version?
-       maybe-version/c
-       maybe-version/c
+       maybe-racket-version/c
+       maybe-racket-version/c
        boolean?)]
   [check-racket-version-ranges
    (-> valid-version?
@@ -35,19 +43,20 @@
 (define PRESUMED_MINIMUM_RACKET_VERSION "0.0")
 (define PRESUMED_MAXIMUM_RACKET_VERSION "9.99.999.999")
 
-(define (racket-version-in-range? given-v min-v max-v)
+(define (make-racket-version-interval min-v max-v)
   (define lo (version->integer (or min-v PRESUMED_MINIMUM_RACKET_VERSION)))
   (define hi (version->integer (or max-v PRESUMED_MAXIMUM_RACKET_VERSION)))
-  (define v  (version->integer given-v))
+  (if (< hi lo)
+      (raise (exn:fail:zcpkg:invalid-racket-version-interval
+              (format "Cannot match Racket version in reversed interval: [~a, ~a]" min-v max-v)
+              (current-continuation-marks) min-v max-v))
+      (values lo hi)))
 
-  (when (< hi lo)
-    (raise (exn:fail:zcpkg:invalid-racket-version-interval
-            (format "Cannot match Racket version in reversed interval: [~a, ~a]" min-v max-v)
-            (current-continuation-marks) min-v max-v)))
-
+(define (racket-version-in-range? given-v min-v max-v)
+  (define-values (lo hi) (make-racket-version-interval min-v max-v))
+  (define v (version->integer given-v))
   (and (<= lo v)
        (<= v hi)))
-
 
 (define (check-racket-version-ranges v ranges)
   (if (null? ranges)
