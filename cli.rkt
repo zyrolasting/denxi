@@ -15,6 +15,7 @@
          racket/set
          racket/vector
          (for-syntax racket/base)
+         "analyze.rkt"
          "archiving.rkt"
          "capture.rkt"
          "config.rkt"
@@ -727,6 +728,8 @@ EOF
                   (format-zcpkg-info info)
                   (zcpkg-info->install-path info)))
         (halt 0)]
+       [(? zcpkg-query-string? query)
+        (write-output (analyze-installed-package (find-latest-info query)))]
        [_
         (write-output ($unrecognized-command what))
         (halt 1)]))

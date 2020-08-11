@@ -7,6 +7,7 @@
 (require racket/date
          racket/format
          racket/list
+         racket/match
          racket/pretty
          "capture.rkt"
          "file.rkt"
@@ -179,6 +180,42 @@
          (format "Could not read ~a. Double check that ~s points to a package directory."
                  CONVENTIONAL_PACKAGE_INFO_FILE_NAME
                  ($package-directory-has-unreadable-info-package-path m))]
+
+        [($package-report? m)
+         (match-define ($package-report info errors warnings) m)
+         (match-define
+           (zcpkg-info
+            provider-name
+            package-name
+            edition-name
+            revision-number
+            revision-names
+            setup-module
+            dependencies
+            integrity
+            signature
+            racket-versions
+            tags
+            description
+            home-page
+            launchers)
+           info)
+         (format
+          (join-lines
+           (list
+            (~a "Package: " package-name)
+            (~a "Provider: " provider-name)
+            (~a "Edition: " edition-name)
+            (~a "Revision: " revision-number
+                (if (null? revision-names) ""
+                    (format " (~a)"
+                            (string-join revision-names ", "))))
+            (if (null? errors)
+                "There are no errors"
+                (join-lines (cons "Errors:" (indent-lines errors))))
+            (if (null? warnings)
+                "There are no warnings"
+                (join-lines (cons "Warnings:" (indent-lines warnings)))))))]
 
         [($no-package-sources? m)
          "No package sources specified."]
