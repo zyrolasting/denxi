@@ -63,16 +63,16 @@
       (send-up ($sentinel)))
 
     (define/public (compile-racket-modules install-path)
-      (for/list ([module-path (in-racket-modules install-path)])
+      (for ([module-path (in-racket-modules install-path)])
         (with-handlers
-          ([exn? (λ (e) ($on-compilation-error module-path (exn->string e)))])
+          ([exn? (λ (e) (send-output ($on-compilation-error module-path (exn->string e))))])
           (managed-compile-zo module-path)
-          ($on-module-compiled module-path))))
+          (send-output ($on-module-compiled module-path)))))
 
     (define/public (setup-package info dependency-infos exprs)
+      (compile-racket-modules (zcpkg-info->install-path info))
       (sequence-for-each (λ (o) (send-output o))
                          (sequence-append
-                          (compile-racket-modules (zcpkg-info->install-path info))
                           (make-zcpkg-links info dependency-infos)
                           (create-launchers info)
                           (load-in-setup-module info exprs))))
@@ -248,8 +248,8 @@
                $on-compilation-error?
                compile-error)
 
-    (test-pred "Report at-fault module using a complete string path"
-               (conjoin string? complete-path?)
+    (test-pred "Report at-fault module using a complete path"
+               complete-path?
                ($on-compilation-error-module-path compile-error))
 
     (test-true "Report expected error as string"
