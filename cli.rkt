@@ -50,6 +50,7 @@
 (define (zcpkg-start-team!)
   (define team
     (new team%
+         [on-output write-output]
          [make-place (λ () (dynamic-place worker.rkt 'main))]))
 
   ; Give each worker the same configuration
@@ -59,11 +60,6 @@
 
   team)
 
-
-(define (process-jobs team tasks)
-  (define output (send team send-assigned-tasks! tasks))
-  (sequence-for-each write-output (in-list output))
-  output)
 
 (define (zcpkg-stop-team! team)
   (send team stop!))
@@ -154,9 +150,9 @@ EOF
       (λ ()
         ; Installation tasks come strictly before setup tasks.
         (define install-output
-          (process-jobs team
-                        (for/list ([(url-or-path infos) (in-hash sow)])
-                          ($install-package (car infos) (cdr infos) url-or-path))))
+          (send team send-assigned-tasks!
+                (for/list ([(url-or-path infos) (in-hash sow)])
+                  ($install-package (car infos) (cdr infos) url-or-path))))
 
         ; We need to set up any packages that were successfully installed.
         ; First, find the packages that made it.
@@ -175,7 +171,7 @@ EOF
           (for/list ([(url-or-path infos) (in-hash setup-sow)])
             ($setup-package (car infos) (cdr infos) null)))
 
-        (process-jobs team setup-tasks))
+        (send team send-assigned-tasks! setup-tasks))
       (λ () (halt (zcpkg-stop-team! team)))))
 
   (run-command-line
@@ -348,9 +344,9 @@ EOF
     (dynamic-wind
       void
       (λ ()
-        (process-jobs team
-                      (for/list ([infos (in-hash-values sow)])
-                        ($setup-package (car infos) (cdr infos) null))))
+        (send team send-assigned-tasks!
+              (for/list ([infos (in-hash-values sow)])
+                ($setup-package (car infos) (cdr infos) null))))
       (λ () (halt (zcpkg-stop-team! team)))))
 
   (run-command-line

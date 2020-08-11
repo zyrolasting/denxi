@@ -18,6 +18,7 @@
   (class object%
     (super-new)
     (init-field make-place
+                [on-output void]
                 [worker-count suggested-worker-count])
 
     (field [output null]
@@ -28,7 +29,9 @@
               (for/list ([id (in-range worker-count)])
                 (new sentry%
                      [pch (make-place)]
-                     [add-output (λ (v) (set! output (cons v output)))])))])
+                     [add-output (λ (v)
+                                   (on-output v)
+                                   (set! output (cons v output)))])))])
 
     (define/public-final (stop!)
       (for ([w (in-list workers)])
