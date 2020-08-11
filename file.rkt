@@ -18,6 +18,16 @@
          "zcpkg-info.rkt"
          "zcpkg-settings.rkt")
 
+(define (path-prefix? to-check prefix-pathy)
+  (define maybe-prefixed (explode-path (simplify-path (path->complete-path to-check))))
+  (define pref (explode-path (simplify-path (path->complete-path prefix-pathy))))
+
+  (and (<= (length pref)
+           (length maybe-prefixed))
+       (for/and ([(el index) (in-indexed pref)])
+         (equal? (list-ref maybe-prefixed index)
+                 el))))
+
 (define (path-cycles? path [previous #f] [encountered (set)])
   ; Do not let simplify-path consult filesystem, because that would
   ; follow any link present. We would not get its identity then.
