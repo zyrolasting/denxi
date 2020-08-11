@@ -63,26 +63,20 @@
       (send-up ($sentinel)))
 
     (define/public (compile-racket-modules install-path)
-      (for ([module-path (in-racket-modules install-path)])
+      (for/list ([module-path (in-racket-modules install-path)])
         (with-handlers
-          ([exn?
-            (λ (e) (send-output
-                    ($on-compilation-error
-                     (path->string module-path)
-                     (exn->string e))))])
+          ([exn? (λ (e) ($on-compilation-error module-path (exn->string e)))])
           (managed-compile-zo module-path)
-          (send-output ($on-module-compiled (path->string module-path))))))
+          ($on-module-compiled module-path))))
 
     (define/public (setup-package info dependency-infos exprs)
-      (define install-path (zcpkg-info->install-path info))
-      (compile-racket-modules install-path)
-      (make-zcpkg-dependency-links #:search? #f dependency-infos install-path)
-      (make-zcpkg-revision-links info)
-      (create-launchers info)
-      (for ([output (load-in-setup-module info (in-list exprs))])
-        (send-output ($setup-module-output
-                      (zcpkg-query->string (zcpkg-info->zcpkg-query info))
-                      (~s output)))))
+      (sequence-for-each (λ (o) (send-output o))
+                         (apply sequence-append
+                                (map in-list
+                                     (list (compile-racket-modules (zcpkg-info->install-path info))
+                                           (make-zcpkg-links info dependency-infos)
+                                           (create-launchers info)
+                                           (load-in-setup-module info exprs))))))
 
     (define/public (install-local-package info dependency-infos package-path)
       (define install-path (zcpkg-info->install-path info))

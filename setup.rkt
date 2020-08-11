@@ -10,6 +10,7 @@
          racket/path
          racket/function
          racket/sandbox
+         racket/sequence
          launcher/launcher
          "config.rkt"
          "contract.rkt"
@@ -96,6 +97,16 @@
         (cons maybe-launcher-path deleted)
         deleted)))
 
+(define (make-zcpkg-links info dependency-infos)
+  (sequence-map $after-write
+                (sequence-append
+                 (in-list (make-zcpkg-dependency-links
+                           #:search? #f
+                           dependency-infos
+                           (zcpkg-info->install-path info)))
+
+                 (in-list (make-zcpkg-revision-links info)))))
+
 (define (make-zcpkg-dependency-links #:search? search? dependencies [where (current-directory)])
   (unless (null? dependencies)
     (for/list ([variant (in-list dependencies)])
@@ -131,10 +142,11 @@
   (call-in-setup-module info read-eval-print-loop))
 
 (define (load-in-setup-module info exprs)
+  (define pkg-name (zcpkg-query->string (zcpkg-info->zcpkg-query info)))
   (call-in-setup-module info
                         (λ ()
-                          (for/list ([expr exprs])
-                            ((current-eval) expr)))
+                          (for/list ([expr (in-list exprs)])
+                            ($setup-module-output pkg-name (~s ((current-eval) expr)))))
                         (λ () null)))
 
 (define (call-in-setup-module info proc [fail-thunk void])
@@ -150,7 +162,6 @@
         (parameterize ([current-eval (make-module-evaluator #:language 'racket/base setup-module-path)])
           (proc)))
       (fail-thunk)))
-
 
 
 (define (get-setup-module-path info)
