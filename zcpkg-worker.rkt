@@ -71,12 +71,11 @@
 
     (define/public (setup-package info dependency-infos exprs)
       (sequence-for-each (λ (o) (send-output o))
-                         (apply sequence-append
-                                (map in-list
-                                     (list (compile-racket-modules (zcpkg-info->install-path info))
-                                           (make-zcpkg-links info dependency-infos)
-                                           (create-launchers info)
-                                           (load-in-setup-module info exprs))))))
+                         (sequence-append
+                          (compile-racket-modules (zcpkg-info->install-path info))
+                          (make-zcpkg-links info dependency-infos)
+                          (create-launchers info)
+                          (load-in-setup-module info exprs))))
 
     (define/public (install-local-package info dependency-infos package-path)
       (define install-path (zcpkg-info->install-path info))

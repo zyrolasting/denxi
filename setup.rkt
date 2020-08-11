@@ -108,11 +108,12 @@
                  (in-list (make-zcpkg-revision-links info)))))
 
 (define (make-zcpkg-dependency-links #:search? search? dependencies [where (current-directory)])
-  (unless (null? dependencies)
-    (for/list ([variant (in-list dependencies)])
-      (define dependency-info (if search? (find-exactly-one-info variant) variant))
-      (make-link/clobber (zcpkg-info->install-path dependency-info)
-                         (build-dependency-path where dependency-info)))))
+  (if (null? dependencies)
+      null
+      (for/list ([variant (in-list dependencies)])
+        (define dependency-info (if search? (find-exactly-one-info variant) variant))
+        (make-link/clobber (zcpkg-info->install-path dependency-info)
+                           (build-dependency-path where dependency-info)))))
 
 
 (define (make-zcpkg-revision-links info
