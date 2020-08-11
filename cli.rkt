@@ -627,7 +627,7 @@ EOF
                      (setup-module . "setup.rkt")
                      (dependencies . ())
                      (launchers . ())
-                     (racket-versions . (("6.0" . ,(version))))))
+                     (racket-versions . ((,(version) . #f)))))
 
                  (write-config
                   (make-immutable-hasheq defn)
