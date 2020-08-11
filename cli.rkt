@@ -153,14 +153,29 @@ EOF
       void
       (λ ()
         ; Installation tasks come strictly before setup tasks.
-        (process-jobs team
-                      (for/list ([(url-or-path infos) (in-hash sow)])
-                        ($install-package (car infos) (cdr infos) url-or-path)))
+        (define install-output
+          (process-jobs team
+                        (for/list ([(url-or-path infos) (in-hash sow)])
+                          ($install-package (car infos) (cdr infos) url-or-path))))
 
-        (process-jobs
-         (send team send-assigned-tasks!
-               (for/list ([infos (in-hash-values sow)])
-                 ($setup-package (car infos) (cdr infos) null)))))
+        ; We need to set up any packages that were successfully installed.
+        ; First, find the packages that made it.
+        (define install-success-messages
+          (sequence-filter $on-package-installed?
+                           (in-list install-output)))
+
+        ; We need the package definitions of the installed packages.
+        (define installed-info
+          (sequence-map $on-package-installed-info
+                        install-success-messages))
+
+        ; Use the dependency resolver to establish scope of work for setup.
+        (define setup-sow (find-scope-of-work (sequence->list installed-info)))
+        (define setup-tasks
+          (for/list ([(url-or-path infos) (in-hash setup-sow)])
+            ($setup-package (car infos) (cdr infos) null)))
+
+        (process-jobs team setup-tasks))
       (λ () (halt (zcpkg-stop-team! team)))))
 
   (run-command-line
