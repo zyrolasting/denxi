@@ -27,6 +27,7 @@
 (define-message $on-bad-digest (info))
 (define-message $on-bad-signature (info))
 (define-message $on-compilation-error (module-path message))
+(define-message $on-module-compiled (module-path))
 (define-message $on-missing-signature (info))
 (define-message $on-package-installed (info))
 (define-message $on-request (method client-ip host-ip referer uri timestamp))

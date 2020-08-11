@@ -89,6 +89,10 @@
                  (zcpkg-query->string (zcpkg-info->zcpkg-query ($already-installed-info m)))
                  (zcpkg-info->install-path ($already-installed-info m)))]
 
+        [($on-module-compiled? m)
+         (format "Compiled: ~a"
+                 ($on-module-compiled-module-path m))]
+
         [($on-compilation-error? m)
          (format "Bytecode compilation error in: ~a~n~a"
                  ($on-compilation-error-module-path m)

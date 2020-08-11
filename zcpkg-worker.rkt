@@ -70,7 +70,8 @@
                     ($on-compilation-error
                      (path->string module-path)
                      (exn->string e))))])
-          (managed-compile-zo module-path))))
+          (managed-compile-zo module-path)
+          (send-output ($on-module-compiled (path->string module-path))))))
 
     (define/public (setup-package info dependency-infos exprs)
       (define install-path (zcpkg-info->install-path info))
@@ -146,7 +147,8 @@
 
 
 (module+ test
-  (require rackunit
+  (require racket/list
+           rackunit
            (submod "file.rkt" test))
 
   (define-values (for-tests for-worker) (place-channel))
@@ -159,6 +161,10 @@
           (check-equal? actual expected)))
     (when (sync/timeout 0 for-tests)
       (fail "Extra output left in place channel")))
+
+  (define (accum-output [l null])
+    (define m (sync/timeout 0 for-tests))
+    (if m (accum-output (cons m l)) (reverse l)))
 
   (define worker (new zcpkg-worker% [pch for-worker]))
 
@@ -220,26 +226,42 @@
     (display-to-file "(module content racket/base (void))" "c.ss")
     (display-to-file "#lang scribble/base" "d.scrbl")
     (send worker compile-racket-modules (current-directory))
+
     (for ([name (in-list (list "a_rkt" "b_rkt" "c_ss" "d_scrbl"))])
       (define path (build-path "compiled" name))
       (check-pred file-exists? (path-replace-extension path #".dep"))
       (check-pred file-exists? (path-replace-extension path #".zo")))
-    (expect-output
-     (λ (m)
-       (test-pred "Report output" $output? m)
-       (define compile-error ($output-v m))
 
-       (test-pred "Report compilation error"
-                  $on-compilation-error?
-                  compile-error)
+    (define output-messages (accum-output))
 
-       (test-pred "Report at-fault module using a complete string path"
-                  (conjoin string? complete-path?)
-                  ($on-compilation-error-module-path compile-error))
+    (test-true "Report $output" (andmap $output? output-messages))
 
-       (test-true "Report expected error as string"
-                  (regexp-match? #rx"expected a `module` declaration"
-                                 ($on-compilation-error-message compile-error))))))
+    (define output-values (map $output-v output-messages))
+
+    (define-values (compile-errors compile-successes)
+      (partition $on-compilation-error? output-values))
+
+    (test-eq? "Report the only error"
+              (length compile-errors)
+              1)
+
+    (test-eq? "Report all successes"
+              (length compile-successes)
+              4)
+
+    (define compile-error (car compile-errors))
+
+    (test-pred "Report compilation error"
+               $on-compilation-error?
+               compile-error)
+
+    (test-pred "Report at-fault module using a complete string path"
+               (conjoin string? complete-path?)
+               ($on-compilation-error-module-path compile-error))
+
+    (test-true "Report expected error as string"
+               (regexp-match? #rx"expected a `module` declaration"
+                              ($on-compilation-error-message compile-error))))
 
   (test-case "Detect packages that do not declare a supported Racket version"
     (define info (make-zcpkg-info #:provider-name "provider"
