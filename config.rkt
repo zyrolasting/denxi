@@ -97,7 +97,7 @@
    (λ ()
      (call-with-output-file #:exists 'truncate/replace
        path (λ (o) (save-config! closure o))))
-   (λ () (error 'set-metadatum!
+   (λ () (error 'save-local-config!
                 "Failed to obtain lock for ~a"
                 path)))
   (delete-file lockfile))
