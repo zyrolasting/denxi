@@ -43,11 +43,13 @@
   (close-input-port from-stdout)
   (values exit-code output))
 
-(define (make-digest target-path)
-  (call-with-input-file target-path
-    (λ (in)
-      (run-openssl-command in
-                           "dgst" "-binary" "-sha384"))))
+(define (make-digest variant)
+  (cond [(path? variant)
+         (call-with-input-file variant make-digest)]
+        [(input-port? variant)
+         (run-openssl-command variant
+                              "dgst" "-binary" "-sha384")]
+        [else (error)]))
 
 (define (digest=? digest target-path)
   (define-values (exit-code other-digest) (make-digest target-path))
