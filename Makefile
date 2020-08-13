@@ -6,7 +6,7 @@ test:
 	raco test -j 8 *.rkt
 
 racket-deps:
-	raco pkg install web-server-lib rackunit-lib
+	raco pkg install web-server-lib rackunit-lib db-lib
 
 compile:
 	raco make -j 8 -v *.rkt
