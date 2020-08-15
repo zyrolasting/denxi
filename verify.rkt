@@ -44,12 +44,12 @@
   (values exit-code output))
 
 (define (make-digest variant)
-  (cond [(path? variant)
+  (cond [(path-string? variant)
          (call-with-input-file variant make-digest)]
         [(input-port? variant)
          (run-openssl-command variant
                               "dgst" "-binary" "-sha384")]
-        [else (error)]))
+        [else (error 'make-digest "Cannot make digest using ~s" variant)]))
 
 (define (digest=? digest target-path)
   (define-values (exit-code other-digest) (make-digest target-path))
