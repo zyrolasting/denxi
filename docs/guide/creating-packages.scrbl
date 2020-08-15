@@ -114,3 +114,54 @@ $ zcpkg sandbox --sandbox-path-permissions "[...]" \
                 -e "(install-python3)" \
                 mavrick:pyracket:totally-works
 }|
+
+
+@section{Developing Packages Locally}
+
+You can install your local package in a @tech{workspace} like so:
+
+@verbatim|{
+$ zcpkg install -y my-pkg
+}|
+
+By default, this copies your package files to the workspace. If
+something does not work right, you have to first uninstall the package
+using the associated query before installing the package again.
+
+@verbatim|{
+$ zcpkg uninstall -y localhost.localdomain:my-pkg
+$ zcpkg install -y my-pkg
+}|
+
+To save some time, you can instead install the package using a
+symbolic link. In this case, your changes will immediately reflect on
+the workspace.
+
+@verbatim|{
+$ zcpkg install -y --link my-pkg
+}|
+
+When using a link, @binary will use the original source when
+setting up your package according to @secref{setup}.
+
+@section[#:tag "setup"]{Package Setup}
+
+@margin-note{@litchar{zcpkg setup} is equivalent to @litchar{raco setup} in purpose.}
+
+Use the @litchar{setup} command to (re)integrate a package with your
+system. Setup runs automatically when you install a package, but you
+may need to run setup again manually whenever you change the source
+code of a package available in the workspace.
+
+@verbatim|{
+$ zcpkg setup localhost.localdomain:my-pkg
+}|
+
+Specifically, the @litchar{setup} command:
+
+@itemlist[
+@item{Creates launchers for a package}
+@item{Compiles @tt{.rkt}, @tt{.ss}, and @tt{.scrbl} modules to bytecode}
+@item{Creates symbolic links to depedencies in @depdir}
+@item{Creates symbolic links to revisions within the @tech{workspace}.}
+]
