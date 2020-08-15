@@ -31,6 +31,8 @@ This illustrates the fundamental difference between @binary and
 @tech/reference{collections}. However, packages can define launchers
 that map top-level collection names to dependency directories.
 
+@section{Manually Linking Packages}
+
 You can access the packages you installed for a specific use, outside of
 conventions set by @|binary|. To do this, use the @litchar{link} command to
 make a symbolic link to a package installed on your system.
@@ -39,3 +41,10 @@ make a symbolic link to a package installed on your system.
 $ zcpkg link john.doe:calculator calc
 $ ls calc
 }|
+
+Example use cases:
+
+@itemlist[
+@item{You want to reuse a package in a different @tech{workspace}.}
+@item{You want to run a program that requires several hand-picked versions of the same package.}
+]
