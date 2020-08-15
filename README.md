@@ -29,29 +29,37 @@ A flexible package manager for Racket.
 
 ## Wait, we already have `raco pkg`
 
-Yes, and it's fine. `zcpkg` complements `raco pkg`, and is not meant
-to provide redundant functionality.
+Yes, and it's fine. `zcpkg` complements `raco pkg`. They are not meant
+to be fully redundant.
 
-To borrow [Sam Boyer's terms][boyer], `raco pkg` is a **Language
-Package Manager**, or LPM.  It fetches and builds packages of Racket
-source code. `raco pkg` further presumes that Racket packages define
-at least one collection to include in a Racket installation. This
-creates scenarios specific to Racket. For example, if two packages
-define conflicting collection paths, users may need to create a custom
-Racket configuration if they want to use both packages at once. These
-configurations can be painful to maintain on a case-by-case basis.
+Because both projects are package managers, some functional overlap is
+expected. So what's different? To borrow [Sam Boyer's terms][boyer],
+`raco pkg` is a **Language Package Manager**, or LPM.  It fetches and
+builds packages of Racket source code. `raco pkg` presumes that Racket
+packages define at least one collection to include in a Racket
+installation. Additionally,
+[pkgs.racket-lang.org](https://pkgs.racket-lang.org) (the default
+catalog) remembers only one artifact per registered
+package. Altogether, what a package installation does to your system
+depends on the exact state of your Racket installation, and what
+happens to be on a catalog at the time.
 
-The command `zcpkg` is short for "Zero-Collection Package," which
-means it manages packages that define no collections.  Removing
-collections from the equation severs the relationship between an
-arbitrary group of files and a Racket installation. Meaning, you
+The command `zcpkg` is short for "Zero-Collection Package," meaning
+the program manages packages that define no collections. This is just
+marketing, since I expect Racket programmers can reason about a
+zero-collection package as part of the casework about package
+management: The only difference that matters is that `zcpkg` does not
+have a side-effect on a Racket installation in the first place. Not
+defining collections is a consequence of that restriction.
+
+Removing collections from the equation severs the relationship between
+an arbitrary group of modules and a Racket installation. Meaning, you
 cannot directly target these files using `raco setup` or collection
 paths. The benefit is that you are free to integrate the files as you
 wish. For that reason, `zcpkg` concerns itself with (re)producing
 files as a **Project/Application Dependency Manager**, or
-PDM. System-level dependencies matter too, but they are out of scope
-for this section.
-
+PDM. System-level dependencies matter too, and `zcpkg` can be
+leveraged to define an OS distribution if you care to do that.
 
 [boyer]: https://medium.com/@sdboyer/so-you-want-to-write-a-package-manager-4ae9c17d9527
 
