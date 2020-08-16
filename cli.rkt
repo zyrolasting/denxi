@@ -754,6 +754,7 @@ EOF
 where <what> is one of
   workspace  The current target workspace directory
   installed  A list of installed packages, as queries
+  <query>    Information about an installed package
 
 EOF
 ))
