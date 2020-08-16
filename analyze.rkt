@@ -11,6 +11,7 @@
 
 (require racket/format
          "file.rkt"
+         "path.rkt"
          "racket-version.rkt"
          "verify.rkt"
          "workspace.rkt"

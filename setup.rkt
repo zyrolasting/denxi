@@ -15,6 +15,7 @@
          "config.rkt"
          "contract.rkt"
          "file.rkt"
+         "path.rkt"
          "string.rkt"
          "url.rkt"
          "verify.rkt"
@@ -170,9 +171,8 @@
   (define zcpkg-path (zcpkg-info->install-path info))
   (define setup-module-path (zcpkg-info-setup-module info))
   (and setup-module-path
-       (let ([path-to-verify (simplify-path (build-path zcpkg-path setup-module-path))])
-         (if (path-prefix? path-to-verify zcpkg-path)
-             path-to-verify
+       (let ([path-to-verify (build-strictly-deeper-path zcpkg-path setup-module-path)])
+         (or path-to-verify
              (error 'setup
                     "~a's setup-module path reaches outside of install directory."
                     name)))))
