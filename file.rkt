@@ -12,33 +12,12 @@
          racket/sequence
          "config.rkt"
          "zcpkg-query.rkt"
+         "path.rkt"
          "setting.rkt"
          "string.rkt"
          "workspace.rkt"
          "zcpkg-info.rkt"
          "zcpkg-settings.rkt")
-
-(define (path-prefix? to-check prefix-pathy)
-  (define maybe-prefixed (explode-path (simplify-path (path->complete-path to-check))))
-  (define pref (explode-path (simplify-path (path->complete-path prefix-pathy))))
-
-  (and (<= (length pref)
-           (length maybe-prefixed))
-       (for/and ([(el index) (in-indexed pref)])
-         (equal? (list-ref maybe-prefixed index)
-                 el))))
-
-(define (path-cycles? path [previous #f] [encountered (set)])
-  ; Do not let simplify-path consult filesystem, because that would
-  ; follow any link present. We would not get its identity then.
-  (define simple (simplify-path path #f))
-  (define id (file-or-directory-identity simple #t))
-  (cond [(equal? id previous) #f] ; Checks for root directory, given call below.
-        [(set-member? encountered id)]
-        [else
-         (path-cycles? (build-path simple 'up)
-                       id
-                       (set-add encountered id))]))
 
 (define (delete-file* path)
   (if (or (file-exists? path)
