@@ -2,6 +2,7 @@
 
 (provide clear-download-cache!
          download-info
+         download-file
          download-artifact
          download-public-key
          current-url->response-values)
