@@ -195,11 +195,11 @@ EOF
     ZCPKG_IGNORE_DOWNLOAD_CACHE)
 
    (λ (flags . package-sources)
-     (define sow (find-scope-of-work package-sources))
-
      (when (null? package-sources)
        (write-output ($no-package-sources))
        (halt 1))
+
+     (define sow (find-scope-of-work package-sources))
 
      (if (ZCPKG_CONSENT)
          (do-work sow)
