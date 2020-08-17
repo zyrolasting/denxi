@@ -10,6 +10,8 @@
 
 (provide (struct-out zcpkg-signature-info)
          (contract-out
+          [make-signature
+           (-> bytes? path-string? bytes?)]
           [zcpkg-cipher-algorithms
            (non-empty-listof symbol?)]
           [zcpkg-cipher-algorithm/c

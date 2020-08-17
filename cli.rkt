@@ -24,6 +24,8 @@
          "download.rkt"
          "file.rkt"
          "format.rkt"
+         "integrity.rkt"
+         "signature.rkt"
          "message.rkt"
          "output.rkt"
          "resolve.rkt"
@@ -570,19 +572,21 @@ EOF
              (pack archive-files to-archive-file)
              archive-file))))
 
-     (define-values (exit-code/digest digest) (make-digest archive))
-     (unless (= exit-code/digest 0)
-       (write-output ($cannot-make-bundle-digest exit-code/digest))
-       (halt 1))
+     (define digest
+       (with-handlers ([exn:fail:zcpkg:openssl?
+                        (λ (e)
+                          (write-output ($cannot-make-bundle-digest (exn:fail:zcpkg:openssl-exit-code e)))
+                          (halt 1))])
+         (make-digest archive 'sha384)))
 
-     (define-values (exit-code/signature signature)
-       (if (ZCPKG_PRIVATE_KEY_PATH)
-           (make-signature digest (ZCPKG_PRIVATE_KEY_PATH))
-           (values 0 #f)))
-
-     (unless (= exit-code/signature 0)
-       (write-output ($cannot-make-bundle-signature exit-code/signature))
-       (halt 1))
+     (define signature
+       (with-handlers ([exn:fail:zcpkg:openssl?
+                        (λ (e)
+                          (write-output ($cannot-make-bundle-signature (exn:fail:zcpkg:openssl-exit-code e)))
+                          (halt 1))])
+         (if (ZCPKG_PRIVATE_KEY_PATH)
+             (make-signature digest (ZCPKG_PRIVATE_KEY_PATH))
+             #f)))
 
      (save-config! (make-config-closure
                     (zcpkg-info->hash

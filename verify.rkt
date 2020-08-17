@@ -5,7 +5,8 @@
 
 (provide validate-zcpkg-info
          run-openssl-command
-         make-error-message-accumulator)
+         make-error-message-accumulator
+         (struct-out exn:fail:zcpkg:openssl))
 
 (require racket/file
          racket/function
@@ -20,23 +21,46 @@
          "zcpkg-query.rkt")
 
 (define openssl (find-executable-path "openssl"))
+(struct exn:fail:zcpkg:openssl exn:fail (exit-code))
 
 (define (run-openssl-command stdin-source . args)
   (define-values (sp from-stdout to-stdin from-stderr)
     (apply subprocess #f #f #f openssl args))
 
   (copy-port stdin-source to-stdin)
+  (flush-output to-stdin)
   (close-output-port to-stdin)
 
-  (sync sp)
-  (define exit-code (subprocess-status sp))
+  (dynamic-wind void
+                (λ ()
+                  (define delay-seconds 3)
+                  (define maybe-sp (sync/timeout delay-seconds sp))
 
-  (copy-port from-stderr (current-output-port))
-  (define output (port->bytes from-stdout))
+                  (define exit-code
+                    (if maybe-sp
+                        (begin (subprocess-kill sp) 1)
+                        (subprocess-status sp)))
 
-  (close-input-port from-stderr)
-  (close-input-port from-stdout)
-  (values exit-code output))
+                  (define error-string
+                    (if maybe-sp
+                        (port->string from-stderr)
+                        (format "Command timed out after ~a seconds. zcpkg terminated the subprocess."
+                                delay-seconds)))
+
+                  (unless (eq? exit-code 0)
+                    (raise (exn:fail:zcpkg:openssl
+                            (format "OpenSSL failed with exit code ~a: ~a"
+                                    exit-code
+                                    error-string)
+                            (current-continuation-marks)
+                            exit-code)))
+
+                  (define output (port->bytes from-stdout))
+                  output)
+                (λ ()
+                  (close-input-port from-stderr)
+                  (close-input-port from-stdout))))
+
 
 ; TODO: Write hash algorithm-dependent check
 (define (non-empty-bytes? b)

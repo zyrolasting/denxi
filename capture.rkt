@@ -15,6 +15,7 @@
          "contract.rkt"
          "zcpkg-query.rkt"
          "file.rkt"
+         "integrity.rkt"
          "message.rkt"
          "setting.rkt"
          "string.rkt"
@@ -60,7 +61,7 @@
                (file-exists? key)
                (not (hash-has-key? wip key))
                (ormap (λ (patt) (regexp-match? patt key)) patterns))
-          (hash-set wip key (make-digest* key))
+          (hash-set wip key (make-digest key 'sha384))
           wip))))
 
 (define (write-capture cap [o (current-output-port)])
@@ -79,12 +80,6 @@
         [(and (not we-have-it) they-have-it)
          ($diff-missing-file path)]))
 
-
-(define (make-digest* path)
-  (define-values (exit-code digest) (make-digest path))
-  (unless (= exit-code 0)
-    (raise exit-code))
-  digest)
 
 (define (normalize-patterns patts)
   (map (λ (variant)

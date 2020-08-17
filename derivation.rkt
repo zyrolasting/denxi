@@ -24,6 +24,7 @@
          net/base64
          "db.rkt"
          "file.rkt"
+         "integrity.rkt"
          "verify.rkt")
 
 

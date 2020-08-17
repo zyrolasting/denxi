@@ -92,27 +92,7 @@
 
 
     (define/public (handle-$setup-package info dependency-infos exprs)
-      (setup-package info dependency-infos exprs))
-
-    (define/public (handle-$install-package info dependency-infos url-or-path)
-      (define (do-install)
-        (if (directory-exists? url-or-path)
-            (install-local-package info dependency-infos url-or-path)
-            (install-remote-package info dependency-infos)))
-
-      (if (zcpkg-installed? info)
-          (send-output ($already-installed info))
-          (case (check-racket-version-ranges (version) (zcpkg-info-racket-versions info))
-            [(supported) (do-install)]
-            [(unsupported)
-             (if (ZCPKG_ALLOW_UNSUPPORTED_RACKET)
-                 (do-install)
-                 (send-output ($unsupported-racket-version info)))]
-            [(undeclared)
-             (if (or (ZCPKG_ALLOW_UNSUPPORTED_RACKET)
-                     (ZCPKG_ALLOW_UNDECLARED_RACKET_VERSIONS))
-                 (do-install)
-                 (send-output ($undeclared-racket-version info)))])))))
+      (setup-package info dependency-infos exprs))))
 
 
 (define (main pch)
