@@ -36,12 +36,12 @@
          "verify.rkt"
          "zcpkg-settings.rkt")
 
-(struct zcpkg-integrity-info (algorithm body) #:prefab)
+(struct zcpkg-integrity-info (algorithm digest) #:prefab)
 
 (define (alist->zcpkg-integrity-info l)
   (zcpkg-integrity-info
    (assoc+ 'algorithm l)
-   (assoc+ 'body l)))
+   (assoc+ 'digest l)))
 
 (define (make-zcpkg-integrity-info variant algorithm)
   (zcpkg-integrity-info algorithm (make-digest variant algorithm)))
@@ -66,7 +66,7 @@
 
 
 (define (zcpkg-integrity-check info variant)
-  (or (equal? (zcpkg-integrity-info-body info)
+  (or (equal? (zcpkg-integrity-info-digest info)
               (make-digest (zcpkg-integrity-info-algorithm info) variant))
       (ZCPKG_TRUST_BAD_DIGEST)))
 
@@ -77,7 +77,7 @@
   (test-equal? "Declare integrity info using list"
                (alist->zcpkg-integrity-info
                 '((algorithm sha384)
-                  (body #"abc")))
+                  (digest #"abc")))
                (zcpkg-integrity-info 'sha384 #"abc"))
 
   (test-equal? "Declare integrity info using empty list"
@@ -90,5 +90,5 @@
       (define info (make-zcpkg-integrity-info bstr algorithm))
       (check-pred zcpkg-integrity-info? info)
       (check-eq? (zcpkg-integrity-info-algorithm info) algorithm)
-      (check-equal? (zcpkg-integrity-info-body info)
+      (check-equal? (zcpkg-integrity-info-digest info)
                     (make-digest bstr algorithm)))))
