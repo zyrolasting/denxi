@@ -15,11 +15,13 @@
          "download.rkt"
          "file.rkt"
          "format.rkt"
+         "integrity.rkt"
          "message.rkt"
          "racket-version.rkt"
          "resolve.rkt"
          "sentry.rkt"
          "setup.rkt"
+         "signature.rkt"
          "string.rkt"
          "team.rkt"
          "url.rkt"
@@ -94,8 +96,12 @@
       (define query          (coerce-zcpkg-query info))
       (define artifact-path  (download-artifact query))
       (define public-key     (download-public-key (zcpkg-query-provider-name query)))
-      (define integrous?     (integrous-artifact? artifact-path info))
-      (define authenticated? (authenticated-provider? info public-key))
+
+      (define integrity-info (zcpkg-integrity-info #f #f))
+      (define signature-info (zcpkg-signature-info #f #f #f))
+
+      (define integrous?     (zcpkg-integrity-check integrity-info artifact-path))
+      (define authenticated? (zcpkg-signature-check integrity-info signature-info))
 
       (unless integrous?
         (send-output ($on-bad-digest info)))

@@ -3,13 +3,8 @@
 ; Define procedures used to verify custom data,
 ; so that other processes can continue.
 
-(provide make-digest
-         make-signature
-         digest=?
-         verify-signature
-         validate-zcpkg-info
-         integrous-artifact?
-         authenticated-provider?
+(provide validate-zcpkg-info
+         run-openssl-command
          make-error-message-accumulator)
 
 (require racket/file
@@ -42,40 +37,6 @@
   (close-input-port from-stderr)
   (close-input-port from-stdout)
   (values exit-code output))
-
-(define (make-digest variant)
-  (cond [(path-string? variant)
-         (call-with-input-file variant make-digest)]
-        [(input-port? variant)
-         (run-openssl-command variant
-                              "dgst" "-binary" "-sha384")]
-        [else (error 'make-digest "Cannot make digest using ~s" variant)]))
-
-(define (digest=? digest target-path)
-  (define-values (exit-code other-digest) (make-digest target-path))
-  (and (eq? exit-code 0)
-       (bytes=? digest other-digest)))
-
-(define (make-signature digest private-key-path)
-  (run-openssl-command (open-input-bytes digest)
-                       "pkeyutl"
-                       "-sign"
-                       "-inkey" private-key-path))
-
-(define (verify-signature digest signature public-key)
-  (define tmpsig (make-temporary-file))
-  (call-with-output-file tmpsig
-    #:exists 'truncate/replace
-    (λ (o) (copy-port (open-input-bytes signature) o)))
-  (define-values (exit-code msg)
-    (run-openssl-command
-     (open-input-bytes digest)
-     "pkeyutl"
-     "-verify"
-     "-sigfile" tmpsig
-     "-pubin" "-inkey" public-key))
-  (eq? exit-code 0))
-
 
 ; TODO: Write hash algorithm-dependent check
 (define (non-empty-bytes? b)
@@ -133,23 +94,6 @@
            "a byte string"))
 
   (reverse errors))
-
-
-(define (integrous-artifact? artifact-path info)
-  (or (digest=? (zcpkg-info-integrity info) artifact-path)
-      (ZCPKG_TRUST_BAD_DIGEST)))
-
-(define (authenticated-provider? info public-key)
-  (define signature
-    (zcpkg-info-signature info))
-
-  (if signature
-      (or (verify-signature (zcpkg-info-integrity info)
-                            signature
-                            public-key)
-          (ZCPKG_TRUST_BAD_SIGNATURE))
-      (or (ZCPKG_TRUST_BAD_DIGEST)
-          (ZCPKG_TRUST_UNSIGNED))))
 
 (module+ test
   (require rackunit)

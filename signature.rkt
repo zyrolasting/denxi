@@ -14,6 +14,8 @@
            (non-empty-listof symbol?)]
           [zcpkg-cipher-algorithm/c
            flat-contract?]
+          [zcpkg-signature-check
+           (-> zcpkg-integrity-info? zcpkg-signature-info? boolean?)]
           [alist->zcpkg-signature-info
            (-> list? zcpkg-integrity-info?)]))
 
