@@ -91,32 +91,6 @@
       (send-output ($on-package-installed info)))
 
 
-    (define/public (install-remote-package info dependency-infos)
-      (define install-path   (zcpkg-info->install-path info))
-      (define query          (coerce-zcpkg-query info))
-      (define artifact-path  (download-artifact query))
-      (define public-key     (download-public-key (zcpkg-query-provider-name query)))
-
-      (define integrity-info (zcpkg-integrity-info #f #f))
-      (define signature-info (zcpkg-signature-info #f #f #f))
-
-      (define integrous?     (zcpkg-integrity-check integrity-info artifact-path))
-      (define authenticated? (zcpkg-signature-check integrity-info signature-info))
-
-      (unless integrous?
-        (send-output ($on-bad-digest info)))
-
-      (unless authenticated?
-        (send-output ((if (zcpkg-info-signature info)
-                              $on-bad-signature
-                              $on-missing-signature)
-                          info)))
-
-      (when (and integrous? authenticated?)
-        (make-directory* (path-only install-path))
-        (unpack artifact-path install-path)
-        (install-local-package info dependency-infos install-path)))
-
     (define/public (handle-$setup-package info dependency-infos exprs)
       (setup-package info dependency-infos exprs))
 
