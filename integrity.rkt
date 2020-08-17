@@ -5,67 +5,46 @@
 (define zcpkg-hash-algorithms
   '(sha384 sha512 sha1 md5))
 
-(define zcpkg-hash-encodings
-  '(base64 base32 b32 b64))
+(define zcpkg-hash-source/c
+  (or/c path-string? bytes? input-port?))
 
 (define zcpkg-hash-algorithm/c
   (apply or/c zcpkg-hash-algorithms))
-
-(define zcpkg-hash-encoding/c
-  (apply or/c zcpkg-hash-encodings))
 
 (provide (struct-out zcpkg-integrity-info)
          (contract-out
           [zcpkg-hash-algorithms
            (non-empty-listof symbol?)]
-          [zcpkg-hash-encodings
-           (non-empty-listof symbol?)]
           [zcpkg-hash-algorithm/c
-           flat-contract?]
-          [zcpkg-hash-encoding/c
            flat-contract?]
           [alist->zcpkg-integrity-info
            (-> list? zcpkg-integrity-info?)]
-          [encode-digest
-           (-> zcpkg-hash-encoding/c bytes? bytes?)]
-          [decode-digest
-           (-> zcpkg-hash-encoding/c bytes? bytes?)]
           [make-digest
-           (-> (or/c path-string? bytes? input-port?)
+           (-> zcpkg-hash-source/c
                zcpkg-hash-algorithm/c
-               bytes?)]))
+               bytes?)]
+          [zcpkg-integrity-check
+           (-> zcpkg-integrity-info?
+               zcpkg-hash-source/c
+               boolean?)]))
 
 (require racket/sequence
          racket/format
-         net/base64
-         base32
+         "encode.rkt"
          "file.rkt"
          "list.rkt"
-         "verify.rkt")
+         "verify.rkt"
+         "zcpkg-settings.rkt")
 
-(struct zcpkg-integrity-info (algorithm encoding body) #:prefab)
+(struct zcpkg-integrity-info (algorithm body) #:prefab)
 
 (define (alist->zcpkg-integrity-info l)
   (zcpkg-integrity-info
    (assoc+ 'algorithm l)
-   (assoc+ 'encoding l)
    (assoc+ 'body l)))
 
-(define (make-zcpkg-integrity-info variant algorithm encoding)
-  (zcpkg-integrity-info algorithm
-                        encoding
-                        (encode-digest encoding (make-digest variant algorithm))))
-
-; Contracts will raise error when misused
-(define (encode-digest encoding digest)
-  (case encoding
-    [(base32 b32) (base32-encode-bytes digest)]
-    [(base64 b64) (base64-encode digest #"")]))
-
-(define (decode-digest encoding encoded-digest)
-  (case encoding
-    [(base32 b32) (base32-decode-bytes encoded-digest)]
-    [(base64 b64) (base64-decode encoded-digest)]))
+(define (make-zcpkg-integrity-info variant algorithm)
+  (zcpkg-integrity-info algorithm (make-digest variant algorithm)))
 
 (define (make-digest variant algorithm)
   (cond [(path-string? variant)
@@ -86,29 +65,30 @@
                     exit-code))]))
 
 
+(define (zcpkg-integrity-check info variant)
+  (or (equal? (zcpkg-integrity-info-body info)
+              (make-digest (zcpkg-integrity-info-algorithm info) variant))
+      (ZCPKG_TRUST_BAD_DIGEST)))
+
+
 (module+ test
   (require rackunit)
 
   (test-equal? "Declare integrity info using list"
                (alist->zcpkg-integrity-info
                 '((algorithm sha384)
-                  (encoding b32)
                   (body #"abc")))
-               (zcpkg-integrity-info 'sha384 'b32 #"abc"))
+               (zcpkg-integrity-info 'sha384 #"abc"))
 
   (test-equal? "Declare integrity info using empty list"
                (alist->zcpkg-integrity-info null)
-               (zcpkg-integrity-info #f #f #f))
+               (zcpkg-integrity-info #f #f))
 
   (test-case "Create integrity information"
-    (for* ([algorithm (in-list zcpkg-hash-algorithms)]
-           [encoding (in-list '(base64 base32 b32 b64))])
+    (for ([algorithm (in-list zcpkg-hash-algorithms)])
       (define bstr (string->bytes/utf-8 (symbol->string algorithm)))
-      (define info (make-zcpkg-integrity-info bstr algorithm encoding))
+      (define info (make-zcpkg-integrity-info bstr algorithm))
       (check-pred zcpkg-integrity-info? info)
       (check-eq? (zcpkg-integrity-info-algorithm info) algorithm)
-      (check-eq? (zcpkg-integrity-info-encoding info) encoding)
       (check-equal? (zcpkg-integrity-info-body info)
-                    (encode-digest encoding (make-digest bstr algorithm)))
-      (check-equal? (decode-digest encoding (zcpkg-integrity-info-body info))
                     (make-digest bstr algorithm)))))
