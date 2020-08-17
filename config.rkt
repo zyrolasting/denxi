@@ -30,6 +30,7 @@
 
 (require racket/file
          racket/format
+         racket/match
          racket/path
          racket/place
          racket/pretty
@@ -55,6 +56,7 @@
 (define (load-config variant)
   (cond [(path? variant) (load-local-config variant)]
         [(url? variant) (load-remote-config variant)]
+        [(list? variant) (load-config (open-input-infotab variant))]
         [(string? variant) (load-config (open-input-string variant))]
         [(bytes? variant) (load-config (open-input-bytes variant))]
         [(input-port? variant) (read-config variant)]))
@@ -107,11 +109,32 @@
   (save-config! closure o)
   (put-pure-port u (get-output-bytes o)))
 
+
+(define (alist->infotab-module-datum alist)
+  `(module infotab setup/infotab
+     . ,(for/list ([pair (in-list alist)])
+          `(define ,(car pair) ,(cdr pair)))))
+
+
 (define (make-infotab-module-datum domain bindings)
   `(module infotab setup/infotab
      . ,(for/list ([k (in-list domain)])
           (define v (hash-ref bindings k))
           `(define ,k ,(if (list? v) `',v v)))))
+
+
+(define (open-input-infotab l)
+  (match l
+    [(? null? l)
+     (open-input-string "")]
+    [(list 'module _ 'setup/infotab _ ...)
+     (open-input-string (~s l))]
+    [(? list? (cons _ _) ...)
+     (open-input-infotab (alist->infotab-module-datum l))]
+    [_ (raise-argument-error 'open-input-infotab
+                             "A valid list used for configuration"
+                             l)]))
+
 
 (define (print-info-module domain bindings o)
   (displayln "#lang info\n" o)
@@ -287,10 +310,22 @@
                                         (load-config tmp-file))))
     (λ () (delete-file tmp-file)))
 
-  (test-case "Read hard-coded config from port"
+  (test-equal? "Create infotab from associative list"
+               (alist->infotab-module-datum '((a . 1) (b . '())))
+               '(module infotab setup/infotab
+                  (define a 1)
+                  (define b '())))
+
+  (test-case "Read literal infotab config"
     (define decl (make-infotab-module-datum '(a b c) (hash 'a 1 'b 2 'c 3)))
-    (define buffer (open-input-string (~s decl)))
-    (define lookup (load-config buffer))
+    (define lookup (load-config decl))
+    (check-pred procedure? lookup)
+    (check-eqv? (lookup 'a) 1)
+    (check-eqv? (lookup 'b) 2)
+    (check-eqv? (lookup 'c) 3))
+
+  (test-case "Read abbreviated infotab config"
+    (define lookup (load-config '((a . 1) (b . 2) (c . 3))))
     (check-pred procedure? lookup)
     (check-eqv? (lookup 'a) 1)
     (check-eqv? (lookup 'b) 2)
