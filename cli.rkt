@@ -15,7 +15,6 @@
          racket/set
          racket/vector
          (for-syntax racket/base)
-         "analyze.rkt"
          "archiving.rkt"
          "capture.rkt"
          "config.rkt"
@@ -747,8 +746,6 @@ EOF
                   (format-zcpkg-info info)
                   (zcpkg-info->install-path info)))
         (halt 0)]
-       [(? zcpkg-query-string? query)
-        (write-output (analyze-installed-package (find-latest-info query)))]
        [_
         (write-output ($unrecognized-command what))
         (halt 1)]))
@@ -756,7 +753,6 @@ EOF
 where <what> is one of
   workspace  The current target workspace directory
   installed  A list of installed packages, as queries
-  <query>    Information about an installed package
 
 EOF
 ))
