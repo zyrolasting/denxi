@@ -86,15 +86,24 @@
 
 (define (resolve-source source requesting-directory seen)
   (define variant (source->variant source requesting-directory))
-  (if (path? variant)
-      (resolve-source-iter (path->directory-path (simplify-path variant))
-                           (read-zcpkg-info-from-directory variant)
-                           variant
-                           seen)
-      (resolve-source-iter source
-                           (find-info variant)
-                           requesting-directory
-                           seen)))
+  (cond [(path? variant)
+         (resolve-source-iter (path->directory-path (simplify-path variant))
+                              (read-zcpkg-info-from-directory variant)
+                              variant
+                              seen)]
+
+        [(zcpkg-query? variant)
+         (resolve-source-iter source
+                              (find-info variant)
+                              requesting-directory
+                              seen)]
+
+        [(url? variant)
+         (resolve-source-iter source
+                              (read-zcpkg-info (download-file variant))
+                              requesting-directory
+                              seen)]))
+
 
 (define (find-info variant)
   (with-handlers ([exn:fail? (λ (e) (download-info variant))])
