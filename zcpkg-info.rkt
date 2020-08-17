@@ -23,9 +23,7 @@
    revision-number    ; The number of a design's implementation.
    revision-names     ; Aliases for the revision-number.
    setup-module       ; A Racket module responsible for userspace changes.
-   dependencies       ; A list of dependency queries.
-   integrity          ; A digest used to verify package contents
-   signature          ; A signature used to authenticate the provider
+   inputs             ; A list of required input files
    racket-versions    ; A list of supported Racket version ranges
    tags               ; A list of strings for discovery purposes
    description        ; A string describing the package
@@ -40,9 +38,7 @@
          #:revision-number [revision-number 0]
          #:revision-names [revision-names null]
          #:setup-module [setup-module #f]
-         #:dependencies [dependencies null]
-         #:integrity [integrity #f]
-         #:signature [signature #f]
+         #:inputs [inputs null]
          #:racket-versions [racket-versions null]
          #:tags [tags null]
          #:description [description #f]
@@ -55,9 +51,7 @@
    revision-number
    revision-names
    setup-module
-   dependencies
-   integrity
-   signature
+   inputs
    racket-versions
    tags
    description
@@ -101,9 +95,7 @@
               (lookup 'revision-number exact-nonnegative-integer?)
               (lookup 'revision-names (listof name-string?) null)
               (lookup 'setup-module (or/c #f path-string?) #f)
-              (lookup 'dependencies (listof string?) null)
-              (lookup 'integrity (or/c #f bytes?) #f)
-              (lookup 'signature (or/c #f bytes?) #f)
+              (lookup 'inputs (listof string?) null)
               (lookup 'racket-versions racket-version-ranges/c null)
               (lookup 'tags (listof string?) null)
               (lookup 'description (or/c #f string?) #f)
@@ -127,9 +119,7 @@
         'revision-number (zcpkg-info-revision-number info)
         'revision-names (zcpkg-info-revision-names info)
         'setup-module (zcpkg-info-setup-module info)
-        'dependencies (zcpkg-info-dependencies info)
-        'integrity (zcpkg-info-integrity info)
-        'signature (zcpkg-info-signature info)
+        'inputs (zcpkg-info-inputs info)
         'racket-versions (zcpkg-info-racket-versions info)
         'tags (zcpkg-info-tags info)
         'description (zcpkg-info-description info)
@@ -155,9 +145,7 @@
       revision-number
       revision-names
       setup-module
-      dependencies
-      integrity
-      signature
+      inputs
       racket-versions))
    o))
 
@@ -176,7 +164,7 @@
      #:edition-name "heavy"
      #:revision-names '("certified")
      #:setup-module "setup.rkt"
-     #:dependencies '("gravity" "dumb-coyote")))
+     #:inputs '("gravity" "dumb-coyote")))
 
   (test-equal? "Create unabbreviated paths"
                (zcpkg-info->relative-path dummy-zcpkg-info)

@@ -61,7 +61,7 @@
                (file-exists? key)
                (not (hash-has-key? wip key))
                (ormap (λ (patt) (regexp-match? patt key)) patterns))
-          (hash-set wip key (make-digest key 'sha384))
+          (hash-set wip key (make-digest (string->path key) 'sha384))
           wip))))
 
 (define (write-capture cap [o (current-output-port)])
@@ -102,7 +102,7 @@
      (copy-zcpkg-info dummy-zcpkg-info
                       [provider-name "fooby"]
                       [package-name "foo"]
-                      [dependencies '()]))
+                      [inputs '()]))
 
    (write-zcpkg-info-to-directory foo-info (zcpkg-info->install-path foo-info))
 

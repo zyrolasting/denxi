@@ -78,7 +78,7 @@
     (hash-set! seen id #f)
     (hash-set! seen id
                (cons info
-                     (for/list ([dependency-source (in-list (zcpkg-info-dependencies info))])
+                     (for/list ([dependency-source (in-list (zcpkg-info-inputs info))])
                        (resolve-source dependency-source
                                        requesting-directory
                                        seen)))))
@@ -137,19 +137,18 @@
      (copy-zcpkg-info dummy-zcpkg-info
                       [provider-name "fooby"]
                       [package-name "foo"]
-                      [dependencies '("." "../bar")]))
+                      [inputs '("." "../bar")]))
    (define bar-info
      (copy-zcpkg-info dummy-zcpkg-info
                       [provider-name "barry"]
                       [package-name "bar"]
-                      [dependencies '("../foo" "acme:anvil:heavy:0")]))
+                      [inputs '("../foo" "acme:anvil:heavy:0")]))
    (define acme-info
      (copy-zcpkg-info dummy-zcpkg-info
                       [provider-name "acme"]
                       [package-name "anvil"]
                       [edition-name "heavy"]
-                      [dependencies '("acme:anvil:heavy:0")]
-                      [integrity #"blah"]))
+                      [inputs '("acme:anvil:heavy:0")]))
 
    (write-zcpkg-info-to-directory foo-info "foo")
    (write-zcpkg-info-to-directory bar-info "bar")

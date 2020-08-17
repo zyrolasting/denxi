@@ -195,9 +195,7 @@
             revision-number
             revision-names
             setup-module
-            dependencies
-            integrity
-            signature
+            inputs
             racket-versions
             tags
             description

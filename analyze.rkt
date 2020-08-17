@@ -101,15 +101,15 @@
        [else (void)]))))
 
 
-(define (analyze-dependencies! info)
-  (unless (null? (zcpkg-info-dependencies info))
+(define (analyze-inputs! info)
+  (unless (null? (zcpkg-info-inputs info))
     (assert-stops
      (define install-path (zcpkg-info->install-path info))
      (assert! (directory-exists? (build-path install-path CONVENTIONAL_DEPENDENCY_DIRECTORY_NAME))
               "~a does not exist. The package will not be able to access any dependencies."
               CONVENTIONAL_DEPENDENCY_DIRECTORY_NAME)
 
-     (for ([dep (in-list (zcpkg-info-dependencies info))])
+     (for ([dep (in-list (zcpkg-info-inputs info))])
        (define dep-info
          (with-handlers ([exn:fail? (λ _ #f)])
            (find-latest-info dep)))
@@ -128,7 +128,7 @@
 (define (analyze-installed-package info)
   (define-values (errors warnings)
     (record (analyze-launcher-state! info)
-            (analyze-dependencies! info)))
+            (analyze-inputs! info)))
   ($package-report info errors warnings))
 
 

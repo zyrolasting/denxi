@@ -538,7 +538,7 @@ EOF
                            (format (~a "Cannot bundle a package with a dependency on ~s.~n"
                                        "Use a path or a package query.~n")
                                    dep))]))
-            (zcpkg-info-dependencies info)))
+            (zcpkg-info-inputs info)))
 
      (define archive-directory
        (if (ZCPKG_BUNDLE_FOR_SERVER)
@@ -591,9 +591,7 @@ EOF
      (save-config! (make-config-closure
                     (zcpkg-info->hash
                      (struct-copy zcpkg-info info
-                                  [dependencies dependencies/nonlocalized]
-                                  [signature signature]
-                                  [integrity digest]))
+                                  [inputs dependencies/nonlocalized]))
                     null)
                    metadata-file)
 
@@ -633,7 +631,7 @@ EOF
                      (revision-names . ())
                      (provider . ,(gethostname))
                      (setup-module . "setup.rkt")
-                     (dependencies . ())
+                     (inputs . ())
                      (launchers . ())
                      (racket-versions . ((,(version) . #f)))))
 

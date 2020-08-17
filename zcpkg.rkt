@@ -6,7 +6,8 @@
 (define revision-number 0)
 (define revision-names '("begin-alpha"))
 (define setup-module #f)
-(define dependencies '())
+(define inputs '())
+
 (define launchers
   '(#hash((name . "zcpkg")
           (gracket? . #f)

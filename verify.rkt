@@ -38,8 +38,8 @@
 
                   (define exit-code
                     (if maybe-sp
-                        (begin (subprocess-kill sp) 1)
-                        (subprocess-status sp)))
+                        (subprocess-status sp)
+                        (begin (subprocess-kill sp #t) 1)))
 
                   (define error-string
                     (if maybe-sp
@@ -107,15 +107,8 @@
   (check (listof (or/c zcpkg-query-string?
                        path-string?
                        url-string?))
-         zcpkg-info-dependencies
+         zcpkg-info-inputs
          "a list containing zcpkg-query URNs, URLs, or paths")
-
-  (when for-server?
-    (check non-empty-bytes? zcpkg-info-integrity
-           "a byte string")
-
-    (check non-empty-bytes? zcpkg-info-signature
-           "a byte string"))
 
   (reverse errors))
 

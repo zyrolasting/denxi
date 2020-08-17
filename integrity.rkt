@@ -52,17 +52,10 @@
         [(bytes? variant)
          (make-digest (open-input-bytes variant) algorithm)]
         [(input-port? variant)
-         (define-values (exit-code digest)
-           (run-openssl-command variant
-                                "dgst"
-                                "-binary"
-                                (~a "-" algorithm)))
-
-         (if (eq? exit-code 0)
-             digest
-             (error "Cannot make digest for ~s: OpenSSL returned exit code ~a"
-                    variant
-                    exit-code))]))
+         (run-openssl-command variant
+                              "dgst"
+                              "-binary"
+                              (~a "-" algorithm))]))
 
 
 (define (zcpkg-integrity-check info variant)

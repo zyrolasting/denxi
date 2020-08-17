@@ -94,11 +94,11 @@
 
 (define (in-abstract-dependency-declarations)
   (sequence-fold (λ (wip info)
-                   (set-union wip (apply set (zcpkg-info-dependencies info))))
+                   (set-union wip (apply set (zcpkg-info-inputs info))))
                  (set)
                  (in-installed-info)))
 
-(define (filter-missing-dependencies dependencies)
+(define (filter-missing-inputs dependencies)
   (for/fold ([wip null])
             ([dep (in-list dependencies)])
     (if (= (sequence-length (search-zcpkg-infos dep (in-installed-info)) 0))
