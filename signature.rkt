@@ -61,7 +61,7 @@
 (define (zcpkg-signature-check integrity-info signature-info)
   (define signature (zcpkg-signature-info-body signature-info))
   (if signature
-      (or (verify-signature (zcpkg-integrity-info-body integrity-info)
+      (or (verify-signature (zcpkg-integrity-info-digest integrity-info)
                             signature
                             (zcpkg-signature-info-pubkey signature-info))
           (ZCPKG_TRUST_BAD_SIGNATURE))
