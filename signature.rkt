@@ -2,43 +2,32 @@
 
 (require "contract.rkt")
 
-(define zcpkg-cipher-algorithms
+(define xiden-cipher-algorithms
   '(rsa))
 
-(define zcpkg-cipher-algorithm/c
-  (apply or/c zcpkg-cipher-algorithms))
+(define xiden-cipher-algorithm/c
+  (apply or/c xiden-cipher-algorithms))
 
-(provide (struct-out zcpkg-signature-info)
+(provide (struct-out signature-info)
          (contract-out
           [make-signature
            (-> bytes? path-string? bytes?)]
-          [zcpkg-cipher-algorithms
+          [xiden-cipher-algorithms
            (non-empty-listof symbol?)]
-          [zcpkg-cipher-algorithm/c
+          [xiden-cipher-algorithm/c
            flat-contract?]
-          [zcpkg-signature-check
-           (-> zcpkg-integrity-info? zcpkg-signature-info? boolean?)]
-          [alist->zcpkg-signature-info
-           (-> list? zcpkg-integrity-info?)]))
+          [check-signature
+           (-> integrity-info? signature-info? boolean?)]))
 
 (require racket/sequence
          racket/format
          racket/port
          "file.rkt"
          "integrity.rkt"
-         "list.rkt"
-         "verify.rkt"
-         "zcpkg-settings.rkt")
+         "rc.rkt"
+         "openssl.rkt")
 
-(struct zcpkg-signature-info (algorithm pubkey body) #:prefab)
-
-
-(define (alist->zcpkg-signature-info l)
-  (zcpkg-signature-info
-   (assoc+ 'algorithm l)
-   (assoc+ 'pubkey l) ; TODO: The public key probably won't be declared. Reference a keyring?
-   (assoc+ 'body l)))
-
+(struct signature-info (algorithm pubkey body) #:prefab)
 
 (define (make-signature digest private-key-path)
   (run-openssl-command (open-input-bytes digest)
@@ -60,12 +49,19 @@
      "-pubin" "-inkey" public-key))
   (eq? exit-code 0))
 
-(define (zcpkg-signature-check integrity-info signature-info)
-  (define signature (zcpkg-signature-info-body signature-info))
+(define (check-signature int sig)
+  (or (XIDEN_TRUST_BAD_DIGEST)
+      (if (and sig (signature-info-body sig))
+          (or (verify-signature (integrity-info-digest int) sig (signature-info-pubkey sig))
+              (or (XIDEN_TRUST_BAD_SIGNATURE)
+                  'mismatch))
+          (or (XIDEN_TRUST_UNSIGNED)
+              'missing))))
+
+(define (verify-signature binfo)
+  (define signature (bytes-info-signature binfo))
   (if signature
-      (or (verify-signature (zcpkg-integrity-info-digest integrity-info)
-                            signature
-                            (zcpkg-signature-info-pubkey signature-info))
-          (ZCPKG_TRUST_BAD_SIGNATURE))
-      (or (ZCPKG_TRUST_BAD_DIGEST)
-          (ZCPKG_TRUST_UNSIGNED))))
+      (if (check-signature (bytes-info-integrity binfo) signature)
+          'ok
+          (raise ($bad-signature binfo)))
+      (raise ($missing-signature binfo))))

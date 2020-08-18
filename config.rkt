@@ -129,7 +129,7 @@
      (open-input-string "")]
     [(list 'module _ 'setup/infotab _ ...)
      (open-input-string (~s l))]
-    [(? list? (cons _ _) ...)
+    [(list (cons _ _) ...)
      (open-input-infotab (alist->infotab-module-datum l))]
     [_ (raise-argument-error 'open-input-infotab
                              "A valid list used for configuration"

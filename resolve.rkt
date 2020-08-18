@@ -1,196 +1,127 @@
 #lang racket/base
 
-; Given a list of strings, find the scope of work for an installation.
+; Define the many ways users can express an input,
+; then resolve those expressions to actual inputs.
 
-(require racket/contract)
+(provide input-expr->package-info)
 
-(provide find-scope-of-work
-         source->variant
-         find-info)
-
-(require (only-in racket/list remove-duplicates)
+(require racket/match
          racket/path
+         racket/port
          racket/set
          racket/sequence
+         version/utils
+         net/head
          "config.rkt"
-         "zcpkg-query.rkt"
-         "download.rkt"
+         "contract.rkt"
+         "encode.rkt"
          "file.rkt"
          "format.rkt"
+         "input-info.rkt"
+         "input-forms-lang.rkt"
+         "integrity.rkt"
          "message.rkt"
+         "package-info.rkt"
+         "query.rkt"
+         "racket-version.rkt"
+         "rc.rkt"
+         "signature.rkt"
          "string.rkt"
          "url.rkt"
-         "zcpkg-info.rkt")
+         "openssl.rkt"
+         "workspace.rkt"
+         "xiden-messages.rkt")
 
 
-(define (source->variant v requesting-path)
-  (or (source->maybe-path v requesting-path)
-      (source->maybe-zcpkg-query v)
-      (string->url v)))
+(define input-forms-namespace
+  (module->namespace "input-forms-lang.rkt"))
 
-(define (variant->source v)
-  (cond [(url? v) (url->string v)]
-        [(zcpkg-query? v) (zcpkg-query->string v)]
-        [(path? v) (path->string v)]))
 
-(define (source->maybe-path #:must-exist? [must-exist? #t] v [relative-path-root (current-directory)])
-  (cond [(path? v)
-         (define pkg-path
-           (simplify-path (if (complete-path? v) v
-                              (build-path relative-path-root v))))
 
-         (if (directory-exists? pkg-path) pkg-path
-             (and must-exist?
-                  (raise-user-error
-                   (format (~a "Package not found: ~a~n~n"
-                               "Assuming your command is correct, a package~n"
-                               "may have an incorrect relative path as a dependency.~n~n"
-                               "Base path: ~a~n"
-                               "Relative path: ~a~n")
-                           pkg-path
-                           relative-path-root
-                           (find-relative-path relative-path-root pkg-path)))))]
+(define (user-string->package-info str)
+  (call-with-input-source str read-package-info))
 
-        [(url? v)
-         (and (or (not (url-scheme v))
-                  (equal? (url-scheme v) "file"))
-              (source->maybe-path #:must-exist? must-exist?
-                                  (url->maybe-path v relative-path-root)
-                                  relative-path-root))]
 
+(define (make-input-info variant)
+  ((select-input-variant-converter variant) variant))
+
+
+(define (select-input-variant-converter variant)
+  (cond [(string? variant) string->input-info]
+        [(url? variant) url->input-info]
+        [(list? variant) list->input-info]
+        [(path? variant) path->input-info]
+        [(input-info? variant) values]
+        [(xiden-query? variant) xiden-query->input-info]))
+
+
+(define (xiden-query->input-info v)
+  (define str (xiden-query->string v))
+  (input-info 'package
+              (encode 'base32 str)
+              (map (λ (url-string)
+                     (define u (string->url url-string))
+                     (url->string
+                      (struct-copy url u
+                                   [path
+                                    (append (url-path u)
+                                            (list (path/param str null)))])))
+                   (XIDEN_SERVICE_ENDPOINTS))
+              #f
+              #f))
+
+
+(define (string->input-info v)
+  (cond [(xiden-query-string? v)
+         (make-input-info (string->xiden-query v))]
+        [(or (file-exists? v) (directory-exists? v))
+         (make-input-info (string->path v))]
         [(url-string? v)
-         (source->maybe-path #:must-exist? must-exist?
-                             (string->url v)
-                             relative-path-root)]
-
-        [else #f]))
-
-
-(define (source->maybe-zcpkg-query v)
-  (with-handlers ([exn? (λ _ #f)])
-    (define dep (coerce-zcpkg-query v))
-    (and (well-formed-zcpkg-query? dep)
-         dep)))
+         (make-input-info (string->url v))]
+        [(list? (with-handlers ([exn:fail:read? (λ _ #f)])
+                  (read (open-input-string v))))
+         (make-input-info (read (open-input-string v)))]))
 
 
-(define (resolve-source-iter id info requesting-directory seen)
-  (unless (hash-has-key? seen id)
-    (hash-set! seen id #f)
-    (hash-set! seen id
-               (cons info
-                     (for/list ([dependency-source (in-list (zcpkg-info-inputs info))])
-                       (resolve-source dependency-source
-                                       requesting-directory
-                                       seen)))))
-  info)
-
-(define (resolve-source source requesting-directory seen)
-  (define variant (source->variant source requesting-directory))
-  (cond [(path? variant)
-         (resolve-source-iter (path->directory-path (simplify-path variant))
-                              (read-zcpkg-info-from-directory variant)
-                              variant
-                              seen)]
-
-        [(zcpkg-query? variant)
-         (resolve-source-iter source
-                              (find-info variant)
-                              requesting-directory
-                              seen)]
-
-        [(url? variant)
-         (resolve-source-iter source
-                              (read-zcpkg-info (download-file variant))
-                              requesting-directory
-                              seen)]))
+(define (list->input-info v)
+  (eval v input-forms-namespace))
 
 
-(define (find-info variant)
-  (with-handlers ([exn:fail? (λ (e) (download-info variant))])
-    (sequence-ref (search-zcpkg-infos variant (in-installed-info))
-                  0)))
+(define (path->input-info v)
+  (input-info 'file
+              (path->string (file-name-from-path v))
+              (list v)
+              (integrity-info 'sha384 (make-digest v 'sha384))
+              #f))
 
-(define (find-scope-of-work package-sources)
-  (define seen (make-hash))
-  (for ([source (in-list package-sources)])
-    (resolve-source source (current-directory) seen))
 
-  (for/hash ([(k v) (in-hash seen)])
-    (values k (remove-duplicates v))))
-
+; A URL can still refer to a local file.
+; Account for that here.
+(define (url->input-info v)
+  (if (or (not (url-scheme v))
+          (equal? (url-scheme v) "file"))
+      (make-input-info (url->maybe-path v))
+      (input-info 'file
+                  (encode 'base32 (url->string v))
+                  (list (url->string v))
+                  #f
+                  #f)))
 
 (module+ test
-  (require rackunit
-           racket/runtime-path
-           (submod "file.rkt" test)
-           (submod "zcpkg-info.rkt" test))
+  (require rackunit)
 
-  (define-runtime-path ./ ".")
-
-  (define (build-path* el)
-    (path->directory-path (build-path (current-directory) el)))
-
-  (test-workspace "Find scope of work for a given package source"
-    ; To make it interesting: Give every package a dependency cycle.
-
-   (define foo-info
-     (copy-zcpkg-info dummy-zcpkg-info
-                      [provider-name "fooby"]
-                      [package-name "foo"]
-                      [inputs '("." "../bar")]))
-   (define bar-info
-     (copy-zcpkg-info dummy-zcpkg-info
-                      [provider-name "barry"]
-                      [package-name "bar"]
-                      [inputs '("../foo" "acme:anvil:heavy:0")]))
-   (define acme-info
-     (copy-zcpkg-info dummy-zcpkg-info
-                      [provider-name "acme"]
-                      [package-name "anvil"]
-                      [edition-name "heavy"]
-                      [inputs '("acme:anvil:heavy:0")]))
-
-   (write-zcpkg-info-to-directory foo-info "foo")
-   (write-zcpkg-info-to-directory bar-info "bar")
-
-   (define mock-remote-info
-     (let ([buffer (open-output-bytes)])
-       (write-zcpkg-info acme-info buffer)
-       (get-output-bytes buffer #t)))
-
-   (parameterize ([current-url->response-values
-                   (λ (u) (values 200 (hash) (open-input-bytes mock-remote-info)))])
-     (define h (find-scope-of-work '("./foo" "./bar")))
-     (check-equal? (hash-ref h (build-path* "foo")) (list foo-info bar-info))
-     (check-equal? (hash-ref h (build-path* "bar")) (list bar-info foo-info acme-info))
-     (check-equal? (hash-ref h "acme:anvil:heavy:0") (list acme-info))))
-
-  (parameterize ([current-directory ./])
-    (test-false "If it looks like a file path, then it doesn't count"
-                (source->maybe-path #:must-exist? #f "./source.rkt"))
-
-    (test-equal? "If it looks like a directory path, then use it."
-                 (source->maybe-path ".")
-                 (simplify-path "."))
-
-    (test-equal? "Mimic rules for file:// url pointing to a file."
-                 (source->maybe-path #:must-exist? #f "file:///./source.rkt")
-                 (source->maybe-path #:must-exist? #f "./source.rkt"))
-
-    (test-equal? "Mimic rules for file:// url pointing to a directory."
-                 (source->maybe-path #:must-exist? #f "file:///.")
-                 (source->maybe-path #:must-exist? #f "."))
-
-    (test-false "Don't make paths out of things that don't exist."
-                (source->maybe-path #:must-exist? #f "weeee.erk")))
-
-  (test-true "All valid zcpkg-query strings are valid sources"
-             (andmap (λ (s) (zcpkg-query? (source->maybe-zcpkg-query s)))
-                     (list "provider:package"
-                           "provider:package:draft"
-                           "provider:package:draft:newest"
-                           "provider:package:draft:oldest:newest"
-                           "provider:package:draft:i:oldest:e:newest")))
-
-  (test-false "Invalid zcpkg-query strings are not valid sources"
-              (zcpkg-query? (source->maybe-zcpkg-query "fsdfhbsdfj"))))
+  (XIDEN_SERVICE_ENDPOINTS (list "https://foo.example.com"
+                                 "https://bar.example.com"
+                                 "https://zap.example.com")
+    (λ ()
+      (test-case "Expand query to input definition"
+        (let* ([query (coerce-xiden-query "example.com:package")]
+               [expanded-query-string (xiden-query->string query)])
+        (test-equal? "Expand abbreviated query"
+                     (xiden-query->input-info query)
+                     (input-info 'package
+                                 (encode 'base32 expanded-query-string)
+                                 (map (λ (pref) (string-append pref "/" expanded-query-string))
+                                      (XIDEN_SERVICE_ENDPOINTS))
+                                 #f
+                                 #f)))))))

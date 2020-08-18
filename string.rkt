@@ -34,6 +34,10 @@
 
 (define maybe-spaces-pattern-string "\\s*")
 
+(define (non-empty-bytes? b)
+  (and (bytes? b)
+       (> (bytes-length b) 0)))
+
 (define (make-rx-predicate p #:whole? [whole? #t])
   (define rx (pregexp (if whole? (whole/pattstr p) p)))
   (λ (v)

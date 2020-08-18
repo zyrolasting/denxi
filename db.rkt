@@ -1,9 +1,8 @@
 #lang racket/base
 
-(require racket/contract)
-
 (provide (all-from-out db)
          query-row+
+         query-rows+
          query-maybe-row+
          query-value+
          query-maybe-value+
@@ -13,21 +12,11 @@
          start-transaction!
          end-transaction!
          rollback-transaction!
-         start-zcpkg-database!)
+         current-db-connection)
 
-(require racket/function
-         db
-         "file.rkt"
-         "format.rkt"
-         "workspace.rkt"
-         "zcpkg-info.rkt")
+(require db)
 
 (define current-db-connection (make-parameter #f))
-
-(define (connect)
-  (sqlite3-connect #:database (build-workspace-path "var/zcpkg/db")
-                   #:mode 'create
-                   #:use-place #f))
 
 (define (start-transaction!)
   (with-handlers
@@ -52,9 +41,6 @@
 
 (define (end-transaction!)
   (query-exec+ "commit transaction;"))
-
-(define (start-zcpkg-database!)
-  (current-db-connection (connect)))
 
 (define (with-connection f)
   (make-keyword-procedure

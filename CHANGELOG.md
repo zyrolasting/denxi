@@ -29,7 +29,7 @@ This project follows [these versioning rules](https://sagegerard.com/edition-rev
 - Define a namespace-specific string format for packages
 - Use SHA-384 for subresource integrity checking
 - Verify digital signatures (No restrictions on asymmetric crypto yet. Just bring your own keys).
-- Capture digests, installed packages, and `zcpkg` configuration for collaborators.
+- Capture digests, installed packages, and `xiden` configuration for collaborators.
 - Create a new package from a template
 - Start a sandboxed REPL inside of a package
 - Show a diff between a capture and a workspace
@@ -50,5 +50,5 @@ This project follows [these versioning rules](https://sagegerard.com/edition-rev
     - GET file from URN's NSS
 
 
-[Unreleased]: https://github.com/zyrolasting/zcpkg/compare/alpha...HEAD
-[draft:alpha]: https://github.com/zyrolasting/zcpkg/releases/tag/alpha
+[Unreleased]: https://github.com/zyrolasting/xiden/compare/alpha...HEAD
+[draft:alpha]: https://github.com/zyrolasting/xiden/releases/tag/alpha

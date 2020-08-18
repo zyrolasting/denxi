@@ -1,18 +1,18 @@
 .PHONY: all test clean doc
 
-all: exe doc
+all: racket-deps exe doc
 
 test:
 	raco test -j 8 *.rkt
 
 racket-deps:
-	raco pkg install web-server-lib rackunit-lib db-lib base32
+	raco pkg install --skip-installed web-server-lib rackunit-lib db-lib base32
 
 compile:
 	raco make -j 8 -v *.rkt
 
 exe: compile test
-	raco exe -o zcpkg -l cli.rkt
+	raco exe -o xiden -l cli.rkt
 
 doc:
 	raco make docs/guide/*.scrbl docs/reference/*.scrbl

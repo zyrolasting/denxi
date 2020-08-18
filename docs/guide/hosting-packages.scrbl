@@ -7,7 +7,7 @@
 You can serve packages using the @litchar{serve} command.
 
 @verbatim|{
-$ zcpkg serve
+$ xiden serve
 }|
 
 The server keeps its own directory of packages bundled into archives.

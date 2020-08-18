@@ -1,8 +1,7 @@
 #lang racket/base
 
 (provide start-server
-         get-server-directory
-         zcpkg-info->public-file-path)
+         get-server-directory)
 
 (require racket/exn
          racket/generator
@@ -25,13 +24,14 @@
          "config.rkt"
          "file.rkt"
          "format.rkt"
-         "output.rkt"
+         "input-info.rkt"
+         "package-info.rkt"
+         "printer.rkt"
+         "query.rkt"
          "url.rkt"
-         "verify.rkt"
+         "openssl.rkt"
          "workspace.rkt"
-         "zcpkg-info.rkt"
-         "zcpkg-messages.rkt"
-         "zcpkg-query.rkt")
+         "xiden-messages.rkt")
 
 (define-syntax-rule (define-endpoint sig body ...)
   (define sig
@@ -40,18 +40,10 @@
 
 ; The server uses the workspace for its files, like everything else.
 (define (get-server-directory)
-  (build-workspace-path "var/zcpkg"))
+  (build-workspace-path "var/xiden"))
 
 (define (build-server-path . args)
   (apply build-path (get-server-directory) args))
-
-(define (zcpkg-info->public-file-path info)
-  (build-path (get-server-directory)
-              (zcpkg-info->relative-path info)))
-
-(define (zcpkg-info->artifact-path info)
-  (path-replace-extension (zcpkg-info->public-file-path info)
-                          #".tgz"))
 
 (define (log-request req)
   (write-output
@@ -88,30 +80,10 @@
 (define-values (service-dispatcher service-url service-applies?)
   (dispatch-rules+applies
    [("file" (string-arg) ...) send-file]
-   [("find" (string-arg) (string-arg) ...) search-packages]
-   [("info" (string-arg)) send-info]
-   [("artifact" (string-arg)) send-artifact]
-   [("public-key" (string-arg)) send-public-key]))
-
-
-(define-endpoint (send-artifact req nss)
-  (define query (nss->zcpkg-query nss))
-  (for ([(candidate-path query-elements revno) (in-existing-revisions nss query)])
-    (raise (response/file #:mime-type #"application/octet-stream"
-                          (build-path candidate-path "archive.tgz")))))
-
-(define-endpoint (send-public-key req provider-name)
-  (response/file #:mime-type #"application/octet-stream"
-                 (build-server-path provider-name "public-key")))
-
-(define-endpoint (send-info req nss)
-  (define query (nss->zcpkg-query nss))
-  (for ([(candidate-path query-elements revno) (in-existing-revisions nss query)])
-    (raise (response/file #:mime-type #"text/plain"
-                          (build-path candidate-path CONVENTIONAL_PACKAGE_INFO_FILE_NAME)))))
+   [("find" (string-arg) (string-arg) ...) search-packages]))
 
 (define-endpoint (search-packages req nss rel-file-path-elements)
-  (define query (nss->zcpkg-query nss))
+  (define query (nss->xiden-query nss))
   (for ([(candidate-path query-elements revno) (in-existing-revisions nss query)])
     (raise
      (response/output
@@ -129,60 +101,10 @@
       void))))
 
 (define (in-existing-revisions nss query)
-  (define-values (minimum-revision-number maximum-revision-number)
-    (resolve-revision-range query nss))
-  (in-generator #:arity 3
-   (for ([revno (in-range maximum-revision-number (sub1 minimum-revision-number) -1)])
-     (define query-elements (deconstruct-zcpkg-query query revno))
-     (define candidate-path (apply build-server-path query-elements))
-     (when (directory-exists? candidate-path)
-       (yield candidate-path query-elements revno)))
-     (raise
-      (cant-resolve #:code 404
-                    (format "Cannot resolve ~s. There are no files in the requested range."
-                            nss)))))
+  ; TODO: Database query
+  (void))
 
-(define (deconstruct-zcpkg-query query revno)
-  (list (zcpkg-query-provider-name query)
-        (zcpkg-query-package-name query)
-        (zcpkg-query-edition-name query)
-        (~a revno)))
-
-
-(define (resolve-revision-range query nss)
-  (define lower-bound-info (get-interval-end-info query nss (zcpkg-query-revision-min query) "lower"))
-  (define upper-bound-info (get-interval-end-info query nss (zcpkg-query-revision-max query) "upper"))
-  (with-handlers ([exn:fail:zcpkg:invalid-revision-interval?
-                   (λ (e)
-                     (raise
-                      (cant-resolve
-                       #:code 400
-                       (format "Can't resolve ~s. It corresponds to invalid number interval [~a, ~a]. "
-                               (exn:fail:zcpkg:invalid-revision-interval-lo e)
-                               (exn:fail:zcpkg:invalid-revision-interval-hi e))
-                       (format "Did you mean ~s?"
-                               (zcpkg-query->string
-                                (struct-copy zcpkg-query query
-                                             [revision-min (zcpkg-query-revision-max query)]
-                                             [revision-max (zcpkg-query-revision-min query)]))))))])
-    (get-inclusive-revision-range (zcpkg-query-revision-min-exclusive? query)
-                                  (zcpkg-query-revision-max-exclusive? query)
-                                  (zcpkg-info-revision-number lower-bound-info)
-                                  (zcpkg-info-revision-number upper-bound-info))))
-
-
-(define (get-interval-end-info query nss rev-name boundary-name)
-  (define boundary-path (apply build-server-path (deconstruct-zcpkg-query query rev-name)))
-  (unless (directory-exists? boundary-path)
-    (raise (cant-resolve #:code 404
-                           (format "Cannot resolve ~s. The ~a bound revision ~a does not exist in our records."
-                                   nss
-                                   boundary-name
-                                   rev-name))))
-  (read-zcpkg-info-from-directory boundary-path))
-
-
-(define (nss->zcpkg-query nss)
+(define (nss->xiden-query nss)
   (with-handlers
     ([exn:fail?
       (λ (e)
@@ -201,7 +123,7 @@
                (li (code "<provider>:<package>:<edition>:<i|e>:<min-revision>:<i|e>:<max-revision>")
                    ", e.g. "
                    (code "example.com:widget:for-msu:i:start-peer-review:e:for-publication"))))))])
-    (coerce-zcpkg-query nss)))
+    (coerce-xiden-query nss)))
 
 (define (cant-resolve #:code code . msg)
   (response/html5 #:code code
@@ -266,12 +188,6 @@
   (response/output #:code 404
                    #:mime-type #"text/plain; charset=utf-8"
                    (λ (o) (displayln "Resource not found." o))))
-
-
-(define (response/text #:code [code 200] fmt-string . a)
-  (response/output #:code code
-                   #:mime-type #"text/plain; charset=utf-8"
-                   (λ (out) (apply fprintf out fmt-string a))))
 
 
 (define (response/file #:mime-type mime-type path)

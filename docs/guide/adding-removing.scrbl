@@ -4,11 +4,13 @@
 
 @title{Adding and Removing Packages}
 
-You can add and remove packages using @tech{queries}.
+You can add and remove packages as you'd expect.
+
+using @tech{queries}.
 
 @verbatim|{
-$ zcpkg install -y john.doe:calculator
-$ zcpkg uninstall -y john.doe:calculator
+$ xiden install -y john.doe:calculator
+$ xiden uninstall -y john.doe:calculator
 }|
 
 Unless forced, @binary will not install any suspicious packages.  If a
@@ -23,7 +25,7 @@ directory to access package modules using the package provider's name and the
 package's name.
 
 @racketblock[
-(require (file "zcpkg-deps/john.doe/calculator/module.rkt"))
+(require (file "xiden-deps/john.doe/calculator/module.rkt"))
 ]
 
 This illustrates the fundamental difference between @binary and
@@ -38,7 +40,7 @@ conventions set by @|binary|. To do this, use the @litchar{link} command to
 make a symbolic link to a package installed on your system.
 
 @verbatim|{
-$ zcpkg link john.doe:calculator calc
+$ xiden link john.doe:calculator calc
 $ ls calc
 }|
 

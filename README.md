@@ -1,68 +1,41 @@
-A flexible package manager for Racket.
-
-## Goals
-
-* Smooth the learning curve for dependency management
-* Give users as much control over distribution as possible
-* Support secure, reliable code exchange.
+A functional package manager for Racket.
 
 
 ## Benefits
 
 * You can install the _exact_ code you asked for.
-* You can make links to the _exact_ versions of packages you need in your projects.
+* You can make links to the _exact_ files you need in your projects.
 * You can use packages that would otherwise conflict in the same Racket installation.
 * You can introduce package code starting from _zero trust_.
 * You can publish breaking changes whenever you want.
 * You can organize your files however you want.
 * You can use your own package namespace.
-* You can define deliverables with more creative freedom, outside of PLT's recipes.
+* You can define deliverables with more creative freedom, outside of the PLT's recipes.
 * You can strictly separate third-party code from your Racket installation.
 
 
 ## Tradeoffs
 
-* Dependencies are installed side-by-side ("SxS", for the hopelessly curt). This means added disk usage.
-* Dependency management is less opinionated, hence more involved if you have highly-specific needs.
-* Package development does not involve `raco setup` or `raco pkg`. The workflow is different.
+* Higher storage requirements
+* A different workflow
 
 
-## Wait, we already have `raco pkg`
+## But we already have `raco pkg`
 
-Yes, and it's fine. `zcpkg` complements `raco pkg`. They are not meant
-to be fully redundant.
+Yes, and it's fine. `xiden` complements `raco pkg`, so it is not meant
+to be fully redundant. But both projects are package managers, so some
+functional overlap exists.
 
-Because both projects are package managers, some functional overlap is
-expected. So what's different? To borrow [Sam Boyer's terms][boyer],
-`raco pkg` is a **Language Package Manager**, or LPM.  It fetches and
-builds packages of Racket source code. `raco pkg` presumes that Racket
-packages define at least one collection to include in a Racket
-installation. Additionally,
-[pkgs.racket-lang.org](https://pkgs.racket-lang.org) (the default
-catalog) remembers only one artifact per registered
-package. Altogether, what a package installation does to your system
-depends on the exact state of your Racket installation, and what
-happens to be on a catalog at the time.
+So what's different? In brief: `raco pkg` has side-effects on the
+Racket installation that runs it. `xiden` does not. This means `xiden`
+does not create collections in an existing Racket installation. You
+cannot directly target Racket modules in these _zero-collection packages_
+using `raco setup` or collection paths. The benefit is that `xiden` behaves
+more like [Guix][], in that packages are built deterministically and
+in a fault-tolerant manner. When you want to use individual packages
+or the files within them, you can request links to those files.
 
-The command `zcpkg` is short for "Zero-Collection Package," meaning
-the program manages packages that define no collections. This is just
-marketing, since I expect Racket programmers can reason about a
-zero-collection package as part of the casework about package
-management: The only difference that matters is that `zcpkg` does not
-have a side-effect on a Racket installation in the first place. Not
-defining collections is a consequence of that restriction.
-
-Removing collections from the equation severs the relationship between
-an arbitrary group of modules and a Racket installation. Meaning, you
-cannot directly target these files using `raco setup` or collection
-paths. The benefit is that you are free to integrate the files as you
-wish. For that reason, `zcpkg` concerns itself with (re)producing
-files as a **Project/Application Dependency Manager**, or
-PDM. System-level dependencies matter too, and `zcpkg` can be
-leveraged to define an OS distribution if you care to do that.
-
-[boyer]: https://medium.com/@sdboyer/so-you-want-to-write-a-package-manager-4ae9c17d9527
-
+[Guix]: https://guix.gnu.org/
 
 ## Setup
 
@@ -76,22 +49,20 @@ Next, build the project using `make`.
 
 ```console
 git clone ...
-cd zcpkg
+cd xiden
 make
 ```
 
 If everything worked, you should have HTML documentation in an `html`
-subdirectory and a new executable called `zcpkg`. If you see an error
-relating to a missing Racket dependency, then you might be using a
-trimmed down Racket installation. In that case, try `make racket-deps
-&& make`.
+subdirectory and a new executable called `xiden` in the working
+directory.
 
 
 ## Release Status
 
 | Milestone   | Status                                                                |
 | ----------- | --------------------------------------------------------------------- |
-| Alpha       | [Released](https://github.com/zyrolasting/zcpkg/releases/tag/alpha)   |
-| Closed Beta | [Ongoing](https://github.com/zyrolasting/zcpkg/milestone/1)           |
-| Open Beta   | [Not started](https://github.com/zyrolasting/zcpkg/milestone/2)       |
-| Production  | [Not started](https://github.com/zyrolasting/zcpkg/milestone/3)       |
+| Alpha       | [Released](https://github.com/zyrolasting/xiden/releases/tag/alpha)   |
+| Closed Beta | [Ongoing](https://github.com/zyrolasting/xiden/milestone/1)           |
+| Open Beta   | [Not started](https://github.com/zyrolasting/xiden/milestone/2)       |
+| Production  | [Not started](https://github.com/zyrolasting/xiden/milestone/3)       |

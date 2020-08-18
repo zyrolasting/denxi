@@ -3,11 +3,10 @@
 @require[@for-label[racket/base]
          "../shared.rkt"]
 
-@title[#:style '(toc)]{A Zero-Collection Package Management System}
+@title[#:style '(toc)]{A Functional Package Management System}
 @author[(author+email "Sage L. Gerard" "sage@sagegerard.com" #:obfuscate? #t)]
 
-This is a guide for @|binary|, a @tech/reference{collection}-less
-package manager for Racket.
+This is a guide for @|binary|, a functional package manager for Racket.
 
 @binary concerns itself with the safe, deterministic reproduction of
 exact @tech{packages} and dependencies without any side-effect on the

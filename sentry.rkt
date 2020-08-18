@@ -10,7 +10,7 @@
 (require racket/place
          "actor.rkt"
          "message.rkt"
-         "zcpkg-messages.rkt")
+         "xiden-messages.rkt")
 
 ; Communicate only on place channel. Avoid ports for simplicity.
 (define sentry%

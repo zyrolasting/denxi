@@ -12,9 +12,9 @@
 (require racket/contract
          racket/path)
 
-(define CONVENTIONAL_WORKSPACE_NAME "zcpkg-workspace")
-(define CONVENTIONAL_DEPENDENCY_DIRECTORY_NAME "zcpkg-deps")
-(define CONVENTIONAL_PACKAGE_INFO_FILE_NAME "zcpkg.rkt")
+(define CONVENTIONAL_WORKSPACE_NAME "xiden-workspace")
+(define CONVENTIONAL_DEPENDENCY_DIRECTORY_NAME "xiden-deps")
+(define CONVENTIONAL_PACKAGE_INFO_FILE_NAME "xiden.rkt")
 (define CONVENTIONAL_LAUNCHER_AUX_DIRECTORY_NAME "launcher-aux")
 
 (define (find-workspace-directory [current-dir (current-directory)])
@@ -40,14 +40,14 @@
 (define (get-initial-workspace-directory)
   (or (with-handlers
         ([exn:fail:contract? (λ (e) #f)])
-        (let ([ws (getenv "ZCPKG_WORKSPACE")])
+        (let ([ws (getenv "XIDEN_WORKSPACE")])
           (assert-workspace-directory ws)))
       (find-workspace-directory)
       (build-path (current-directory)
                   CONVENTIONAL_WORKSPACE_NAME)))
 
 (define (show-workspace-envvar-error?)
-  (let ([ws (getenv "ZCPKG_WORKSPACE")])
+  (let ([ws (getenv "XIDEN_WORKSPACE")])
     (and ws
          (with-handlers ([exn:fail:contract?
                           (λ (e) (not (equal? ws (workspace-directory))))])

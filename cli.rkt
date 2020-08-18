@@ -2,6 +2,7 @@
 
 (require racket/class
          racket/cmdline
+         racket/function
          racket/path
          racket/pretty
          racket/list
@@ -16,39 +17,55 @@
          racket/vector
          (for-syntax racket/base)
          "archiving.rkt"
-         "capture.rkt"
          "config.rkt"
          "contract.rkt"
-         "zcpkg-query.rkt"
-         "download.rkt"
          "file.rkt"
          "format.rkt"
+         "input-info.rkt"
+         "input-forms-lang.rkt"
          "integrity.rkt"
-         "signature.rkt"
          "message.rkt"
          "output.rkt"
+         "package.rkt"
+         "package-info.rkt"
+         "printer.rkt"
+         "query.rkt"
+         "rc.rkt"
          "resolve.rkt"
          "setting.rkt"
-         "setup.rkt"
          "server.rkt"
+         "signature.rkt"
          "string.rkt"
          "team.rkt"
          "url.rkt"
-         "verify.rkt"
+         "openssl.rkt"
+         "worker.rkt"
          "workspace.rkt"
-         "zcpkg-info.rkt"
-         "zcpkg-messages.rkt"
-         "zcpkg-settings.rkt"
-         "zcpkg-worker.rkt")
+         "xiden-messages.rkt")
 
 
 (module+ main
-  (define-values (exit-code output) (entry-point))
-  (exit exit-code))
+  (match-define ($with-output stop-value _ accumulated)
+    (entry-point (current-command-line-arguments)))
 
-(define-runtime-path worker.rkt "zcpkg-worker.rkt")
+  (sequence-for-each write-output accumulated)
 
-(define (zcpkg-start-team!)
+  (exit stop-value))
+
+
+(define (output-cli-error m)
+  (output-return #:stop-value 1 #f m))
+
+(define-syntax-rule (with-flags flags body ...)
+  (with-handlers ([exn:fail? (λ (e) (output-cli-error ($fail (exn-message e))))])
+    (call-with-applied-settings flags (λ () body ...))))
+
+
+
+#|
+(define-runtime-path worker.rkt "worker.rkt")
+
+(define (xiden-start-team!)
   (define team
     (new team%
          [on-output write-output]
@@ -57,319 +74,148 @@
   ; Give each worker the same configuration
   (send team broadcast!
         ($start (workspace-directory)
-                (dump-zcpkg-settings)))
+                (dump-xiden-settings)))
 
   team)
 
 
-(define (zcpkg-stop-team! team)
+(define (xiden-stop-team! team)
   (send team stop!))
+|#
 
-(define current-cli-continuation (make-parameter #f))
-
-(define (halt exit-code)
-  ((current-cli-continuation) exit-code))
 
 ; Keep seperate for functional tests.
-(define (entry-point #:reload-config? [reload-config? #t] [args (current-command-line-arguments)])
-  (when reload-config?
-    (reset-zcpkg-setting-overrides!)
-    (load-zcpkg-settings!))
+(define (entry-point args)
+  (output-fold args
+               (λ (args)
+                 (output-return args
+                                (if (show-workspace-envvar-error?)
+                                    ($invalid-workspace-envvar)
+                                    null)))
+               (list top-level-cli)))
 
-  (when (show-workspace-envvar-error?)
-    (write-output ($invalid-workspace-envvar)))
-
-  (define exit-code
-    (call/cc
-     (λ (k)
-       (parameterize ([current-cli-continuation k])
-         (top-level-cli args)))))
-
-  (values exit-code (get-output #:reset? #t)))
 
 (define (top-level-cli args)
   (run-command-line
-   #:program "zcpkg"
+   #:program "xiden"
    #:arg-help-strings '("action" "args")
    #:args args
    #:flags
    (settings->flag-specs
-    ZCPKG_FASL_OUTPUT
-    ZCPKG_READER_FRIENDLY_OUTPUT
-    ZCPKG_VERBOSE)
-   (λ (flags action . args)
+    XIDEN_FASL_OUTPUT
+    XIDEN_READER_FRIENDLY_OUTPUT
+    XIDEN_VERBOSE)
+   (λ (action . args)
      (define proc
        (match action
+         ["make" make-command]
          ["install" install-command]
          ["uninstall" uninstall-command]
-         ["new" new-command]
          ["show" show-command]
          ["link" link-command]
-         ["setup" setup-command]
          ["config" config-command]
-         ["capture" capture-command]
-         ["restore" restore-command]
-         ["diff" diff-command]
          ["sandbox" sandbox-command]
          ["serve" serve-command]
-         ["chver" chver-command]
          ["bundle" bundle-command]
-         [_ (write-output ($unrecognized-command action))
-            (λ _ 1)]))
+         [_ (const (output-return #:stop-value 1
+                                  ($unrecognized-command action)))]))
      (proc args))
 
 #<<EOF
 <action> is one of
+  make       Create packages
   install    Install packages
   uninstall  Uninstall packages
-  new        Create a new package
   show       Print helpful information
-  link       Create a symlink to an installed package
-  setup      Integrate a package
-  config     Configure the package manager
-  capture    Capture workspace
-  restore    Restore workspace
-  diff       Compare workspace to capture
+  link       Create symlink to package file
+  config     Manage configuration
   sandbox    Start sandboxed REPL for package's setup module.
   serve      Serve package artifacts
-  chver      Change package version
   bundle     Prepare package for distribution
 
 EOF
 ))
 
 
+
+(define (make-command args)
+  (run-command-line
+   #:program "make"
+   #:args args
+   #:arg-help-strings '("package-defn")
+   #:flags
+   (settings->flag-specs
+    XIDEN_SERVICE_ENDPOINTS
+    XIDEN_DOWNLOAD_MAX_REDIRECTS
+    XIDEN_INSTALL_RELATIVE_PATH
+    XIDEN_TRUST_BAD_DIGEST
+    XIDEN_TRUST_BAD_SIGNATURE
+    XIDEN_TRUST_UNSIGNED
+    XIDEN_ALLOW_UNDECLARED_RACKET_VERSIONS
+    XIDEN_ALLOW_UNSUPPORTED_RACKET)
+
+   (λ (flags . package-defn-input-exprs)
+     (with-flags flags
+       (output-fold package-defn-input-exprs
+                    (list in-user-requested-package-definitions
+                          in-package-modules))))))
+
+
 (define (install-command args)
-  (define (review-work package-sources sow)
-    (write-output ($review-installation-work sow package-sources))
-    (halt 0))
-
-  (define (do-work sow)
-    (define team (zcpkg-start-team!))
-    (dynamic-wind
-      void
-      (λ ()
-        ; Installation tasks come strictly before setup tasks.
-        (define install-output
-          (send team send-assigned-tasks!
-                (for/list ([(url-or-path infos) (in-hash sow)])
-                  ($install-package (car infos) (cdr infos) url-or-path))))
-
-        ; We need to set up any packages that were successfully installed.
-        ; First, find the packages that made it.
-        (define install-success-messages
-          (sequence-filter $on-package-installed?
-                           (in-list install-output)))
-
-        ; We need the package definitions of the installed packages.
-        (define installed-info
-          (sequence-map $on-package-installed-info
-                        install-success-messages))
-
-        ; Use the dependency resolver to establish scope of work for setup.
-        (define setup-sow (find-scope-of-work (sequence->list installed-info)))
-        (define setup-tasks
-          (for/list ([(url-or-path infos) (in-hash setup-sow)])
-            ($setup-package (car infos) (cdr infos) null)))
-
-        (send team send-assigned-tasks! setup-tasks))
-      (λ () (halt (zcpkg-stop-team! team)))))
-
   (run-command-line
    #:program "install"
    #:args args
-   #:arg-help-strings '("package-source")
+   #:arg-help-strings '("package-path")
    #:flags
    (settings->flag-specs
-    ZCPKG_SERVICE_ENDPOINTS
-    ZCPKG_DOWNLOAD_MAX_REDIRECTS
-    ZCPKG_INSTALL_RELATIVE_PATH
-    ZCPKG_LAUNCHER_RELATIVE_PATH
-    ZCPKG_TRUST_BAD_DIGEST
-    ZCPKG_TRUST_BAD_SIGNATURE
-    ZCPKG_TRUST_UNSIGNED
-    ZCPKG_INSTALL_ORPHAN
-    ZCPKG_CONSENT
-    ZCPKG_LINK
-    ZCPKG_ALLOW_UNDECLARED_RACKET_VERSIONS
-    ZCPKG_ALLOW_UNSUPPORTED_RACKET
-    ZCPKG_IGNORE_DOWNLOAD_CACHE)
+    XIDEN_SERVICE_ENDPOINTS
+    XIDEN_DOWNLOAD_MAX_REDIRECTS
+    XIDEN_TRUST_BAD_DIGEST
+    XIDEN_TRUST_BAD_SIGNATURE
+    XIDEN_TRUST_UNSIGNED
+    XIDEN_CONSENT
+    XIDEN_LINK
+    XIDEN_ALLOW_UNDECLARED_RACKET_VERSIONS
+    XIDEN_ALLOW_UNSUPPORTED_RACKET)
 
-   (λ (flags . package-sources)
-     (when (null? package-sources)
-       (write-output ($no-package-sources))
-       (halt 1))
-
-     (define sow (find-scope-of-work package-sources))
-
-     (if (ZCPKG_CONSENT)
-         (do-work sow)
-         (review-work package-sources sow)))))
-
-
-(define (capture-command args)
-  (run-command-line
-   #:program "capture"
-   #:flags
-   (settings->flag-specs
-    ZCPKG_MATCH_RACKET_MODULES
-    ZCPKG_MATCH_COMPILED_RACKET)
-   #:args args
-   #:arg-help-strings '("pregexp-strings")
-   (λ (flags . file-patterns)
-     (define consider-modules
-       (if (ZCPKG_MATCH_RACKET_MODULES)
-           (cons (make-extension-pattern-string "rkt" "ss" "scrbl" "rktd")
-                 file-patterns)
-           file-patterns))
-
-     (define consider-compiled
-       (if (ZCPKG_MATCH_COMPILED_RACKET)
-           (cons (make-extension-pattern-string "dep" "zo")
-                 consider-modules)
-           consider-modules))
-
-     (write-output ($on-workspace-capture (capture-workspace consider-compiled)))
-     (halt 0))))
-
-
-(define (restore-command args)
-  (define (do-work capture-file delete-commands configure-commands install-commands)
-    (for ([cmd (in-list delete-commands)])
-      (define target ($restore-delete-file-path cmd))
-      (when (file-exists? target)
-        (delete-file target))
-      (when (directory-exists? target)
-        (delete-directory/files target)))
-
-    (reset-zcpkg-setting-overrides!)
-    (for ([cmd (in-list configure-commands)])
-      (change-zcpkg-setting! ($restore-config-name cmd)
-                             ($restore-config-value cmd)))
-
-    (save-zcpkg-settings!)
-    (write-output ($after-write (get-zcpkg-settings-path)))
-
-    (entry-point (list->vector
-                  `("install"
-                    ,(setting->short-flag ZCPKG_CONSENT)
-                    . ,(map $restore-package-query install-commands)))))
-
-  (define (show-work capture-file delete-commands configure-commands install-commands)
-    (write-output
-     ($review-restoration-work capture-file
-                               (workspace-directory)))
-
-    (sequence-for-each write-output
-                       (sequence-append (in-list delete-commands)
-                                        (in-list configure-commands)
-                                        (in-list install-commands)))
-
-    (halt 0))
-
-  (run-command-line
-   #:program "restore"
-   #:args args
-   #:flags
-   (settings->flag-specs ZCPKG_CONSENT)
-   #:arg-help-strings '("capture-file")
-   (λ (flags capture-file)
-     (define lookup (load-config (string->path capture-file)))
-     (define diff (diff-workspace lookup))
-     (define config (lookup 'config))
-     (define packages (lookup 'packages))
-
-     (define config-commands
-       (for/list ([(k v) (in-hash config)])
-         ($restore-config k v)))
-
-     (define install-commands
-       (for/list ([query (in-list packages)])
-         ($restore-package query)))
-
-     (define delete-commands
-       (for/fold ([l null])
-                 ([m (in-list diff)])
-         (define path
-           (cond [($diff-different-file? m)
-                  ($diff-different-file-path m)]
-                 [($diff-extra-file? m)
-                  ($diff-extra-file-path m)]
-                 [else #f]))
-         (if path
-             (cons ($restore-delete-file path) l)
-             l)))
-
-     ((if (ZCPKG_CONSENT) do-work show-work)
-      capture-file
-      delete-commands
-      config-commands
-      install-commands))))
-
-
-(define (diff-command args)
-  (run-command-line
-   #:program "diff"
-   #:args args
-   #:arg-help-strings '("capture-file-path")
-   (λ (flags capture-file)
-     (define lookup (load-config (string->path capture-file)))
-     (for ([m (in-list (diff-workspace lookup))])
-       (write-output m))
-     (halt 0))))
+   (λ (flags . package-paths)
+     (output-fold package-paths
+                  (list #;in-user-specified-packages)))))
 
 
 (define (link-command args)
   (run-command-line
    #:program "link"
    #:args args
-   #:arg-help-strings '("nss" "link-path")
-   (λ (flags source link-path)
-     (define seq (search-zcpkg-infos source (in-installed-info)))
-     (if (= (sequence-length seq) 0)
-         (begin
-           (write-output ($link-command-no-package source))
-           (halt 1))
-         (begin
-           (make-file-or-directory-link
-            (zcpkg-info->install-path
-             (sequence-ref seq 0))
-            link-path)
-           (halt 0))))))
+   #:arg-help-strings '("link-path" "query" "rel-path")
+   (λ (flags link-path query rel-path)
+     (output-fold query
+                  null #;(list find-exactly-one-installed-package
+                        (λ (package-directory)
+                          (make-link-to-package-file package-directory
+                                                     link-path
+                                                     rel-path)))))))
 
-
-(define (setup-command args)
-  (define (do-work info exprs)
-    (define sow (find-scope-of-work (list info)))
-    (define team (zcpkg-start-team!))
-    (dynamic-wind
-      void
-      (λ ()
-        (send team send-assigned-tasks!
-              (for/list ([infos (in-hash-values sow)])
-                ($setup-package (car infos) (cdr infos) null))))
-      (λ () (halt (zcpkg-stop-team! team)))))
-
-  (run-command-line
-   #:program "setup"
-   #:args args
-   #:flags
-   (settings->flag-specs
-    ZCPKG_LAUNCHER_RELATIVE_PATH)
-   #:arg-help-strings '("query" "expr")
-   (λ (flags query . exprs)
-     (define infos (search-zcpkg-infos query (in-installed-info)))
-     (if (= (sequence-length infos) 0)
-         (begin (write-output ($setup-command-no-package query))
-                (halt 1))
-         (do-work (sequence-ref infos 0) exprs)))))
+#|
+     (define seq '(TODO: get package from query))
+     (make-file-or-directory-link
+      (build-path (with-handlers ([exn:fail?
+                                    (λ (e)
+                                      (write-output ($link-command-no-package query))
+                                      (halt 1))])
+                     (sequence-ref seq 0))
+                  rel-path)
+      link-path)
+     (halt 0))))
+|#
 
 
 (define (config-command args)
   (define (make-fail-thunk str)
     (λ ()
-      (write-output ($config-command-nonexistant-setting str))
-      (halt 1)))
+      (output-return #:stop-value 1
+                     #f
+                     ($config-command-nonexistant-setting str))))
 
   (run-command-line
    #:program "config"
@@ -379,49 +225,48 @@ EOF
    (λ (flags action . args)
      (match action
        ["get"
-        (run-command-line #:args args
-                          #:program "config-get"
-                          #:arg-help-strings '("key")
-                          (λ (flags key)
-                            (pretty-write #:newline? #t
-                                          (get-zcpkg-setting-value
-                                           (string->symbol key)
-                                           (make-fail-thunk key)))
-                            (halt 0)))]
+        (run-command-line
+         #:args args
+         #:program "config-get"
+         #:arg-help-strings '("key")
+         (λ (flags key)
+           (output-return
+            #:stop-value 0 #f
+            ($show-setting-value (string->symbol key)))))]
+
        ["dump"
-        (run-command-line #:args args
-                          #:program "config-dump"
-                          #:arg-help-strings '()
-                          (λ (flags)
-                            (pretty-write #:newline? #t
-                                          (dump-zcpkg-settings))
-                            (halt 0)))]
+        (run-command-line
+         #:args args
+         #:program "config-dump"
+         #:arg-help-strings '()
+         (λ (flags)
+           (output-return
+            #:stop-value 0 #f
+            ($show-all-settings))))]
 
        ["set"
-        (run-command-line #:args args
-                          #:program "config-set"
-                          #:arg-help-strings '("key" "value")
-                          (λ (flags key value)
-                            (define sym (string->symbol key))
-                            (define picked-setting
-                              (get-zcpkg-setting sym (make-fail-thunk key)))
-
-                            (define to-write
-                              (with-handlers ([exn:fail?
-                                               (λ (e)
-                                                 (write-output
-                                                  ($reject-user-setting
-                                                   sym
-                                                   value
-                                                   (cadr (regexp-match #px"expected:\\s+([^\n]+)"
-                                                                       (exn-message e)))))
-                                                 (halt 0))])
-                                (picked-setting (read (open-input-string value)))
-                                (picked-setting)))
-
-                            (save-zcpkg-settings!)
-                            (write-output ($after-write (get-zcpkg-settings-path)))
-                            (halt 0)))]
+        (run-command-line
+         #:args args
+         #:program "config-set"
+         #:arg-help-strings '("key" "value")
+         (λ (flags key value)
+           (define sym (string->symbol key))
+           (output-fold (get-xiden-setting sym (make-fail-thunk key)
+                        (list (λ (picked-setting)
+                                (with-handlers
+                                  ([exn:fail?
+                                    (λ (e)
+                                      (output-return #:stop-value 1 #f
+                                                     ($reject-user-setting
+                                                      sym
+                                                      value
+                                                      (cadr (regexp-match #px"expected:\\s+([^\n]+)"
+                                                                          (exn-message e))))))])
+                                  (picked-setting (read (open-input-string value))
+                                                  (λ ()
+                                                    (save-xiden-settings!)
+                                                    (output-return #:stop-value 0 #f
+                                                                   ($after-write (get-xiden-settings-path))))))))))))]
 
        ["repl"
         (define (start-repl)
@@ -439,16 +284,19 @@ EOF
                           [exn:break?
                            (λ (e)
                              (displayln "bye"))])
-            (parameterize ([current-namespace (make-zcpkg-settings-namespace)])
+            (parameterize ([current-namespace (make-xiden-settings-namespace)])
               (read-eval-print-loop))))
 
         (run-command-line #:args args
                           #:program "config-repl"
                           #:arg-help-strings null
-                          (λ (flags) (start-repl)))]
+                          (λ (flags)
+                            (start-repl)
+                            (output-return #:stop-value 0 #f null)))]
 
-       [_ (write-output ($unrecognized-command action))
-          (halt 1)]))
+       [_
+        (output-return #:stop-value 1
+                       ($unrecognized-command action))]))
 
    #<<EOF
 <action> is one of
@@ -461,103 +309,30 @@ EOF
 ))
 
 
-(define (chver-command args)
-  (run-command-line
-   #:program "chver"
-   #:arg-help-strings '("package-path" "revision-names")
-   #:flags
-   (settings->flag-specs
-    ZCPKG_EDITION
-    ZCPKG_REVISION_NUMBER)
-   #:args args
-   (λ (flags package-path-string . revision-names)
-     (define info
-       (with-handlers ([exn:fail:filesystem?
-                        (λ (e)
-                          (write-output ($package-directory-has-unreadable-info package-path-string))
-                          (halt 1))])
-         (read-zcpkg-info-from-directory package-path-string)))
-
-     (define (assert-valid-info name info)
-       (define errors (validate-zcpkg-info info))
-       (unless (null? errors)
-         (write-output ($chver-command-bad-info name errors))
-         (halt 1))
-       info)
-
-     (define new-info
-       (assert-valid-info
-        "new"
-        (struct-copy zcpkg-info (assert-valid-info "original" info)
-                     [edition-name (if (ZCPKG_EDITION)
-                                       (~a (ZCPKG_EDITION))
-                                       (zcpkg-info-edition-name info))]
-                     [revision-number (if (ZCPKG_REVISION_NUMBER)
-                                          (ZCPKG_REVISION_NUMBER)
-                                          (add1 (zcpkg-info-revision-number info)))]
-                     [revision-names revision-names])))
-
-     (call-with-output-file
-       #:exists 'truncate/replace
-       (build-path package-path-string
-                   CONVENTIONAL_PACKAGE_INFO_FILE_NAME)
-       (λ (o) (write-zcpkg-info new-info o)))
-
-     (write-output ($chver-command-updated-info info new-info))
-     (halt 0))))
-
 (define (bundle-command args)
+  (void))
+
+#|
   (run-command-line
    #:program "bundle"
-   #:arg-help-strings '("package-path" "pregexp-pattern-strings")
+   #:arg-help-strings '("private-key-path")
    #:flags
-   (settings->flag-specs ZCPKG_PRIVATE_KEY_PATH
-                         ZCPKG_BUNDLE_FOR_SERVER
-                         ZCPKG_MATCH_RACKET_MODULES)
+   (settings->flag-specs XIDEN_PRIVATE_KEY_PATH)
    #:args args
-   (λ (flags package-path-string . pattern-strings)
-     (define info
-       (with-handlers ([exn:fail:filesystem?
-                        (λ (e)
-                          (write-output ($package-directory-has-unreadable-info package-path-string))
-                          (halt 1))])
-         (read-zcpkg-info-from-directory package-path-string)))
+   (λ (flags package-def-path file-patterns)
+     (output-fold (string->path package-def-path)
+                  (list read-package-definition
+                        (λ (pkginfo) (bundle-package file-patterns))))
 
-     ; Detach package from filesystem, leaving it only able to depend
-     ; on URNs.
-     (define dependencies/nonlocalized
-       (map (λ (dep)
-              (define variant (source->variant dep package-path-string))
-              (cond [(and (path? variant)
-                          (directory-exists? variant))
-                     (zcpkg-query->string (coerce-zcpkg-query (read-zcpkg-info-from-directory variant)))]
-                    [(zcpkg-query? variant)
-                     (zcpkg-query->string variant)]
-                    [else (raise-user-error
-                           (format (~a "Cannot bundle a package with a dependency on ~s.~n"
-                                       "Use a path or a package query.~n")
-                                   dep))]))
-            (zcpkg-info-inputs info)))
-
-     (define archive-directory
-       (if (ZCPKG_BUNDLE_FOR_SERVER)
-           (let ([d (zcpkg-info->public-file-path info)])
-             (make-directory* d)
-             d)
-           (current-directory)))
-
-     (define archive-file
-       (build-path archive-directory "archive.tar"))
-
-     (define metadata-file
-       (build-path archive-directory CONVENTIONAL_PACKAGE_INFO_FILE_NAME))
+     (define metadata-file "package-definition.rkt")
+     (define archive-file "source-code.tar")
 
      (define archive
        (parameterize ([current-directory package-path-string])
          (define archive-files
            (sequence->list
             (in-matching-files
-             (map pregexp (if (ZCPKG_MATCH_RACKET_MODULES)
+             (map pregexp (if (XIDEN_MATCH_RACKET_MODULES)
                               (cons "\\.(ss|rkt|rktd|scrbl)$" pattern-strings)
                               pattern-strings))
              (current-directory))))
@@ -572,124 +347,28 @@ EOF
              archive-file))))
 
      (define digest
-       (with-handlers ([exn:fail:zcpkg:openssl?
+       (with-handlers ([exn:fail:xiden:openssl?
                         (λ (e)
-                          (write-output ($cannot-make-bundle-digest (exn:fail:zcpkg:openssl-exit-code e)))
+                          (write-output ($cannot-make-bundle-digest (exn:fail:xiden:openssl-exit-code e)))
                           (halt 1))])
          (make-digest archive 'sha384)))
 
      (define signature
-       (with-handlers ([exn:fail:zcpkg:openssl?
+       (with-handlers ([exn:fail:xiden:openssl?
                         (λ (e)
-                          (write-output ($cannot-make-bundle-signature (exn:fail:zcpkg:openssl-exit-code e)))
+                          (write-output ($cannot-make-bundle-signature (exn:fail:xiden:openssl-exit-code e)))
                           (halt 1))])
-         (if (ZCPKG_PRIVATE_KEY_PATH)
-             (make-signature digest (ZCPKG_PRIVATE_KEY_PATH))
+         (if (XIDEN_PRIVATE_KEY_PATH)
+             (make-signature digest (XIDEN_PRIVATE_KEY_PATH))
              #f)))
 
      (save-config! (make-config-closure
-                    (zcpkg-info->hash
-                     (struct-copy zcpkg-info info
-                                  [inputs dependencies/nonlocalized]))
+                    (package-info->hash info)
                     null)
                    metadata-file)
 
-     (define links-made
-       (if (ZCPKG_BUNDLE_FOR_SERVER)
-           (make-zcpkg-revision-links info #:target archive-directory)
-           null))
-
-     (for ([created (in-list (append (list archive-file
-                                           metadata-file)
-                                     links-made))])
-       (write-output ($after-write (path->string created))))
-
      (halt 0))))
-
-
-
-(define (new-command args)
-  (define (make-file dir file-name proc)
-    (call-with-output-file (build-path dir file-name)
-      (λ (o) (parameterize ([current-output-port o])
-               (proc)))))
-
-
-  (define (make-package name)
-    (make-directory name)
-
-    (make-file name CONVENTIONAL_PACKAGE_INFO_FILE_NAME
-               (λ ()
-                 (define defn
-                   `((package . ,name)
-                     (description . "Describe this package in a sentence.")
-                     (tags . ())
-                     (home-page . "https://example.com")
-                     (edition . "draft")
-                     (revision-number . 0)
-                     (revision-names . ())
-                     (provider . ,(gethostname))
-                     (setup-module . "setup.rkt")
-                     (inputs . ())
-                     (launchers . ())
-                     (racket-versions . ((,(version) . #f)))))
-
-                 (write-config
-                  (make-immutable-hasheq defn)
-                  (map car defn)
-                  (current-output-port))))
-
-    (make-file name "setup.rkt"
-               (λ ()
-                 (display-lines
-                  '("#lang racket/base"
-                    ""
-                    "; This module is for setting up dependencies in userspace outside of Racket,"
-                    "; like an isolated Python installation, a C library, or even another Racket"
-                    "; installation."
-                    ";"
-                    "; For security, `zcpkg` asks the user to run (show-help) in a zero-trust sandbox"
-                    "; to learn what EXACTLY your package will do to their system if they consent "
-                    "; to extra automated setup."
-                    ";"
-                    "; Write (show-help) to explain the bindings in this module, and the permissions"
-                    "; you need for them to work."
-                    ";"
-                    "; To build trust:"
-                    ";   1. Ask for as little as possible."
-                    ";   2. Be specific. \"I need write permission for /etc\" is too broad,"
-                    ";      and that can come off as suspicious."
-                    ";   3. Do exactly what you say you will do, and nothing else."
-                    ";"
-                    "; Finally, be mindful that other versions of your package may have"
-                    "; already modified the user's system. Look for evidence of your impact,"
-                    "; and react accordingly."
-                    ""
-                    "(define (show-help)"
-                    "  (displayln \"I need write permission for...\"))")))))
-
-  (run-command-line
-   #:program "new"
-   #:arg-help-strings '("package-name" "package-names")
-   #:args args
-   (λ (flags name . names)
-     (define targets (cons name names))
-     (define existing
-       (filter-map (λ (t)
-                     (and (or (file-exists? t)
-                              (directory-exists? t)
-                              (link-exists? t))
-                          t))
-                   targets))
-
-     (unless (null? existing)
-       (write-output ($new-package-conflict existing))
-       (halt 1))
-
-     (for ([t (in-list targets)])
-       (make-package t))
-
-     (halt 0))))
+|#
 
 
 (define (serve-command args)
@@ -698,19 +377,21 @@ EOF
    #:arg-help-strings null
    #:flags
    (settings->flag-specs
-    ZCPKG_PORT)
+    XIDEN_PORT)
    #:args args
    (λ (flags)
-     (define stop (start-server #:port (ZCPKG_PORT)))
+     (define stop (start-server #:port (XIDEN_PORT)))
      (with-handlers ([exn:break?
                       (λ (e)
-                        (write-output ($on-server-break))
-                        (halt 0))])
+                        (output-return #:stop-value 0
+                                       #f
+                                       ($on-server-break)))])
        (dynamic-wind void
                      (λ ()
-                       (write-output ($on-server-up (format "[::]:~a" (ZCPKG_PORT))))
+                       (write-output ($on-server-up (format "[::]:~a" (XIDEN_PORT))))
                        (sync/enable-break never-evt))
                      stop)))))
+
 
 
 (define (sandbox-command args)
@@ -720,14 +401,14 @@ EOF
 
    #:flags
    (settings->flag-specs
-    ZCPKG_SANDBOX_MEMORY_LIMIT_MB
-    ZCPKG_SANDBOX_EVAL_MEMORY_LIMIT_MB
-    ZCPKG_SANDBOX_EVAL_TIME_LIMIT_SECONDS
-    ZCPKG_SANDBOX_PATH_PERMISSIONS)
+    XIDEN_SANDBOX_MEMORY_LIMIT_MB
+    XIDEN_SANDBOX_EVAL_MEMORY_LIMIT_MB
+    XIDEN_SANDBOX_EVAL_TIME_LIMIT_SECONDS
+    XIDEN_SANDBOX_PATH_PERMISSIONS)
 
    #:args args
    (λ (flags query)
-     (enter-setup-module (find-exactly-one-info query)))))
+     (enter-package (void)))))
 
 
 (define (show-command args)
@@ -738,17 +419,18 @@ EOF
    (λ (flags what)
      (match what
        ["workspace"
-        (displayln (workspace-directory))
-        (halt 0)]
+        (output-return #:stop-value 0
+                       #f
+                       ($show-string ((workspace-directory))))]
        ["installed"
-        (for ([info (in-installed-info)])
-          (printf "~a: ~a~n"
-                  (format-zcpkg-info info)
-                  (zcpkg-info->install-path info)))
-        (halt 0)]
+        (define in-installed '(TODO database query))
+        (output-return
+         #:stop-value 0
+         #f
+         (for/list ([info in-installed])
+          (void)))]
        [_
-        (write-output ($unrecognized-command what))
-        (halt 1)]))
+        (output-return #:stop-value 1 #f ($unrecognized-command what))]))
    #<<EOF
 where <what> is one of
   workspace  The current target workspace directory
@@ -757,49 +439,16 @@ where <what> is one of
 EOF
 ))
 
+
 (define (uninstall-command args)
   (run-command-line
    #:program "uninstall"
-   #:arg-help-strings '("queries")
+   #:arg-help-strings '("query")
    #:flags
-   (settings->flag-specs
-    ZCPKG_LEAVE_ORPHANS
-    ZCPKG_CONSENT)
+   (settings->flag-specs XIDEN_CONSENT)
    #:args args
    (λ (flags . queries)
-     (define to-uninstall (mutable-set))
-     (define will-be-orphaned (mutable-set))
-
-     ; Determine impact to the system
-     (for ([query (in-list queries)])
-       (define info (find-exactly-one-info query))
-       (define target-install-path (zcpkg-info->install-path info))
-       (set-add! to-uninstall info)
-
-       (for ([install-path (in-installed-package-paths)])
-         (define link-path (build-dependency-path install-path info))
-         (when (and (link-exists? link-path)
-                    (equal? (file-or-directory-identity link-path)
-                            (file-or-directory-identity target-install-path)))
-           (define orphan-info (read-zcpkg-info-from-directory install-path))
-           (set-add! will-be-orphaned orphan-info)
-           (unless (ZCPKG_LEAVE_ORPHANS)
-             (set-add! to-uninstall orphan-info)))))
-
-     (if (ZCPKG_CONSENT)
-         (for ([info (in-set to-uninstall)])
-           (define install-path (zcpkg-info->install-path info))
-           (define deleted-revision-links (delete-zcpkg-revision-links info))
-           (define deleted-launchers (delete-launchers info))
-           (delete-directory/files/empty-parents install-path)
-           (sequence-for-each (λ (path) (write-output ($after-delete path)))
-                              (sequence-append (in-list deleted-revision-links)
-                                               (in-list deleted-launchers)
-                                               (in-value install-path))))
-         (write-output ($review-uninstallation-work
-                        (sequence->list (in-mutable-set to-uninstall)))))
-
-     (halt 0))))
+     (void))))
 
 
 
@@ -812,6 +461,7 @@ EOF
                           #:suffix-is-index? [suffix-is-index? #t]
                           handle-arguments
                           [help-suffix ""])
+  ; This is helpful for functional tests since it enables vanilla quasiquoting.
   (define argv
     (if (list? args)
         (list->vector args)
@@ -821,254 +471,78 @@ EOF
     (or (vector-member "-h" argv)
         (vector-member "--help" argv)))
 
-  (with-handlers ([exn:fail:user?
-                   ; parse-command-line barfs a sometimes unhelpful exception
-                   ; when an argument is missing and -h is not set.
-                   ; Be sure the user gets more context if the help-suffix
-                   ; holds a list of possible commands.
-                   (λ (e)
-                     (printf "~a~n~a"
-                             (exn-message e)
-                             (if (and (regexp-match? #px"given 0 arguments" (exn-message e))
-                                      suffix-is-index?
-                                      (not help-requested?))
-                                 help-suffix
-                                 ""))
-                     (halt 1))])
-    (parse-command-line program argv
-                        (if (null? flags)
-                            null
-                            `((once-each . ,flags)))
-                        handle-arguments
-                        arg-help-strings
-                        (λ (help-str)
-                          (printf "~a~n~a"
-                                  help-str
-                                  help-suffix)
-                          (halt (if help-requested? 0 1))))))
+  ; parse-command-line does not show help when arguments are missing
+  ; and -h is not set.  Show help anyway.
+  (define (show-help-on-zero-arguments e)
+    (output-return #:stop-value 1
+                   ($show-string
+                    (format "~a~n~a"
+                            (exn-message e)
+                            (if (and (regexp-match? #px"given 0 arguments" (exn-message e))
+                                     suffix-is-index?
+                                     (not help-requested?))
+                                help-suffix
+                                "")))))
+
+
+  (call/cc
+   ; The callback for showing the help string does not stop evaluation
+   ; of the argument handler. This is why parse-command-line calls the
+   ; exit handler by default. Use a continuation to maintain a
+   ; functional approach.
+   (λ (force-output)
+     (with-handlers ([exn:fail:user? show-help-on-zero-arguments])
+       (parse-command-line program argv
+                           (if (null? flags)
+                               null
+                               `((once-each . ,flags)))
+                           handle-arguments
+                           arg-help-strings
+                           (λ (help-str)
+                             (force-output
+                              (output-return #:stop-value (if help-requested? 0 1)
+                                             #f
+                                             ($show-string (format "~a~n~a" help-str help-suffix))))))))))
 
 ; Functional tests follow. Use to detect changes in the interface and
 ; verify high-level impact.
 (module+ test
   (require racket/port
            racket/random
-           racket/runtime-path
            rackunit
            (submod "file.rkt" test))
 
-  (define-runtime-path here ".")
-
-  (define (run-entry-point #:reload-config? [reload-config? #t] #:stdin [stdin (open-input-bytes #"")] args after)
-    (define nout (current-output-port))
-    (define stdout (open-output-bytes))
-    (define stderr (open-output-bytes))
-    (define-values (exit-code outbytes errbytes output)
-      (parameterize ([current-output-port stdout]
-                     [current-error-port stderr]
-                     [current-input-port stdin])
-        (define-values (code output) (entry-point #:reload-config? reload-config? args))
-        (flush-output stdout)
-        (flush-output stderr)
-        (close-input-port stdin)
-        (values code
-                (open-input-bytes (get-output-bytes stdout #t))
-                (open-input-bytes (get-output-bytes stderr #t))
-                output)))
-
-    (after exit-code
-           outbytes
-           errbytes
-           output))
-
-  (test-case "Configure zcpkg"
+  (test-case "Configure xiden"
     (test-workspace "Respond to an incomplete command with help"
-      (run-entry-point #("config")
-                       (λ (exit-code stdout stderr output)
-                         (check-eq? exit-code 1)
-                         (check-true (andmap (λ (patt) (regexp-match? (regexp patt) stdout))
-                                             '("given 0 arguments"
-                                               "set"
-                                               "get"
-                                               "dump"))))))
+                    (define out (entry-point '("config")))
+                    (define help-message (findf $show-string? ($with-output-accumulated out)))
+                    (check-eq? ($with-output-stop-value out) 1)
+                    (check-true
+                     (andmap (λ (patt) (regexp-match? (regexp patt) ($show-string-message help-message)))
+                             '("given 0 arguments"
+                               "set"
+                               "get"
+                               "dump"))))
 
     (test-workspace "Dump all (read)able configuration on request"
-      (run-entry-point #("config" "dump")
+                    (entry-point '("config" "dump")
+
                        (λ (exit-code stdout stderr output)
                          (check-eq? exit-code 0)
-                         (check-equal? (dump-zcpkg-settings)
-                                       (read stdout)))))
+                         (check-equal? (dump-xiden-settings)))))
 
     (test-workspace "Return a (read)able config value"
-      (define config-key (random-ref (in-hash-keys ZCPKG_SETTINGS)))
+      (define config-key (random-ref (in-hash-keys XIDEN_SETTINGS)))
       (define config-key/str (symbol->string config-key))
-      (run-entry-point (vector "config" "get" config-key/str)
+      (entry-point (vector "config" "get" config-key/str)
                        (λ (exit-code stdout stderr output)
                          (check-eq? exit-code 0)
-                         (check-equal? (get-zcpkg-setting-value config-key)
+                         (check-equal? (get-xiden-setting-value config-key)
                                        (read stdout)))))
 
     (test-workspace "Save a (write)able config value"
-      (run-entry-point (vector "config" "get" "ZCPKG_VERBOSE")
-                       (λ _
-                         ; This confirms that a new workspace has different results.
-                         (check-false (ZCPKG_VERBOSE))
-                         (check-false (file-exists? (get-zcpkg-settings-path)))))
-
-
-      (run-entry-point (vector "config" "set" "ZCPKG_VERBOSE" "#t")
-                       (λ (exit-code stdout stderr output)
-                         (check-eq? exit-code 0)
-                         (check-true (ZCPKG_VERBOSE))
-                         (check-true (file-exists? (get-zcpkg-settings-path)))
-
-                         ; Reload just for good measure.
-                         (load-zcpkg-settings!)
-                         (check-true (ZCPKG_VERBOSE))))))
-
-  (test-workspace "Change a package's version"
-                  (define package-name "foo")
-                  (run-entry-point (vector "new" package-name) void)
-                  (run-entry-point (vector "chver"
-                                           (setting->short-flag ZCPKG_EDITION) "ed"
-                                           (setting->short-flag ZCPKG_REVISION_NUMBER) "8"
-                                           package-name
-                                           "a" "b" "c")
-                                   (λ (exit-code stdout stderr output)
-                                     (check-eq? exit-code 0)
-                                     (check-equal? (port->string stderr) "")
-                                     (check-equal? (port->string stdout)
-                                                   (format "~a:foo:draft:i:0:i:0 -> ~a:foo:ed:i:8:i:8\n"
-                                                           (gethostname)
-                                                           (gethostname)))
-
-                                     (define info (read-zcpkg-info-from-directory package-name))
-                                     (check-equal? (zcpkg-info-edition-name info) "ed")
-                                     (check-equal? (zcpkg-info-revision-number info) 8)
-                                     (check-equal? (zcpkg-info-revision-names info)
-                                                   '("a" "b" "c")))))
-
-
-  (test-workspace "Create a new package"
-    (define package-name "foo")
-    (run-entry-point (vector "new" "foo")
-                     (λ (exit-code stdout stderr output)
-                       (define pkg-dir (build-path (current-directory) package-name))
-                       (check-eq? exit-code 0)
-                       (check-pred directory-exists? pkg-dir)
-                       (check-pred zcpkg-info? (read-zcpkg-info-from-directory pkg-dir)))))
-
-  (test-workspace "Let zcpkg install itself"
-                  (run-entry-point (vector "install" (setting->short-flag ZCPKG_CONSENT) (path->string here))
-                                   (λ (exit-code stdout stderr output)
-                                     (check-eq? exit-code 0))))
-
-  (test-workspace "Install a local package with no dependencies"
-    (define package-name "foo")
-    (run-entry-point (vector "new" package-name) void)
-
-    (define info (read-zcpkg-info-from-directory package-name))
-    (define install-path (zcpkg-info->install-path info))
-
-    ; Without explicit consent, the workspace filesystem does not change.
-    ; The user is only alerted to what would happen if they gave consent.
-    (run-entry-point (vector "install" package-name)
-                     (λ (exit-code stdout stderr output)
-                       ; Make sure the output mentions the package by name.
-
-                       (check-true (regexp-match? (regexp package-name) stdout))
-                       (check-false (directory-exists? install-path))
-                       (check-eq? exit-code 0)))
-
-    (run-entry-point (vector "install"
-                             (setting->short-flag ZCPKG_CONSENT)
-                             (setting->short-flag ZCPKG_LINK)
-                             package-name)
-                     (λ (exit-code stdout stderr output)
-                       (check-equal?
-                        (file-or-directory-identity install-path)
-                        (file-or-directory-identity package-name))
-                       (check-eq? exit-code 0)))
-
-    ; Uninstallation has the same workflow. By default it does nothing but state its intentions.
-    (run-entry-point (vector "uninstall" (zcpkg-query->string (zcpkg-info->zcpkg-query info)))
-                     (λ (exit-code stdout stderr output)
-                       (check-true (regexp-match? (regexp package-name) stdout))
-                       (check-equal?
-                        (file-or-directory-identity install-path)
-                        (file-or-directory-identity package-name))
-                       (check-eq? exit-code 0)))
-
-    (run-entry-point (vector "uninstall"
-                             (setting->short-flag ZCPKG_CONSENT)
-                             (zcpkg-query->string (zcpkg-info->zcpkg-query info)))
-                     (λ (exit-code stdout stderr output)
-                       (check-false (directory-exists? install-path))
-                       (check-true (directory-exists? package-name))
-                       (check-eq? exit-code 0))))
-
-  (test-workspace "Capture, Restore, and Diff workspace"
-    (run-entry-point #("new" "foo") void)
-    (run-entry-point `#("install" ,(setting->short-flag ZCPKG_CONSENT) "./foo") void)
-
-    (call-with-output-file #:exists 'truncate/replace "other.rkt"
-      (λ (o) (displayln "new!" o)))
-
-    (run-entry-point #("capture" "\\.rkt$")
-                     (λ (exit-code stdout stderr output)
-                       (check-eq? exit-code 0)
-                       (check-eqv? (length output) 1)
-                       (check-pred $on-workspace-capture? (car output))
-                       (call-with-output-file "cap.rkt"
-                         (λ (to-capture-file) (copy-port stdout to-capture-file)))))
-
-    (call-with-output-file #:exists 'truncate/replace "other.rkt"
-      (λ (o) (displayln "change!" o)))
-
-    (delete-file "foo/setup.rkt")
-
-    (assume-settings ([ZCPKG_VERBOSE #t])
-      (run-entry-point #("diff" "cap.rkt") #:reload-config? #f
-                       (λ (exit-code stdout stderr output)
-                         (check-eq? exit-code 0)
-                         (check-equal? (set-subtract
-                                        (set ($diff-different-file "other.rkt")
-                                             ($diff-extra-file "cap.rkt")
-                                             ($diff-missing-file "foo/setup.rkt")
-                                             ($diff-same-file "foo/zcpkg.rkt"))
-                                        (apply set output))
-                                       (set))
-                         (check-equal? (set-subtract
-                                        (set "* other.rkt"
-                                             "+ cap.rkt"
-                                             "- foo/setup.rkt"
-                                             "= foo/zcpkg.rkt")
-                                        (apply set (string-split (port->string stdout) "\n")))
-                                       (set))
-                         (check-equal? (port->bytes stderr) #""))))
-
-    (run-entry-point #("restore" "cap.rkt") #:reload-config? #f
-                     (λ (exit-code stdout stderr output)
-                       (check-equal? (port->bytes stderr) #"")
-                       (check-true (> (length output) 1))
-                       (define review (car output))
-
-                       (test-pred "Emit $review-restoration-work in output"
-                                  $review-restoration-work? review)
-
-                       (test-equal? "Include capture file path in $restore-restoration-work"
-                                    ($review-restoration-work-capture-file-path review)
-                                    "cap.rkt")
-
-                       (test-equal? "Plan to restore complete configuration"
-                                    (apply set (hash-keys ZCPKG_SETTINGS))
-                                    (apply set (map $restore-config-name (filter $restore-config? output))))
-
-                       (test-case "Plan to restore captured packages"
-                         (define package-work (filter $restore-package? output))
-                         (check-eqv? (length package-work) 1)
-                         (check-equal?
-                          (car package-work)
-                          ($restore-package
-                           (zcpkg-query->string
-                            (coerce-zcpkg-query
-                             (read-zcpkg-info-from-directory "foo"))))))))))
+      ; This confirms that a new workspace has different results.
+      (check-false (XIDEN_VERBOSE))
+      (check-false (file-exists? (get-xiden-settings-path)))
+      (entry-point '("config" "get" "XIDEN_VERBOSE"))
+      (entry-point '("config" "set" "XIDEN_VERBOSE" "#t")))))

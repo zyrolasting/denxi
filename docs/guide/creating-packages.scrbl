@@ -8,7 +8,7 @@ Use the @tt{new} command to create a package.  You should see a new
 directory with the name you provided.
 
 @verbatim|{
-$ zcpkg new my-pkg
+$ xiden new my-pkg
 $ ls my-pkg
 }|
 
@@ -92,7 +92,7 @@ start a sandboxed REPL in the context of a setup module using the
 @tt{sandbox} command.
 
 @verbatim|{
-$ zcpkg sandbox mavrick:pyracket:totally-works
+$ xiden sandbox mavrick:pyracket:totally-works
 >
 }|
 
@@ -109,7 +109,7 @@ setup module. It serves to educate and negotiate permissions with a human user.
 "Run (install-python3) with write permissions to [...],
 and permission to download from [***]"
 ^D
-$ zcpkg sandbox --sandbox-path-permissions "[...]" \
+$ xiden sandbox --sandbox-path-permissions "[...]" \
                 --sandbox-network-permissions "[***]" \
                 -e "(install-python3)" \
                 mavrick:pyracket:totally-works
@@ -121,7 +121,7 @@ $ zcpkg sandbox --sandbox-path-permissions "[...]" \
 You can install your local package in a @tech{workspace} like so:
 
 @verbatim|{
-$ zcpkg install -y my-pkg
+$ xiden install -y my-pkg
 }|
 
 By default, this copies your package files to the workspace. If
@@ -129,8 +129,8 @@ something does not work right, you have to first uninstall the package
 using the associated query before installing the package again.
 
 @verbatim|{
-$ zcpkg uninstall -y localhost.localdomain:my-pkg
-$ zcpkg install -y my-pkg
+$ xiden uninstall -y localhost.localdomain:my-pkg
+$ xiden install -y my-pkg
 }|
 
 To save some time, you can instead install the package using a
@@ -138,7 +138,7 @@ symbolic link. In this case, your changes will immediately reflect on
 the workspace.
 
 @verbatim|{
-$ zcpkg install -y --link my-pkg
+$ xiden install -y --link my-pkg
 }|
 
 When using a link, @binary will use the original source when
@@ -146,7 +146,7 @@ setting up your package according to @secref{setup}.
 
 @section[#:tag "setup"]{Package Setup}
 
-@margin-note{@litchar{zcpkg setup} is equivalent to @litchar{raco setup} in purpose.}
+@margin-note{@litchar{xiden setup} is equivalent to @litchar{raco setup} in purpose.}
 
 Use the @litchar{setup} command to (re)integrate a package with your
 system. Setup runs automatically when you install a package, but you
@@ -154,7 +154,7 @@ may need to run setup again manually whenever you change the source
 code of a package available in the workspace.
 
 @verbatim|{
-$ zcpkg setup localhost.localdomain:my-pkg
+$ xiden setup localhost.localdomain:my-pkg
 }|
 
 Specifically, the @litchar{setup} command:

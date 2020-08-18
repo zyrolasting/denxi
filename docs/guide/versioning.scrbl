@@ -26,10 +26,3 @@ The default name of an edition is @racket{draft}.
 
 By the above rules, every package starts on the zeroth revision of the
 @racket{draft} edition.
-
-Use @litchar{zcpkg chver} to @bold{ch}ange the @bold{ver}sion of a package.
-
-@itemlist[
-@item{@litchar{zcpkg chver foo}: Increments @tt{foo}'s @tech{revision number}.}
-@item{@litchar{zcpkg chver --edition nice --revision-number 0 foo fizz buzz}: Sets @tt{foo}'s edition to @racket{nice}, the @tech{revision number} to @racket[0], and the revision names to @racket['("fizz" "buzz")]}
-]

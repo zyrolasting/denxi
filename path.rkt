@@ -8,6 +8,9 @@
          racket/path
          racket/set)
 
+(define (../ path)
+  (simplify-path (build-path path 'up)))
+
 (define (strip-ups path)
   (define filtered (filter-not (curry eq? 'up) (explode-path path)))
   (and (not (null? filtered))

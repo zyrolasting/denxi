@@ -1,102 +1,104 @@
 #lang racket/base
 
-; Define program output
+; Define monadic operations to accumulate output.
 
-(require racket/fasl
-         racket/pretty
-         racket/serialize
-         "contract.rkt"
-         "format.rkt"
+(require "contract.rkt"
          "message.rkt"
-         "zcpkg-settings.rkt"
-         "zcpkg-messages.rkt")
+         "xiden-messages.rkt")
 
 (provide
  (contract-out
-  [write-output (->* ($message?) (output-port?) void?)]
-  [get-output (->* () (#:reset? any/c) (listof $message?))]))
+  [output-fold
+   (-> any/c
+       (non-empty-listof procedure?)
+       $with-output?)]
+  [output-return
+   (->* ()
+        (any/c
+         (or/c $message? (listof $message?))
+         #:stop-value any/c)
+        any/c)]
+  [output-unit
+   (-> any/c $with-output?)]
+  [output-bind
+   (-> (-> any/c $with-output?)
+       (-> $with-output? $with-output?))]
+  [output-lift
+   (-> (-> any/c any/c)
+       (-> any/c $with-output?))]))
 
-(define program-output null)
 
-(define verbose-messages (list $diff-same-file?))
+(define (output-fold initial fs)
+  ((apply compose (map output-bind (reverse fs)))
+   (output-unit initial)))
 
-(define (get-output #:reset? [reset? #f])
-  (define out program-output)
-  (when reset?
-    (set! program-output null))
-  (reverse out))
 
-(define (include-output? m)
-  (if (ormap (λ (?) (? m)) verbose-messages)
-      (ZCPKG_VERBOSE)
-      #t))
+(define (output-unit v)
+  ($with-output #f v null))
 
-(define (write-output v [out (current-output-port)])
-  (when (include-output? v)
-    (set! program-output (cons v program-output))
-    (parameterize ([current-output-port out])
-      (define to-send
-        (if (ZCPKG_READER_FRIENDLY_OUTPUT)
-            v
-            (format-zcpkg-message v)))
 
-      (if (ZCPKG_FASL_OUTPUT)
-          (s-exp->fasl (serialize to-send) (current-output-port))
-          (if (ZCPKG_READER_FRIENDLY_OUTPUT)
-              (pretty-write #:newline? #t to-send)
-              (displayln to-send)))
-      (flush-output))))
+(define (output-lift f)
+  (procedure-rename
+   (compose output-unit f)
+   (string->symbol (format "~a/with-output/lifted"
+                           (object-name f)))))
+
+
+(define (output-return #:stop-value [stop-value #f] [val #f] [msg null])
+  ($with-output stop-value
+                val
+                (if (list? msg) msg (list msg))))
+
+
+(define (output-bind f)
+  (procedure-rename
+   (λ (accum)
+     (if ($with-output-stop-value accum)
+         accum
+         (with-handlers
+           ([values
+             (λ (e) (output-return #:stop-value e
+                                   ($with-output-intermediate accum)
+                                   ($with-output-accumulated accum)))])
+           (let ([next (f ($with-output-intermediate accum))])
+             ($with-output ($with-output-stop-value next)
+                           ($with-output-intermediate next)
+                           (append ($with-output-accumulated accum)
+                                   ($with-output-accumulated next)))))))
+   (string->symbol (format "~a/with-output/bound"
+                           (object-name f)))))
+
+
 
 (module+ test
-  (require rackunit
-           "setting.rkt"
-           "zcpkg-info.rkt"
-           (submod "zcpkg-info.rkt" test))
+  (require rackunit)
 
-  (define (capture-bytes p)
-    (define buffer (open-output-bytes))
-    (p buffer)
-    (get-output-bytes buffer #t))
+  (test-equal? "Lift output procedure"
+               ((output-lift add1) 1)
+               ($with-output #f 2 null))
 
-  (define (test-output msg v expected)
-    (define buffer (open-output-bytes))
-    (write-output v buffer)
-    (test-true msg
-               (if (or (regexp? expected)
-                       (pregexp? expected))
-                   (regexp-match? expected (get-output-bytes buffer #t))
-                   (equal? (get-output-bytes buffer #t) expected))))
+  (test-case "Compose output-producing functions"
+    (define (add v) (output-return (add1 v) '(add 1)))
+    (define (sub v) (output-return (- v 3)  '(sub 3)))
+    (define (dbl v) (output-return (* 2 v)  '(mul 2)))
+    (define (sqr v) (output-return (* v v)  `(mul ,v)))
 
-  (test-output "By default, program output is human-friendly"
-               ($already-installed dummy-zcpkg-info)
-               #px"already installed at")
+    (define out (output-fold 5 (list add sub dbl sqr)))
+    (check-pred $with-output? out)
+    (check-equal? out
+                  ($with-output #f 36 '(add 1 sub 3 mul 2 mul 6))))
 
-  (assume-settings ([ZCPKG_READER_FRIENDLY_OUTPUT #t])
-    (test-output "Allow reader-friendly output"
-                 ($already-installed dummy-zcpkg-info)
-                 (capture-bytes
-                  (λ (o)
-                    (pretty-write #:newline? #t ($already-installed dummy-zcpkg-info) o)))))
+  (test-case "Stop output compositions with errors"
+    (define e (exn:fail "uh oh" (current-continuation-marks)))
+    (define (add v) (output-return (add1 v) '(add 1)))
+    (define (err v) (raise e))
 
-  (assume-settings ([ZCPKG_READER_FRIENDLY_OUTPUT #t]
-                    [ZCPKG_FASL_OUTPUT #t])
-    (test-case "Allow FASL output"
-      (define in
-        (open-input-bytes
-         (capture-bytes
-          (λ (o) (write-output ($already-installed dummy-zcpkg-info) o)))))
+    (check-equal? (output-fold 5 (list add err add))
+                  ($with-output e 6 '(add 1))))
 
-      (check-equal? (deserialize (fasl->s-exp in))
-                    ($already-installed dummy-zcpkg-info))))
+  (test-case "Stop output compositions with return value"
+    (define (add v) (output-return (add1 v) 1))
+    (define (err v) (output-return #:stop-value 'stop))
 
-  (test-case "Control verbose output"
-    (assume-settings ([ZCPKG_VERBOSE #f])
-                     (test-output "Opt out of verbose output"
-                                  ($diff-same-file 1)
-                                  #""))
-
-    (assume-settings ([ZCPKG_VERBOSE #t]
-                      [ZCPKG_READER_FRIENDLY_OUTPUT #t])
-                     (test-output "Opt into verbose output"
-                                  ($diff-same-file 1)
-                                  #px"\\$diff-same-file"))))
+    (check-equal? (output-fold 5 (list add err add))
+                  ($with-output 'stop #f '(1)))))

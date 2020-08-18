@@ -18,7 +18,7 @@
   (listof racket-version-range/c))
 
 (provide
- (struct-out exn:fail:zcpkg:invalid-racket-version-interval)
+ (struct-out exn:fail:xiden:invalid-racket-version-interval)
  (contract-out
   [PRESUMED_MINIMUM_RACKET_VERSION valid-version?]
   [PRESUMED_MAXIMUM_RACKET_VERSION valid-version?]
@@ -38,7 +38,7 @@
        racket-version-ranges/c
        current-racket-version-relationship/c)]))
 
-(struct exn:fail:zcpkg:invalid-racket-version-interval exn:fail (lo hi))
+(struct exn:fail:xiden:invalid-racket-version-interval exn:fail (lo hi))
 
 (define PRESUMED_MINIMUM_RACKET_VERSION "0.0")
 (define PRESUMED_MAXIMUM_RACKET_VERSION "9.99.999.999")
@@ -47,7 +47,7 @@
   (define lo (version->integer (or min-v PRESUMED_MINIMUM_RACKET_VERSION)))
   (define hi (version->integer (or max-v PRESUMED_MAXIMUM_RACKET_VERSION)))
   (if (< hi lo)
-      (raise (exn:fail:zcpkg:invalid-racket-version-interval
+      (raise (exn:fail:xiden:invalid-racket-version-interval
               (format "Cannot match Racket version in reversed interval: [~a, ~a]" min-v max-v)
               (current-continuation-marks) min-v max-v))
       (values lo hi)))
@@ -77,9 +77,9 @@
   (define (test-invalid-interval min-v max-v)
     (test-exn (format "Flag [~a, ~a] as an invalid interval" min-v max-v)
             (λ (e)
-              (and (exn:fail:zcpkg:invalid-racket-version-interval? e)
-                   (check-eq? (exn:fail:zcpkg:invalid-racket-version-interval-lo e) min-v)
-                   (check-eq? (exn:fail:zcpkg:invalid-racket-version-interval-hi e) max-v)))
+              (and (exn:fail:xiden:invalid-racket-version-interval? e)
+                   (check-eq? (exn:fail:xiden:invalid-racket-version-interval-lo e) min-v)
+                   (check-eq? (exn:fail:xiden:invalid-racket-version-interval-hi e) max-v)))
             (λ ()
               (racket-version-in-range? "0.0" min-v max-v))))
 

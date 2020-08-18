@@ -6,11 +6,11 @@
          file/gzip
          file/gunzip)
 
-(provide (contract-out [compress   (-> path-string? (listof path-string?) path-string?)]
-                       [decompress (-> path-string? path-string? path-string?)])
-         (struct-out exn:fail:zcpkg:decompression))
+(provide (contract-out [compress   (->* (input-port? output-port?) (exact-integer?) void?)]
+                       [decompress (-> input-port? output-port? string?)])
+         (struct-out exn:fail:xiden:decompression))
 
-(struct exn:fail:zcpkg:decompression exn:fail (pos))
+(struct exn:fail:xiden:decompression exn:fail (pos))
 
 (define (compress in out [timestamp (current-seconds)])
   (gzip-through-ports in out #f timestamp))
@@ -19,7 +19,7 @@
   (port-count-lines! in)
   (with-handlers ([exn:fail?
                    (λ (e)
-                     (raise (exn:fail:zcpkg:decompression
+                     (raise (exn:fail:xiden:decompression
                              (format "Could not decompress ~a: ~a"
                                      name
                                      (exn-message e))
@@ -47,8 +47,8 @@
 
   (test-exn "Detect corruption"
     (λ (e)
-      (and (exn:fail:zcpkg:decompression? e)
-           (eq? (exn:fail:zcpkg:decompression-pos e)
+      (and (exn:fail:xiden:decompression? e)
+           (eq? (exn:fail:xiden:decompression-pos e)
                 3)))
     (λ ()
       (define in (open-input-bytes original))
