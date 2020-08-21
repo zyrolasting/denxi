@@ -337,7 +337,7 @@ EOF
    #<<EOF
 where <what> is one of
   workspace  The current target workspace directory
-  installed  A list of installed packages, as queries
+  installed  A list of installed packages
 
 EOF
 ))
