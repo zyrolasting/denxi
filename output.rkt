@@ -1,6 +1,11 @@
 #lang racket/base
 
-; Define monadic operations to accumulate output.
+; Define monadic operations to accumulate output.  Emitting output
+; elsewhere as a side-effect is allowed in the abstract, but the
+; nature of those side-effects must be specified.
+;
+; This is all in the name of making better tests and carefully
+; controlling side-effects in long-running jobs.
 
 (require "contract.rkt"
          "message.rkt"
@@ -8,6 +13,10 @@
 
 (provide
  (contract-out
+  [make-$with-output
+   (-> any/c any/c (listof $message?) $with-output?)]
+  [current-output-emitter
+   (parameter/c (or/c #f (-> $message? any)))]
   [output-success
    (-> $message? $with-output?)]
   [output-failure
@@ -34,11 +43,24 @@
        (-> any/c $with-output?))]))
 
 
+(define current-output-emitter
+  (make-parameter #f))
+
+(define (make-$with-output stop-value intermediate messages)
+  ; Sometimes sending output as a side-effect is desirable.
+  ; The main use case is reporting progress on long running jobs.
+  (let ([emit! (current-output-emitter)])
+    (unless (or (null? messages) (not emit!))
+      (for ([m (in-list messages)]) (emit! m))))
+  ($with-output stop-value intermediate messages))
+
 (define (output-success m)
   (output-return #:stop-value 0 #f m))
 
+
 (define (output-failure #:stop-value [stop-value 1] m)
   (output-return #:stop-value stop-value #f m))
+
 
 (define (output-fold initial fs)
   ((apply compose (map output-bind (reverse fs)))
@@ -46,7 +68,7 @@
 
 
 (define (output-unit v)
-  ($with-output #f v null))
+  (make-$with-output #f v null))
 
 
 (define (output-lift f)
@@ -57,9 +79,9 @@
 
 
 (define (output-return #:stop-value [stop-value #f] [val #f] [msg null])
-  ($with-output stop-value
-                val
-                (if (list? msg) msg (list msg))))
+  (make-$with-output stop-value
+                     val
+                     (if (list? msg) msg (list msg))))
 
 
 (define (output-bind f)
@@ -112,6 +134,25 @@
     (check-pred $with-output? out)
     (check-equal? out
                   ($with-output #f 36 '(add 1 sub 3 mul 2 mul 6))))
+
+  (test-case "Dynamically control output as a side-effect"
+    (define imperatively-collected null)
+    (define (meta v) (output-bind (λ (_) (output-return v (list v)))))
+    (define-values (a b c d e)
+      (apply values (map meta '(a b c d e))))
+
+    (define (instrument f)
+      (λ (v)
+        (parameterize ([current-output-emitter
+                        (λ (m) (set! imperatively-collected (cons m imperatively-collected)))])
+          (f v))))
+
+    (define functionally-collected
+      ((compose e (instrument d) (instrument c) b a)
+       (output-unit 0)))
+
+    (check-equal? ($with-output-accumulated functionally-collected) '(a b c d e))
+    (check-equal? imperatively-collected '(d c)))
 
   (test-case "Stop output compositions with raised messages errors"
     (define e ($fail "uh oh"))
