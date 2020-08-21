@@ -34,7 +34,8 @@
 ; The only difference between a vanilla setting an a Xiden setting is how a
 ; fallback value is computed.
 (define-syntax-rule (define-xiden-setting id cnt short-flag default-value help-strs)
-  (define-setting id cnt short-flag (xiden-setting-find-value default-value) help-strs))
+  (begin (provide (contract-out [id setting?]))
+         (define-setting id cnt short-flag (xiden-setting-find-value default-value) help-strs)))
 
 
 ; Return a procedure to fetch a value for a setting if it is not already set.
