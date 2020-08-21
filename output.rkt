@@ -68,10 +68,11 @@
      (if ($with-output-stop-value accum)
          accum
          (with-handlers
-           ([values
-             (λ (e) (output-return #:stop-value e
+           ([$message?
+             (λ (m) (output-return #:stop-value 1
                                    ($with-output-intermediate accum)
-                                   ($with-output-accumulated accum)))])
+                                   (append ($with-output-accumulated accum)
+                                           (list m))))])
            (let ([next (f ($with-output-intermediate accum))])
              ($with-output ($with-output-stop-value next)
                            ($with-output-intermediate next)
@@ -112,13 +113,13 @@
     (check-equal? out
                   ($with-output #f 36 '(add 1 sub 3 mul 2 mul 6))))
 
-  (test-case "Stop output compositions with errors"
-    (define e (exn:fail "uh oh" (current-continuation-marks)))
+  (test-case "Stop output compositions with raised messages errors"
+    (define e ($fail "uh oh"))
     (define (add v) (output-return (add1 v) '(add 1)))
     (define (err v) (raise e))
 
     (check-equal? (output-fold 5 (list add err add))
-                  ($with-output e 6 '(add 1))))
+                  ($with-output 1 6 `(add 1 ,e))))
 
   (test-case "Stop output compositions with return value"
     (define (add v) (output-return (add1 v) 1))
