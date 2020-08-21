@@ -2,7 +2,8 @@
 
 
 (provide team%
-         suggested-worker-count)
+         suggested-worker-count
+         xiden-start-team!)
 
 (require racket/class
          racket/place
@@ -13,6 +14,18 @@
 
 (define suggested-worker-count
   (max 1 (sub1 (processor-count))))
+
+(define-runtime-path worker.rkt "worker.rkt")
+
+(define (xiden-start-team! write-output workspace settings)
+  (define team
+    (new team%
+         [on-output write-output]
+         [make-place (λ () (dynamic-place worker.rkt 'main))]))
+  (send team broadcast!
+        ($start workspace settings))
+  team)
+
 
 (define team%
   (class object%

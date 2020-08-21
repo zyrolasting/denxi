@@ -46,41 +46,14 @@
 (module+ main
   (match-define ($with-output stop-value _ accumulated)
     (entry-point (current-command-line-arguments)))
-
   (sequence-for-each write-output accumulated)
-
   (exit stop-value))
 
-
-(define (output-cli-error m)
-  (output-return #:stop-value 1 #f m))
-
+; Define a transition from accumulated command line flags to a new parameterization
+; in terms of those flags. Capture any failure to do so as main program output.
 (define-syntax-rule (with-flags flags body ...)
   (with-handlers ([exn:fail? (λ (e) (output-cli-error ($fail (exn-message e))))])
     (call-with-applied-settings flags (λ () body ...))))
-
-
-
-#|
-(define-runtime-path worker.rkt "worker.rkt")
-
-(define (xiden-start-team!)
-  (define team
-    (new team%
-         [on-output write-output]
-         [make-place (λ () (dynamic-place worker.rkt 'main))]))
-
-  ; Give each worker the same configuration
-  (send team broadcast!
-        ($start (workspace-directory)
-                (dump-xiden-settings)))
-
-  team)
-
-
-(define (xiden-stop-team! team)
-  (send team stop!))
-|#
 
 
 ; Keep seperate for functional tests.
