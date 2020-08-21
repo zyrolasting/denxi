@@ -10,7 +10,7 @@
          (contract-out
           [exc (->* ((unconstrained-domain-> exn?))
                           #:rest list?
-                          (->* (string?) #:rest list? exn?))]
+                          (unconstrained-domain-> exn?))]
           [make-xiden-error
            (->* ((unconstrained-domain-> exn?) string?)
                 (#:fields null)
@@ -34,7 +34,7 @@
 ;  "field")
 ;
 (define (exc ctor . fields)
-  (λ (fmt-message . fmt-args)
+  (λ ([fmt-message ""] . fmt-args)
     (apply make-xiden-error #:fields fields ctor fmt-message fmt-args)))
 
 (define (make-xiden-error #:fields [fields null] ctor fmt-message . fmt-args)
@@ -86,8 +86,10 @@
   (test-case "Create exceptions using a one-step process"
     (check-instance
      (apply make-xiden-error exn:xiden:test:extra #:fields '(1 2 3) fmt-args))
-    (test-not-exn "Do not always require field declarations"
+    (test-not-exn "Do not require field declarations"
                   (λ () (make-xiden-error exn:fail:xiden ""))))
 
   (test-case "Create exceptions using a two-step process"
-    (check-instance (apply (exc exn:xiden:test:extra 1 2 3) fmt-args))))
+    (check-instance (apply (exc exn:xiden:test:extra 1 2 3) fmt-args))
+    (test-not-exn "Do not require messages"
+                  (λ () ((exc exn:xiden:test:extra 1 2 3))))))
