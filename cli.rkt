@@ -217,49 +217,7 @@ EOF
          #:program "config-set"
          #:arg-help-strings '("key" "value")
          (λ (flags key value)
-           (define sym (string->symbol key))
-           (output-fold (get-xiden-setting sym (make-fail-thunk key)
-                        (list (λ (picked-setting)
-                                (with-handlers
-                                  ([exn:fail?
-                                    (λ (e)
-                                      (output-return #:stop-value 1 #f
-                                                     ($reject-user-setting
-                                                      sym
-                                                      value
-                                                      (cadr (regexp-match #px"expected:\\s+([^\n]+)"
-                                                                          (exn-message e))))))])
-                                  (picked-setting (read (open-input-string value))
-                                                  (λ ()
-                                                    (save-xiden-settings!)
-                                                    (output-return #:stop-value 0 #f
-                                                                   ($after-write (get-xiden-settings-path))))))))))))]
-
-       ["repl"
-        (define (start-repl)
-          (with-handlers ([exn:fail:contract?
-                           (λ (e)
-                             (define m (regexp-match #px"expected:\\s+[^\n]+" (exn-message e)))
-                             (if (null? m)
-                                 (raise e)
-                                 (begin (displayln (car m))
-                                        (start-repl))))]
-                          [exn:fail?
-                           (λ (e)
-                             ((error-display-handler) e)
-                             (start-repl))]
-                          [exn:break?
-                           (λ (e)
-                             (displayln "bye"))])
-            (parameterize ([current-namespace (make-xiden-settings-namespace)])
-              (read-eval-print-loop))))
-
-        (run-command-line #:args args
-                          #:program "config-repl"
-                          #:arg-help-strings null
-                          (λ (flags)
-                            (start-repl)
-                            (output-return #:stop-value 0 #f null)))]
+           (apply-user-setting (string->symbol key) value)))]
 
        [_
         (output-return #:stop-value 1
@@ -270,7 +228,6 @@ EOF
   set   Set a new value for a setting
   get   Get the current value of a setting
   dump  Write a hash table of all settings
-  repl  Start a REPL to edit the rcfile
 
 EOF
 ))

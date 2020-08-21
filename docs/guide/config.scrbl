@@ -40,9 +40,6 @@ account for these differences when it makes sense, and contracts
 protect each setting. Don't worry too much about making a mistake
 or typing more than you need to.
 
-@secref{config-reply} covers a configuration REPL to help you work
-outside of shell conventions when they become unwieldy.
-
 @binary defines short flags, but values still need to be specified
 (e.g. @litchar{-v "#t"}).
 
@@ -90,55 +87,3 @@ I'll use the @tt{XIDEN_VERBOSE} setting for the below examples:
 @item{@litchar{xiden config set XIDEN_VERBOSE "#t"}: Changes a setting in a @tech{workspace}'s @tt{etc/xiden.rkt} file.}
 @item{@litchar{xiden config get XIDEN_VERBOSE}: Gets the value of a setting}
 ]
-
-@section{Using the Configuration REPL}
-
-If the shell conventions of your platform make configuration too
-painful, then use @litchar{xiden config repl}. This will drop you into
-a limited REPL with bindings to all settings and two procedures called
-@racket[save!] and @racket[dump].
-
-@racket[dump] will show you the entire configuration you've set.
-@racket[save!] will save that same configuration to the runtime
-configuration file in your @tech{workspace}.
-
-Each setting identifier is bound to a procedure.  If you
-apply this procedure to no arguments, you will get the current value
-of the setting as @|binary| sees it during runtime.
-
-@racketinput[(XIDEN_VERBOSE)]
-@racketresult[#f]
-
-If you apply the setting to one argument, then you define a new value
-for that setting. The value only applies for the session, and will
-not persist unless you @racket[save!] your work.
-
-Don't worry about making mistakes. Every setting is guarded by a
-@tech/reference{contract}.
-
-@racketinput[(XIDEN_VERBOSE 'yes)]
-@racketresult{expected: (or/c void? boolean?)}
-@racketinput[(XIDEN_VERBOSE)]
-@racketresult[#f]
-@racketinput[(XIDEN_VERBOSE #t)]
-@racketinput[(XIDEN_VERBOSE)]
-@racketresult[#t]
-
-Notice that each setting accepts @racket[(void)]. This has the effect
-of removing the value you set in the session. You can use this to undo
-a mistake or leave an existing value unchanged on disk.
-
-@racketinput[(XIDEN_VERBOSE (void))]
-@racketinput[(XIDEN_VERBOSE)]
-@racketresult[#f]
-
-To review the values of all settings, call @racket[dump].
-You'll see a hash of the complete current configuration.
-
-@racketinput[(dump)]
-
-When you are satisfied with your changes, call @racket[save!].  This
-will write all current settings to your @tech{workspace}'s
-configuration file.
-
-@racketinput[(save!)]
