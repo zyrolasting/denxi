@@ -10,7 +10,8 @@
          define-setting-group
          (contract-out
           [call-with-applied-settings
-           (-> (non-empty-listof (cons/c setting? any/c))
+           (-> (or/c (hash/c setting? any/c)
+                     (non-empty-listof (cons/c setting? any/c)))
                (-> any)
                any)]
           [settings->flag-specs
@@ -78,11 +79,14 @@
         (setting-help-strings s)))
 
 
-(define (call-with-applied-settings flag-accum proc)
+(define (call-with-applied-settings variant proc)
+  (define h
+    (if (list? variant)
+        (apply make-immutable-hash variant)
+        variant))
+
   ((for/fold ([wip proc])
-             ([(pair i) (in-indexed flag-accum)])
-     (define s (car pair))
-     (define v (cdr pair))
+             ([(s v) (in-hash h)])
      (λ ()
        (parameterize ([(setting-derived-parameter s) v])
          (wip))))))
