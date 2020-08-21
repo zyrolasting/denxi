@@ -1,7 +1,6 @@
 #lang racket/base
 
-(provide run-openssl-command
-         (struct-out exn:fail:xiden:openssl))
+(provide run-openssl-command)
 
 (require racket/file
          racket/function
@@ -9,13 +8,13 @@
          racket/port
          racket/system
          "contract.rkt"
+         "exn.rkt"
          "query.rkt"
          "rc.rkt"
          "string.rkt"
          "url.rkt")
 
 (define openssl (find-executable-path "openssl"))
-(struct exn:fail:xiden:openssl exn:fail (exit-code))
 
 (define (run-openssl-command stdin-source . args)
   (define-values (sp from-stdout to-stdin from-stderr)
@@ -42,12 +41,10 @@
                                 delay-seconds)))
 
                   (unless (eq? exit-code 0)
-                    (raise (exn:fail:xiden:openssl
-                            (format "OpenSSL failed with exit code ~a: ~a"
-                                    exit-code
-                                    error-string)
-                            (current-continuation-marks)
-                            exit-code)))
+                    (raise ((exc exn:fail:xiden:openssl exit-code)
+                            "OpenSSL failed with exit code ~a: ~a"
+                            exit-code
+                            error-string)))
 
                   (define output (port->bytes from-stdout))
                   output)

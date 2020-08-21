@@ -4,13 +4,11 @@
 
 (require racket/contract
          file/gzip
-         file/gunzip)
+         file/gunzip
+         "exn.rkt")
 
 (provide (contract-out [compress   (->* (input-port? output-port?) (exact-integer?) void?)]
-                       [decompress (-> input-port? output-port? string?)])
-         (struct-out exn:fail:xiden:decompression))
-
-(struct exn:fail:xiden:decompression exn:fail (pos))
+                       [decompress (-> input-port? output-port? string?)]))
 
 (define (compress in out [timestamp (current-seconds)])
   (gzip-through-ports in out #f timestamp))

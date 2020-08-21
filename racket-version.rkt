@@ -1,7 +1,8 @@
 #lang racket/base
 
 (require racket/contract
-         version/utils)
+         version/utils
+         "exn.rkt")
 
 (define maybe-racket-version/c
   (or/c #f valid-version?))
@@ -18,7 +19,6 @@
   (listof racket-version-range/c))
 
 (provide
- (struct-out exn:fail:xiden:invalid-racket-version-interval)
  (contract-out
   [PRESUMED_MINIMUM_RACKET_VERSION valid-version?]
   [PRESUMED_MAXIMUM_RACKET_VERSION valid-version?]
@@ -38,7 +38,6 @@
        racket-version-ranges/c
        current-racket-version-relationship/c)]))
 
-(struct exn:fail:xiden:invalid-racket-version-interval exn:fail (lo hi))
 
 (define PRESUMED_MINIMUM_RACKET_VERSION "0.0")
 (define PRESUMED_MAXIMUM_RACKET_VERSION "9.99.999.999")

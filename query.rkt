@@ -6,7 +6,6 @@
 (require "contract.rkt")
 
 (provide (struct-out xiden-query)
-         (struct-out exn:fail:xiden:invalid-revision-interval)
          (contract-out
           [CONVENTIONAL_NEWEST_REVISION_NAME string?]
           [revision-string? predicate/c]
@@ -28,17 +27,14 @@
           [xiden-query-match? (-> xiden-query-variant? xiden-query-variant? boolean?)]))
 
 
-(require racket/exn
-         racket/format
+(require racket/format
          racket/function
          racket/match
          racket/generator
          racket/match
          racket/sequence
+         "exn.rkt"
          "string.rkt")
-
-; Define an exception capturing a reversed revision range like [8, 1].
-(struct exn:fail:xiden:invalid-revision-interval exn:fail (lo hi))
 
 (define CONVENTIONAL_NEWEST_REVISION_NAME "newest")
 
