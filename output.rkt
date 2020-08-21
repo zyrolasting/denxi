@@ -8,6 +8,12 @@
 
 (provide
  (contract-out
+  [output-success
+   (-> $message? $with-output?)]
+  [output-failure
+   (->* ($message?)
+        (#:stop-value exact-positive-integer?)
+        $with-output?)]
   [output-fold
    (-> any/c
        (non-empty-listof procedure?)
@@ -27,6 +33,12 @@
    (-> (-> any/c any/c)
        (-> any/c $with-output?))]))
 
+
+(define (output-success m)
+  (output-return #:stop-value 0 #f m))
+
+(define (output-failure #:stop-value [stop-value 1] m)
+  (output-return #:stop-value stop-value #f m))
 
 (define (output-fold initial fs)
   ((apply compose (map output-bind (reverse fs)))
@@ -76,6 +88,18 @@
   (test-equal? "Lift output procedure"
                ((output-lift add1) 1)
                ($with-output #f 2 null))
+
+  (test-equal? "Abbreviate output-return for success"
+               (output-success 1)
+               (output-return #:stop-value 0 #f 1))
+
+  (test-equal? "Abbreviate output-return for general failure"
+               (output-failure 'a)
+               (output-return #:stop-value 1 #f 'a))
+
+  (test-equal? "Abbreviate output-return for specific failure"
+               (output-failure 'a #:stop-value 2)
+               (output-return #:stop-value 2 #f 'a))
 
   (test-case "Compose output-producing functions"
     (define (add v) (output-return (add1 v) '(add 1)))

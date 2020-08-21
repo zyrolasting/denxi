@@ -52,7 +52,7 @@
 ; Define a transition from accumulated command line flags to a new parameterization
 ; in terms of those flags. Capture any failure to do so as main program output.
 (define-syntax-rule (with-flags flags body ...)
-  (with-handlers ([exn:fail? (λ (e) (output-cli-error ($fail (exn-message e))))])
+  (with-handlers ([exn:fail? (λ (e) (output-success ($fail (exn-message e))))])
     (call-with-applied-settings flags (λ () body ...))))
 
 
@@ -201,9 +201,7 @@ EOF
          #:program "config-get"
          #:arg-help-strings '("key")
          (λ (flags key)
-           (output-return
-            #:stop-value 0 #f
-            ($show-setting-value (string->symbol key)))))]
+           (output-success ($show-setting-value (string->symbol key)))))]
 
        ["dump"
         (run-command-line
@@ -211,9 +209,7 @@ EOF
          #:program "config-dump"
          #:arg-help-strings '()
          (λ (flags)
-           (output-return
-            #:stop-value 0 #f
-            ($show-all-settings))))]
+           (output-success ($show-all-settings))))]
 
        ["set"
         (run-command-line
