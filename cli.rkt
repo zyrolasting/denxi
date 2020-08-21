@@ -77,21 +77,20 @@
     XIDEN_FASL_OUTPUT
     XIDEN_READER_FRIENDLY_OUTPUT
     XIDEN_VERBOSE)
-   (λ (action . args)
-     (define proc
-       (match action
-         ["make" make-command]
-         ["install" install-command]
-         ["uninstall" uninstall-command]
-         ["show" show-command]
-         ["link" link-command]
-         ["config" config-command]
-         ["sandbox" sandbox-command]
-         ["serve" serve-command]
-         ["bundle" bundle-command]
-         [_ (const (output-return #:stop-value 1
-                                  ($unrecognized-command action)))]))
-     (proc args))
+   (λ (flags action . args)
+     (with-flags flags
+       (define proc
+         (match action
+           ["make" make-command]
+           ["install" install-command]
+           ["uninstall" uninstall-command]
+           ["show" show-command]
+           ["link" link-command]
+           ["config" config-command]
+           ["sandbox" sandbox-command]
+           ["bundle" bundle-command]
+           [_ (const (output-failure ($unrecognized-command action)))]))
+       (proc args)))
 
 #<<EOF
 <action> is one of
@@ -150,8 +149,9 @@ EOF
     XIDEN_ALLOW_UNSUPPORTED_RACKET)
 
    (λ (flags . package-paths)
-     (output-fold package-paths
-                  (list #;in-user-specified-packages)))))
+     (with-flags flags
+       (output-fold package-paths
+                    (list #;in-user-specified-packages))))))
 
 
 (define (link-command args)
