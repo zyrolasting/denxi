@@ -9,7 +9,7 @@ racket-deps:
 	raco pkg install --skip-installed rackunit-lib db-lib base32
 
 compile:
-	raco make -j 8 -v *.rkt
+	raco make -j 8 *.rkt
 
 exe: compile test
 	raco exe -o xiden -l cli.rkt
