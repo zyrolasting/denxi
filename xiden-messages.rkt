@@ -3,6 +3,7 @@
 (provide (all-defined-out))
 (require "message.rkt")
 
+(define-message $accept-user-setting (name value))
 (define-message $after-delete (path))
 (define-message $after-write (path))
 (define-message $already-installed (info))
