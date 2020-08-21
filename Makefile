@@ -6,7 +6,7 @@ test:
 	raco test -j 8 *.rkt
 
 racket-deps:
-	raco pkg install --skip-installed web-server-lib rackunit-lib db-lib base32
+	raco pkg install --skip-installed rackunit-lib db-lib base32
 
 compile:
 	raco make -j 8 -v *.rkt

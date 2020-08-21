@@ -33,7 +33,6 @@
          "rc.rkt"
          "resolve.rkt"
          "setting.rkt"
-         "server.rkt"
          "signature.rkt"
          "string.rkt"
          "team.rkt"
@@ -130,7 +129,6 @@
   link       Create symlink to package file
   config     Manage configuration
   sandbox    Start sandboxed REPL for package's setup module.
-  serve      Serve package artifacts
   bundle     Prepare package for distribution
 
 EOF
@@ -370,27 +368,6 @@ EOF
      (halt 0))))
 |#
 
-
-(define (serve-command args)
-  (run-command-line
-   #:program "serve"
-   #:arg-help-strings null
-   #:flags
-   (settings->flag-specs
-    XIDEN_PORT)
-   #:args args
-   (λ (flags)
-     (define stop (start-server #:port (XIDEN_PORT)))
-     (with-handlers ([exn:break?
-                      (λ (e)
-                        (output-return #:stop-value 0
-                                       #f
-                                       ($on-server-break)))])
-       (dynamic-wind void
-                     (λ ()
-                       (write-output ($on-server-up (format "[::]:~a" (XIDEN_PORT))))
-                       (sync/enable-break never-evt))
-                     stop)))))
 
 
 
