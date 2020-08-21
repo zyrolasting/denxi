@@ -2,27 +2,43 @@
 
 ; Define runtime configuration.
 
-(provide (all-defined-out))
+(require "contract.rkt")
+(provide
+ (contract-out
+  [XIDEN_SETTINGS
+   (hash/c symbol? setting? #:immutable #t)]
+  [try-user-setting
+   (-> setting? string? $with-output?)]
+  [get-xiden-settings-path
+   (-> complete-path?)]
+  [load-xiden-rcfile
+   (-> config-closure/c)]
+  [dump-xiden-settings
+   (-> (hash/c symbol? setting?))]
+  [save-xiden-settings!
+   (-> any)]))
+
 
 (require racket/function
          racket/match
          racket/pretty
          (only-in racket/tcp listen-port-number?)
          "config.rkt"
-         "contract.rkt"
+         "output.rkt"
          "setting.rkt"
-         "string.rkt"
          "url.rkt"
-         "workspace.rkt")
+         "workspace.rkt"
+         "xiden-messages.rkt")
 
 
-(define (in-xiden-setting-value-sources id default-value)
-  (in-list (list (λ () (maybe-get-setting-value-from-envvar (symbol->string id)))
-                 (λ () ((load-xiden-rcfile) id any/c (void)))
-                 (const default-value))))
+; The only difference between a vanilla setting an a Xiden setting is how a
+; fallback value is computed.
+(define-syntax-rule (define-xiden-setting id cnt short-flag default-value help-strs)
+  (define-setting id cnt short-flag (xiden-setting-find-value default-value) help-strs))
 
 
-(define (xiden-setting-default-value default-value)
+; Return a procedure to fetch a value for a setting if it is not already set.
+(define (xiden-setting-find-value default-value)
   (λ (id)
     (for/or ([make-value (in-xiden-setting-value-sources id default-value)])
       (define maybe-not-void (make-value))
@@ -30,8 +46,11 @@
            maybe-not-void))))
 
 
-(define-syntax-rule (define-xiden-setting id cnt short-flag default-value help-strs)
-  (define-setting id cnt short-flag (xiden-setting-default-value default-value) help-strs))
+; Checks environment variable, then rcfile, then hard-coded value.
+(define (in-xiden-setting-value-sources id default-value)
+  (in-list (list (λ () (maybe-get-setting-value-from-envvar (symbol->string id)))
+                 (λ () ((load-xiden-rcfile) id any/c (void)))
+                 (const default-value))))
 
 
 (define (maybe-get-setting-value-from-envvar envname)
@@ -41,39 +60,58 @@
         [else (read (open-input-string env))]))
 
 
-(define (make-xiden-settings-namespace)
-  (define ns (make-base-namespace))
-  (for ([(k v) (in-hash XIDEN_SETTINGS)])
-    (namespace-set-variable-value! k v #t ns #t))
-  (namespace-set-variable-value! 'save! save-xiden-settings! #t ns #t)
-  (namespace-set-variable-value! 'dump
-                                 (λ () (pretty-write #:newline? #t (dump-xiden-settings)))
-                                 #t ns #t)
-  ns)
+; Map user setting exception to program output
+(define (make-invalid-user-setting-handler target-setting string-value)
+  (λ (e)
+    (output-failure
+     ($reject-user-setting
+      (setting-id target-setting)
+      string-value
+      (if (exn:fail:contract? e)
+          (cadr (regexp-match #px"expected:\\s+([^\n]+)"
+                              (exn-message e)))
+          (exn-message e))))))
+
+
+; Use this to update a setting from string input (such as a command-line argument)
+; Returns program output explaining why the value was rejected.
+(define (try-user-setting target-setting string-value)
+  (with-handlers ([exn:fail? (make-invalid-user-setting-handler target-setting string-value)])
+    (define value (read (open-input-string string-value)))
+    (target-setting
+     value
+     (λ () (output-return #:stop-value #f #f
+                          ($accept-user-setting (setting-id target-setting) value))))))
 
 
 (define (get-xiden-settings-path)
   (build-workspace-path "etc/xiden.rkt"))
 
 
-(define load-xiden-rcfile
-  (let ([cache #f])
-    (λ (#:reload? [reload? #f])
-      (when (or (not cache) reload?)
-        (let ([path (get-xiden-settings-path)])
-          (set! cache
-                (if (file-exists? path)
-                    (load-config path)
-                    (make-config-closure (hasheq) null)))))
-      cache)))
+; load-xiden-rcfile reads the rcfile every time, which avoids caching bugs.
+;
+; But combined with in-xiden-setting-value-sources, there are two
+; other problems:
+;
+; 1. You trigger a full file read for every fetch of an undefined setting's value.
+; 2. Different calls may return different values for the same setting
+;
+; #2 is desirable for secured interactive applications, but #1 is just wasteful.
+; To avoid extra reads, create a parameterization where each setting
+; has a value. e.g. (call-with-applied-settings all-settings (λ () ...))
+;
+; In that parameterization, no disk reads will occur because there
+; will be no need to search for a value. Note that using
+; (dump-xiden-settings) for `all-settings` above defeats the purpose
+; because it will read the file once for every unset value anyway.
+; But if you would trigger more reads than the dump would, perhaps
+; that's not an issue.
 
-
-(define (get-xiden-setting . args)
-  (apply hash-ref XIDEN_SETTINGS args))
-
-
-(define (get-xiden-setting-value . args)
-  ((apply get-xiden-setting args)))
+(define (load-xiden-rcfile)
+  (let ([path (get-xiden-settings-path)])
+    (if (file-exists? path)
+        (load-config path)
+        (make-config-closure (hasheq) null))))
 
 
 (define (dump-xiden-settings)
@@ -81,13 +119,23 @@
     (values k (v))))
 
 
-(define (save-xiden-settings! closure)
-  (save-config! closure (get-xiden-settings-path)))
+; This implementation preserves the reading order of
+; any rcfile on disk, as a courtesy to the user.
+(define (save-xiden-settings!)
+  (save-config! (make-config-closure
+                 (dump-xiden-settings)
+                 (filter (curry hash-has-key? XIDEN_SETTINGS)
+                         ((load-xiden-rcfile) READ_ORDER)))
+                (get-xiden-settings-path)))
 
 
-(define (switch-help strs)
-  (cons strs (list "#t-or-#f")))
+; For boolean options, since they all use the same help string.
+(define (switch-help str)
+  (cons str '("#t-or-#f")))
 
+
+;; Begin runtime configuration space
+;; =================================
 
 (define-xiden-setting XIDEN_SANDBOX_MEMORY_LIMIT_MB (>=/c 0) "-M" 30
   '("Total memory quota for a sandbox"
@@ -104,7 +152,7 @@
     "seconds"))
 
 
-  ; Controls network and file I/O permissions for sandboxed installers.
+; Controls network and file I/O permissions for sandboxed installers.
 (define-xiden-setting XIDEN_SANDBOX_NETWORK_PERMISSIONS
    (list/c (or/c #f string?)
            (or/c #f string?)
@@ -172,11 +220,6 @@
   (switch-help "Show more information in program output"))
 
 
-(define-xiden-setting XIDEN_PORT listen-port-number? "-p" 8080
-  '("Set listen port"
-    "port-number"))
-
-
 (define-xiden-setting XIDEN_PRIVATE_KEY_PATH (or/c #f path-string?) "-q" #f
   '("The location of a private key"
     "path"))
@@ -240,7 +283,6 @@
    XIDEN_MATCH_COMPILED_RACKET
    XIDEN_MATCH_RACKET_MODULES
    XIDEN_MODS_MODULE
-   XIDEN_PORT
    XIDEN_PRIVATE_KEY_PATH
    XIDEN_READER_FRIENDLY_OUTPUT
    XIDEN_SANDBOX_EVAL_MEMORY_LIMIT_MB
@@ -254,3 +296,101 @@
    XIDEN_TRUST_UNSIGNED
    XIDEN_TRUST_UNVERIFIED_HOST
    XIDEN_VERBOSE])
+
+(module+ test
+  (require rackunit
+           (submod "file.rkt" test))
+
+  (test-workspace "Represent a lack of rcfile as an empty hash"
+    (check-equal? ((load-xiden-rcfile)) (hasheq)))
+
+
+  (test-not-exn "Group all runtime configuration in a hash table"
+                (λ ()
+                  (invariant-assertion
+                   (and/c immutable? (hash/c symbol? setting?))
+                   XIDEN_SETTINGS)))
+
+
+  (test-case "Define runtime configuration file path in terms of workspace"
+    (define rcfile-/a
+      (parameterize ([workspace-directory "/a"])
+        (get-xiden-settings-path)))
+    (define rcfile-/b
+      (parameterize ([workspace-directory "/b"])
+        (get-xiden-settings-path)))
+    (check-pred complete-path? rcfile-/a)
+    (check-pred complete-path? rcfile-/b)
+    (check-not-equal? rcfile-/a rcfile-/b))
+
+
+  (test-case "Dump current runtime configuration to a hash table"
+    (check-not-exn
+     (λ ()
+       (invariant-assertion
+        (and/c immutable? (hash/c symbol? (not/c setting?)))
+        (dump-xiden-settings))))
+
+    (define dump (dump-xiden-settings))
+    (check-equal? (hash-ref dump 'XIDEN_PRIVATE_KEY_PATH)
+                  (XIDEN_PRIVATE_KEY_PATH))
+
+    (XIDEN_PRIVATE_KEY_PATH
+     "foo"
+     (λ ()
+       (check-not-equal? (hash-ref dump 'XIDEN_PRIVATE_KEY_PATH)
+                         (XIDEN_PRIVATE_KEY_PATH))
+       (check-equal? (hash-ref (dump-xiden-settings) 'XIDEN_PRIVATE_KEY_PATH)
+                     (XIDEN_PRIVATE_KEY_PATH)))))
+
+  (test-equal? "Accept valid user-provided settings"
+               (try-user-setting XIDEN_PRIVATE_KEY_PATH "\"a\"")
+               ($with-output #f #f (list ($accept-user-setting 'XIDEN_PRIVATE_KEY_PATH "a"))))
+
+  (test-equal? "Reject invalid user-provided settings"
+               (try-user-setting XIDEN_PRIVATE_KEY_PATH "123")
+               ($with-output 1 #f (list ($reject-user-setting
+                                         'XIDEN_PRIVATE_KEY_PATH
+                                         "123"
+                                         "(or/c void? (or/c #f path-string?))"))))
+
+  (let ([malformed "\"({"])
+    (test-equal? "Reject unreadable user-provided settings"
+                 (try-user-setting XIDEN_PRIVATE_KEY_PATH malformed)
+                 ($with-output 1 #f (list ($reject-user-setting
+                                           'XIDEN_PRIVATE_KEY_PATH
+                                           malformed
+                                           (with-handlers ([exn:fail:read? exn-message])
+                                             (read (open-input-string malformed))))))))
+
+  (test-workspace "Find fallback values from several sources"
+    (test-false "First use a hard-coded value"
+                (XIDEN_PRIVATE_KEY_PATH))
+
+    (test-case "Override hard-coded value with rcfile"
+      (XIDEN_PRIVATE_KEY_PATH "foo"
+                              (λ ()
+                                (check-false ((load-xiden-rcfile) 'XIDEN_PRIVATE_KEY_PATH any/c #f))
+                                (save-xiden-settings!)
+                                (check-equal? ((load-xiden-rcfile) 'XIDEN_PRIVATE_KEY_PATH) "foo")))
+      (check-equal? (XIDEN_PRIVATE_KEY_PATH) "foo"))
+
+    (test-case "Override rcfile value with envvar value"
+      (dynamic-wind (λ () (putenv "XIDEN_PRIVATE_KEY_PATH" "\"bar\""))
+                    (λ () (check-equal? (XIDEN_PRIVATE_KEY_PATH) "bar"))
+                    (λ ()
+                      (putenv "XIDEN_PRIVATE_KEY_PATH" "")
+                      (test-equal? "Do not use empty envvar strings as a source for settings"
+                                   (XIDEN_PRIVATE_KEY_PATH)
+                                   "foo")))))
+
+  (test-workspace "Lazily validate fallback values"
+    (test-exn "Reject invalid values from ennvar"
+              exn:fail:contract?
+              (λ ()
+                (dynamic-wind void
+                              (λ ()
+                                (putenv "XIDEN_PRIVATE_KEY_PATH" "123")
+                                (XIDEN_PRIVATE_KEY_PATH))
+                              (λ ()
+                                (putenv "XIDEN_PRIVATE_KEY_PATH" "")))))))
