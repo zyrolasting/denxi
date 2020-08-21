@@ -12,12 +12,14 @@
          (contract-out
           [make-signature
            (-> bytes? path-string? bytes?)]
+          [well-formed-signature-info?
+           predicate/c]
           [xiden-cipher-algorithms
            (non-empty-listof symbol?)]
           [xiden-cipher-algorithm/c
            flat-contract?]
           [check-signature
-           (-> integrity-info? signature-info? boolean?)]))
+           (-> bytes? bytes? bytes? boolean?)]))
 
 (require racket/sequence
          racket/format
@@ -29,13 +31,21 @@
 
 (struct signature-info (algorithm pubkey body) #:prefab)
 
+
+(define (well-formed-signature-info? info)
+  (and (signature-info? info)
+       (xiden-cipher-algorithm/c (signature-info-algorithm info))
+       (bytes? (signature-info-body info))
+       (bytes? (signature-info-pubkey info))))
+
+
 (define (make-signature digest private-key-path)
   (run-openssl-command (open-input-bytes digest)
                        "pkeyutl"
                        "-sign"
                        "-inkey" private-key-path))
 
-(define (verify-signature digest signature public-key)
+(define (check-signature digest signature public-key)
   (define tmpsig (make-temporary-file))
   (call-with-output-file tmpsig
     #:exists 'truncate/replace
@@ -48,20 +58,3 @@
      "-sigfile" tmpsig
      "-pubin" "-inkey" public-key))
   (eq? exit-code 0))
-
-(define (check-signature int sig)
-  (or (XIDEN_TRUST_BAD_DIGEST)
-      (if (and sig (signature-info-body sig))
-          (or (verify-signature (integrity-info-digest int) sig (signature-info-pubkey sig))
-              (or (XIDEN_TRUST_BAD_SIGNATURE)
-                  'mismatch))
-          (or (XIDEN_TRUST_UNSIGNED)
-              'missing))))
-
-(define (verify-signature binfo)
-  (define signature (bytes-info-signature binfo))
-  (if signature
-      (if (check-signature (bytes-info-integrity binfo) signature)
-          'ok
-          (raise ($bad-signature binfo)))
-      (raise ($missing-signature binfo))))
