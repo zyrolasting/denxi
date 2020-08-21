@@ -14,6 +14,8 @@
 (require "contract.rkt")
 (provide
  (contract-out
+  [config-closure/c
+   contract?]
   [READ_ORDER symbol?]
   [save-config!
    (->* (config-closure/c (or/c path-string? url? output-port?)) void?)]
