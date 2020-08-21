@@ -59,6 +59,12 @@
 (define-exn exn:fail:xiden:source:no-content exn:fail:xiden:source ())
 (define-exn exn:fail:xiden:source:cannot-find-size exn:fail:xiden:source (key))
 (define-exn exn:fail:xiden:source:cannot-open-port exn:fail:xiden:source (key))
+(define-exn exn:fail:xiden:source:digest exn:fail:xiden:source (src))
+(define-exn exn:fail:xiden:source:digest:missing  exn:fail:xiden:source:digest ())
+(define-exn exn:fail:xiden:source:digest:mismatch exn:fail:xiden:source:digest (exp-id))
+(define-exn exn:fail:xiden:source:signature exn:fail:xiden:source (src))
+(define-exn exn:fail:xiden:source:signature:missing exn:fail:xiden:source:signature ())
+(define-exn exn:fail:xiden:source:signature:mismatch exn:fail:xiden:source:signature (exp-id))
 
 (define-exn exn:fail:xiden:openssl exn:fail:xiden (exit-code))
 
