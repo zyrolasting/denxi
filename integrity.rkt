@@ -17,14 +17,16 @@
            (non-empty-listof symbol?)]
           [xiden-hash-algorithm/c
            flat-contract?]
+          [well-formed-integrity-info?
+           predicate/c]
           [make-digest
            (-> xiden-hash-source/c
                xiden-hash-algorithm/c
                bytes?)]
           [check-integrity
-           (-> (or/c integrity-info? #f)
+           (-> well-formed-integrity-info?
                xiden-hash-source/c
-               (or/c #t 'mismatch 'missing))]))
+               boolean?)]))
 
 (require racket/sequence
          racket/format
@@ -38,6 +40,15 @@
 (define (make-integrity-info variant algorithm)
   (integrity-info algorithm (make-digest variant algorithm)))
 
+(define (well-formed-integrity-info? info)
+  (and (integrity-info? info)
+       (xiden-hash-algorithm/c (integrity-info-algorithm info))
+       (bytes? (integrity-info-digest info))
+       (equal? (bytes-length (integrity-info-digest info))
+               (bytes-length (make-digest #"whatever"
+                                          (integrity-info-algorithm info))))))
+
+
 (define (make-digest variant algorithm)
   (cond [(path-string? variant)
          (call-with-input-file variant (λ (i) (make-digest i algorithm)))]
@@ -47,17 +58,14 @@
          (run-openssl-command variant
                               "dgst"
                               "-binary"
-                              (~a "-" algorithm))]))
+                              (~a "-" algorithm))]
+        [else (raise-argument-error 'make-digest
+                                    "A path, bytes, or an input port"
+                                    variant)]))
 
-
-(define (check-integrity info-or-#f variant)
-  (or (XIDEN_TRUST_BAD_DIGEST)
-      (if (and info-or-#f (integrity-info-digest info-or-#f))
-          (or (equal? (integrity-info-digest info-or-#f)
-                      (make-digest (integrity-info-algorithm info-or-#f) variant))
-              'mismatch)
-          'missing)))
-
+(define (check-integrity info variant)
+  (equal? (integrity-info-digest info)
+          (make-digest variant (integrity-info-algorithm info))))
 
 (module+ test
   (require rackunit)
