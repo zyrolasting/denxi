@@ -12,7 +12,6 @@
          racket/sequence
          "config.rkt"
          "path.rkt"
-         "rc.rkt"
          "setting.rkt"
          "string.rkt"
          "workspace.rkt"
@@ -135,20 +134,4 @@
                                      [else #'val])])
            #'(call-with-output-file fname writer)))]
       [(_ kw)
-       #'(>> kw "")]))
-
-
-  (temp-fs [dir #:inst [>> #:a] [dir #:nested [>> #:b]]]
-           [dir #:other [>> #:file]]
-           (parameterize ([workspace-directory (current-directory)]
-                          [(setting-derived-parameter XIDEN_INSTALL_RELATIVE_PATH) "inst"])
-             (test-equal? "Provide all paths in workspace"
-                          (apply set (sequence->list (in-workspace)))
-                          (apply set (map (λ (p)
-                                            (build-path (current-directory) p))
-                                          '("inst"
-                                            "inst/a"
-                                            "inst/nested"
-                                            "inst/nested/b"
-                                            "other"
-                                            "other/file")))))))
+       #'(>> kw "")])))
