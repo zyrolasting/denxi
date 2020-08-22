@@ -8,14 +8,18 @@
   [write-output
    (->* ($message?) (output-port?) void?)]))
 
-(require racket/fasl
+(require racket/date
+         racket/fasl
          racket/pretty
          racket/serialize
+         "exn.rkt"
          "format.rkt"
          "message.rkt"
          "package-info.rkt"
+         "racket-version.rkt"
          "rc.rkt"
          "setting.rkt"
+         "workspace.rkt"
          "xiden-messages.rkt")
 
 
@@ -97,11 +101,11 @@
                  (package-info-provider-name ($bad-signature-info m))
                  (setting-long-flag XIDEN_TRUST_BAD_SIGNATURE))]
 
-        [($missing-signature? m)
+        [($undeclared-signature-info? m)
          (format (~a "~a does not have a signature. If you are testing a package, this is expected.~n"
                      "If you got the package from the Internet, then exercise caution!~n"
                      "To trust unsigned packages, use ~a.")
-                 (format-package-info ($missing-signature-info m))
+                 "INPUT NAME"
                  (setting-long-flag XIDEN_TRUST_UNSIGNED))]
 
         [($on-unverified-host? m)

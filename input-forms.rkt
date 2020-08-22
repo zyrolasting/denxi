@@ -17,7 +17,7 @@
          quote
          quasiquote
          unquote
-         (rename-out [sources list])
+         (rename-out [list sources])
          (contract-out
           [input
            (->* (non-empty-string?

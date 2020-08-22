@@ -34,7 +34,7 @@
 (struct package (name definition))
 
 (define (in-user-requested-package-infos package-defn-input-exprs)
-  (sequence-map input-expr->package-info
+  (sequence-map user-string->package-info
                 (in-list package-defn-input-exprs)))
 
 (define (in-package-modules package-infos)
@@ -55,12 +55,10 @@
 
 (define (get-package-module pkg)
   (define distribution-name (package-name pkg))
-  (define setup-module (package-info-setup-module pkg))
   `(module package racket/base
      (require xiden version/utils)
-     ,setup-module
      (define (install!) . ,(get-installation-instructions pkg))
-     (module+ main (install!) (setup!))))
+     (module+ main (install! (current-command-line-arguments)))))
 
 (define (get-installation-instructions pkg)
   (define distribution-name (package-name pkg))

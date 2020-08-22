@@ -10,7 +10,8 @@
          define-setting-group
          (contract-out
           [call-with-applied-settings
-           (-> (or/c (hash/c setting? any/c)
+           (-> (if/c hash?
+                     (hash/c setting? any/c)
                      (non-empty-listof (cons/c setting? any/c)))
                (-> any)
                any)]

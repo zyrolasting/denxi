@@ -3,7 +3,7 @@
 ; Define the many ways users can express an input,
 ; then resolve those expressions to actual inputs.
 
-(provide input-expr->package-info)
+(provide user-string->package-info)
 
 (require racket/match
          racket/path
@@ -37,9 +37,12 @@
   (module->namespace "input-forms-lang.rkt"))
 
 
-
 (define (user-string->package-info str)
-  (call-with-input-source str read-package-info))
+  (read-package-info
+   (XIDEN_TRUST_BAD_DIGEST
+    #t
+    (λ ()
+      (fulfill-input (input-info "package-def" (list str) #f #f))))))
 
 
 (define (make-input-info variant)

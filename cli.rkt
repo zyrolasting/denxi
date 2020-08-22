@@ -127,7 +127,7 @@ EOF
    (λ (flags . package-defn-input-exprs)
      (with-flags flags
        (output-fold package-defn-input-exprs
-                    (list in-user-requested-package-definitions
+                    (list in-user-requested-package-infos
                           in-package-modules))))))
 
 
@@ -217,7 +217,7 @@ EOF
          #:program "config-set"
          #:arg-help-strings '("key" "value")
          (λ (flags key value)
-           (apply-user-setting (string->symbol key) value)))]
+           (try-user-setting (string->symbol key) value)))]
 
        [_
         (output-return #:stop-value 1
@@ -440,7 +440,7 @@ EOF
       (entry-point (vector "config" "get" config-key/str)
                        (λ (exit-code stdout stderr output)
                          (check-eq? exit-code 0)
-                         (check-equal? (get-xiden-setting-value config-key)
+                         (check-equal? (hash-ref XIDEN_SETTINGS config-key)
                                        (read stdout)))))
 
     (test-workspace "Save a (write)able config value"

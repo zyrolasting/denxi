@@ -13,7 +13,7 @@
 (provide
  (contract-out
   [dynamic-require/mod
-   (-> symbol? (-> any/c) any/c)]))
+   (-> symbol? (-> any/c) (-> any) any/c)]))
 
 (require "output.rkt"
          "rc.rkt"

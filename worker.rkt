@@ -65,9 +65,9 @@
 
     (define/public (handle-$compile module-path)
       (with-handlers
-        ([exn? (λ (e) (send-output ($on-compilation-error module-path (exn->string e))))])
+        ([exn? (λ (e) (send-output ($compilation-error module-path (exn->string e))))])
         (managed-compile-zo module-path)
-        (send-output ($on-module-compiled module-path))))))
+        (send-output ($module-compiled module-path))))))
 
 
 (define (main pch)
@@ -175,7 +175,7 @@
     (define output-values (map $output-v output-messages))
 
     (define-values (compile-errors compile-successes)
-      (partition $on-compilation-error? output-values))
+      (partition $compilation-error? output-values))
 
     (test-eq? "Report the only error"
               (length compile-errors)
@@ -188,13 +188,13 @@
     (define compile-error (car compile-errors))
 
     (test-pred "Report compilation error"
-               $on-compilation-error?
+               $compilation-error?
                compile-error)
 
     (test-equal? "Report at-fault module using given path"
-                 ($on-compilation-error-module-path compile-error)
+                 ($compilation-error-module-path compile-error)
                  (build-path "junk.rkt"))
 
     (test-true "Report expected error as string"
                (regexp-match? #rx"expected a `module` declaration"
-                              ($on-compilation-error-message compile-error)))))
+                              ($compilation-error-message compile-error)))))

@@ -168,7 +168,7 @@
 
              (sync (handle-evt
                     (alarm-evt (+ (current-inexact-milliseconds)
-                                  (XIDEN_FETCH_TIMEOUT)))
+                                  (XIDEN_FETCH_TIMEOUT_MS)))
                     (λ (alarm)
                       (rex exn:fail:xiden:source:fetch-timeout)))
 

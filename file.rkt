@@ -34,9 +34,8 @@
 (define (in-racket-modules start-path)
   (sequence-filter (λ (p)
                      (and (not (link-exists? p))
-                          (not (member (path->string (file-name-from-path p))
-                                       (list CONVENTIONAL_WORKSPACE_NAME
-                                             CONVENTIONAL_DEPENDENCY_DIRECTORY_NAME)))
+                          (not (equal? (path->string (file-name-from-path p))
+                                       CONVENTIONAL_WORKSPACE_NAME))
                           (file-exists? p)
                           (member (path-get-extension p)
                                   '(#".rkt" #".ss" #".scrbl"))))
