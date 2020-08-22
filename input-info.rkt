@@ -99,8 +99,8 @@
 
 ; User may customize the means by which bytes are analyzed and fetched.
 (define (get-get-source-info)
-  (dynamic-require/mod 'get-source-info
-                       (const get-source-info)))
+  (define (fallback . _) get-source-info)
+  (dynamic-require/mod 'get-source-info fallback fallback))
 
 
 (define (get-input-size source)
