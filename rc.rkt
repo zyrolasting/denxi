@@ -213,6 +213,14 @@
   (switch-help "Use FASL program output"))
 
 
+(define-xiden-setting XIDEN_FETCH_BUFFER_SIZE_MB real? (real-in 0.2 20) 10
+  '("The maximum size, in mibibytes, to read from a source at a time"
+    "mibibytes"))
+
+(define-xiden-setting XIDEN_FETCH_TIMEOUT_MS real? (real-in 100 (* 1000 10)) 3000
+  '("The maximum time, in milliseconds, to wait for a distinct read of bytes from a source"
+    "milliseconds"))
+
 (define-xiden-setting XIDEN_READER_FRIENDLY_OUTPUT boolean? "-R" #f
   (switch-help "Use (read)able program output"))
 
@@ -278,6 +286,8 @@
    XIDEN_CONSENT
    XIDEN_DOWNLOAD_MAX_REDIRECTS
    XIDEN_FASL_OUTPUT
+   XIDEN_FETCH_BUFFER_SIZE_MB
+   XIDEN_FETCH_TIMEOUT_MS
    XIDEN_INSTALL_RELATIVE_PATH
    XIDEN_LAUNCHER_RELATIVE_PATH
    XIDEN_LINK
