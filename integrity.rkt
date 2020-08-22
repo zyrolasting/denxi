@@ -2,8 +2,30 @@
 
 (require "contract.rkt")
 
+; Mirror OpenSSL
 (define xiden-hash-algorithms
-  '(sha384 sha512 sha1 md5))
+  '(blake2b512
+    blake2s256
+    gost
+    md2
+    md4
+    md5
+    rmd160
+    sha1
+    sha1
+    sha224
+    sha256
+    sha3-224
+    sha3-256
+    sha3-384
+    sha3-512
+    sha384
+    sha512
+    sha512-224
+    sha512-256
+    shake128
+    shake256
+    sm3))
 
 (define xiden-hash-source/c
   (or/c path-string? bytes? input-port?))
