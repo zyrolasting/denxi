@@ -4,18 +4,12 @@
          find-workspace-directory
          workspace-directory
          CONVENTIONAL_WORKSPACE_NAME
-         CONVENTIONAL_DEPENDENCY_DIRECTORY_NAME
-         CONVENTIONAL_PACKAGE_INFO_FILE_NAME
-         CONVENTIONAL_LAUNCHER_AUX_DIRECTORY_NAME
          show-workspace-envvar-error?)
 
 (require racket/contract
          racket/path)
 
 (define CONVENTIONAL_WORKSPACE_NAME "xiden-workspace")
-(define CONVENTIONAL_DEPENDENCY_DIRECTORY_NAME "xiden-deps")
-(define CONVENTIONAL_PACKAGE_INFO_FILE_NAME "xiden.rkt")
-(define CONVENTIONAL_LAUNCHER_AUX_DIRECTORY_NAME "launcher-aux")
 
 (define (find-workspace-directory [current-dir (current-directory)])
   (define complete-current-dir (simplify-path (path->complete-path current-dir)))
@@ -99,25 +93,6 @@
              (check-equal? (find-workspace-directory "deeper") right-here)
              (check-equal? (find-workspace-directory wsn) within-ws)
              (check-equal? (find-workspace-directory "depeer/deeper") deeper)))))
-
-  (test-not-exn "Conventional names are not reserved file names"
-                (λ ()
-                  (tmp #:dir? #t
-                       (λ (tmpdir)
-                         (parameterize ([current-directory tmpdir])
-                           (dynamic-wind
-                             void
-                             (λ ()
-                               (make-directory CONVENTIONAL_WORKSPACE_NAME)
-                               (make-directory CONVENTIONAL_DEPENDENCY_DIRECTORY_NAME)
-                               (display-to-file "" CONVENTIONAL_PACKAGE_INFO_FILE_NAME))
-                             (λ ()
-                               (when (directory-exists? CONVENTIONAL_WORKSPACE_NAME)
-                                 (delete-directory CONVENTIONAL_WORKSPACE_NAME))
-                               (when (directory-exists? CONVENTIONAL_DEPENDENCY_DIRECTORY_NAME)
-                                 (delete-directory CONVENTIONAL_DEPENDENCY_DIRECTORY_NAME))
-                               (when (file-exists? CONVENTIONAL_PACKAGE_INFO_FILE_NAME)
-                                 (delete-file CONVENTIONAL_PACKAGE_INFO_FILE_NAME)))))))))
 
   (test-exn "Guard against existing file paths"
             exn:fail:contract?

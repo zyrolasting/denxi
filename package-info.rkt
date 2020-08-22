@@ -4,7 +4,6 @@
 
 (provide (struct-out package-info)
          make-package-info
-         read-package-info-from-directory
          read-package-info
          package-info->hash)
 
@@ -109,12 +108,6 @@
         'tags (package-info-tags pkginfo)
         'description (package-info-description pkginfo)
         'home-page (package-info-home-page pkginfo)))
-
-
-(define (read-package-info-from-directory dir)
-   (with-handlers ([exn:fail:filesystem?
-                    (λ (e) (output-return #f ($package-directory-has-unreadable-info dir)))])
-     (output-unit (read-package-info (build-path dir CONVENTIONAL_PACKAGE_INFO_FILE_NAME)))))
 
 
 (define-syntax-rule (copy-package-info i fields ...)
