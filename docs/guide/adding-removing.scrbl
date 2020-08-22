@@ -2,51 +2,38 @@
 
 @require["../shared.rkt" @for-label[racket/base]]
 
-@title{Adding and Removing Packages}
+@title{Installing Packages}
 
-You can add and remove packages as you'd expect.
-
-using @tech{queries}.
+To install a package, give @binary a @tech{package definition}.
 
 @verbatim|{
-$ xiden install -y john.doe:calculator
-$ xiden uninstall -y john.doe:calculator
+$ xiden install def.rkt
 }|
 
-Unless forced, @binary will not install any suspicious packages.  If a
-situation comes up, then @binary will explain your options.
-
-Don't worry about conflicting versions. @binary installs packages side-by-side,
-meaning that two versions of the same package each get a unique directory.
-
-When @binary installs a package, it adds a @|depdir| directory to the package's
-installation directory (See @secref{new-pkg}). Package authors use this
-directory to access package modules using the package provider's name and the
-package's name.
-
-@racketblock[
-(require (file "xiden-deps/john.doe/calculator/module.rkt"))
-]
-
-This illustrates the fundamental difference between @binary and
-@tt{raco pkg}: @binary does not define
-@tech/reference{collections}. However, packages can define launchers
-that map top-level collection names to dependency directories.
-
-@section{Manually Linking Packages}
-
-You can access the packages you installed for a specific use, outside of
-conventions set by @|binary|. To do this, use the @litchar{link} command to
-make a symbolic link to a package installed on your system.
+That definition might come from the Internet.
 
 @verbatim|{
-$ xiden link john.doe:calculator calc
-$ ls calc
+$ xiden install https://example.com/...
 }|
 
-Example use cases:
+@binary also comes with a plugin system, where you can provide custom
+queries that resolve to definitions. Here's an example that uses
+@|binary|'s own query format.
 
-@itemlist[
-@item{You want to reuse a package in a different @tech{workspace}.}
-@item{You want to run a program that requires several hand-picked versions of the same package.}
-]
+@verbatim|{
+$ xiden install example.com:widget
+}|
+
+@binary is hypervigilant. The commands we've used so far actually say
+what they @italic{would do} if you @italic{explicitly consented} to
+running them (Package managers may do more work than users intended).
+
+@verbatim|{
+$ xiden install -y def.rkt
+}|
+
+Don't worry about installing conflicting versions. @binary installs
+packages side-by-side, meaning if anything is different about a
+package, then that package will get a unique directory. If you try to
+install the same package twice, then @binary will simply re-create
+that package's directory with fresh contents.

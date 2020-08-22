@@ -10,8 +10,7 @@ This is a guide for @|binary|, a functional package manager for Racket.
 
 @binary concerns itself with the safe, deterministic reproduction of
 exact @tech{packages} and dependencies without any side-effect on the
-running Racket installation. In that light, it applies aspects of
-functional programming to package management.
+running Racket installation.
 
 @table-of-contents[]
 
@@ -22,6 +21,4 @@ functional programming to package management.
 @include-section{creating-packages.scrbl}
 @include-section{versioning.scrbl}
 @include-section{config.scrbl}
-@include-section{hosting-packages.scrbl}
-@include-section{publishing-packages.scrbl}
 @include-section{reproduction.scrbl}
