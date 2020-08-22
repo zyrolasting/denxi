@@ -8,9 +8,12 @@
          read-package-info
          package-info->hash)
 
-(require "config.rkt"
+(require racket/sequence
+         "config.rkt"
          "contract.rkt"
          "output.rkt"
+         "output-info.rkt"
+         "input-info.rkt"
          "racket-version.rkt"
          "string.rkt"
          "url.rkt"
@@ -57,6 +60,26 @@
    tags
    description
    home-page))
+
+
+(define (merge-package-info a b)
+  (struct-copy package-info b
+               [inputs
+                (merge-package-lists
+                 #:get-name input-info-name
+                 (package-info-inputs a)
+                 (package-info-inputs b))]
+               [outputs
+                (merge-package-lists
+                 #:get-name output-info-name
+                 (package-info-outputs a)
+                 (package-info-outputs b))]))
+
+
+(define (merge-package-lists #:get-name get-name list-a list-b)
+  (hash-values (for/fold ([seen (hash)])
+                         ([v (sequence-append (in-list list-a) (in-list list-b))])
+                 (hash-set seen (get-name v) v))))
 
 
 (define (read-package-info in)
