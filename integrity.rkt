@@ -17,14 +17,14 @@
            (non-empty-listof symbol?)]
           [xiden-hash-algorithm/c
            flat-contract?]
-          [well-formed-integrity-info?
-           predicate/c]
+          [well-formed-integrity-info/c
+           flat-contract?]
           [make-digest
            (-> xiden-hash-source/c
                xiden-hash-algorithm/c
                bytes?)]
           [check-integrity
-           (-> well-formed-integrity-info?
+           (-> well-formed-integrity-info/c
                xiden-hash-source/c
                boolean?)]))
 
@@ -37,16 +37,22 @@
 
 (struct integrity-info (algorithm digest) #:prefab)
 
+(define (digest-length-ok? info)
+  (equal? (bytes-length (integrity-info-digest info))
+          (bytes-length (make-digest #"whatever"
+                                     (integrity-info-algorithm info)))))
+
+
+(define well-formed-integrity-info/c
+  (and/c (struct/c integrity-info
+                   xiden-hash-algorithm/c
+                   bytes?)
+         digest-length-ok?))
+
+
 (define (make-integrity-info variant algorithm)
   (integrity-info algorithm (make-digest variant algorithm)))
 
-(define (well-formed-integrity-info? info)
-  (and (integrity-info? info)
-       (xiden-hash-algorithm/c (integrity-info-algorithm info))
-       (bytes? (integrity-info-digest info))
-       (equal? (bytes-length (integrity-info-digest info))
-               (bytes-length (make-digest #"whatever"
-                                          (integrity-info-algorithm info))))))
 
 
 (define (make-digest variant algorithm)
