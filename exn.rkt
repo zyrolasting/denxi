@@ -8,6 +8,11 @@
 
 (provide (all-from-out racket/exn)
          (contract-out
+          [rex
+           (->* ((unconstrained-domain-> exn?))
+                #:rest list?
+                any)]
+
           [exc (->* ((unconstrained-domain-> exn?))
                           #:rest list?
                           (unconstrained-domain-> exn?))]
@@ -36,6 +41,9 @@
 (define (exc ctor . fields)
   (λ ([fmt-message ""] . fmt-args)
     (apply make-xiden-error #:fields fields ctor fmt-message fmt-args)))
+
+(define (rex ctor . fields)
+  (raise ((apply exc ctor fields))))
 
 (define (make-xiden-error #:fields [fields null] ctor fmt-message . fmt-args)
   (apply ctor
@@ -93,7 +101,11 @@
     (check-instance
      (apply make-xiden-error exn:xiden:test:extra #:fields '(1 2 3) fmt-args))
     (test-not-exn "Do not require field declarations"
-                  (λ () (make-xiden-error exn:fail:xiden ""))))
+                  (λ () (make-xiden-error exn:fail:xiden "")))
+
+    (test-exn "Raise exceptions with fields only"
+              (struct/c exn:xiden:test:extra string? continuation-mark-set? 1 2 3)
+              (λ () (rex exn:xiden:test:extra 1 2 3))))
 
   (test-case "Create exceptions using a two-step process"
     (check-instance (apply (exc exn:xiden:test:extra 1 2 3) fmt-args))
