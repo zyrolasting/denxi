@@ -34,7 +34,7 @@
          #:stop-value any/c)
         any/c)]
   [output-unit
-   (-> any/c $with-output?)]
+   (->* () (any/c) $with-output?)]
   [output-bind
    (-> (-> any/c $with-output?)
        (-> $with-output? $with-output?))]
@@ -67,7 +67,7 @@
    (output-unit initial)))
 
 
-(define (output-unit v)
+(define (output-unit [v #f])
   (make-$with-output #f v null))
 
 
@@ -149,7 +149,7 @@
 
     (define functionally-collected
       ((compose e (instrument d) (instrument c) b a)
-       (output-unit 0)))
+       (output-unit)))
 
     (check-equal? ($with-output-accumulated functionally-collected) '(a b c d e))
     (check-equal? imperatively-collected '(d c)))
