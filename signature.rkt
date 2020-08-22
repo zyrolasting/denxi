@@ -12,8 +12,8 @@
          (contract-out
           [make-signature
            (-> bytes? path-string? bytes?)]
-          [well-formed-signature-info?
-           predicate/c]
+          [well-formed-signature-info/c
+           flat-contract?]
           [xiden-cipher-algorithms
            (non-empty-listof symbol?)]
           [xiden-cipher-algorithm/c
@@ -32,11 +32,11 @@
 (struct signature-info (algorithm pubkey body) #:prefab)
 
 
-(define (well-formed-signature-info? info)
-  (and (signature-info? info)
-       (xiden-cipher-algorithm/c (signature-info-algorithm info))
-       (bytes? (signature-info-body info))
-       (bytes? (signature-info-pubkey info))))
+(define (well-formed-signature-info/c info)
+  (struct/c signature-info
+            xiden-cipher-algorithm/c
+            bytes?
+            bytes?))
 
 
 (define (make-signature digest private-key-path)
