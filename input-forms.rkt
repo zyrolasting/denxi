@@ -17,24 +17,14 @@
          quote
          quasiquote
          unquote
+         (rename-out [sources list])
          (contract-out
-          [file
+          [input
            (->* (non-empty-string?
                  (non-empty-listof string?))
                 ((or/c #f integrity-info?)
                  (or/c #f signature-info?))
                 input-info?)]
-
-          [package
-           (->* (non-empty-string?
-                 (non-empty-listof non-empty-string?))
-               ((or/c #f integrity-info?)
-                (or/c #f signature-info?))
-               input-info?)]
-
-          [sources
-           (->* () #:rest (non-empty-listof non-empty-string?)
-                (non-empty-listof non-empty-string?))]
 
           [integrity
            (-> xiden-hash-algorithm/c
@@ -56,21 +46,12 @@
           [base64
            (-> (or/c non-empty-string? bytes?) bytes?)]))
 
-(define (file name sources [integrity #f] [signature #f])
-  (input-info 'file
-              name
+(define (input name sources [integrity #f] [signature #f])
+  (input-info name
               sources
               integrity
               signature))
 
-(define (package name sources [integrity #f] [signature #f])
-  (input-info 'package
-              name
-              sources
-              integrity
-              signature))
-
-(define sources list)
 (define integrity integrity-info)
 (define signature signature-info)
 (define fingerprint values)
