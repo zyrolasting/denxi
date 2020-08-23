@@ -5,16 +5,17 @@
 (require "contract.rkt")
 (provide
  (contract-out
+  [setting-ref
+   (-> (or/c string? symbol?)
+       (or/c setting? #f))]
   [XIDEN_SETTINGS
    (hash/c symbol? setting? #:immutable #t)]
-  [try-user-setting
-   (-> setting? string? $with-output?)]
   [get-xiden-settings-path
    (-> complete-path?)]
   [load-xiden-rcfile
    (-> config-closure/c)]
   [dump-xiden-settings
-   (-> (hash/c symbol? setting?))]
+   (-> (hash/c symbol? any/c))]
   [save-xiden-settings!
    (-> any)]))
 
@@ -61,28 +62,13 @@
         [else (read (open-input-string env))]))
 
 
-; Map user setting exception to program output
-(define (make-invalid-user-setting-handler target-setting string-value)
-  (λ (e)
-    (output-failure
-     ($reject-user-setting
-      (setting-id target-setting)
-      string-value
-      (if (exn:fail:contract? e)
-          (cadr (regexp-match #px"expected:\\s+([^\n]+)"
-                              (exn-message e)))
-          (exn-message e))))))
+(define (setting-ref name)
+  (hash-ref XIDEN_SETTINGS
+            (if (string? name)
+                (string->symbol name)
+                name)
+            #f))
 
-
-; Use this to update a setting from string input (such as a command-line argument)
-; Returns program output explaining why the value was rejected.
-(define (try-user-setting target-setting string-value)
-  (with-handlers ([exn:fail? (make-invalid-user-setting-handler target-setting string-value)])
-    (define value (read (open-input-string string-value)))
-    (target-setting
-     value
-     (λ () (output-return #:stop-value #f #f
-                          ($accept-user-setting (setting-id target-setting) value))))))
 
 
 (define (get-xiden-settings-path)
@@ -353,26 +339,6 @@
                          (XIDEN_PRIVATE_KEY_PATH))
        (check-equal? (hash-ref (dump-xiden-settings) 'XIDEN_PRIVATE_KEY_PATH)
                      (XIDEN_PRIVATE_KEY_PATH)))))
-
-  (test-equal? "Accept valid user-provided settings"
-               (try-user-setting XIDEN_PRIVATE_KEY_PATH "\"a\"")
-               ($with-output #f #f (list ($accept-user-setting 'XIDEN_PRIVATE_KEY_PATH "a"))))
-
-  (test-equal? "Reject invalid user-provided settings"
-               (try-user-setting XIDEN_PRIVATE_KEY_PATH "123")
-               ($with-output 1 #f (list ($reject-user-setting
-                                         'XIDEN_PRIVATE_KEY_PATH
-                                         "123"
-                                         "(or/c void? (or/c #f path-string?))"))))
-
-  (let ([malformed "\"({"])
-    (test-equal? "Reject unreadable user-provided settings"
-                 (try-user-setting XIDEN_PRIVATE_KEY_PATH malformed)
-                 ($with-output 1 #f (list ($reject-user-setting
-                                           'XIDEN_PRIVATE_KEY_PATH
-                                           malformed
-                                           (with-handlers ([exn:fail:read? exn-message])
-                                             (read (open-input-string malformed))))))))
 
   (test-workspace "Find fallback values from several sources"
     (test-false "First use a hard-coded value"

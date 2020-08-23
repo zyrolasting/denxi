@@ -9,8 +9,10 @@
          racket/path
          racket/port
          racket/pretty
+         racket/runtime-path
          racket/sandbox
          racket/sequence
+         version/utils
          "config.rkt"
          "contract.rkt"
          "encode.rkt"
@@ -31,78 +33,69 @@
          "workspace.rkt"
          "xiden-messages.rkt")
 
-(struct package (name definition))
+(define-runtime-path here "package.rkt")
 
 (define (in-user-requested-package-infos package-defn-input-exprs)
   (sequence-map user-string->package-info
                 (in-list package-defn-input-exprs)))
 
 (define (in-package-modules package-infos)
-  (sequence-map (compose get-package-module make-package)
+  (sequence-map make-package-module
                 package-infos))
 
-(define (make-package pkginfo)
-  (package (make-package-name pkginfo)
-           pkginfo))
-
-(define (save-package! pkg)
+(define (save-package! pkginfo pkgmod)
   (call-with-output-file #:exists 'truncate/replace
-    (path-replace-extension (package-name pkg) #".rkt")
-    (λ (o) (write-package pkg o))))
+    (path-replace-extension (make-package-name pkginfo) #".rkt")
+    (λ (o) (pretty-write #:newline? #t pkgmod o))))
 
-(define (write-package pkg o)
-  (pretty-write #:newline? #t (get-package-module pkg) o))
 
-(define (get-package-module pkg)
-  (define distribution-name (package-name pkg))
+(define (make-package-module pkginfo)
   `(module package racket/base
-     (require xiden version/utils)
-     (define (install!) . ,(get-installation-instructions pkg))
-     (module+ main (install! (current-command-line-arguments)))))
+     (require (file ,here))
+     (module+ main (install!))
+     (define def ,pkginfo)
+     (define (install!)
+       (define distribution-directory (get-inputs pkginfo))
+       (unless (directory-exists? distribution-directory)
+         (make-directory* distribution-directory)
+         (parameterize ([current-directory distribution-directory])
+           (for ([input (package-info-inputs def)])
+             (define-values (input-path errors) (fulfill-input input))
+             (unless (null? errors)
+               (for ([e (in-list errors)])
+                 (writeln e))
+               (exit 1))
+             (make-file-or-directory-link input-path (input-info-name input)))
+           (for ([output (package-info-outputs def)])
+             (call-in-sandbox (output-info-builder-name output)
+                              (λ ()
+                                (parameterize ([current-environment-variables (make-environment-variables)])
+                                  (for ([expr (in-list (output-info-builder-expressions output))])
+                                    ((current-eval) expr)))))))))))
 
-(define (get-installation-instructions pkg)
-  (define distribution-name (package-name pkg))
-  (in-generator
-   (yield `(if (directory-exists? ,distribution-name)
-               (write-output ($already-installed))
-               (parameterize ([current-directory distribution-name])
-                 (make-directory* distribution-name)
-                 (void))))))
 
-(define (get-racket-support-check versions)
-  `(let ([racket-support (check-racket-version-ranges (version) ,versions)])
-     (case racket-support
-       [(supported) (do-install)]
-       [(unsupported)
-        (unless ,(XIDEN_ALLOW_UNSUPPORTED_RACKET)
-          (write-output ($unsupported-racket-version info)))]
-       [(undeclared)
-        (unless ,(or (XIDEN_ALLOW_UNSUPPORTED_RACKET)
-                (XIDEN_ALLOW_UNDECLARED_RACKET_VERSIONS))
-          (send-output ($undeclared-racket-version)))])))
-
-(define (make-package-name pkginfo)
-  (format "~a-~a"
-          (encode 'base32 (make-package-info-digest pkginfo))
-          (package-info-package-name pkginfo)))
-
-(define (make-package-info-digest pkginfo)
-  (make-digest 'sha384
-   (apply input-port-append
-          (map open-input-bytes
-               (sequence->list
-                (in-generator
-                 (yield (string->bytes/utf-8 (package-info-package-name pkginfo)))
-                 (for ([input (in-list (package-info-inputs pkginfo))])
-                   (yield (integrity-info-digest
-                           (input-info-integrity input))))))))))
+(define (check-racket-support pkginfo)
+  (let ([racket-support
+         (check-racket-version-ranges (version)
+                                      (package-info-racket-versions pkginfo))])
+    (case racket-support
+      [(supported)
+       (:use pkginfo)]
+      [(unsupported)
+       (if (XIDEN_ALLOW_UNSUPPORTED_RACKET)
+           (:use pkginfo)
+           (:fail ($unsupported-racket-version pkginfo)))]
+      [(undeclared)
+       (if (or (XIDEN_ALLOW_UNSUPPORTED_RACKET)
+               (XIDEN_ALLOW_UNDECLARED_RACKET_VERSIONS))
+           (:use pkginfo)
+           (send-output ($undeclared-racket-version)))])))
 
 
 (define (enter-package pkg)
   (call-in-sandbox (package-name pkg)
                    read-eval-print-loop))
 
-(define in-setup-instructions void)
 
 (define (setup-package pkg)
   (call-in-sandbox (package-name pkg)

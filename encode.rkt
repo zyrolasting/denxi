@@ -12,6 +12,9 @@
            (non-empty-listof symbol?)]
           [xiden-encoding/c
            flat-contract?]
+          [encoded-file-name
+           (-> (or/c bytes? string?)
+               string?)]
           [encode
            (-> xiden-encoding/c
                (or/c bytes? string?)
@@ -26,6 +29,17 @@
 
 (define xiden-encoding/c
   (apply or/c xiden-encodings))
+
+(define (encoded-file-name variant)
+  (define encoded (encode 'base32 variant))
+  (define as-string
+    (if (bytes? encoded)
+        (bytes->string/utf-8 encoded)
+        encoded))
+
+  (substring as-string 0
+             (min (string-length as-string) 32)))
+
 
 (define (encode encoding variant)
   (define bstr

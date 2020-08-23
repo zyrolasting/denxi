@@ -38,11 +38,15 @@
 
 
 (define (user-string->package-info str)
-  (read-package-info
-   (XIDEN_TRUST_BAD_DIGEST
-    #t
-    (λ ()
-      (fulfill-input (input-info "package-def" (list str) #f #f))))))
+   (define-values (path errors)
+     (XIDEN_TRUST_BAD_DIGEST
+      #t ; There is no integrity requirement here, and we don't execute code.
+      (λ () (fulfill-input (input-info "package-def" (list str) #f #f)))))
+
+
+  (if (null? errors)
+      (read-package-info path)
+      errors))
 
 
 (define (make-input-info variant)

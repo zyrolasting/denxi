@@ -5,14 +5,18 @@
 (provide (struct-out package-info)
          make-package-info
          read-package-info
+         make-package-name
          package-info->hash)
 
-(require racket/sequence
+(require racket/format
+         racket/sequence
          "config.rkt"
          "contract.rkt"
+         "encode.rkt"
          "output.rkt"
          "output-info.rkt"
          "input-info.rkt"
+         "integrity.rkt"
          "racket-version.rkt"
          "string.rkt"
          "url.rkt"
@@ -113,6 +117,13 @@
 (define-syntax-rule (copy-package-info i fields ...)
   (struct-copy package-info i
                fields ...))
+
+
+(define (make-package-name pkginfo)
+  (format "~a-~a"
+          (encoded-file-name
+           (make-digest (open-input-string (~s pkginfo)) 'sha384))
+          (package-info-package-name pkginfo)))
 
 
 (module+ test

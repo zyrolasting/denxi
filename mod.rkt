@@ -12,16 +12,20 @@
 
 (provide
  (contract-out
-  [dynamic-require/mod
-   (-> symbol? (-> any/c) (-> any) any/c)]))
+  [load-plugin
+   (-> symbol? (-> any/c) (-> exn? any) any/c)]
+  #;[load-plugin/with-output
+   (-> symbol? (-> any/c) $with-output?)]))
 
 (require "output.rkt"
          "rc.rkt"
          "xiden-messages.rkt")
 
-(define (dynamic-require/mod key fail-thunk on-load-failure)
+(define (load-plugin key fail-thunk on-load-failure)
   (define maybe-path (XIDEN_MODS_MODULE))
   (if maybe-path
       (with-handlers ([exn:fail? on-load-failure])
-        (dynamic-require maybe-path key fail-thunk))
+        (dynamic-require maybe-path
+                         key
+                         fail-thunk))
       (fail-thunk)))

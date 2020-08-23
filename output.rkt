@@ -12,15 +12,20 @@
          "xiden-messages.rkt")
 
 (provide
+ :>
+ (rename-out [output-return  :use]
+             [output-failure :fail]
+             [output-success :done])
  (contract-out
   [make-$with-output
    (-> any/c any/c (listof $message?) $with-output?)]
   [current-output-emitter
    (parameter/c (or/c #f (-> $message? any)))]
   [output-success
-   (-> $message? $with-output?)]
+   (->* ((or/c $message? (listof $message?)))
+        $with-output?)]
   [output-failure
-   (->* ($message?)
+   (->* ((or/c $message? (listof $message?)))
         (#:stop-value exact-positive-integer?)
         $with-output?)]
   [output-fold
@@ -43,6 +48,11 @@
        (-> any/c $with-output?))]))
 
 
+(define-syntax-rule (:> initial [sig body ...] ...)
+  (output-fold initial
+               (list (λ sig body ...)
+                     ...)))
+
 (define current-output-emitter
   (make-parameter #f))
 
@@ -54,11 +64,11 @@
       (for ([m (in-list messages)]) (emit! m))))
   ($with-output stop-value intermediate messages))
 
-(define (output-success m)
+(define (output-success [m null])
   (output-return #:stop-value 0 #f m))
 
 
-(define (output-failure #:stop-value [stop-value 1] m)
+(define (output-failure #:stop-value [stop-value 1] [m null])
   (output-return #:stop-value stop-value #f m))
 
 

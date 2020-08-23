@@ -11,6 +11,7 @@
            flat-contract?]
           [fulfill-input
            (-> well-formed-input-info/c
+               (-> string? real? any)
                complete-path?)]))
 
 
@@ -26,6 +27,7 @@
          "integrity.rkt"
          "mod.rkt"
          "output.rkt"
+         "path.rkt"
          "rc.rkt"
          "signature.rkt"
          "workspace.rkt")
@@ -49,58 +51,55 @@
                   well-formed-signature-info/c)))
 
 
-(define (fetch-source input source)
-  (define input-name (input-info-name input))
+(define (fetch-source input source on-progress)
   (define expected-size (get-input-size source))
-  (define in (open-input-source source))
-  (define tmp (make-temporary-file))
-  (with-handlers ([values (λ (e) (delete-file* tmp) (raise e))])
-    (copy-port/report-progress in input-name source expected-size tmp)
-    (raise-unless-postconditions-met input-name tmp)
-    (define path (get-xiden-object-path (make-digest tmp)))
-    (rename-file-or-directory tmp path)
-    path))
+  (call-with-input-source
+   source
+   (λ (in)
+     (define tmp (make-temporary-file))
+     (with-handlers ([values (λ (e) (delete-file* tmp) (raise e))])
+       (copy-source-port in (input-info-name input) source expected-size tmp on-progress)
+       (raise-unless-postconditions-met input source tmp)
+       (define path (get-object-path (make-digest tmp (integrity-info-algorithm (input-info-integrity input)))))
+       (make-directory* (path-only path))
+       (rename-file-or-directory tmp path)
+       path))))
 
 
-(define (fulfill-input input)
-  (for/fold ([path #f]
+(define (fulfill-input input on-progress)
+  (for/fold ([path (get-maybe-existing-object-path input)]
              [errors null])
             ([source (in-list (input-info-sources input))])
     (with-handlers ([exn:fail:xiden:source? (λ (e) (values #f (cons e errors)))])
-      (values (or path (fetch-source input source))
+      (values (or path (fetch-source input source on-progress))
               (reverse errors)))))
 
 
-(define (raise-unless-postconditions-met input-name source src tmp)
-  (for ([pre (in-list (get-fetch-postconditions))])
-    (pre input-name source src tmp)))
+(define (get-maybe-existing-object-path input)
+  (with-handlers ([exn? (const #f)])
+    (define path
+      (get-object-path
+       (integrity-info-digest
+        (input-info-integrity input))))
+    (and (file-exists? path) path)))
 
 
-(define (get-fetch-postconditions)
-  (if (XIDEN_TRUST_BAD_DIGEST)
-      null
-      (if (XIDEN_TRUST_BAD_SIGNATURE)
-          (list raise-unless-integrous)
-          (list raise-unless-integrous
-                raise-unless-authenticated))))
-
-
-(define (raise-unless-authenticated input-name source src tmp)
-  (or (check-signature (integrity-info-digest (input-info-integrity src))
-                       (signature-info-body (input-info-signature src))
-                       (signature-info-pubkey (input-info-signature src)))
-      (rex exn:fail:xiden:source:signature-mismatch input-name src source)))
-
-
-(define (raise-unless-integrous input-name source src tmp)
-  (or (check-integrity (input-info-integrity src) tmp)
-      (rex exn:fail:xiden:source:digest-mismatch input-name src source)))
+(define (raise-unless-postconditions-met input source tmp)
+  (unless (XIDEN_TRUST_BAD_DIGEST)
+    (or (check-integrity (input-info-integrity input) tmp)
+        (rex exn:fail:xiden:source:digest-mismatch input source)))
+    (unless (XIDEN_TRUST_UNSIGNED)
+      (or (check-signature (integrity-info-digest (input-info-integrity input))
+                           (signature-info-body (input-info-signature input))
+                           (signature-info-pubkey (input-info-signature input)))
+          (rex exn:fail:xiden:source:signature-mismatch input source))))
 
 
 ; User may customize the means by which bytes are analyzed and fetched.
 (define (get-get-source-info)
-  (define (fallback . _) get-source-info)
-  (dynamic-require/mod 'get-source-info fallback fallback))
+  (load-plugin 'get-source-info
+               (λ () get-source-info)
+               (λ (e) get-source-info)))
 
 
 (define (get-input-size source)
@@ -138,44 +137,80 @@
                              (string->url source))])))
 
 
+(define (get-source-info/package-output kind source)
+  (with-handlers ([exn:fail? (λ (e) #f)])
+    (void))) ; TODO: Query package. Maybe build it first.
+
+
 (define get-source-info
   (disjoin get-source-info/filesystem
            get-source-info/http))
 
 
-(define (get-xiden-object-path digest)
-  (define full
-    (bytes->string/utf-8
-     (encode 'base32 digest)))
-  (build-workspace-path
-   "var/xiden/objects"
-   (substring full 0
-              (min (string-length full) 64))))
+(define (make-timeout-evt timeout handle)
+  (handle-evt (alarm-evt (+ (current-inexact-milliseconds)
+                            (XIDEN_FETCH_TIMEOUT_MS)))
+              handle))
 
-(define (copy-port/report-progress in input-name source max-size tmp on-progress)
-  (define buffer-size/mb (XIDEN_FETCH_BUFFER_SIZE_MB))
-  (define buffer-size (quotient buffer-size/mb (* 1024 1024)))
+
+(define (copy-source-port in input-name source max-size tmp on-progress)
+  (define timeout (XIDEN_FETCH_TIMEOUT_MS))
+  (define buffer-size (inexact->exact (ceiling (* (XIDEN_FETCH_BUFFER_SIZE_MB) 1024 1024))))
+  (define buffer (make-bytes buffer-size 0))
+
+  (define (fail ctor)
+    (rex ctor input-name source))
+
+  (define (transfer out bytes-read)
+    (on-progress source (/ bytes-read max-size))
+    (if (> bytes-read max-size)
+      (fail exn:fail:xiden:source:unexpected-size)
+      (sync (make-timeout-evt timeout (λ () (fail exn:fail:xiden:source:fetch-timeout)))
+            (handle-evt (read-bytes-avail!-evt buffer in)
+                        (λ (variant)
+                          (cond [(eof-object? variant)
+                                 (void)]
+                                [(and (number? variant) (> variant 0))
+                                 (write-bytes buffer out 0 variant)
+                                 (transfer out (+ bytes-read variant))]))))))
 
   (call-with-output-file tmp #:exists 'truncate/replace
-    (λ (to-file)
-      (define th
-        (thread
-         (λ ()
-           (let loop ([bytes-read 0])
-             (when (> bytes-read max-size)
-               (raise ((exc exn:fail:xiden:source:unexpected-size input-name source))))
-             (on-progress (/ bytes-read max-size))
+    (λ (to-file) (transfer to-file 0))))
 
-             (sync (handle-evt
-                    (alarm-evt (+ (current-inexact-milliseconds)
-                                  (XIDEN_FETCH_TIMEOUT_MS)))
-                    (λ (alarm)
-                      (rex exn:fail:xiden:source:fetch-timeout)))
 
-                   (handle-evt
-                    (read-bytes-evt buffer-size in)
-                    (λ (buffer)
-                      (write-bytes buffer to-file)
-                      (loop (min max-size (+ bytes-read buffer-size))))))))))
+(module+ test
+  (require racket/runtime-path
+           rackunit
+           mzlib/etc
+           (submod "file.rkt" test)
+           "setting.rkt")
 
-      (sync/enable-break th))))
+  (define me (build-path (this-expression-source-directory) (this-expression-file-name)))
+  (test-workspace
+   "Fulfill an input from the file system"
+   (define input-myself
+     (input-info "hooray"
+                 (list me)
+                 (integrity-info 'sha384 (make-digest me 'sha384))
+                 #f))
+
+   (define progress-calls null)
+   (parameterize ([(setting-derived-parameter XIDEN_TRUST_UNSIGNED) #t]
+                  [(setting-derived-parameter XIDEN_FETCH_BUFFER_SIZE_MB) 0.001])
+     (define-values (path errors)
+       (fulfill-input input-myself
+                      (λ A (set! progress-calls (cons A progress-calls)))))
+     (check-pred null? errors)
+     (define my-digest (make-digest me 'sha384))
+     (define other-digest (make-digest path 'sha384))
+     (check-equal? my-digest other-digest)
+     (check-equal? (get-object-path my-digest)
+                   (get-object-path other-digest)))
+
+   (test-case "Record estimated progress on source download"
+     (void (for/fold ([scalar 1])
+                     ([progress (in-list progress-calls)])
+             (check-equal? (car progress) me)
+             (check-true (<= (cadr progress) scalar))
+             (check-pred (real-in 0 1) (cadr progress))
+             (cadr progress))))))

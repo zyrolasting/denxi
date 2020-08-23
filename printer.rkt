@@ -69,6 +69,10 @@
         [($show-string? m)
          ($show-string-message m)]
 
+        [($show-datum? m)
+         (pretty-format #:mode 'write
+                        ($show-datum-value m))]
+
         [($already-installed? m)
          (format "~a is already installed"
                  (format-package-info ($already-installed-info m)))]
@@ -142,17 +146,17 @@
          (format "To consent to these changes, run again with ~a"
                  (setting-short-flag XIDEN_CONSENT))]
 
-        [($link-command-no-package? m)
+        [($no-package-found? m)
          (format "Cannot find a package using ~s."
-                 ($link-command-no-package-query-string m))]
+                 ($no-package-found m))]
 
         [($setup-command-no-package? m)
          (format "Cannot find a package using ~s."
                  ($setup-command-no-package-query-string m))]
 
-        [($config-command-nonexistant-setting? m)
+        [($no-such-setting? m)
          (format "There is no setting called ~a.~n"
-                 ($config-command-nonexistant-setting-name m))]
+                 ($no-such-setting-name m))]
 
         [($init-localstate? m)
          (format "Initalizing local state at ~a"

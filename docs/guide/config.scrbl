@@ -9,7 +9,7 @@ line interface, and/or a runtime configuration file. Every setting
 has only one name, and a contract for accepted Racket values.
 
 Configuration will feel awkward in your shell because @binary
-emphasizes consistency to an almost religuous degree.
+emphasizes consistency.
 
 Let's look at the @racketfont{XIDEN_VERBOSE} setting, which is a
 boolean. This list covers the possible sources of a value, where

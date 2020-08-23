@@ -63,14 +63,14 @@
 (define-exn exn:fail:user:xiden:config:unreadable-setting exn:fail:user:xiden:config ())
 (define-exn exn:fail:user:xiden:config:invalid-setting-value exn:fail:user:xiden:config ())
 
-(define-exn exn:fail:xiden:source exn:fail:xiden (input-name source-index expr))
+(define-exn exn:fail:xiden:source exn:fail:xiden (input-name source))
 (define-exn exn:fail:xiden:source:no-content exn:fail:xiden:source ())
-(define-exn exn:fail:xiden:source:cannot-find-size exn:fail:xiden:source (expr))
-(define-exn exn:fail:xiden:source:cannot-open-port exn:fail:xiden:source (expr))
-(define-exn exn:fail:xiden:source:fetch-timeout exn:fail:xiden:source (expr))
-(define-exn exn:fail:xiden:source:unexpected-size exn:fail:xiden:source (expr))
-(define-exn exn:fail:xiden:source:digest-mismatch exn:fail:xiden:source (expr))
-(define-exn exn:fail:xiden:source:signature-mismatch exn:fail:xiden:source (expr))
+(define-exn exn:fail:xiden:source:cannot-find-size exn:fail:xiden:source ())
+(define-exn exn:fail:xiden:source:cannot-open-port exn:fail:xiden:source ())
+(define-exn exn:fail:xiden:source:fetch-timeout exn:fail:xiden:source ())
+(define-exn exn:fail:xiden:source:unexpected-size exn:fail:xiden:source ())
+(define-exn exn:fail:xiden:source:digest-mismatch exn:fail:xiden:source ())
+(define-exn exn:fail:xiden:source:signature-mismatch exn:fail:xiden:source ())
 
 (define-exn exn:fail:xiden:openssl exn:fail:xiden (exit-code))
 

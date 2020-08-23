@@ -12,7 +12,7 @@
           [call-with-applied-settings
            (-> (if/c hash?
                      (hash/c setting? any/c)
-                     (non-empty-listof (cons/c setting? any/c)))
+                     (listof (cons/c setting? any/c)))
                (-> any)
                any)]
           [settings->flag-specs
@@ -83,7 +83,7 @@
 (define (call-with-applied-settings variant proc)
   (define h
     (if (list? variant)
-        (apply make-immutable-hash variant)
+        (make-immutable-hash variant)
         variant))
 
   ((for/fold ([wip proc])
@@ -185,6 +185,13 @@
                   (immutable? GROUP)
                   (eq? (hash-ref GROUP 'GROUP_A) GROUP_A)
                   (eq? (hash-ref GROUP 'GROUP_B) GROUP_B)))
+
+  ; This case is important because a command line handler can specify no flags.
+  (test-equal? "Allow useless parameterizations"
+               (call-with-applied-settings null
+                                           (λ () 1))
+               1)
+
 
   (test-case "Accumulate setting values using racket/cmdline"
     (define-setting FOO symbol? "-f" 'default '("A symbol" "symbol"))
