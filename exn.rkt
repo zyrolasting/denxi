@@ -66,10 +66,6 @@
 
 (define-exn exn:fail:xiden:source exn:fail:xiden (input-name source))
 (define-exn exn:fail:xiden:source:no-content exn:fail:xiden:source ())
-(define-exn exn:fail:xiden:source:cannot-find-size exn:fail:xiden:source ())
-(define-exn exn:fail:xiden:source:cannot-open-port exn:fail:xiden:source ())
-(define-exn exn:fail:xiden:source:fetch-timeout exn:fail:xiden:source ())
-(define-exn exn:fail:xiden:source:unexpected-size exn:fail:xiden:source ())
 (define-exn exn:fail:xiden:source:digest-mismatch exn:fail:xiden:source ())
 (define-exn exn:fail:xiden:source:signature-mismatch exn:fail:xiden:source ())
 
