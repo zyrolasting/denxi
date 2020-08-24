@@ -16,6 +16,7 @@
 (define-message $consent-note ())
 (define-message $declare-input (digest path))
 (define-message $fail (to-display))
+(define-message $fetch-progress (source scalar))
 (define-message $init-localstate (path))
 (define-message $invalid-launcher-spec (info name errors))
 (define-message $invalid-workspace-envvar ())
