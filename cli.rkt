@@ -248,7 +248,8 @@ EOF
 
    #:args args
    (λ (flags query)
-     (enter-package (void)))))
+     (parameterize ([current-eval (make-sandbox (void))])
+       (read-eval-print-loop)))))
 
 
 (define (show-command args)
