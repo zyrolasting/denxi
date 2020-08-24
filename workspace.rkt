@@ -3,7 +3,6 @@
 (provide build-workspace-path
          find-workspace-directory
          workspace-directory
-         get-object-path
          CONVENTIONAL_WORKSPACE_NAME
          show-workspace-envvar-error?)
 
@@ -56,11 +55,6 @@
 (define (build-workspace-path . paths)
   (apply build-path (workspace-directory)
          paths))
-
-(define (get-object-path digest)
-  (build-workspace-path
-   "var/xiden/objects"
-   (encoded-file-name digest)))
 
 (module+ test
   (require racket/file
