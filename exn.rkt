@@ -7,6 +7,7 @@
          racket/exn)
 
 (provide (all-from-out racket/exn)
+         define-exn
          (contract-out
           [rex
            (->* ((unconstrained-domain-> exn?))
