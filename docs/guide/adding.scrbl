@@ -13,20 +13,21 @@ $ xiden install def.rkt
 That definition might come from the Internet.
 
 @verbatim|{
-$ xiden install https://example.com/...
+$ xiden install https://example.com/def.rkt
 }|
 
-@binary also comes with a plugin system, where you can provide custom
-queries that resolve to definitions. Here's an example that uses
-@|binary|'s own query format.
+Here's an example that uses @|binary|'s own query format, which can
+match definitions served from a configured list of endpoints. See
+@secref{queries} for more information.
 
 @verbatim|{
-$ xiden install example.com:widget
+$ xiden install example.com:widget:draft
 }|
 
-@binary is hypervigilant. The commands we've used so far actually say
-what they @italic{would do} if you @italic{explicitly consented} to
-running them (Package managers may do more work than users intended).
+The commands we've used so far actually output what they @italic{would
+do} if you @italic{explicitly consented} to running them. Package
+managers may do more work than users intended, which is why you need
+to explicitly consent when using the default settings.
 
 @verbatim|{
 $ xiden install -y def.rkt

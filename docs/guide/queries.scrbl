@@ -4,16 +4,19 @@
 
 @title[#:tag "asking"]{Package Queries}
 
-You can request packages using a colon-separated @tech{query} string.
+You can request package definitions using a colon-separated
+@tech{query} string.
 
 @tt{john.doe:calculator} means "the @tt{calculator} package by
-@tt{john.doe}". But it turns out that @tt{john.doe:calculator} is just an
-abbreviation for @tt{john.doe:calculator:draft:newest}.  @tt{draft} is the
-package's @tech{edition}. @tt{newest} is the edition's @tech{revision}.  Both
-@tt{draft} and @tt{newest} are just default values.
+@tt{john.doe}". But @tt{john.doe:calculator} is actually an
+abbreviation for @tt{john.doe:calculator:draft:newest}.  @tt{draft} is
+the package's @tech{edition}. @tt{newest} is the edition's
+@tech{revision}.  Both @tt{draft} and @tt{newest} are just default
+values.
 
-So, @tt{john.doe:calculator:draft:newest} means "the @tt{newest} revision of the
-@tt{draft} edition of the @tt{calculator} package by @tt{john.doe}."
+So, if we did not abbreviate, @tt{john.doe:calculator:draft:newest}
+means "the @tt{newest} revision of the @tt{draft} edition of the
+@tt{calculator} package by @tt{john.doe}."
 
 
 @section{Specifying an Edition}
@@ -103,24 +106,15 @@ john.doe:calculator:scientific:e:3:e:3
 }|
 
 
-@section{Exact Queries in an Inexact World}
+@section{What if Two Queries Return Different Definitions?}
 
-Both @tt{john.doe:calculator:scientific:288} and
-@tt{john.doe:calculator:scientific:with-trig} are @tech{exact queries}
-in the context of a single server. But if @binary uses these queries
+No matter how specific you are, the Internet is a fickle beast,
+full of inconsistencies. But if @binary uses the same queries
 to collect information from more than one server, it's possible that
-both servers will conflicting information.
+both servers will return conflicting information.
 
-The cause of this discrepency is human behavior, which no software can
-correct. @secref{verification} covers how you can verify that a
-package is exactly what you expect it to be on your system.
-
-In practice, different answers for the same @tech{exact queries} can
-be addressed on a case-by-case basis. For example, @tt{john.doe} as a
-provider might guarentee that @tt{with-trig} will refer to the same
-revision supporting trigonometric functions, even if the revision
-numbers differ.
-
+To help protect packages from the effects of change over time, see
+@secref{inputs}.
 
 @section{Query Grammar}
 

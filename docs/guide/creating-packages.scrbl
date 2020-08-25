@@ -4,7 +4,7 @@
 
 @title[#:tag "new-pkg"]{Defining Packages}
 
-@binary creates packages from @deftech{package definitions}. The below
+@binary creates packages from @tech{package definitions}. The below
 example defines a hypothetical package for working with URIs. The
 package expects the source code and a setup program as input. Once
 that input is available, it will produce libraries, documentation, and
@@ -45,43 +45,47 @@ generate a whole other program that expects @italic{exact bits}
 as input for some process.
 
 
-@section{Determinism or Bust}
+@section{Package Inputs}
 
 @racketblock[(... (integrity sha384 (base64 "KxAqYG79sTcKi8yuH/YkdKE+O9oiBsXIlwWs3pBwv/mXT9/jGuK0yqcwmjM/nNLe")))]
 
-Package inputs are declared with integrity information. @binary
-supports various cryptographic hash algorithms and various encodings
-of digests. For the sake of safety and reproducible builds,
-inputs should be declared with integrity information.
+Since we did not check our dependencies right into source control, we
+need a compact way to ask for the same bytes that would have been
+checked in.
 
-When @binary fetches an input, it will fail if the bytes do not
-produce the same hash with the same algorithm.
+A package inputs is a named declaration of bytes that @italic{must
+exist} to install a package. Inputs come with integrity information,
+which is that funny garble of letters you see above. When @binary
+fetches an input, it will fail if the bytes do not pass an integrity
+check.
 
 If working with integrity information is problematic, then you can shut off
 @|binary|'s integrity check. @bold{Please don't, that's dreadfully unsafe}.
 
 You should also avoid SHA-1 and MD5, because their digests can be
-spoofed. Aim for SHA-384 from the SHA-2 suite as a baseline.
+spoofed. Aim for SHA-384 as a baseline.
 
 
 @section{Where's the Output Integrity Information?}
 
 Astute readers would have already noticed that package outputs do not
-declare integrity information. A package's output can serve as another
-package's input, then the bits would be verified at that time.
+declare integrity information. Since a package's output can serve as another
+package's input, the bits would be verified as inputs.
 
 
 @section{What About Nondeterministic Builds?}
 
-If a package's output contains changing data like an embedded timestamp,
-then the digest of that output will change. That prevents you from using
-the same integrity information to verify a package's output as a whole.
-It does not make sense to simply leave out integrity information
-because that can be an attack vector.
+If a package's output contains changing data like an embedded
+timestamp, then the digest of that output will change. That may
+prevent you from using the same integrity information to verify a
+package's output. It does not make sense to simply leave out integrity
+information because that can be an attack vector.
 
 In practice, this is only a problem if an input's source returns
-different information across builds. If that happens, then that
-is an issue to take up with whoever owns that source.
+different information across builds. If that happens, then that is an
+issue to take up with whoever owns that source. Package inputs are
+also not expected to be things like bytecode files, they are expected
+to be source code or other inputs to some build system.
 
 
 @section{Authenticating Inputs}

@@ -1,6 +1,6 @@
 #lang scribble/manual
 
-
+@require["../shared.rkt" @for-label[racket/base]]
 
 You can extend @binary using a Racket module as a @deftech{plugin}.
 
@@ -177,7 +177,7 @@ of @racket[handle-source].
 
 This is a good approximation of what @binary does by default when
 finding local files to use as @tech{inputs}.
-
+}
 
 @subsubsection{Creating Derivations}
 
@@ -212,7 +212,7 @@ racket/base
     "-"))
 
 (define package-definition-pattern-string
-  "[a-z][a-z0-9-]+@(\\d+\.){2}\\d+")
+  "[a-z][a-z0-9-]+@(\\d+\\.){2}\\d+")
 
 (define registry-px
   (pregexp
