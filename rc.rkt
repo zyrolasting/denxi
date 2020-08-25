@@ -207,11 +207,11 @@
   '("The maximum size, in mibibytes, to read from any source. Set to +inf.0 to remove limit."
     "mibibytes-or-+inf.0"))
 
-(define-xiden-setting XIDEN_FETCH_BUFFER_SIZE_MB (real-in 0.2 20) #f 10
+(define-xiden-setting XIDEN_FETCH_BUFFER_SIZE_MB (real-in 0.1 20) #f 10
   '("The maximum size, in mibibytes, to read from a source at a time"
     "mibibytes"))
 
-(define-xiden-setting XIDEN_FETCH_PKGDEF_SIZE_MB (real-in 0.2 20) #f 0.1
+(define-xiden-setting XIDEN_FETCH_PKGDEF_SIZE_MB (real-in 0.1 20) #f 0.1
   '("The maximum expected size, in mibibytes, of a package definition when scoping out work"
     "mibibytes"))
 
