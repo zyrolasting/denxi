@@ -17,7 +17,7 @@
                #:transfer-name non-empty-string?
                #:est-size (or/c +inf.0 real?)
                #:timeout-ms (>=/c 0)
-               #:on-progress (-> (real-in 0 1) any)
+               #:on-progress (-> non-empty-string? (real-in 0 1) any)
                exact-positive-integer?)]))
 
 (define-exn exn:fail:user:xiden:transfer exn:fail:user:xiden (name))
