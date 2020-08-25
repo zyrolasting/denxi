@@ -55,21 +55,7 @@
 
 
 (define-exn exn:fail:xiden exn:fail ())
-(define-exn exn:fail:xiden:decompression exn:fail:xiden (pos))
-(define-exn exn:fail:xiden:invalid-revision-interval exn:fail:xiden (lo hi))
-(define-exn exn:fail:xiden:invalid-racket-version-interval exn:fail:xiden (lo hi))
-
 (define-exn exn:fail:user:xiden exn:fail:user ())
-(define-exn exn:fail:user:xiden:config exn:fail:xiden ())
-(define-exn exn:fail:user:xiden:config:unreadable-setting exn:fail:user:xiden:config ())
-(define-exn exn:fail:user:xiden:config:invalid-setting-value exn:fail:user:xiden:config ())
-
-(define-exn exn:fail:xiden:source exn:fail:xiden (input-name source))
-(define-exn exn:fail:xiden:source:no-content exn:fail:xiden:source ())
-(define-exn exn:fail:xiden:source:digest-mismatch exn:fail:xiden:source ())
-(define-exn exn:fail:xiden:source:signature-mismatch exn:fail:xiden:source ())
-
-(define-exn exn:fail:xiden:openssl exn:fail:xiden (exit-code))
 
 
 (module+ test

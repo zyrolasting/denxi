@@ -10,6 +10,8 @@
 (provide (contract-out [compress   (->* (input-port? output-port?) (exact-integer?) void?)]
                        [decompress (-> input-port? output-port? string?)]))
 
+(define-exn exn:fail:xiden:decompression exn:fail:xiden (pos))
+
 (define (compress in out [timestamp (current-seconds)])
   (gzip-through-ports in out #f timestamp))
 

@@ -25,12 +25,17 @@
          racket/pretty
          (only-in racket/tcp listen-port-number?)
          "config.rkt"
+         "exn.rkt"
          "output.rkt"
          "setting.rkt"
          "url.rkt"
          "workspace.rkt"
          "xiden-messages.rkt")
 
+
+(define-exn exn:fail:user:xiden:config exn:fail:xiden ())
+(define-exn exn:fail:user:xiden:config:unreadable-setting exn:fail:user:xiden:config ())
+(define-exn exn:fail:user:xiden:config:invalid-setting-value exn:fail:user:xiden:config ())
 
 ; The only difference between a vanilla setting an a Xiden setting is how a
 ; fallback value is computed.

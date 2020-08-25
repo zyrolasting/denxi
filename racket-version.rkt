@@ -38,6 +38,7 @@
        racket-version-ranges/c
        current-racket-version-relationship/c)]))
 
+(define-exn exn:fail:xiden:invalid-racket-version-interval exn:fail:xiden (lo hi))
 
 (define PRESUMED_MINIMUM_RACKET_VERSION "0.0")
 (define PRESUMED_MAXIMUM_RACKET_VERSION "9.99.999.999")

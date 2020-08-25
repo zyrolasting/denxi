@@ -14,6 +14,8 @@
          "string.rkt"
          "url.rkt")
 
+(define-exn exn:fail:xiden:openssl exn:fail:xiden (exit-code))
+
 (define openssl (find-executable-path "openssl"))
 
 (define (run-openssl-command stdin-source . args)

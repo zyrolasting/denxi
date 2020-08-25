@@ -38,6 +38,11 @@
          "xiden-messages.rkt")
 
 
+(define-exn exn:fail:xiden:source exn:fail:xiden (input-name source))
+(define-exn exn:fail:xiden:source:no-content exn:fail:xiden:source ())
+(define-exn exn:fail:xiden:source:digest-mismatch exn:fail:xiden:source ())
+(define-exn exn:fail:xiden:source:signature-mismatch exn:fail:xiden:source ())
+
 
 (define (make-package-path pkginfo)
   (build-workspace-path (XIDEN_INSTALL_RELATIVE_PATH)

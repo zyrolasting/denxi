@@ -36,6 +36,8 @@
          "exn.rkt"
          "string.rkt")
 
+(define-exn exn:fail:xiden:invalid-revision-interval exn:fail:xiden (lo hi))
+
 (define CONVENTIONAL_NEWEST_REVISION_NAME "newest")
 
 (define revision-number-pattern-string "\\d+")
