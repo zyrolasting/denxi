@@ -26,6 +26,12 @@
                  (or/c #f signature-info?))
                 input-info?)]
 
+          [output
+           (->* (non-empty-string?
+                 (non-empty-listof string?))
+                (list?)
+                output-info?)]
+
           [integrity
            (-> xiden-hash-algorithm/c
                bytes?
@@ -51,6 +57,12 @@
               sources
               integrity
               signature))
+
+(define (output name builder-name [exprs null])
+  (output-info name
+               builder-name
+               exprs))
+
 
 (define integrity integrity-info)
 (define signature signature-info)

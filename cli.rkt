@@ -31,7 +31,6 @@
          "printer.rkt"
          "query.rkt"
          "rc.rkt"
-         "resolve.rkt"
          "setting.rkt"
          "signature.rkt"
          "string.rkt"
@@ -120,11 +119,11 @@ EOF
     XIDEN_LINK
     XIDEN_ALLOW_UNDECLARED_RACKET_VERSIONS
     XIDEN_ALLOW_UNSUPPORTED_RACKET)
-   (λ (flags . package-defn-exprs)
+   (λ (flags . package-defn-sources)
      (with-flags flags
        (:fold (void)
-              (for/list ([expr (in-list package-defn-exprs)])
-                (λ () (install-package! expr))))))))
+              (for/list ([pkginfo (in-scope-of-work package-defn-sources)])
+                (λ () (install-package! pkginfo))))))))
 
 
 (define (link-command args)

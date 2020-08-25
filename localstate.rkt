@@ -7,25 +7,39 @@
          path-string?))
 
 (provide (contract-out
+          [build-object-path
+           (-> bytes? complete-path?)]
           [find-latest-package-id
            (-> xiden-query? (or/c #f exact-positive-integer?))]
           [get-derivation-directory
            (-> exact-positive-integer? path-string?)]
-          [declare-input
+          [make-addressable-file
+           (-> non-empty-string? input-port? (or/c +inf.0 exact-positive-integer?) complete-path?)]
+          [declare-file
            (-> bytes? input-path/c void?)]))
 
 (require "db.rkt"
+         "encode.rkt"
          "file.rkt"
          "format.rkt"
+         "integrity.rkt"
+         "rc.rkt"
          "package-info.rkt"
          "path.rkt"
+         "port.rkt"
          "printer.rkt"
          "query.rkt"
+         "string.rkt"
          "workspace.rkt"
          "xiden-messages.rkt")
 
 (define (get-localstate-path)
   (build-workspace-path "var/xiden/db"))
+
+(define (build-object-path digest)
+  (build-workspace-path
+   "var/xiden/objects"
+   (encoded-file-name digest)))
 
 (define (connect)
   (define db-path (get-localstate-path))
@@ -37,15 +51,15 @@
 (define-syntax-rule (define-state-procedure (sig ...) body ...)
   (define (sig ...) (unless (current-db-connection) (initialize!)) body ...))
 
-(define-state-procedure (declare-input digest path)
+(define-state-procedure (declare-file digest path)
   (with-handlers ([exn:fail:sql?
                    (λ (e)
                      (if (eq? (exn:fail:sql-sqlstate e) 'constraint)
-                         (raise-user-error 'declare-input
-                                           "Cannot redeclare input ~a."
+                         (raise-user-error 'declare-file
+                                           "Cannot redeclare ~a."
                                            path)
                          (raise e)))])
-    (query-exec+ "insert into inputs values (NULL, ?, ?);"
+    (query-exec+ "insert into files values (NULL, ?, ?);"
                  path
                  digest)
     (write-output ($declare-input digest path))))
@@ -85,9 +99,38 @@
 (define (get-derivation-directory package-id)
   (query-value+ "select path from derivations where package_id=?;" package-id))
 
+(define (mibibytes->bytes mib)
+  (inexact->exact (ceiling (* mib 1024 1024))))
 
-(define create-input-table #<<EOS
-CREATE TABLE IF NOT EXISTS inputs (
+(define (make-addressable-file name in est-size)
+  (define tmp (make-temporary-file))
+  (dynamic-wind
+    void
+    (λ ()
+      (with-handlers ([values (λ (e) (delete-file* tmp) (raise e))])
+        (define bytes-written
+          (call-with-output-file tmp #:exists 'truncate/replace
+            (λ (to-file)
+              (transfer in to-file
+                        #:on-progress (λ (name scalar)
+                                        (write-output ($fetch-progress name scalar)))
+                        #:transfer-name name
+                        #:max-size (mibibytes->bytes (XIDEN_FETCH_TOTAL_SIZE_MB))
+                        #:buffer-size (mibibytes->bytes (XIDEN_FETCH_BUFFER_SIZE_MB))
+                        #:timeout-ms (XIDEN_FETCH_TIMEOUT_MS)
+                        #:est-size est-size))))
+
+        (define digest (make-digest tmp 'sha384))
+        (define path (build-object-path digest))
+        (make-directory* (path-only path))
+        (rename-file-or-directory tmp path)
+        (declare-file digest path)
+        path))
+    (λ () (close-input-port in))))
+
+
+(define create-file-table #<<EOS
+CREATE TABLE IF NOT EXISTS files (
        id INTEGER NOT NULL PRIMARY KEY,
        path TEXT NOT NULL UNIQUE,
        digest BLOB NOT NULL UNIQUE
@@ -145,7 +188,7 @@ EOS
 
 
 (define create-queries
-  (list create-input-table
+  (list create-file-table
         create-package-table-query
         create-dependency-table-query
         create-derivations-table-query))

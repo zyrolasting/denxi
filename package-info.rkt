@@ -39,8 +39,8 @@
    edition-name       ; The name of a design used in the package
    revision-number    ; The number of a design's implementation.
    revision-names     ; Aliases for the revision-number.
-   inputs             ; A list of input-info
-   outputs            ; A list of output-info
+   inputs             ; A list of input expressions
+   outputs            ; A list of output expressions
    racket-versions    ; A list of supported Racket version ranges
    tags               ; A list of strings for discovery purposes
    description        ; A string describing the package
@@ -130,8 +130,8 @@
    (lookup 'edition name-string?)
    (lookup 'revision-number exact-nonnegative-integer?)
    (lookup 'revision-names (listof name-string?) null)
-   (lookup 'inputs (listof well-formed-input-info/c) null)
-   (lookup 'outputs (listof well-formed-output-info/c) null)
+   (lookup 'inputs list? null)
+   (lookup 'outputs list? null)
    (lookup 'racket-versions racket-version-ranges/c null)
    (lookup 'tags (listof string?) null)
    (lookup 'description (or/c #f string?) #f)

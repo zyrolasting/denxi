@@ -20,6 +20,8 @@
          "exn.rkt"
          "file.rkt"
          "integrity.rkt"
+         "input-forms-lang.rkt"
+         "localstate.rkt"
          "mod.rkt"
          "output.rkt"
          "package-info.rkt"
@@ -29,7 +31,7 @@
          "query.rkt"
          "racket-version.rkt"
          "rc.rkt"
-         "resolve.rkt"
+         "setting.rkt"
          "signature.rkt"
          "string.rkt"
          "url.rkt"
@@ -37,11 +39,49 @@
          "workspace.rkt"
          "xiden-messages.rkt")
 
-
 (define-exn exn:fail:xiden:source exn:fail:xiden (input-name source))
 (define-exn exn:fail:xiden:source:no-content exn:fail:xiden:source ())
 (define-exn exn:fail:xiden:source:digest-mismatch exn:fail:xiden:source ())
 (define-exn exn:fail:xiden:source:signature-mismatch exn:fail:xiden:source ())
+
+(define input-forms-namespace
+  (module->namespace "input-forms-lang.rkt"))
+
+(define (in-scope-of-work strs)
+  (apply sequence-append
+         (map (compose in-referenced-package-infos
+                       read-package-info
+                       fetch-source)
+              strs)))
+
+(define (in-referenced-package-infos pkginfo)
+  (define (yield-package-infos pkginfo)
+    (yield pkginfo)
+    (for ([input-expr (in-list (package-info-inputs pkginfo))])
+      (with-handlers ([exn:fail:user:xiden:transfer:too-big?
+                       void])
+        (define path (fetch-input (eval input-expr input-forms-namespace)))
+        (yield-package-infos (read-package-info path)))))
+  (in-generator
+   (call-with-applied-settings
+    (hash XIDEN_FETCH_TOTAL_SIZE_MB (XIDEN_FETCH_PKGDEF_SIZE_MB)
+          XIDEN_FETCH_BUFFER_SIZE_MB (max (/ (XIDEN_FETCH_PKGDEF_SIZE_MB) 5) 5))
+    (λ () (yield-package-infos pkginfo)))))
+
+
+
+(define (mibibytes->bytes mib)
+  (inexact->exact (ceiling (* mib 1024 1024))))
+
+(define (map/service-endpoints to-add)
+  (map (λ (url-string)
+         (define u (string->url url-string))
+         (url->string
+          (struct-copy url u
+                       [path
+                        (append (url-path u)
+                                (list (path/param to-add null)))])))
+       (XIDEN_SERVICE_ENDPOINTS)))
 
 
 (define (make-package-path pkginfo)
@@ -49,15 +89,11 @@
                         (make-package-name pkginfo)))
 
 
-(define (install-package! expr)
-  (:fold expr
-         (list user-string->package-info
-               check-racket-support
-               (λ (pkginfo)
-                 (define path (make-package-path pkginfo))
-                 (if (directory-exists? path)
-                     (:fail ($already-installed path))
-                     (run-package! pkginfo path))))))
+(define (install-package! pkginfo)
+  (define path (make-package-path pkginfo))
+  (if (directory-exists? path)
+      (:fail ($already-installed path))
+      (run-package! pkginfo path)))
 
 
 (define (run-package! pkginfo path)
@@ -65,14 +101,7 @@
   (parameterize ([current-directory path])
     (:fold pkginfo
            (list fetch-inputs!
-                 (λ (links) (:unit (make-links! path links)))
                  build-outputs!))))
-
-
-(define (make-links! pkgpath links)
-  (for ([(input-name input-path) (in-hash links)])
-    (make-file-or-directory-link (find-relative-path pkgpath input-path)
-                                 input-name)))
 
 
 (define (fetch-inputs! inputs)
@@ -82,16 +111,14 @@
              (:unit
               (hash-set links
                         (input-info-name input)
-                        ($with-output-intermediate (fulfill-input input))))))))
+                        ($with-output-intermediate (fetch-input input))))))))
 
 
 (define (build-outputs! pkginfo)
   (:fold null
-         (for/list ([output (package-info-outputs pkginfo)])
+         (for/list ([output (in-list (package-info-outputs pkginfo))])
            (λ (sandbox-values)
-             (define seval (make-sandbox (output-info-builder-name output)))
-             (cons (for/list ([expr (in-list (output-info-builder-expressions output))])
-                     (seval expr))
+             (cons (build-derivation output)
                    sandbox-values)))))
 
 
@@ -125,56 +152,43 @@
     (make-module-evaluator #:language 'racket/base path)))
 
 
+(define (build-derivation output)
+  (define seval (make-sandbox (output-info-builder-name output)))
+  (for/list ([expr (in-list (output-info-builder-expressions output))])
+    (seval expr)))
 
-(define (fetch-source/filesystem source make-input-file build-derivation make-link)
+
+(define (fetch-source/filesystem source make-file)
   (with-handlers ([exn:fail? (λ (e) #f)])
     (and (file-exists? source)
-         (make-link (make-input-file (open-input-file source)
-                                     (+ (* 20 1024) ; for Mac OS resource forks
-                                        (file-size source)))))))
+         (make-file (open-input-file source)
+                    (+ (* 20 1024) ; for Mac OS resource forks
+                       (file-size source))))))
 
 
-(define (fetch-source/http source make-input-file build-derivation make-link)
+(define (fetch-source/http source make-file)
   (with-handlers ([exn:fail? (λ (e) #f)])
     (define in (head-impure-port (string->url source)))
     (define headers (extract-all-fields (port->bytes in)))
     (define est-size (string->number (bytes->string/utf-8 (extract-field #"content-length" headers))))
-    (make-link
-     (make-input-file (get-pure-port #:redirections (XIDEN_DOWNLOAD_MAX_REDIRECTS) (string->url source))
-                      est-size))))
+    (make-file (get-pure-port #:redirections (XIDEN_DOWNLOAD_MAX_REDIRECTS) (string->url source))
+               est-size)))
 
 
-(define (fetch-source/xiden-query source make-input-file build-derivation make-link)
-  (void)
-  #;(with-handlers ([exn:fail? (λ (e) #f)])
-    (define query (string->xiden-query source))
-    (define urls
-      (map (λ (url-string)
-             (define u (string->url url-string))
-             (url->string
-              (struct-copy url u
-                           [path
-                            (append (url-path u)
-                                    (list (path/param source null)))])))
-           (XIDEN_SERVICE_ENDPOINTS)))
+(define (fetch-source/xiden-query source make-file)
+  (define pkginfo
+    (for/or ([u (in-list (map/service-endpoints source))])
+      (with-handlers ([exn:fail? (λ (e) #f)])
+        (read-package-info (get-pure-port u #:redirections (XIDEN_DOWNLOAD_MAX_REDIRECTS))))))
 
+  (and pkginfo
+       (let-values ([(i o) (make-pipe)])
+         (write-config #:pretty? #t (package-info->hash pkginfo) null o)
+         (flush-output o)
+         (close-output-port o)
+         (make-file i (mibibytes->bytes (XIDEN_FETCH_PKGDEF_SIZE_MB))))))
 
-    (define pkginfo
-      (for/or ([u (in-list urls)])
-        (read-package-info (get-pure-port u #:redirections (XIDEN_DOWNLOAD_MAX_REDIRECTS)))))
-
-    (define input-paths
-      (for/list ([input (in-list (package-info-inputs pkginfo))])
-        (fulfill-input input)))
-
-    (define derivation-paths
-      (for/list ([output (in-list (package-info-outputs pkginfo))])
-        (build-derivation (find-setup-module pkginfo output)
-                          (output-info-builder-expressions output)
-                          (input-paths))))))
-
-
-(define (fetch-source input source)
+(define (fetch-source source)
   (define method
     (disjoin fetch-source/filesystem
              fetch-source/http
@@ -183,16 +197,19 @@
                           (λ () #f) (λ (e) #f))))
 
   (define (make-file in est-size)
-    (make-input-file input source in est-size))
+    (make-addressable-file source in est-size))
 
-  (define (make-link path)
-    (make-file-or-directory-link path (input-info-name input)))
-
-  (define input-path
-    (method make-file make-link))
-
-  (or input-path
+  (or (method make-file)
       (rex)))
+
+
+#;(define (make-link path . others)
+  (if (null? others)
+      (make-file-or-directory-link path (input-info-name input))
+      (begin (make-directory* (input-info-name input))
+             (for ([other (in-list others)])
+               (make-file-or-directory-link path
+                                            (build-path (input-info-name input) other))))))
 
 
 (define (raise-unless-postconditions-met input source tmp)
@@ -206,33 +223,28 @@
           (rex exn:fail:xiden:source:signature-mismatch input source))))
 
 
-(define (mibibytes->bytes mib)
-  (inexact->exact (ceiling (* mib 1024 1024))))
+(define (fetch-input input)
+  (call/cc
+   (λ (return)
+     (define existing (get-maybe-existing-input-path input))
+     (if existing
+         existing
+         (for ([source (in-list (input-info-sources input))])
+           (with-handlers ([exn? void])
+             (define candidate-path (fetch-source source))
+             (raise-unless-postconditions-met input source candidate-path)
+             (return candidate-path)))))))
 
-(define (make-input-file input source in est-size)
-  (define tmp (make-temporary-file))
-  (dynamic-wind
-    void
-    (λ ()
-      (with-handlers ([values (λ (e) (delete-file* tmp) (raise e))])
-        (define bytes-written
-          (call-with-output-file tmp #:exists 'truncate/replace
-            (λ (to-file)
-              (transfer in to-file
-                        #:on-progress (λ (name scalar)
-                                        (write-output ($fetch-progress name scalar)))
-                        #:transfer-name (input-info-name input)
-                        #:max-size (mibibytes->bytes (XIDEN_FETCH_TOTAL_SIZE_MB))
-                        #:buffer-size (mibibytes->bytes (XIDEN_FETCH_BUFFER_SIZE_MB))
-                        #:timeout-ms (XIDEN_FETCH_TIMEOUT_MS)
-                        #:est-size est-size))))
 
-        (raise-unless-postconditions-met input source tmp)
-        (define path (build-input-path (make-digest tmp (integrity-info-algorithm (input-info-integrity input)))))
-        (make-directory* (path-only path))
-        (rename-file-or-directory tmp path)
-        path))
-    (λ () (close-input-port in))))
+
+(define (get-maybe-existing-input-path input)
+  (with-handlers ([exn? (λ _ #f)])
+    (define path
+      (build-object-path
+       (integrity-info-digest
+        (input-info-integrity input))))
+    (and (file-exists? path)
+         path)))
 
 
 (module+ test
@@ -243,7 +255,6 @@
            "setting.rkt")
 
   (define me (build-path (this-expression-source-directory) (this-expression-file-name)))
-
 
   (test-case "Detect packages that do not declare a supported Racket version"
     (define output
