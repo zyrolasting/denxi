@@ -142,6 +142,11 @@
          (format "Unrecognized command: ~s. Run with -h for usage information.~n"
                  ($unrecognized-command-command m))]
 
+        [($fetch-progress? m)
+         (format "~a: ~a%"
+                 ($fetch-progress-source m)
+                 (~r (* 100 ($fetch-progress-scalar m)) #:precision 0))]
+
         [($consent-note? m)
          (format "To consent to these changes, run again with ~a"
                  (setting-short-flag XIDEN_CONSENT))]
