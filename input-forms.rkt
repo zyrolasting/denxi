@@ -6,7 +6,7 @@
          racket/function
          racket/string
          "encode.rkt"
-         "input-info.rkt"
+         "package-info.rkt"
          "integrity.rkt"
          "signature.rkt")
 

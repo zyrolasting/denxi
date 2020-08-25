@@ -21,7 +21,6 @@
          "contract.rkt"
          "file.rkt"
          "format.rkt"
-         "input-info.rkt"
          "input-forms-lang.rkt"
          "integrity.rkt"
          "localstate.rkt"

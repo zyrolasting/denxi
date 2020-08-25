@@ -15,7 +15,6 @@
          "file.rkt"
          "format.rkt"
          "integrity.rkt"
-         "input-info.rkt"
          "message.rkt"
          "query.rkt"
          "racket-version.rkt"

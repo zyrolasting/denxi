@@ -17,7 +17,6 @@
          "encode.rkt"
          "file.rkt"
          "format.rkt"
-         "input-info.rkt"
          "input-forms-lang.rkt"
          "integrity.rkt"
          "message.rkt"
