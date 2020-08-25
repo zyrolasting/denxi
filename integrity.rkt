@@ -6,8 +6,6 @@
 (define xiden-hash-algorithms
   '(blake2b512
     blake2s256
-    gost
-    md2
     md4
     md5
     rmd160
