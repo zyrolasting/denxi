@@ -20,10 +20,12 @@
 
 (require "db.rkt"
          "encode.rkt"
+         "exn.rkt"
          "file.rkt"
          "format.rkt"
          "integrity.rkt"
          "rc.rkt"
+         "output.rkt"
          "package-info.rkt"
          "path.rkt"
          "port.rkt"
@@ -60,9 +62,11 @@
                                            path)
                          (raise e)))])
     (query-exec+ "insert into files values (NULL, ?, ?);"
-                 path
+                 (if (path? path)
+                     (path->string path)
+                     path)
                  digest)
-    (write-output ($declare-input digest path))))
+    (:return path ($declare-input digest path))))
 
 (define-state-procedure (declare-package pkginfo)
   (query-exec+ "insert into packages values (NULL, ?, ?, ?, ?, ?);"
@@ -103,11 +107,11 @@
   (inexact->exact (ceiling (* mib 1024 1024))))
 
 (define (make-addressable-file name in est-size)
-  (define tmp (make-temporary-file))
+  (define tmp (build-object-path #"tmp"))
   (dynamic-wind
     void
     (λ ()
-      (with-handlers ([values (λ (e) (delete-file* tmp) (raise e))])
+      (with-handlers ([values (λ (e) (displayln (exn->string e)) (delete-file* tmp) (raise e))])
         (define bytes-written
           (call-with-output-file tmp #:exists 'truncate/replace
             (λ (to-file)
@@ -119,13 +123,11 @@
                         #:buffer-size (mibibytes->bytes (XIDEN_FETCH_BUFFER_SIZE_MB))
                         #:timeout-ms (XIDEN_FETCH_TIMEOUT_MS)
                         #:est-size est-size))))
-
         (define digest (make-digest tmp 'sha384))
         (define path (build-object-path digest))
         (make-directory* (path-only path))
-        (rename-file-or-directory tmp path)
-        (declare-file digest path)
-        path))
+        (rename-file-or-directory tmp path #t)
+        (declare-file digest path)))
     (λ () (close-input-port in))))
 
 

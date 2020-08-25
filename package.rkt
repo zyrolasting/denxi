@@ -39,7 +39,7 @@
          "workspace.rkt"
          "xiden-messages.rkt")
 
-(define-exn exn:fail:xiden:source exn:fail:xiden (input-name source))
+(define-exn exn:fail:xiden:source exn:fail:xiden (source))
 (define-exn exn:fail:xiden:source:no-content exn:fail:xiden:source ())
 (define-exn exn:fail:xiden:source:digest-mismatch exn:fail:xiden:source ())
 (define-exn exn:fail:xiden:source:signature-mismatch exn:fail:xiden:source ())
@@ -137,7 +137,7 @@
        (if (or (XIDEN_ALLOW_UNSUPPORTED_RACKET)
                (XIDEN_ALLOW_UNDECLARED_RACKET_VERSIONS))
            (:unit pkginfo)
-           (:unit ($undeclared-racket-version)))])))
+           (:fail ($undeclared-racket-version pkginfo)))])))
 
 
 (define (make-sandbox path)
@@ -194,13 +194,14 @@
              fetch-source/http
              fetch-source/xiden-query
              (load-plugin 'fetch-source
-                          (λ () #f) (λ (e) #f))))
+                          (λ () (const #f))
+                          (λ (e) (const #f)))))
 
   (define (make-file in est-size)
     (make-addressable-file source in est-size))
 
-  (or (method make-file)
-      (rex)))
+  (or (method source make-file)
+      (rex exn:fail:xiden:source:no-content source)))
 
 
 #;(define (make-link path . others)
@@ -257,18 +258,18 @@
   (define me (build-path (this-expression-source-directory) (this-expression-file-name)))
 
   (test-case "Detect packages that do not declare a supported Racket version"
-    (define output
-      (check-racket-support (make-package-info #:provider-name "provider"
-                                               #:package-name "pkg"
-                                               #:racket-versions null)))
-    (check-equal? output
-                  ($with-output ($undeclared-racket-version))))
+    (define pkginfo
+      (make-package-info #:provider-name "provider"
+                         #:package-name "pkg"
+                         #:racket-versions null))
+    (check-equal? (check-racket-support pkginfo)
+                  ($with-output 1 #f (list ($undeclared-racket-version pkginfo)))))
 
   (test-case "Detect packages that declare an unsupported Racket version"
-    (define output
-      (check-racket-support
-       (make-package-info #:provider-name "provider"
-                          #:package-name "pkg"
-                          #:racket-versions (list "0.0"))))
-    (check-equal? output
-     ($with-output ($unsupported-racket-version)))))
+    (define pkginfo
+      (make-package-info #:provider-name "provider"
+                         #:package-name "pkg"
+                         #:racket-versions (list "0.0")))
+
+    (check-equal? (check-racket-support pkginfo)
+                  ($with-output 1 #f (list ($unsupported-racket-version pkginfo))))))
