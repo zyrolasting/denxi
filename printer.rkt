@@ -16,6 +16,7 @@
          "format.rkt"
          "message.rkt"
          "package-info.rkt"
+         "port.rkt"
          "racket-version.rkt"
          "rc.rkt"
          "setting.rkt"
@@ -142,10 +143,10 @@
          (format "Unrecognized command: ~s. Run with -h for usage information.~n"
                  ($unrecognized-command-command m))]
 
-        [($fetch-progress? m)
+        [($transfer-progress? m)
          (format "~a: ~a%"
-                 ($fetch-progress-source m)
-                 (~r (* 100 ($fetch-progress-scalar m)) #:precision 0))]
+                 ($transfer-name m)
+                 (~r (* 100 ($transfer-progress-scalar m)) #:precision 0))]
 
         [($consent-note? m)
          (format "To consent to these changes, run again with ~a"
