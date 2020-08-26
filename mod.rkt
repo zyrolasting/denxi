@@ -17,7 +17,7 @@
   #;[load-plugin/with-output
    (-> symbol? (-> any/c) $with-output?)]))
 
-(require "output.rkt"
+(require "message.rkt"
          "rc.rkt"
          "xiden-messages.rkt")
 

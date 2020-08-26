@@ -22,7 +22,7 @@
          racket/sequence
          "config.rkt"
          "encode.rkt"
-         "output.rkt"
+         "message.rkt"
          "integrity.rkt"
          "racket-version.rkt"
          "signature.rkt"

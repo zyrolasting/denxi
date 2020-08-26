@@ -24,7 +24,6 @@
          "localstate.rkt"
          "message.rkt"
          "mod.rkt"
-         "output.rkt"
          "package-info.rkt"
          "path.rkt"
          "port.rkt"

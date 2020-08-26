@@ -27,7 +27,7 @@
          (only-in racket/tcp listen-port-number?)
          "config.rkt"
          "exn.rkt"
-         "output.rkt"
+         "message.rkt"
          "setting.rkt"
          "url.rkt"
          "workspace.rkt"

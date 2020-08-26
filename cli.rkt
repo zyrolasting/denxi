@@ -25,7 +25,6 @@
          "integrity.rkt"
          "localstate.rkt"
          "message.rkt"
-         "output.rkt"
          "package.rkt"
          "package-info.rkt"
          "printer.rkt"

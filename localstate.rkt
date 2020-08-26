@@ -25,7 +25,7 @@
          "format.rkt"
          "integrity.rkt"
          "rc.rkt"
-         "output.rkt"
+         "message.rkt"
          "package-info.rkt"
          "path.rkt"
          "port.rkt"
