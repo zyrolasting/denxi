@@ -120,11 +120,25 @@ EOF
     XIDEN_LINK
     XIDEN_ALLOW_UNDECLARED_RACKET_VERSIONS
     XIDEN_ALLOW_UNSUPPORTED_RACKET)
-   (λ (flags . package-defn-sources)
-     (with-flags flags
-       (:fold (void)
-              (for/list ([pkginfo (in-scope-of-work package-defn-sources)])
-                (λ () (install-package! pkginfo))))))))
+   (λ (flags . pkgdef-sources)
+     (with-rc flags
+       (define results
+         (:fold (void)
+                (for/list ([source (in-list pkgdef-sources)])
+                  (λ (_) (:return #f ($show-string source))))))
+       (:merge results
+               (:done))))))
+
+
+(define (uninstall-command args)
+  (run-command-line
+   #:program "uninstall"
+   #:arg-help-strings '("query")
+   #:flags
+   (settings->flag-specs XIDEN_CONSENT)
+   #:args args
+   (λ (flags . queries)
+     (void))))
 
 
 (define (link-command args)
@@ -273,17 +287,6 @@ where <what> is one of
 
 EOF
    ))
-
-
-(define (uninstall-command args)
-  (run-command-line
-   #:program "uninstall"
-   #:arg-help-strings '("query")
-   #:flags
-   (settings->flag-specs XIDEN_CONSENT)
-   #:args args
-   (λ (flags . queries)
-     (void))))
 
 
 

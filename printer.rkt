@@ -30,7 +30,6 @@
            ($verbose-message m))
       m))
 
-
 (define (write-output v [out (current-output-port)])
   (define maybe-message (filter-output v))
   (when maybe-message

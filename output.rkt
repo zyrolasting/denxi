@@ -95,9 +95,7 @@
 
 (define (:fold initial fs)
   ((apply compose (map :bind (reverse fs)))
-   (if ($with-output? initial)
-       initial
-       (:unit initial))))
+   (:unit initial)))
 
 
 (define (:do #:initial [v (void)] . fs)
