@@ -22,7 +22,7 @@
     [(_ id super-id (fields ...))
      (struct id super-id (fields ...) #:prefab)]
     [(_ id (fields ...))
-     (define+provide-message id $message (fields ...))]))
+     (define-message id $message (fields ...))]))
 
 (define-syntax-rule (define+provide-message id rem ...)
   (begin (provide (struct-out id))
