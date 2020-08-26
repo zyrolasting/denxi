@@ -1,11 +1,9 @@
 #lang racket/base
 
-; Define monadic operations to accumulate output.  Emitting output
-; elsewhere as a side-effect is allowed in the abstract, but the
-; nature of those side-effects must be specified.
-;
-; This is all in the name of making better tests and carefully
-; controlling side-effects in long-running jobs.
+; Define monadic operations for functions that include program output
+; with their return values. The nature of any side-effects must be
+; explicitly specified. This is all in the name of nicer tests
+; and declarative code.
 
 (require "contract.rkt"
          "message.rkt"
