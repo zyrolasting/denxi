@@ -47,4 +47,3 @@
 (define-message $unrecognized-command (command))
 (define-message $unsupported-racket-version (info))
 (define-message $verbose (message))
-(define-message $with-output (stop-value intermediate accumulated))

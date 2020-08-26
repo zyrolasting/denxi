@@ -29,6 +29,18 @@
         (#:stop-value exact-positive-integer?)
         $with-output?)]
 
+  [:merge
+   (-> $with-output? $with-output? $with-output?)]
+
+  [:do
+   (->* () (#:initial any/c) #:rest (listof procedure?)
+        $with-output?)]
+
+  [:loop
+   (->* ((-> any/c any/c))
+        (any/c)
+        $with-output?)]
+
   [:fold
    (-> any/c
        (non-empty-listof procedure?)
@@ -52,10 +64,10 @@
    (-> (-> any/c any/c)
        (-> any/c $with-output?))]))
 
+(define+provide-message $with-output (stop-value intermediate accumulated))
 
 (define current-output-emitter
   (make-parameter #f))
-
 
 (define (make-$with-output stop-value intermediate messages)
   ; Sometimes sending output as a side-effect is desirable.
@@ -86,8 +98,20 @@
        (:unit initial))))
 
 
-(define (:unit [v #f])
-  (make-$with-output #f v null))
+(define (:do #:initial [v (void)] . fs)
+  (if (null? fs)
+      (:unit v)
+      (apply :do #:initial ((:bind (:lift (car fs))) (:unit v))
+             (cdr fs))))
+
+
+(define (:unit [variant #f])
+  (cond [($with-output? variant)
+         variant]
+        [($message? variant)
+         (:return #f variant)]
+        [else
+         (:return variant null)]))
 
 
 (define (:lift f)
@@ -103,6 +127,12 @@
                      (if (list? msg) msg (list msg))))
 
 
+(define (:merge a b)
+  ($with-output ($with-output-stop-value b)
+                ($with-output-intermediate b)
+                (append ($with-output-accumulated a)
+                        ($with-output-accumulated b))))
+
 
 (define (:bind f)
   (procedure-rename
@@ -115,14 +145,15 @@
                              ($with-output-intermediate accum)
                              (append ($with-output-accumulated accum)
                                      (list m))))])
-           (let ([next (f ($with-output-intermediate accum))])
-             ($with-output ($with-output-stop-value next)
-                           ($with-output-intermediate next)
-                           (append ($with-output-accumulated accum)
-                                   ($with-output-accumulated next)))))))
+           (:merge accum (f ($with-output-intermediate accum))))))
    (string->symbol (format "~a/with-output/bound"
                            (object-name f)))))
 
+
+(define (:loop f [variant (:unit)])
+  (define o (:unit variant))
+  (if ($with-output-stop-value o) o
+      (:loop f (:merge o (:unit (f ($with-output-intermediate o)))))))
 
 
 (module+ test
@@ -144,6 +175,20 @@
   (test-equal? "Abbreviate :return for specific failure"
                (:fail 'a #:stop-value 2)
                (:return #:stop-value 2 #f 'a))
+
+  (test-equal? "Normalize Racket values to $with-output"
+               (:unit)
+               ($with-output #f #f null))
+
+  (test-equal? "Do not double-wrap $with-output"
+               (:unit ($with-output 1 2 (list 2)))
+               ($with-output 1 2 (list 2)))
+
+  (define-message $m (v))
+  (test-equal? "Do not treat $messages as intermediate values"
+               (:unit ($m 1))
+               ($with-output #f #f (list ($m 1))))
+
 
   (test-case "Compose output-producing functions"
     (define (add v) (:return (add1 v) '(add 1)))
@@ -199,4 +244,19 @@
                                       (const (:return #f 'are))
                                       (const (:return #f 'you)))))))
                ($with-output #f #f
-                             '(hello how are you))))
+                             '(hello how are you)))
+
+  (test-equal? "Sequence $with-output operations as if they were imperative"
+               (:do #:initial 1 add1 add1 add1 sqrt)
+               ($with-output #f 2 null))
+
+  (test-equal? "Stop :do when requested"
+               (:do #:initial 5 add1 add1 add1 (λ (v) (:return #:stop-value 1 v)) sqrt)
+               ($with-output 1 8 null))
+
+  (test-case "Accumulate output using pre-test loop"
+    (define (iter n)
+      (:return #:stop-value (>= n 2)
+               (add1 n) (* n (add1 n))))
+    (check-equal? (:loop iter (:unit 0))
+                  ($with-output #t 3 '(0 2 6)))))
