@@ -4,6 +4,7 @@
 
 (require "contract.rkt")
 (provide
+ with-xiden-rcfile
  (contract-out
   [setting-ref
    (-> (or/c string? symbol?)
@@ -37,6 +38,9 @@
 (define-exn exn:fail:user:xiden:config:unreadable-setting exn:fail:user:xiden:config ())
 (define-exn exn:fail:user:xiden:config:invalid-setting-value exn:fail:user:xiden:config ())
 
+(define current-xiden-rcfile-cache (make-parameter void))
+
+
 ; The only difference between a vanilla setting an a Xiden setting is how a
 ; fallback value is computed.
 (define-syntax-rule (define-xiden-setting id cnt short-flag default-value help-strs)
@@ -56,7 +60,7 @@
 ; Checks environment variable, then rcfile, then hard-coded value.
 (define (in-xiden-setting-value-sources id default-value)
   (in-list (list (λ () (maybe-get-setting-value-from-envvar (symbol->string id)))
-                 (λ () ((load-xiden-rcfile) id any/c (void)))
+                 (λ () ((current-xiden-rcfile-cache) id any/c (void)))
                  (const default-value))))
 
 
@@ -80,30 +84,17 @@
   (build-workspace-path "etc/xiden.rkt"))
 
 
-; load-xiden-rcfile reads the rcfile every time, which avoids caching bugs.
-;
-; But combined with in-xiden-setting-value-sources, there are two
-; other problems:
-;
-; 1. You trigger a full file read for every fetch of an undefined setting's value.
-; 2. Different calls may return different values for the same setting
-;
-; #2 is desirable for secured interactive applications, but #1 is just wasteful.
-; To avoid extra reads, create a parameterization where each setting
-; has a value. e.g. (call-with-applied-settings all-settings (λ () ...))
-;
-; In that parameterization, no disk reads will occur because there
-; will be no need to search for a value. Note that using
-; (dump-xiden-settings) for `all-settings` above defeats the purpose
-; because it will read the file once for every unset value anyway.
-; But if you would trigger more reads than the dump would, perhaps
-; that's not an issue.
-
+; Warning: This performs a full file read every time. Use a cache where relevant.
 (define (load-xiden-rcfile)
   (let ([path (get-xiden-settings-path)])
     (if (file-exists? path)
         (load-config path)
         (make-config-closure (hasheq) null))))
+
+
+(define-syntax-rule (with-xiden-rcfile body ...)
+  (parameterize ([current-xiden-rcfile-cache (load-xiden-rcfile)])
+    body ...))
 
 
 (define (dump-xiden-settings)
@@ -364,16 +355,17 @@
                                 (check-false ((load-xiden-rcfile) 'XIDEN_PRIVATE_KEY_PATH any/c #f))
                                 (save-xiden-settings!)
                                 (check-equal? ((load-xiden-rcfile) 'XIDEN_PRIVATE_KEY_PATH) "foo")))
-      (check-equal? (XIDEN_PRIVATE_KEY_PATH) "foo"))
+      (with-xiden-rcfile (check-equal? (XIDEN_PRIVATE_KEY_PATH) "foo")))
 
     (test-case "Override rcfile value with envvar value"
       (dynamic-wind (λ () (putenv "XIDEN_PRIVATE_KEY_PATH" "\"bar\""))
                     (λ () (check-equal? (XIDEN_PRIVATE_KEY_PATH) "bar"))
                     (λ ()
                       (putenv "XIDEN_PRIVATE_KEY_PATH" "")
-                      (test-equal? "Do not use empty envvar strings as a source for settings"
-                                   (XIDEN_PRIVATE_KEY_PATH)
-                                   "foo")))))
+                      (with-xiden-rcfile
+                        (test-equal? "Do not use empty envvar strings as a source for settings"
+                                     (XIDEN_PRIVATE_KEY_PATH)
+                                     "foo"))))))
 
   (test-workspace "Lazily validate fallback values"
     (test-exn "Reject invalid values from ennvar"

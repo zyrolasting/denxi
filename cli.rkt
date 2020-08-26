@@ -48,11 +48,13 @@
   (sequence-for-each write-output accumulated)
   (exit stop-value))
 
-; Define a transition from accumulated command line flags to a new parameterization
-; in terms of those flags. Capture any failure to do so as main program output.
-(define-syntax-rule (with-flags flags body ...)
+; Define a transition from accumulated command line flags to a new
+; parameterization in terms of those flags and a cached read of the
+; rcfile. Capture any failure in this transition as main program
+; output.
+(define-syntax-rule (with-rc flags body ...)
   (with-handlers ([exn:fail? (λ (e) (:done ($fail (exn-message e))))])
-    (call-with-applied-settings flags (λ () body ...))))
+    (with-xiden-rcfile (call-with-applied-settings flags (λ () body ...)))))
 
 
 ; Keep seperate for functional tests.
@@ -77,7 +79,7 @@
     XIDEN_READER_FRIENDLY_OUTPUT
     XIDEN_VERBOSE)
    (λ (flags action . args)
-     (with-flags flags
+     (with-rc flags
        (define proc
          (match action
            ["install" install-command]
