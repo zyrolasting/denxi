@@ -25,7 +25,7 @@
      (define+provide-message id $message (fields ...))]))
 
 (define-syntax-rule (define+provide-message id rem ...)
-  (begin (provide id)
+  (begin (provide (struct-out id))
          (define-message id rem ...)))
 
 (module+ test
