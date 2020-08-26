@@ -22,12 +22,12 @@
          "integrity.rkt"
          "input-forms-lang.rkt"
          "localstate.rkt"
+         "message.rkt"
          "mod.rkt"
          "output.rkt"
          "package-info.rkt"
          "path.rkt"
          "port.rkt"
-         (only-in "printer.rkt" write-output)
          "query.rkt"
          "racket-version.rkt"
          "rc.rkt"
@@ -44,24 +44,17 @@
 (define-exn exn:fail:xiden:source:digest-mismatch exn:fail:xiden:source ())
 (define-exn exn:fail:xiden:source:signature-mismatch exn:fail:xiden:source ())
 
+(define-message $no-source-bytes (source))
+
 (define input-forms-namespace
   (module->namespace "input-forms-lang.rkt"))
-
-(define (in-scope-of-work strs)
-  (apply sequence-append
-         (map (compose in-referenced-package-infos
-                       read-package-info
-                       fetch-source)
-              strs)))
 
 (define (in-referenced-package-infos pkginfo)
   (define (yield-package-infos pkginfo)
     (yield pkginfo)
     (for ([input-expr (in-list (package-info-inputs pkginfo))])
-      (with-handlers ([exn:fail:user:xiden:transfer:too-big?
-                       void])
         (define path (fetch-input (eval input-expr input-forms-namespace)))
-        (yield-package-infos (read-package-info path)))))
+        (yield-package-infos (read-package-info path))))
   (in-generator
    (call-with-applied-settings
     (hash XIDEN_FETCH_TOTAL_SIZE_MB (XIDEN_FETCH_PKGDEF_SIZE_MB)
@@ -188,20 +181,29 @@
          (close-output-port o)
          (make-file i (mibibytes->bytes (XIDEN_FETCH_PKGDEF_SIZE_MB))))))
 
+
+(define (get-fetch-source-method source)
+  (disjoin fetch-source/filesystem
+           fetch-source/http
+           fetch-source/xiden-query
+           (load-plugin 'fetch-source
+                        (λ () (const #f))
+                        (λ (e) (const #f)))))
+
+
 (define (fetch-source source)
   (define method
-    (disjoin fetch-source/filesystem
-             fetch-source/http
-             fetch-source/xiden-query
-             (load-plugin 'fetch-source
-                          (λ () (const #f))
-                          (λ (e) (const #f)))))
+    (get-fetch-source-method))
 
-  (define (make-file in est-size)
-    (make-addressable-file source in est-size))
+  (define maybe-path
+    (method source
+            (λ (make-file in est-size)
+              (make-addressable-file source in est-size))))
 
-  (or (method source make-file)
-      (rex exn:fail:xiden:source:no-content source)))
+  (if maybe-path
+      (:unit maybe-path)
+      ($no-source-bytes source)))
+
 
 
 #;(define (make-link path . others)

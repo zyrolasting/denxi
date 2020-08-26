@@ -111,13 +111,11 @@
   (dynamic-wind
     void
     (λ ()
-      (with-handlers ([values (λ (e) (displayln (exn->string e)) (delete-file* tmp) (raise e))])
+      (with-handlers ([values (λ (e) (delete-file* tmp) (raise e))])
         (define bytes-written
           (call-with-output-file tmp #:exists 'truncate/replace
             (λ (to-file)
               (transfer in to-file
-                        #:on-progress (λ (name scalar)
-                                        (write-output ($fetch-progress name scalar)))
                         #:transfer-name name
                         #:max-size (mibibytes->bytes (XIDEN_FETCH_TOTAL_SIZE_MB))
                         #:buffer-size (mibibytes->bytes (XIDEN_FETCH_BUFFER_SIZE_MB))
