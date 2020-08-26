@@ -104,12 +104,11 @@ EOF
    ))
 
 
-
 (define (install-command args)
   (run-command-line
    #:program "install"
    #:args args
-   #:arg-help-strings '("package-path")
+   #:arg-help-strings '("pkgdef-source")
    #:flags
    (settings->flag-specs
     XIDEN_SERVICE_ENDPOINTS
