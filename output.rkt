@@ -21,12 +21,14 @@
    (-> $with-output? boolean?)]
 
   [:done
-   (->* ((or/c $message? (listof $message?)))
+   (->* ()
+        ((or/c $message? (listof $message?)))
         $with-output?)]
 
   [:fail
-   (->* ((or/c $message? (listof $message?)))
-        (#:stop-value exact-positive-integer?)
+   (->* ()
+        ((or/c $message? (listof $message?))
+         #:stop-value exact-positive-integer?)
         $with-output?)]
 
   [:merge
