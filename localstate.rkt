@@ -29,7 +29,6 @@
          "package-info.rkt"
          "path.rkt"
          "port.rkt"
-         "printer.rkt"
          "query.rkt"
          "string.rkt"
          "workspace.rkt"
