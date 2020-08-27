@@ -34,7 +34,7 @@
           [$with-messages/c
            (-> contract? contract?)]
           [emit-message!
-           (-> $message? void?)]
+           (-> (or/c $with-messages? $message? (listof $message?)) void?)]
           [current-output-emitter
            (parameter/c (or/c #f (-> $message? any)))]
           [:merge
@@ -138,7 +138,13 @@
 
 
 (define (emit-message! msg)
-  ((current-output-emitter) msg))
+  (cond [($message? msg)
+         ((current-output-emitter) msg)]
+        [($with-messages? msg)
+         (emit-message! ($with-messages-accumulated msg))]
+        [(list? msg)
+         (for ([m (in-list msg)])
+           (emit-message! m))]))
 
 
 (module+ test
