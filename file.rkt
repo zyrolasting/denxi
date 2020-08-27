@@ -11,6 +11,7 @@
          racket/set
          racket/sequence
          "config.rkt"
+         "message.rkt"
          "path.rkt"
          "setting.rkt"
          "string.rkt"
@@ -18,12 +19,19 @@
          "query.rkt")
 
 
+(define+provide-message $made-symlink (target-path link-path))
+(define+provide-message $deleted-file (path))
+
+
 (define (delete-file* path)
-  (if (or (file-exists? path)
-          (link-exists? path))
-      (begin (delete-file path)
-             path)
-      #f))
+  (attach-message
+   (if (or (file-exists? path)
+           (link-exists? path))
+       (begin (delete-file path)
+              path)
+       #f)
+   ($deleted-file path)))
+
 
 (define (in-acyclic-directory start-dir [use-dir? (λ _ #t)])
   (in-directory start-dir
@@ -60,7 +68,8 @@
   (when (link-exists? link-path)
     (delete-file link-path))
   (make-file-or-directory-link to link-path)
-  link-path)
+  (attach-message link-path
+                  ($made-symlink to link-path)))
 
 
 (define (delete-directory/files/empty-parents path)
