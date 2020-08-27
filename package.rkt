@@ -48,6 +48,7 @@
 (define input-forms-namespace
   (module->namespace "input-forms-lang.rkt"))
 
+
 (define (in-referenced-package-infos pkginfo)
   (define (yield-package-infos pkginfo)
     (yield pkginfo)
@@ -61,9 +62,9 @@
     (λ () (yield-package-infos pkginfo)))))
 
 
-
 (define (mibibytes->bytes mib)
   (inexact->exact (ceiling (* mib 1024 1024))))
+
 
 (define (map/service-endpoints to-add)
   (map (λ (url-string)
@@ -81,33 +82,44 @@
                         (make-package-name pkginfo)))
 
 
-(define (install-package! pkginfo)
-  (define path (make-package-path pkginfo))
-  (if (directory-exists? path)
-      (:fail ($already-installed path))
-      (run-package! pkginfo path)))
+(define (install-package-from-source source)
+  (fetch-source source download-package-info))
+
+
+(define (download-package-info from-source est-size)
+  (define max-size (mibibytes->bytes (XIDEN_FETCH_PKGDEF_SIZE_MB)))
+  (define-values (from-pipe to-pipe) (make-pipe max-size))
+  (define transfer-output
+    (transfer from-source to-pipe
+              #:transfer-name "package-info"
+              #:max-size max-size
+              #:buffer-size (mibibytes->bytes (max (/ (XIDEN_FETCH_PKGDEF_SIZE_MB) 5) 5))
+              #:timeout-ms (XIDEN_FETCH_TIMEOUT_MS)
+              #:est-size est-size))
+  (close-output-port to-pipe)
+  (:merge transfer-output
+          (:return (read-package-info from-pipe))))
 
 
 (define (run-package! pkginfo path)
   (make-directory* path)
   (parameterize ([current-directory path])
-    (:fold pkginfo
-           (list fetch-inputs!
-                 build-outputs!))))
+    (:do #:with pkginfo
+         fetch-inputs!
+         build-outputs!)))
 
 
 (define (fetch-inputs! inputs)
-  (:fold (hash)
+  (apply :do #:with (hash)
          (for/list ([input (in-list inputs)])
            (λ (links)
-             (:unit
-              (hash-set links
-                        (input-info-name input)
-                        ($with-output-intermediate (fetch-input input))))))))
+             (hash-set links
+                       (input-info-name input)
+                       ($with-messages-intermediate (fetch-input input)))))))
 
 
 (define (build-outputs! pkginfo)
-  (:fold null
+  (apply :do #:with null
          (for/list ([output (in-list (package-info-outputs pkginfo))])
            (λ (sandbox-values)
              (cons (build-derivation output)
@@ -120,16 +132,16 @@
                                       (package-info-racket-versions pkginfo))])
     (case racket-support
       [(supported)
-       (:unit pkginfo)]
+       (:return pkginfo)]
       [(unsupported)
        (if (XIDEN_ALLOW_UNSUPPORTED_RACKET)
-           (:unit pkginfo)
-           (:fail ($unsupported-racket-version pkginfo)))]
+           (:return pkginfo)
+           (attach-message #f ($unsupported-racket-version pkginfo)))]
       [(undeclared)
        (if (or (XIDEN_ALLOW_UNSUPPORTED_RACKET)
                (XIDEN_ALLOW_UNDECLARED_RACKET_VERSIONS))
-           (:unit pkginfo)
-           (:fail ($undeclared-racket-version pkginfo)))])))
+           (:return pkginfo)
+           (attach-message #f ($undeclared-racket-version pkginfo)))])))
 
 
 (define (make-sandbox path)
@@ -151,7 +163,7 @@
 
 
 (define (fetch-source/filesystem source make-file)
-  (with-handlers ([exn:fail? (λ (e) #f)])
+  (with-handlers ([exn:fail? (λ (e) (displayln e) ($verbose (exn->string e)))])
     (and (file-exists? source)
          (make-file (open-input-file source)
                     (+ (* 20 1024) ; for Mac OS resource forks
@@ -181,7 +193,7 @@
          (make-file i (mibibytes->bytes (XIDEN_FETCH_PKGDEF_SIZE_MB))))))
 
 
-(define (get-fetch-source-method source)
+(define (get-fetch-source-method)
   (disjoin fetch-source/filesystem
            fetch-source/http
            fetch-source/xiden-query
@@ -190,18 +202,15 @@
                         (λ (e) (const #f)))))
 
 
-(define (fetch-source source)
-  (define method
-    (get-fetch-source-method))
-
-  (define maybe-path
-    (method source
-            (λ (make-file in est-size)
-              (make-addressable-file source in est-size))))
-
-  (if maybe-path
-      (:unit maybe-path)
-      ($no-source-bytes source)))
+(define (fetch-source source request-transfer)
+  (:do #:with (get-fetch-source-method)
+       (λ (method)
+         (method source request-transfer))
+       (λ (maybe-path)
+         (:return maybe-path
+                  (if maybe-path
+                      null
+                      ($no-source-bytes source))))))
 
 
 
@@ -264,7 +273,7 @@
                          #:package-name "pkg"
                          #:racket-versions null))
     (check-equal? (check-racket-support pkginfo)
-                  ($with-output 1 #f (list ($undeclared-racket-version pkginfo)))))
+                  ($with-messages #f (list ($undeclared-racket-version pkginfo)))))
 
   (test-case "Detect packages that declare an unsupported Racket version"
     (define pkginfo
@@ -273,4 +282,4 @@
                          #:racket-versions (list "0.0")))
 
     (check-equal? (check-racket-support pkginfo)
-                  ($with-output 1 #f (list ($unsupported-racket-version pkginfo))))))
+                  ($with-messages #f (list ($unsupported-racket-version pkginfo))))))
