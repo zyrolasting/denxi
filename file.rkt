@@ -39,6 +39,7 @@
                            (not (path-cycles? p))
                            (use-dir? p)))))
 
+
 (define (in-racket-modules start-path)
   (sequence-filter (λ (p)
                      (and (not (link-exists? p))
@@ -57,6 +58,7 @@
      (when (and (file-exists? rel-path)
                 (ormap (λ (p) (regexp-match? p rel-path)) patterns))
        (yield rel-path)))))
+
 
 (define (in-workspace)
   (in-acyclic-directory (build-workspace-path)
@@ -82,8 +84,10 @@
         (begin (delete-directory next)
                (loop next (../ next))))))
 
+
 (define (directory-empty? path)
   (null? (directory-list path)))
+
 
 (define (call-with-temporary-directory f #:cd? [cd? #t])
   (define tmp-dir (make-temporary-file "rktdir~a" 'directory))
@@ -92,9 +96,11 @@
                         (f tmp-dir)))
                 (λ () (delete-directory/files tmp-dir))))
 
+
 (define-syntax-rule (with-temporary-directory body ...)
   (call-with-temporary-directory
    (λ (tmp-dir) body ...)))
+
 
 (module+ test
   (provide temp-fs dir >> test-workspace)
