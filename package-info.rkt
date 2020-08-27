@@ -5,17 +5,10 @@
 (require "contract.rkt")
 
 (provide (struct-out package-info)
-         (struct-out output-info)
-         (struct-out input-info)
          make-package-info
          read-package-info
          make-package-name
-         package-info->hash
-         (contract-out
-          [well-formed-output-info/c
-           flat-contract?]
-          [well-formed-input-info/c
-           flat-contract?]))
+         package-info->hash)
 
 
 (require racket/format
@@ -23,7 +16,10 @@
          "config.rkt"
          "encode.rkt"
          "message.rkt"
+         "input-info.rkt"
          "integrity.rkt"
+         "output-info.rkt"
+         "package-info-lang.rkt"
          "racket-version.rkt"
          "signature.rkt"
          "string.rkt"
@@ -31,6 +27,8 @@
          "workspace.rkt"
          "xiden-messages.rkt")
 
+(define input-forms-namespace
+  (module->namespace "package-info-lang.rkt"))
 
 
 (struct package-info
@@ -46,34 +44,6 @@
    description        ; A string describing the package
    home-page)         ; A related link to a project's home page
   #:prefab)
-
-(struct output-info
-  (name                 ; The name of the link used to reference the output of `builder-name`
-   builder-name         ; Matches the `input-info-name` of an input used as a Racket build module
-   builder-expressions) ; A list of expressions to eval in a sandbox
-  #:prefab)
-
-(struct input-info
-  (name       ; The name of the link used to reference input bytes
-   sources    ; Where to look to get bytes
-   integrity  ; Integrity information: Did I get the right bytes?
-   signature) ; Signature for authentication: Did the bytes come from someone I trust?
-  #:prefab)
-
-
-(define well-formed-input-info/c
-  (struct/c input-info
-            non-empty-string?
-            (non-empty-listof any/c)
-            (or/c #f well-formed-integrity-info/c)
-            (or/c #f well-formed-signature-info/c)))
-
-
-(define well-formed-output-info/c
-  (struct/c output-info
-            non-empty-string?
-            non-empty-string?
-            list?))
 
 
 (define (make-package-info
@@ -100,26 +70,6 @@
    tags
    description
    home-page))
-
-
-(define (merge-package-info a b)
-  (struct-copy package-info b
-               [inputs
-                (merge-package-lists
-                 #:get-name input-info-name
-                 (package-info-inputs a)
-                 (package-info-inputs b))]
-               [outputs
-                (merge-package-lists
-                 #:get-name output-info-name
-                 (package-info-outputs a)
-                 (package-info-outputs b))]))
-
-
-(define (merge-package-lists #:get-name get-name list-a list-b)
-  (hash-values (for/fold ([seen (hash)])
-                         ([v (sequence-append (in-list list-a) (in-list list-b))])
-                 (hash-set seen (get-name v) v))))
 
 
 (define (read-package-info in)

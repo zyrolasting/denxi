@@ -1,13 +1,15 @@
 #lang racket/base
 
-; Define a module language to express inputs
+; Define a module language for non-trivial expressions inside package
+; definitions.
 
 (require racket/contract
          racket/function
          racket/string
          "encode.rkt"
-         "package-info.rkt"
+         "input-info.rkt"
          "integrity.rkt"
+         "output-info.rkt"
          "signature.rkt")
 
 (provide #%app
@@ -62,7 +64,6 @@
   (output-info name
                builder-name
                exprs))
-
 
 (define integrity integrity-info)
 (define signature signature-info)
