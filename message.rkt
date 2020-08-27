@@ -37,6 +37,12 @@
            (-> (or/c $with-messages? $message? (listof $message?)) void?)]
           [current-output-emitter
            (parameter/c (or/c #f (-> $message? any)))]
+          [:lift
+           (-> (-> any/c)
+               (-> any/c $with-messages?))]
+          [:bind
+           (-> (-> any/c $with-messages?)
+               (-> $with-messages? $with-messages?))]
           [:merge
            (-> $with-messages? $with-messages? $with-messages?)]
           [:do
