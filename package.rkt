@@ -38,12 +38,29 @@
 (define-message $package (info))
 (define-message $package-installed $package ())
 
+
+(define (transfer-package-info from-source est-size)
+  (define max-size (mibibytes->bytes (XIDEN_FETCH_PKGDEF_SIZE_MB)))
+  (define-values (from-pipe to-pipe) (make-pipe max-size))
+  (define transfer-output
+    (transfer from-source to-pipe
+              #:transfer-name "package-info"
+              #:max-size max-size
+              #:buffer-size (mibibytes->bytes (max (/ (XIDEN_FETCH_PKGDEF_SIZE_MB) 5) 5))
+              #:timeout-ms (XIDEN_FETCH_TIMEOUT_MS)
+              #:est-size est-size))
+  (close-output-port to-pipe)
+  (:merge transfer-output
+          (:return (read-package-info from-pipe))))
+
+
 (define (make-package-path pkginfo)
   (build-workspace-path "var/xiden/pkg"
                         (make-package-name pkginfo)))
 
+
 (define (install-package-from-source source)
-  (:do #:with (fetch-source source transfer-package-info)
+  (:do #:with (fetch-named-source source source transfer-package-info)
        (λ (maybe-path)
          (if maybe-path
              (:return (read-package-info maybe-path))
@@ -52,16 +69,18 @@
 
 
 (define (make-package pkginfo)
-  (define path (make-package-path pkginfo))
-  (λ ()
-    (:do #:with (check-racket-support pkginfo))
-    (λ (supported?)
-      (if supported?
-          (apply :do
-                 (for/list ([output (in-list (package-info-outputs pkginfo))])
-                   (λ (_) (build-derivation output))))
-          (:return #f)))))
+  (:do #:with (check-racket-support pkginfo)
+       (λ (supported?)
+         (if supported?
+             (:return #f)))))
 
+
+(define (fold-inputs pkginfo)
+  (for/fold ([bound (hash)])
+            ([input (package-info-inputs pkginfo)])
+    (hash-set bound
+              (input-info-name input)
+              (input-info-fetch-info input))))
 
 (define (check-racket-support pkginfo)
   (let ([racket-support (check-racket-version-ranges (version) (package-info-racket-versions pkginfo))])

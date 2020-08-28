@@ -122,7 +122,7 @@
 ;; Begin runtime configuration space
 ;; =================================
 
-(define-xiden-setting XIDEN_SANDBOX_MEMORY_LIMIT_MB (>=/c 0) "-M" 30
+(define-xiden-setting XIDEN_SANDBOX_MEMORY_LIMIT_MB (>=/c 0) "-M" 200
   '("Total memory quota for a sandbox"
     "mibibytes"))
 

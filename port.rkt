@@ -135,7 +135,6 @@
     (check-eq? written size)
     (check-equal? (get-output-bytes bytes/sink #t) bstr))
 
-
   (test-pred "Prohibit unlimited transfers unless max-size agrees"
             $transfer-small-budget?
             (car ($with-messages-accumulated

@@ -15,17 +15,16 @@
           [url->maybe-path (->* (url?) (path-string?) (or/c #f path?))]
           [url-string? predicate/c]
           [merge-urls (-> url? url? url?)]
-          [map/service-endpoints (-> string? (listof url-string?) (listof url-string?))]))
+          [map/service-endpoints (-> string? (listof url-string?) (listof url?))]))
 
 
 (define (map/service-endpoints to-add endpoints)
   (map (λ (url-string)
          (define u (string->url url-string))
-         (url->string
-          (struct-copy url u
-                       [path
-                        (append (url-path u)
-                                (list (path/param to-add null)))])))
+         (struct-copy url u
+                      [path
+                       (append (url-path u)
+                               (list (path/param to-add null)))]))
        endpoints))
 
 

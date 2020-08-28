@@ -7,6 +7,8 @@
          path-string?))
 
 (provide (contract-out
+          [get-objects-directory
+           (-> complete-path?)]
           [build-object-path
            (-> bytes? complete-path?)]
           [find-latest-package-id
@@ -14,9 +16,7 @@
           [get-derivation-directory
            (-> exact-positive-integer? path-string?)]
           [make-addressable-file
-           (-> non-empty-string? input-port? (or/c +inf.0 exact-positive-integer?) complete-path?)]
-          [declare-file
-           (-> bytes? input-path/c void?)]))
+           (-> non-empty-string? input-port? (or/c +inf.0 exact-positive-integer?) complete-path?)]))
 
 (require "db.rkt"
          "encode.rkt"
@@ -39,10 +39,13 @@
 (define (get-localstate-path)
   (build-workspace-path "var/xiden/db"))
 
-(define (build-object-path digest)
+(define (get-objects-directory)
   (build-workspace-path
-   "var/xiden/objects"
-   (encoded-file-name digest)))
+   "var/xiden/objects"))
+
+(define (build-object-path digest)
+  (build-path (get-objects-directory)
+              (encoded-file-name digest)))
 
 (define (connect)
   (define db-path (get-localstate-path))
@@ -53,21 +56,6 @@
 
 (define-syntax-rule (define-state-procedure (sig ...) body ...)
   (define (sig ...) (unless (current-db-connection) (initialize!)) body ...))
-
-(define-state-procedure (declare-file digest path)
-  (with-handlers ([exn:fail:sql?
-                   (λ (e)
-                     (if (eq? (exn:fail:sql-sqlstate e) 'constraint)
-                         (raise-user-error 'declare-file
-                                           "Cannot redeclare ~a."
-                                           path)
-                         (raise e)))])
-    (query-exec+ "insert into files values (NULL, ?, ?);"
-                 (if (path? path)
-                     (path->string path)
-                     path)
-                 digest)
-    (:return path ($declare-input digest path))))
 
 (define-state-procedure (declare-package pkginfo)
   (query-exec+ "insert into packages values (NULL, ?, ?, ?, ?, ?);"
@@ -109,7 +97,7 @@
     void
     (λ ()
       (with-handlers ([values (λ (e) (delete-file* tmp) (raise e))])
-        (define bytes-written
+        (define transfer-output-with-messages
           (call-with-output-file tmp #:exists 'truncate/replace
             (λ (to-file)
               (transfer in to-file
@@ -122,7 +110,8 @@
         (define path (build-object-path digest))
         (make-directory* (path-only path))
         (rename-file-or-directory tmp path #t)
-        (declare-file digest path)))
+        (:merge transfer-output-with-messages
+                (:return path))))
     (λ () (close-input-port in))))
 
 

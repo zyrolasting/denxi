@@ -49,6 +49,7 @@
 (define+provide-message $fetch-signature-trust-unsigned $fetch-signature ())
 (define+provide-message $fetch-signature-unchecked $fetch-signature ())
 (define+provide-message $fetch-signature-verified $fetch-signature ())
+(define+provide-message $unverified-host (url))
 
 
 ; Implementation follows

@@ -19,15 +19,11 @@
          "input-info.rkt"
          "integrity.rkt"
          "output-info.rkt"
-         "package-info-lang.rkt"
          "racket-version.rkt"
          "signature.rkt"
          "string.rkt"
          "url.rkt"
          "workspace.rkt")
-
-(define input-forms-namespace
-  (module->namespace "package-info-lang.rkt"))
 
 
 (struct package-info
