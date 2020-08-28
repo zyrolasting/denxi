@@ -3,18 +3,29 @@
 ; Define means for fetching bytes from some origin.
 
 (require "contract.rkt")
+
+(define request-transfer/c
+  (-> (or/c #f non-empty-string?)
+      input-port?
+      (or/c +inf.0 exact-positive-integer?)
+      any/c))
+
+
 (provide (struct-out fetch-info)
          (contract-out
-          [fetch-source
-           (-> string?
-               (-> input-port?
-                   (or/c +inf.0 exact-positive-integer?)
-                   any/c)
-               any/c)]
-          [transfer-package-info
-           (-> input-port?
-               (or/c +inf.0 exact-positive-integer?)
-               ($with-messages/c package-info?))]
+          [fetch*
+           (-> (listof well-formed-fetch-info/c)
+               request-transfer/c
+               ($with-messages/c any/c))]
+          [fetch
+           (-> well-formed-fetch-info/c
+               request-transfer/c
+               ($with-messages/c any/c))]
+          [fetch-named-source
+           (-> non-empty-string?
+               string?
+               request-transfer/c
+               ($with-messages/c any/c))]
           [well-formed-fetch-info/c
            flat-contract?]))
 
@@ -22,6 +33,7 @@
 ; when trying to procure bytes.
 
 (require "message.rkt")
+
 (define+provide-message $source (user-string))
 (define+provide-message $source-method-ruled-out $source (reason))
 (define+provide-message $source-fetched $source ())
@@ -48,7 +60,6 @@
          "file.rkt"
          "integrity.rkt"
          "localstate.rkt"
-         "message.rkt"
          "mod.rkt"
          "package-info.rkt"
          "path.rkt"
@@ -61,7 +72,7 @@
 
 
 (struct fetch-info
-  (name       ; The name of the link used to reference input bytes
+  (name       ; A name to bind to fetched bytes
    sources    ; Where to look to get bytes
    integrity  ; Integrity information: Did I get the right bytes?
    signature) ; Signature for authentication: Did the bytes come from someone I trust?
@@ -98,13 +109,18 @@
 
 
 (define (fetch-exact-source info source request-transfer)
-  (:do #:with (fetch-source source request-transfer)
+  (:do #:with (fetch-named-source
+               (format "~a <- ~a" (fetch-info-name info) source)
+               source
+               request-transfer)
        (λ (path) (check-fetch-integrity info source path))
        (λ (path) (check-fetch-signature info source path))))
 
 
-(define (fetch-source source request-transfer)
+(define (fetch-named-source name source request-transfer)
   (define (mod-fallback . _) (const #f))
+  (define request-transfer/reduced (curry request-transfer name))
+
   ; The fetch procedures can just return #f if they cannot
   ; find something. This instruments the procedures so that
   ; they can be composed below.
@@ -116,7 +132,7 @@
             ([exn:fail?
               (λ (e)
                 (attach-message #f ($source-method-ruled-out source (exn->string e))))])
-            (let ([maybe-result (f source request-transfer)])
+            (let ([maybe-result (f source request-transfer/reduced)])
               (if maybe-result
                   (:return maybe-result)
                   (attach-message #f
@@ -166,20 +182,6 @@
          (close-output-port o)
          (make-file i (mibibytes->bytes (XIDEN_FETCH_PKGDEF_SIZE_MB))))))
 
-
-(define (transfer-package-info from-source est-size)
-  (define max-size (mibibytes->bytes (XIDEN_FETCH_PKGDEF_SIZE_MB)))
-  (define-values (from-pipe to-pipe) (make-pipe max-size))
-  (define transfer-output
-    (transfer from-source to-pipe
-              #:transfer-name "package-info"
-              #:max-size max-size
-              #:buffer-size (mibibytes->bytes (max (/ (XIDEN_FETCH_PKGDEF_SIZE_MB) 5) 5))
-              #:timeout-ms (XIDEN_FETCH_TIMEOUT_MS)
-              #:est-size est-size))
-  (close-output-port to-pipe)
-  (:merge transfer-output
-          (:return (read-package-info from-pipe))))
 
 
 ; I add any cached path as a source so that it goes through
@@ -233,9 +235,12 @@
 
   (define mod-source "====[{]::[}]====")
 
+  (define (fetch-source source make-file)
+    (fetch-named-source "anon" source make-file))
+
   (define (try-mod-fetch)
     (fetch-source mod-source
-                  (λ (in est-size)
+                  (λ (name in est-size)
                     (check-equal? est-size (string-length mod-source))
                     (check-equal? (read-string est-size in) mod-source))))
 
@@ -247,9 +252,10 @@
        (test-equal? "Fetch from file"
                     (fetch-source
                      source
-                     (λ (in est-size)
-                       (test-equal? "Can read file" (read in) plugin-module-datum)
-                       (test-true "Can estimate file size" (>= est-size (file-size tmp)))
+                     (λ (name in est-size)
+                       (test-equal? "See bound name" name "anon")
+                       (test-equal? "Read file" (read in) plugin-module-datum)
+                       (test-true "Estimate file size" (>= est-size (file-size tmp)))
                        'some-value))
                     (attach-message 'some-value ($source-fetched source)))
 
@@ -289,7 +295,7 @@
 
     (define fetch-output
       (fetch-source source
-                    (λ (in est-size)
+                    (λ (name in est-size)
                       (check-eq? est-size 5)
                       (check-equal? (read-bytes est-size in) #"12345")
                       (kill-thread th)
