@@ -28,6 +28,7 @@
          "rc.rkt"
          "sentry.rkt"
          "setting.rkt"
+         "source.rkt"
          "worker.rkt"
          "workspace.rkt")
 
