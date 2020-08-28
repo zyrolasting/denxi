@@ -97,15 +97,11 @@
     (query-exec+ create-query))
   (query-exec+ "pragma foreign_keys = on;"))
 
-
 (define (in-installed-derivations pkginfo)
   (in-query+ "select path from derivations;"))
 
 (define (get-derivation-directory package-id)
   (query-value+ "select path from derivations where package_id=?;" package-id))
-
-(define (mibibytes->bytes mib)
-  (inexact->exact (ceiling (* mib 1024 1024))))
 
 (define (make-addressable-file name in est-size)
   (define tmp (build-object-path #"tmp"))

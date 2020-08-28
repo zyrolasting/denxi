@@ -10,6 +10,8 @@
 
 (provide (all-from-out racket/port)
          (contract-out
+          [mibibytes->bytes
+           (-> real? exact-nonnegative-integer?)]
           [transfer
            (-> input-port?
                output-port?
@@ -27,6 +29,9 @@
 (define+provide-message $transfer-over-budget $transfer ())
 (define+provide-message $transfer-timeout $transfer ())
 
+
+(define (mibibytes->bytes mib)
+  (inexact->exact (ceiling (* mib 1024 1024))))
 
 (define (transfer from to
                   #:max-size max-size
@@ -94,6 +99,14 @@
 
 (module+ test
   (require rackunit)
+
+  (test-case "Convert mibibytes to bytes"
+    (check-eq? (mibibytes->bytes 0) 0)
+    (check-eqv? (mibibytes->bytes 1)
+                1048576)
+    (test-equal? "Allow real number expressions for mibibytes"
+                 (mibibytes->bytes (/ 1 2))
+                 (/ 1048576 2)))
 
   (test-case "Transfer bytes transparently"
     (define bstr #"ABCDEFG")
