@@ -52,12 +52,14 @@
 
 (define (make-package pkginfo)
   (define path (make-package-path pkginfo))
-  (λ (outputs)
-    (make-directory* path)
-    (parameterize ([current-directory path])
-      (apply :do
-             (for/list ([output (in-list outputs)])
-               (λ (_) (build-derivation output)))))))
+  (λ ()
+    (:do #:with (check-racket-support pkginfo))
+    (λ (supported?)
+      (if supported?
+          (apply :do
+                 (for/list ([output (in-list (package-info-outputs pkginfo))])
+                   (λ (_) (build-derivation output))))
+          (:return #f)))))
 
 
 (define (check-racket-support pkginfo)

@@ -10,12 +10,9 @@
          make-sandbox
          (contract-out
           [build-derivation
-           (-> well-formed-output-info/c
-               list?)]))
-
+           (-> well-formed-derivation/c list?)]))
 
 (require racket/function
-         racket/generator
          racket/path
          racket/pretty
          racket/sandbox
@@ -46,7 +43,6 @@
          "output-info.rkt"
          "workspace.rkt")
 
-
 (define+provide-message $consent-note ())
 (define+provide-message $input (info))
 (define+provide-message $input-integrity $input (source))
@@ -70,10 +66,17 @@
 (define+provide-message $source-unfetched $source ())
 (define+provide-message $unverified-host (url))
 
+
 (define (mibibytes->bytes mib)
   (inexact->exact (ceiling (* mib 1024 1024))))
 
 (struct derivation (inputs output) #:prefab)
+
+(define well-formed-derivation/c
+  (struct/c derivation
+            (listof well-formed-input-info/c)
+            well-formed-output-info/c))
+
 
 (define (build-derivation drv)
   (:do #:with (fetch-inputs (derivation-inputs drv))
