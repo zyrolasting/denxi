@@ -34,6 +34,7 @@
            rackunit)
 
   (define-message $derived (a b c))
+  (define-message $child $derived (d))
 
   (test-case "Destructure a $message"
     (define msg ($derived 1 2 3))
@@ -44,6 +45,12 @@
     (test-equal? "Convert symbol for message id to method id"
                  (message-id->method-id key)
                  'handle-$derived)
+
+    (test-case "Destructure message subtypes"
+      (define msg ($child 1 2 3 4))
+      (define-values (key args) (destructure-message msg))
+      (check-eq? key 'struct:$child)
+      (check-equal? args '(1 2 3 4)))
 
     (test-case "Call actor% methods with messages"
       (define got #f)
