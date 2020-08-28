@@ -31,8 +31,10 @@
          "port.rkt"
          "query.rkt"
          "string.rkt"
-         "workspace.rkt"
-         "xiden-messages.rkt")
+         "workspace.rkt")
+
+(define+provide-message $init-localstate (path))
+(define+provide-message $declare-input (digest path))
 
 (define (get-localstate-path)
   (build-workspace-path "var/xiden/db"))

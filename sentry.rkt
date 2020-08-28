@@ -9,8 +9,13 @@
 (provide (all-defined-out))
 (require racket/place
          "actor.rkt"
-         "message.rkt"
-         "xiden-messages.rkt")
+         "message.rkt")
+
+(define+provide-message $fail (to-display))
+(define+provide-message $sentinel ())
+(define+provide-message $start (workspace-dir config))
+(define+provide-message $stop ())
+(define+provide-message $output (v))
 
 ; Communicate only on place channel. Avoid ports for simplicity.
 (define sentry%

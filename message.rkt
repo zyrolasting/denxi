@@ -18,7 +18,10 @@
 ; an imperative style when it makes sense.
 
 
-(require "contract.rkt")
+(require "contract.rkt"
+         (for-syntax racket/base
+                     racket/syntax
+                     syntax/stx))
 
 (provide (struct-out $message)
          accumulate-messages
@@ -54,7 +57,6 @@
 
 (struct $message () #:prefab)
 
-
 (define-syntax define-message
   (syntax-rules ()
     [(_ id super-id (fields ...))
@@ -68,6 +70,10 @@
          (define-message id rem ...)))
 
 
+(define+provide-message $show-datum (value))
+(define+provide-message $show-string (message))
+(define+provide-message $unrecognized-command (command))
+(define+provide-message $verbose (message))
 (define+provide-message $with-messages (intermediate accumulated))
 
 
@@ -105,6 +111,8 @@
         (apply :do #:with ((:bind (car fs)) v)
                (cdr fs)))))
 
+(define (:fold fs)
+  (apply :do (map (λ (f) (λ (v) (:merge v (f)))) fs)))
 
 (define (attach-message value message)
   ($with-messages value (list message)))

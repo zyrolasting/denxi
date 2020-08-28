@@ -24,8 +24,7 @@
                      syntax/parse
                      syntax/stx)
          "string.rkt"
-         "url.rkt"
-         "xiden-messages.rkt")
+         "url.rkt")
 
 
 (struct setting (id valid? parameter derived-parameter short-flag long-flag help-strings)

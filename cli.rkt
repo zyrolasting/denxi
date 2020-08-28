@@ -19,9 +19,9 @@
          "archiving.rkt"
          "config.rkt"
          "contract.rkt"
+         "derivation.rkt"
          "file.rkt"
          "format.rkt"
-         "input-forms-lang.rkt"
          "integrity.rkt"
          "localstate.rkt"
          "message.rkt"
@@ -30,6 +30,7 @@
          "printer.rkt"
          "query.rkt"
          "rc.rkt"
+         "sentry.rkt"
          "setting.rkt"
          "signature.rkt"
          "string.rkt"
@@ -37,8 +38,7 @@
          "url.rkt"
          "openssl.rkt"
          "worker.rkt"
-         "workspace.rkt"
-         "xiden-messages.rkt")
+         "workspace.rkt")
 
 
 (module+ main
@@ -150,7 +150,7 @@ EOF
                                                          rel-path)
                                              link-path)
                 (:return 0))
-         (attach-message 1 ($no-package-found))))))
+         (attach-message 1 ($show-string "No package found"))))))
 
 
 (define (config-command args)
@@ -158,7 +158,7 @@ EOF
     (define maybe-selected-setting (setting-ref name))
     (if maybe-selected-setting
         (:return maybe-selected-setting)
-        (attach-message #f ($no-such-setting))))
+        (attach-message #f ($setting-not-found name))))
 
   (run-command-line
    #:program "config"
@@ -176,7 +176,7 @@ EOF
            (define maybe-selected-setting (setting-ref name))
            (if maybe-selected-setting
                (attach-message 0 ($show-datum (maybe-selected-setting)))
-               (attach-message 1 ($no-such-setting)))))]
+               (attach-message 1 ($setting-not-found name)))))]
 
 
        ["dump"
@@ -199,7 +199,7 @@ EOF
                (with-handlers ([exn:fail?
                                 (λ (e)
                                   (attach-message 1
-                                                  ($reject-user-setting
+                                                  ($setting-value-rejected
                                                    (setting-id maybe-selected-setting)
                                                    value-string
                                                    (if (exn:fail:contract? e)
@@ -209,7 +209,7 @@ EOF
                  (attach-message 0
                                  (maybe-selected-setting (read (open-input-string value-string))
                                                          save-xiden-settings!)))
-               (attach-message 1 ($no-such-setting)))))]
+               (attach-message 1 ($setting-not-found name)))))]
 
        [_
         (attach-message 1 ($unrecognized-command action))]))

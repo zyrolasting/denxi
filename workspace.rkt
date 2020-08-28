@@ -8,9 +8,12 @@
 
 (require racket/contract
          racket/path
-         "encode.rkt")
+         "encode.rkt"
+         "message.rkt")
 
 (define CONVENTIONAL_WORKSPACE_NAME "xiden-workspace")
+
+(define+provide-message $invalid-workspace-envvar ())
 
 (define (find-workspace-directory [current-dir (current-directory)])
   (define complete-current-dir (simplify-path (path->complete-path current-dir)))

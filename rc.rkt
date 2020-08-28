@@ -30,13 +30,15 @@
          "message.rkt"
          "setting.rkt"
          "url.rkt"
-         "workspace.rkt"
-         "xiden-messages.rkt")
+         "workspace.rkt")
 
+(define+provide-message $setting (name))
+(define+provide-message $setting-accepted $setting (value))
+(define+provide-message $no-setting-sources ())
+(define+provide-message $setting-not-found $setting ())
+(define+provide-message $setting-value-unreadable $setting (source-name))
+(define+provide-message $setting-value-rejected $setting (value expected))
 
-(define-exn exn:fail:user:xiden:config exn:fail:xiden ())
-(define-exn exn:fail:user:xiden:config:unreadable-setting exn:fail:user:xiden:config ())
-(define-exn exn:fail:user:xiden:config:invalid-setting-value exn:fail:user:xiden:config ())
 
 (define current-xiden-rcfile-cache (make-parameter void))
 

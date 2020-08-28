@@ -26,8 +26,10 @@
          "team.rkt"
          "url.rkt"
          "openssl.rkt"
-         "workspace.rkt"
-         "xiden-messages.rkt")
+         "workspace.rkt")
+
+(define+provide-message $compilation-error (module-path message))
+(define+provide-message $module-compiled (module-path))
 
 (define xiden-worker%
   (class actor%

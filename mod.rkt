@@ -18,8 +18,9 @@
    (-> symbol? (-> any/c) $with-output?)]))
 
 (require "message.rkt"
-         "rc.rkt"
-         "xiden-messages.rkt")
+         "rc.rkt")
+
+(define+provide-message $mod-load-failure (path original-error-string))
 
 (define (load-plugin key fail-thunk on-load-failure)
   (define maybe-path (XIDEN_MODS_MODULE))

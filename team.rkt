@@ -9,8 +9,7 @@
          racket/place
          racket/runtime-path
          "sentry.rkt"
-         "workspace.rkt"
-         "xiden-messages.rkt")
+         "workspace.rkt")
 
 (define suggested-worker-count
   (max 1 (sub1 (processor-count))))
