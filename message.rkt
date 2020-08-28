@@ -30,6 +30,8 @@
          imperative-style
          with-message-emitter
          (contract-out
+          [find-message
+           (-> (-> $message? any/c) $with-messages? (or/c #f $message?))]
           [attach-message
            (-> any/c $message? $with-messages?)]
           [call-with-message-emitter
@@ -41,7 +43,7 @@
           [current-output-emitter
            (parameter/c (or/c #f (-> $message? any)))]
           [:lift
-           (-> (-> any/c)
+           (-> (-> any/c any/c)
                (-> any/c $with-messages?))]
           [:bind
            (-> (-> any/c $with-messages?)
@@ -160,6 +162,8 @@
          (for ([m (in-list msg)])
            (emit-message! m))]))
 
+(define (find-message ? $)
+  (findf ? ($with-messages-accumulated $)))
 
 (module+ test
   (require racket/function

@@ -65,6 +65,7 @@
 (define+provide-message $sandbox-error (line))
 (define+provide-message $sandbox-output (line))
 (define+provide-message $source (user-string))
+(define+provide-message $source-method-ruled-out $source (reason))
 (define+provide-message $source-fetched $source ())
 (define+provide-message $source-unfetched $source ())
 (define+provide-message $unverified-host (url))
@@ -129,27 +130,28 @@
 
 
 (define (fetch-source/filesystem source make-file)
-  (with-handlers ([exn:fail? (λ (e) ($show-string (exn->string e)))])
-    (and (file-exists? source)
-         (make-file (open-input-file source)
-                    (+ (* 20 1024) ; for Mac OS resource forks
-                       (file-size source))))))
+  (and (file-exists? source)
+       (make-file (open-input-file source)
+                  (+ (* 20 1024) ; for Mac OS resource forks
+                     (file-size source)))))
 
 
 (define (fetch-source/http source make-file)
-  (with-handlers ([exn:fail? (λ (e) #f)])
-    (define in (head-impure-port (string->url source)))
-    (define headers (extract-all-fields (port->bytes in)))
-    (define est-size (string->number (bytes->string/utf-8 (extract-field #"content-length" headers))))
-    (make-file (get-pure-port #:redirections (XIDEN_DOWNLOAD_MAX_REDIRECTS) (string->url source))
-               est-size)))
+  (define in (head-impure-port (string->url source)))
+  (define headers (extract-all-fields (port->string in)))
+  (define content-length-pair (assf (λ (el) (equal? (string-downcase el) "content-length")) headers))
+  (define est-size
+    (if content-length-pair
+        (string->number (or (cdr content-length-pair) "+inf.0"))
+        "+inf.0"))
+  (make-file (get-pure-port #:redirections (XIDEN_DOWNLOAD_MAX_REDIRECTS) (string->url source))
+             est-size))
 
 
 (define (fetch-source/xiden-query source make-file)
   (define pkginfo
     (for/or ([u (in-list (map/service-endpoints source (XIDEN_SERVICE_ENDPOINTS)))])
-      (with-handlers ([exn:fail? (λ (e) #f)])
-        (read-package-info (get-pure-port u #:redirections (XIDEN_DOWNLOAD_MAX_REDIRECTS))))))
+      (read-package-info (get-pure-port u #:redirections (XIDEN_DOWNLOAD_MAX_REDIRECTS)))))
   (and pkginfo
        (let-values ([(i o) (make-pipe)])
          (write-config #:pretty? #t (package-info->hash pkginfo) null o)
@@ -158,21 +160,51 @@
          (make-file i (mibibytes->bytes (XIDEN_FETCH_PKGDEF_SIZE_MB))))))
 
 
-(define (get-fetch-source-method)
-  (disjoin fetch-source/filesystem
-           fetch-source/http
-           fetch-source/xiden-query
-           (load-plugin 'fetch-source
-                        (λ () (const #f))
-                        (λ (e) (const #f)))))
-
-
 (define (fetch-source source request-transfer)
-  (define maybe-path ((get-fetch-source-method) source request-transfer))
-  (attach-message maybe-path
-                  (if maybe-path
-                      ($source-fetched source)
-                      ($source-unfetched source))))
+  (define (mod-fallback . _) (const #f))
+
+
+  ; The fetch procedures can just return #f if they cannot
+  ; find something. This instruments the procedures so that
+  ; they can be composed in fetch-source.
+  (define (lift-fetch-source-method f method-name)
+    (λ (status)
+      (if status
+          (:return status)
+          (with-handlers
+            ([exn:fail?
+              (λ (e)
+                (attach-message #f ($source-method-ruled-out source (exn->string e))))])
+            (let ([maybe-result (f source request-transfer)])
+              (if maybe-result
+                  (:return maybe-result)
+                  (attach-message
+                   #f
+                   ($source-method-ruled-out source
+                                             (format "Method produced nothing: ~a"
+                                                     method-name)))))))))
+
+  (:do #:with (:return (fetch-source/filesystem source request-transfer))
+       (lift-fetch-source-method fetch-source/http "HTTP")
+       (lift-fetch-source-method fetch-source/xiden-query "Package query")
+       (lift-fetch-source-method (load-plugin 'fetch-source mod-fallback mod-fallback) "Plugin")
+       (λ (maybe-path)
+         (attach-message maybe-path
+                         (if maybe-path
+                             ($source-fetched source)
+                             ($source-unfetched source))))))
+
+
+(define (fetch-inputs inputs)
+  (apply :do #:with (hash)
+         (for/list ([input (in-list inputs)])
+           (λ (links)
+             (define fetch-res (fetch-input input))
+             (:merge fetch-res
+                     (:return
+                      (hash-set links
+                                (input-info-name input)
+                                ($with-messages-intermediate fetch-res))))))))
 
 
 (define (fetch-input input request-transfer)
@@ -184,16 +216,6 @@
                       (cons (path->string existing)
                             (input-info-sources input))
                       (input-info-sources input)))))
-
-
-(define (fetch-inputs inputs)
-  (apply :do #:with (hash)
-         (for/list ([input (in-list inputs)])
-           (λ (links)
-             (hash-set links
-                       (input-info-name input)
-                       ($with-messages-intermediate
-                        (fetch-input input)))))))
 
 
 (define (get-maybe-existing-input-path input)
@@ -248,8 +270,79 @@
 
 
 (module+ test
-  (require racket/file rackunit)
+  (require racket/file
+           racket/tcp
+           rackunit
+           "setting.rkt")
 
-  (test-case "Create a directory tree using a derivation"
+  (define plugin-module-datum
+    '(module mods racket/base
+       (provide fetch-source)
+       (define (fetch-source source make-file)
+         (make-file (open-input-string source)
+                    (string-length source)))))
 
-    ))
+  (define mod-source "====[{]::[}]====")
+
+  (define (try-mod-fetch)
+    (fetch-source mod-source
+                  (λ (in est-size)
+                    (check-equal? est-size (string-length mod-source))
+                    (check-equal? (read-string est-size in) mod-source))))
+
+  (call-with-temporary-file
+   (λ (tmp)
+     (write-to-file plugin-module-datum tmp #:exists 'truncate/replace)
+     (parameterize ([(setting-derived-parameter XIDEN_MODS_MODULE) tmp])
+       (define source (path->string tmp))
+       (test-equal? "Fetch from file"
+                    (fetch-source
+                     source
+                     (λ (in est-size)
+                       (test-equal? "Can read file" (read in) plugin-module-datum)
+                       (test-true "Can estimate file size" (>= est-size (file-size tmp)))
+                       'some-value))
+                    (attach-message 'some-value ($source-fetched source)))
+
+       (test-equal? "Fetch from mod"
+                    (find-message $source-fetched? (try-mod-fetch))
+                    ($source-fetched mod-source)))))
+
+  ; Notice we just left the parameterize that set the mod path
+  (test-case "Investigate fetch failures"
+    (define fetch-output (try-mod-fetch))
+    (test-equal? "Fetch fails when mod is not available"
+                 (find-message $source-unfetched? fetch-output)
+                 ($source-unfetched mod-source))
+    (check-false (null? (filter $source-method-ruled-out? ($with-messages-accumulated fetch-output)))))
+
+  (test-case "Fetch over HTTP"
+    (define listener (tcp-listen 8018 1 #t))
+    (define th
+      (thread
+       (λ ()
+         (let loop ([num 0])
+           (define-values (in out) (tcp-accept listener))
+           (display "HTTP/1.1 200 OK\r\n" out)
+           (display "https: //www.example.com/\r\n" out)
+           (display "Content-Type: text/html; charset=UTF-8\r\n" out)
+           (display "Date: Fri, 28 Aug 2020 04:02:21 GMT\r\n" out)
+           (display "Server: foo\r\n" out)
+           (display "Content-Length: 5\r\n\r\n" out)
+           (unless (= num 0)
+             (display "12345" out))
+           (flush-output out)
+           (close-output-port out)
+           (close-input-port in)
+           (loop (add1 num))))))
+
+    (define source "http://127.0.0.1:8018")
+    (check-equal?
+     (fetch-source source
+                   (λ (in est-size)
+                     (check-eq? est-size 5)
+                     (check-equal? (read-bytes est-size in) #"12345")
+                     (kill-thread th)
+                     (tcp-close listener)))
+     (attach-message (void)
+                     ($source-fetched source)))))

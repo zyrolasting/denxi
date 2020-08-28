@@ -96,6 +96,12 @@
                         (f tmp-dir)))
                 (λ () (delete-directory/files tmp-dir))))
 
+(define (call-with-temporary-file proc)
+  (define tmp (make-temporary-file "~a"))
+  (dynamic-wind void
+                (λ () (proc tmp))
+                (λ () (delete-file tmp))))
+
 
 (define-syntax-rule (with-temporary-directory body ...)
   (call-with-temporary-directory
