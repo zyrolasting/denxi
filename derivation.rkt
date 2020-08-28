@@ -4,11 +4,11 @@
 ; unique and internally-consistent directories on disk.
 
 (require "contract.rkt")
-
 (provide make-sandbox
          (contract-out
           [build-derivation
            (-> well-formed-derivation/c list?)]))
+
 
 (require racket/function
          racket/path
@@ -42,18 +42,8 @@
          "output-info.rkt"
          "workspace.rkt")
 
+
 (define+provide-message $consent-note ())
-(define+provide-message $input (info))
-(define+provide-message $input-integrity $input (source))
-(define+provide-message $input-integrity-assumed  $input-integrity ())
-(define+provide-message $input-integrity-mismatch $input-integrity ())
-(define+provide-message $input-integrity-verified $input-integrity ())
-(define+provide-message $input-signature $input (source))
-(define+provide-message $input-signature-mismatch $input-signature ())
-(define+provide-message $input-signature-missing $input-signature ())
-(define+provide-message $input-signature-trust-unsigned $input-signature ())
-(define+provide-message $input-signature-unchecked $input-signature ())
-(define+provide-message $input-signature-verified $input-signature ())
 (define+provide-message $no-package-info (source))
 (define+provide-message $sandbox ())
 (define+provide-message $sandbox-crash (exn-string))
@@ -70,8 +60,9 @@
 
 
 (define (build-derivation drv)
-  (:do #:with (fetch-inputs (derivation-inputs drv))
-       (λ (input-bindings) (make-refs input-bindings))
+  (:do #:with (fetch* (derivation-inputs drv) make-input-file)
+       (λ (input-bindings)
+         (make-refs input-bindings))
        (λ (_) (run-builder (derivation-output drv)))))
 
 
@@ -131,64 +122,6 @@
   (append (map (λ (input-path) (list 'read input-path)) input-files)
           (cons (list 'write build-directory)
                 (XIDEN_SANDBOX_PATH_PERMISSIONS))))
-
-
-(define (fetch-inputs inputs)
-  (apply :do #:with (hash)
-         (for/list ([input (in-list inputs)])
-           (λ (links)
-             (define fetch-res (fetch-input input))
-             (:merge fetch-res
-                     (:return
-                      (hash-set links
-                                (input-info-name input)
-                                ($with-messages-intermediate fetch-res))))))))
-
-
-(define (fetch-input input request-transfer)
-  (apply :do (map (λ (source) (fetch-exact-source input source))
-                  (get-input-sources input))))
-
-; I add any cached path as a source so that it goes through
-; validation. This captures local tampering.
-(define (get-input-sources input)
-  (with-handlers ([exn? (λ _ (input-info-sources input))])
-    (define path
-      (build-object-path
-       (integrity-info-digest
-        (input-info-integrity input))))
-    (if (file-exists? path)
-        (cons (path->string path)
-              (input-info-sources input))
-        (input-info-sources input))))
-
-
-(define (fetch-exact-source input source request-transfer)
-  (:do #:with (fetch-source source request-transfer)
-       (λ (path) (check-input-integrity input source path))
-       (λ (path) (check-input-signature input source path))))
-
-
-(define (check-input-integrity input source path)
-  (if (XIDEN_TRUST_BAD_DIGEST)
-      (attach-message path ($input-integrity-assumed input source))
-      (if (check-integrity (input-info-integrity input) path)
-          (attach-message path ($input-integrity-verified input source))
-          (raise (attach-message #f ($input-integrity-mismatch input source))))))
-
-
-(define (check-input-signature input source path)
-  (if (XIDEN_TRUST_BAD_DIGEST)
-      (attach-message path ($input-signature-unchecked input source))
-      (if (XIDEN_TRUST_UNSIGNED)
-          (attach-message path ($input-signature-trust-unsigned input source))
-          (if (check-signature (integrity-info-digest (input-info-integrity input))
-                               (signature-info-body (input-info-signature input))
-                               (signature-info-pubkey (input-info-signature input)))
-              (attach-message path ($input-signature-verified input source))
-              (raise (attach-message #f ($input-signature-mismatch input source)))))))
-
-
 
 (module+ test
   (require rackunit))

@@ -1,28 +1,53 @@
 #lang racket/base
 
-; Define methods for fetching bytes from some origin when given only a
-; string.
+; Define means for fetching bytes from some origin.
 
 (require "contract.rkt")
-(provide
- (contract-out
-  [fetch-source
-   (-> string?
-       (-> input-port?
-           (or/c +inf.0 exact-positive-integer?)
-           any/c)
-       any/c)]
-  [transfer-package-info
-   (-> input-port?
-       (or/c +inf.0 exact-positive-integer?)
-       ($with-messages/c package-info?))]))
+(provide (struct-out fetch-info)
+         (contract-out
+          [fetch-source
+           (-> string?
+               (-> input-port?
+                   (or/c +inf.0 exact-positive-integer?)
+                   any/c)
+               any/c)]
+          [transfer-package-info
+           (-> input-port?
+               (or/c +inf.0 exact-positive-integer?)
+               ($with-messages/c package-info?))]
+          [well-formed-fetch-info/c
+           flat-contract?]))
 
+; Define a message space to capture what goes wrong or right
+; when trying to procure bytes.
+
+(require "message.rkt")
+(define+provide-message $source (user-string))
+(define+provide-message $source-method-ruled-out $source (reason))
+(define+provide-message $source-fetched $source ())
+(define+provide-message $source-unfetched $source ())
+(define+provide-message $fetch (info))
+(define+provide-message $fetch-integrity $fetch (source))
+(define+provide-message $fetch-integrity-assumed  $fetch-integrity ())
+(define+provide-message $fetch-integrity-mismatch $fetch-integrity ())
+(define+provide-message $fetch-integrity-verified $fetch-integrity ())
+(define+provide-message $fetch-signature $fetch (source))
+(define+provide-message $fetch-signature-mismatch $fetch-signature ())
+(define+provide-message $fetch-signature-missing $fetch-signature ())
+(define+provide-message $fetch-signature-trust-unsigned $fetch-signature ())
+(define+provide-message $fetch-signature-unchecked $fetch-signature ())
+(define+provide-message $fetch-signature-verified $fetch-signature ())
+
+
+; Implementation follows
 
 (require racket/function
          net/head
          "config.rkt"
          "exn.rkt"
          "file.rkt"
+         "integrity.rkt"
+         "localstate.rkt"
          "message.rkt"
          "mod.rkt"
          "package-info.rkt"
@@ -30,23 +55,59 @@
          "port.rkt"
          "query.rkt"
          "rc.rkt"
+         "signature.rkt"
+         "string.rkt"
          "url.rkt")
 
-(define+provide-message $source (user-string))
-(define+provide-message $source-method-ruled-out $source (reason))
-(define+provide-message $source-fetched $source ())
-(define+provide-message $source-unfetched $source ())
 
-(define (mibibytes->bytes mib)
-  (inexact->exact (ceiling (* mib 1024 1024))))
+(struct fetch-info
+  (name       ; The name of the link used to reference input bytes
+   sources    ; Where to look to get bytes
+   integrity  ; Integrity information: Did I get the right bytes?
+   signature) ; Signature for authentication: Did the bytes come from someone I trust?
+  #:prefab)
+
+
+(define well-formed-fetch-info/c
+  (struct/c fetch-info
+            non-empty-string?
+            (non-empty-listof any/c)
+            (or/c #f well-formed-integrity-info/c)
+            (or/c #f well-formed-signature-info/c)))
+
+
+(define (fetch* infos request-transfer)
+  (for/fold ([links (:return (hash))])
+            ([info (in-list infos)])
+    (define fetch-res (fetch info request-transfer))
+    (:merge fetch-res
+            (:return
+             (hash-set ($with-messages-intermediate links)
+                       (fetch-info-name info)
+                       ($with-messages-intermediate fetch-res))))))
+
+
+(define (fetch info request-transfer)
+  (apply :do (map (λ (source)
+                    (fetch-exact-source info
+                                        (λ args
+                                          (apply request-transfer
+                                                 (fetch-info-name info)
+                                                 args))))
+                  (get-fetch-sources info))))
+
+
+(define (fetch-exact-source info source request-transfer)
+  (:do #:with (fetch-source source request-transfer)
+       (λ (path) (check-fetch-integrity info source path))
+       (λ (path) (check-fetch-signature info source path))))
 
 
 (define (fetch-source source request-transfer)
   (define (mod-fallback . _) (const #f))
-
   ; The fetch procedures can just return #f if they cannot
   ; find something. This instruments the procedures so that
-  ; they can be composed in fetch-source.
+  ; they can be composed below.
   (define (lift-fetch-source-method f method-name)
     (λ (status)
       (if status
@@ -58,13 +119,13 @@
             (let ([maybe-result (f source request-transfer)])
               (if maybe-result
                   (:return maybe-result)
-                  (attach-message
-                   #f
+                  (attach-message #f
                    ($source-method-ruled-out source
                                              (format "Method produced nothing: ~a"
                                                      method-name)))))))))
 
-  (:do #:with (:return (fetch-source/filesystem source request-transfer))
+  (:do #:with (:return #f)
+       (lift-fetch-source-method fetch-source/filesystem "Filesystem")
        (lift-fetch-source-method fetch-source/http "HTTP")
        (lift-fetch-source-method fetch-source/xiden-query "Package query")
        (lift-fetch-source-method (load-plugin 'fetch-source mod-fallback mod-fallback) "Plugin")
@@ -119,6 +180,42 @@
   (close-output-port to-pipe)
   (:merge transfer-output
           (:return (read-package-info from-pipe))))
+
+
+; I add any cached path as a source so that it goes through
+; validation. This captures local tampering.
+(define (get-fetch-sources info)
+  (with-handlers ([exn? (λ _ (fetch-info-sources info))])
+    (define path
+      (build-object-path
+       (integrity-info-digest
+        (fetch-info-integrity info))))
+    (if (file-exists? path)
+        (cons (path->string path)
+              (fetch-info-sources info))
+        (fetch-info-sources info))))
+
+
+(define (check-fetch-integrity info source path)
+  (if (XIDEN_TRUST_BAD_DIGEST)
+      (attach-message path ($fetch-integrity-assumed info source))
+      (if (check-integrity (fetch-info-integrity info) path)
+          (attach-message path ($fetch-integrity-verified info source))
+          (raise (attach-message #f ($fetch-integrity-mismatch info source))))))
+
+
+(define (check-fetch-signature info source path)
+  (if (XIDEN_TRUST_BAD_DIGEST)
+      (attach-message path ($fetch-signature-unchecked info source))
+      (if (XIDEN_TRUST_UNSIGNED)
+          (attach-message path ($fetch-signature-trust-unsigned info source))
+          (if (check-signature (integrity-info-digest (fetch-info-integrity info))
+                               (signature-info-body (fetch-info-signature info))
+                               (signature-info-pubkey (fetch-info-signature info)))
+              (attach-message path ($fetch-signature-verified info source))
+              (raise (attach-message #f ($fetch-signature-mismatch info source)))))))
+
+
 
 
 (module+ test
@@ -189,12 +286,14 @@
            (loop (add1 num))))))
 
     (define source "http://127.0.0.1:8018")
-    (check-equal?
-     (fetch-source source
-                   (λ (in est-size)
-                     (check-eq? est-size 5)
-                     (check-equal? (read-bytes est-size in) #"12345")
-                     (kill-thread th)
-                     (tcp-close listener)))
-     (attach-message (void)
-                     ($source-fetched source)))))
+
+    (define fetch-output
+      (fetch-source source
+                    (λ (in est-size)
+                      (check-eq? est-size 5)
+                      (check-equal? (read-bytes est-size in) #"12345")
+                      (kill-thread th)
+                      (tcp-close listener))))
+
+    (check-equal? (find-message $source-fetched? fetch-output)
+                  ($source-fetched source))))
