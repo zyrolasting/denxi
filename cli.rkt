@@ -1,7 +1,6 @@
 #lang racket/base
 
 (require racket/class
-         racket/cmdline
          racket/function
          racket/path
          racket/pretty
@@ -17,6 +16,7 @@
          racket/vector
          (for-syntax racket/base)
          "archiving.rkt"
+         "cmdline.rkt"
          "config.rkt"
          "contract.rkt"
          "derivation.rkt"
@@ -25,6 +25,7 @@
          "integrity.rkt"
          "localstate.rkt"
          "message.rkt"
+         "monad.rkt"
          "package.rkt"
          "package-info.rkt"
          "printer.rkt"
@@ -42,28 +43,15 @@
 
 
 (module+ main
-  (match-define ($with-messages stop-value accumulated)
-    (entry-point (current-command-line-arguments)))
-  (sequence-for-each write-output accumulated)
-  (exit stop-value))
-
-; Define a transition from accumulated command line flags to a new
-; parameterization in terms of those flags and a cached read of the
-; rcfile. Capture any failure in this transition as main program
-; output.
-(define-syntax-rule (with-rc flags body ...)
-  (with-handlers ([exn:fail? (λ (e) (attach-message 0 ($fail (exn-message e))))])
-    (with-xiden-rcfile (call-with-applied-settings flags (λ () body ...)))))
+  (exit (entry-point (current-command-line-arguments))))
 
 
 ; Keep seperate for functional tests.
 (define (entry-point args)
-  (:do #:with (:return args)
-       (λ (args)
-         (if (show-workspace-envvar-error?)
-             (attach-message args ($invalid-workspace-envvar))
-             (:return args)))
-       top-level-cli))
+  (do (if (show-workspace-envvar-error?)
+          (attach-message args ($invalid-workspace-envvar))
+          (omit-message args))
+      top-level-cli))
 
 
 (define (top-level-cli args)
@@ -119,12 +107,13 @@ EOF
     XIDEN_ALLOW_UNDECLARED_RACKET_VERSIONS
     XIDEN_ALLOW_UNSUPPORTED_RACKET)
    (λ (flags . pkgdef-sources)
+     ; Source -> package definition
+     ; Package definition -> derivation
+     ; Run derivation
+     ; Find in trash if needed
      (with-rc flags
-       (with-handlers ([$with-messages? values])
-         (for/fold ([output (:return)])
-                   ([source (in-list pkgdef-sources)])
-           (:merge output
-                   (install-package-from-source source))))))))
+       (do source  <- (return (in-list pkgdef-sources))
+           (return source))))))
 
 
 (define (uninstall-command args)
@@ -134,7 +123,11 @@ EOF
    #:flags
    (settings->flag-specs XIDEN_CONSENT)
    #:args args
-   (λ (flags . queries)
+   ; Proceed as if you were installing, until you
+   ; find package paths. Check database for
+   ; dependents referencing the paths.
+   ; Move to trash
+   (λ (flags . sources)
      (void))))
 
 
@@ -144,20 +137,20 @@ EOF
    #:args args
    #:arg-help-strings '("link-path" "query" "rel-path")
    (λ (flags link-path query rel-path)
-     (define maybe-package-id (find-latest-package-id (coerce-xiden-query query)))
-     (if maybe-package-id
-         (begin (make-file-or-directory-link (build-path (get-derivation-directory maybe-package-id)
-                                                         rel-path)
-                                             link-path)
-                (:return 0))
-         (attach-message 1 ($show-string "No package found"))))))
+     (do mid <- (find-latest-package-id (coerce-xiden-query query))
+         (return
+          (if mid
+              (make-link/clobber (build-path (get-derivation-directory mid)
+                                             rel-path)
+                                 link-path)
+              (attach-message 1 ($show-string "No package found"))))))))
 
 
 (define (config-command args)
   (define (get-setting name)
     (define maybe-selected-setting (setting-ref name))
     (if maybe-selected-setting
-        (:return maybe-selected-setting)
+        (omit-message maybe-selected-setting)
         (attach-message #f ($setting-not-found name))))
 
   (run-command-line
@@ -230,17 +223,16 @@ EOF
   (run-command-line
    #:program "sandbox"
    #:arg-help-strings '("query")
-
    #:flags
    (settings->flag-specs
     XIDEN_SANDBOX_MEMORY_LIMIT_MB
     XIDEN_SANDBOX_EVAL_MEMORY_LIMIT_MB
-    XIDEN_SANDBOX_EVAL_TIME_LIMIT_SECONDS
-    XIDEN_SANDBOX_PATH_PERMISSIONS)
-
+    XIDEN_SANDBOX_EVAL_TIME_LIMIT_SECONDS)
    #:args args
    (λ (flags query)
-     (parameterize ([current-eval (make-sandbox (void))])
+     (define input-program "TODO")
+     (define build-directory "TODO")
+     (parameterize ([current-eval (make-build-sandbox input-program build-directory)])
        (read-eval-print-loop)))))
 
 
@@ -268,62 +260,140 @@ EOF
    ))
 
 
+#;(define (format-package-info info)
+  (package-info-package-name info))
 
-; Base bindings follow
+#;(define (format-setting-flag-example s)
+  (format "~a/~a"
+          (setting-short-flag s)
+          (setting-long-flag s)))
 
-(define (run-command-line #:program program
-                          #:flags [flags null]
-                          #:args [args (current-command-line-arguments)]
-                          #:arg-help-strings arg-help-strings
-                          #:suffix-is-index? [suffix-is-index? #t]
-                          handle-arguments
-                          [help-suffix ""])
-  ; This is helpful for functional tests since it enables vanilla quasiquoting.
-  (define argv
-    (if (list? args)
-        (list->vector args)
-        args))
+#;(define (format-xiden-message m)
+  (match m
+    [($test-print v)
+     (format "Testing: ~a" v)]
 
-  (define help-requested?
-    (or (vector-member "-h" argv)
-        (vector-member "--help" argv)))
+    [($output v)
+     (format-xiden-message v)]
 
-  ; parse-command-line does not show help when arguments are missing
-  ; and -h is not set.  Show help anyway.
-  (define (show-help-on-zero-arguments e)
-    (attach-message 1
-     ($show-string
-      (format "~a~n~a"
-              (exn-message e)
-              (if (and (regexp-match? #px"given 0 arguments" (exn-message e))
-                       suffix-is-index?
-                       (not help-requested?))
-                  help-suffix
-                  "")))))
+    [($fail v)
+     (cond [(exn? v) (exn->string v)]
+           [(string? v) v]
+           [else (~s v)])]
 
+    [($show-string v) v]
 
-  (call/cc
-   ; The callback for showing the help string does not stop evaluation
-   ; of the argument handler. This is why parse-command-line calls the
-   ; exit handler by default. Use a continuation to maintain a
-   ; functional approach.
-   (λ (force-output)
-     (with-handlers ([exn:fail:user? show-help-on-zero-arguments])
-       (parse-command-line program argv
-                           (if (null? flags)
-                               null
-                               `((once-each . ,flags)))
-                           handle-arguments
-                           arg-help-strings
-                           (λ (help-str)
-                             (force-output
-                              (:return #:stop-value (if help-requested? 0 1)
-                                       #f
-                                       ($show-string (format "~a~n~a" help-str help-suffix))))))))))
+    [($show-datum v)
+     (pretty-format #:mode 'write v)]
+
+    [($module-compiled module-path)
+     (format "Compiled: ~a" module-path)]
+
+    [($compilation-error module-path message)
+     (format "Bytecode compilation error in: ~a~n~a"
+             module-path
+             message m)]
+
+    [($fetch-integrity-mismatch input source)
+     (format (~a "~a failed its integrity check.~n"
+                 "While unsafe, you can force installation using ~a.")
+             (format-package-info source)
+             (setting-long-flag XIDEN_TRUST_BAD_DIGEST))]
+
+    [($mod-load-failure path error-string)
+     (format (~a "Could not load plugin module ~a. Using default implementations.~n"
+                 "Load error: ~a")
+             path
+             error-string)]
+
+    [($fetch-signature-mismatch input source)
+     (format (~a "~s's signature does not match any trusted public key.~n"
+                 "While unsafe, you can trust bad signatures using ~a.")
+             source
+             (setting-long-flag XIDEN_TRUST_BAD_SIGNATURE))]
+
+    [($fetch-signature-missing (fetch-info name _ _ _) source)
+     (format (~a "~a does not have a signature. If you are testing a package, this is expected.~n"
+                 "If you got the package from the Internet, then exercise caution!~n"
+                 "To trust unsigned packages, use ~a.")
+             name
+             (setting-long-flag XIDEN_TRUST_UNSIGNED))]
+
+    [($unverified-host url)
+     (format (~a "~a does not have a valid certificate.~n"
+                 "Connections to this server are not secure.~n"
+                 "To trust servers without valid certificates, use ~a.")
+             url
+             (setting-long-flag XIDEN_TRUST_UNVERIFIED_HOST))]
+
+    [($package-installed info)
+     (format "Installed package ~a"
+             (format-package-info info))]
+
+    [($unrecognized-command m)
+     (format "Unrecognized command: ~s. Run with -h for usage information.~n"
+             ($unrecognized-command-command m))]
+
+    [($consent-note)
+     (format "To consent to these changes, run again with ~a"
+             (setting-short-flag XIDEN_CONSENT))]
+
+    [($source-unfetched user-string)
+     (format "Cannot find content for ~s" user-string)]
+
+    [($source-fetched user-string)
+     (format "Fetched ~s" user-string)]
+
+    [($setting-not-found name)
+     (format "There is no setting called ~s.~n" name)]
+
+    [($init-localstate path)
+     (format "Initalizing local state at ~a" path)]
+
+    [($setting-value-rejected name value expected)
+     (format "Invalid value for ~a: ~a~n  expected: ~a~n  (Note: (void) only applies for `xiden config repl` use)"
+             name
+             value
+             expected)]
+
+    [($invalid-workspace-envvar)
+     (format "Ignoring envvar value for XIDEN_WORKSPACE: ~a~n  falling back to ~a"
+             (getenv "XIDEN_WORKSPACE")
+             (workspace-directory))]
+
+    [($undeclared-racket-version info)
+     (join-lines
+      (list (format "~a does not declare a supported Racket version."
+                    (format-package-info info))
+            (format "To install this package anyway, run again with ~a"
+                    (setting-short-flag XIDEN_ALLOW_UNDECLARED_RACKET_VERSIONS))))]
+
+    [($unsupported-racket-version info)
+     (join-lines
+      (list (format "~a claims that it does not support this version of Racket (~a)."
+                    (format-package-info info)
+                    (version))
+            (format "Supported versions (ranges are inclusive):~n~a~n"
+                    (join-lines
+                     (map (λ (variant)
+                            (format "  ~a"
+                                    (if (pair? variant)
+                                        (format "~a - ~a"
+                                                (or (car variant)
+                                                    PRESUMED_MINIMUM_RACKET_VERSION)
+                                                (or (cdr variant)
+                                                    PRESUMED_MAXIMUM_RACKET_VERSION))
+                                        variant))
+                            (package-info-racket-versions info)))))
+            (format "To install this package anyway, run again with ~a"
+                    (setting-long-flag XIDEN_ALLOW_UNSUPPORTED_RACKET))))]
+
+    [_ (error 'format-xiden-message "Unknown message type: ~s" m)]))
+
 
 ; Functional tests follow. Use to detect changes in the interface and
 ; verify high-level impact.
-(module+ test
+#;(module+ test
   (require racket/port
            racket/random
            rackunit

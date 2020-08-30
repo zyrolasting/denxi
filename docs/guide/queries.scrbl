@@ -4,8 +4,14 @@
 
 @title[#:tag "asking"]{Package Queries}
 
-You can request package definitions using a colon-separated
-@tech{query} string.
+Under the hood, @project-name understands finding packages from the
+file system or over HTTP. If you have a different protocol such as
+SFTP, Git, SVN, etc, define a @tech{plugin}.
+
+To aid package discovery, you can request package definitions from
+configured hosts a colon-separated @deftech{package query} string.
+
+@section{Simple Queries}
 
 @tt{john.doe:calculator} means "the @tt{calculator} package by
 @tt{john.doe}". But @tt{john.doe:calculator} is actually an

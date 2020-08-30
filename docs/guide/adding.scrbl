@@ -16,9 +16,8 @@ That definition might come from the Internet.
 $ xiden install https://example.com/def.rkt
 }|
 
-Here's an example that uses @|binary|'s own query format, which can
-match definitions served from a configured list of endpoints. See
-@secref{queries} for more information.
+@secref{queries} covers how @binary searches for a package definition
+when an exact location is not clear.
 
 @verbatim|{
 $ xiden install example.com:widget:draft
@@ -38,3 +37,15 @@ packages side-by-side, meaning if anything is different about a
 package, then that package will get a unique directory. If you try to
 install the same package twice, then @binary will simply re-create
 that package's directory with fresh contents.
+
+
+@section{What About a Confirmation Prompt?}
+
+@project-name is not interactive. Its runtime configuration is held
+constant after launch so that each command feels like calling a pure
+function. Incorrect behavior is cause to review
+@secref{Configuration}.
+
+In another view, your shell is already interactive and able to
+abbreviate any long, repetitive commands. If calling a complete
+command is tedious, then please leverage the features of your shell.

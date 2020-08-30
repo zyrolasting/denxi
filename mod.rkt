@@ -3,24 +3,16 @@
 ; Define a plugin system such that an administrator-provided module
 ; provides functionality required by other parts of Xiden.
 ;
-; MODS ARE AN ATTACK VECTOR. Unlike the package management process
-; itself, this implementation runs with the same privilege level as
-; Xiden's user.
+; Warning: Plugins run in Xiden's process.
 
-(require racket/contract
-         racket/exn)
+(require racket/contract)
 
 (provide
  (contract-out
   [load-plugin
-   (-> symbol? (-> any/c) (-> exn? any) any/c)]
-  #;[load-plugin/with-output
-   (-> symbol? (-> any/c) $with-output?)]))
+   (-> symbol? (-> any/c) (-> exn? any) any/c)]))
 
-(require "message.rkt"
-         "rc.rkt")
-
-(define+provide-message $mod-load-failure (path original-error-string))
+(require "rc.rkt")
 
 (define (load-plugin key fail-thunk on-load-failure)
   (define maybe-path (XIDEN_MODS_MODULE))

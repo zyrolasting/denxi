@@ -13,11 +13,12 @@ $ xiden uninstall https://example.com/def.rkt
 $ xiden uninstall example.com:widget:draft
 }|
 
-The difference is that @binary will find matching installed packages
-based on the information you provide. @binary will tell you what it
-will remove. As before, explicit consent actually uninstalls the
-packages.
+The difference is that @binary will match installed packages against
+the definition and walk you through what will be removed. As before,
+explicit consent actually uninstalls the packages.
 
 @verbatim|{
 $ xiden uninstall -y def.rkt
 }|
+
+See @secref{rollbacks} for reversing uninstallations.

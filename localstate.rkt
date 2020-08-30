@@ -26,7 +26,6 @@
          "integrity.rkt"
          "rc.rkt"
          "message.rkt"
-         "package-info.rkt"
          "path.rkt"
          "port.rkt"
          "query.rkt"
@@ -34,7 +33,6 @@
          "workspace.rkt")
 
 (define+provide-message $init-localstate (path))
-(define+provide-message $declare-input (digest path))
 
 (define (get-localstate-path)
   (build-workspace-path "var/xiden/db"))
@@ -56,12 +54,6 @@
 
 (define-syntax-rule (define-state-procedure (sig ...) body ...)
   (define (sig ...) (unless (current-db-connection) (initialize!)) body ...))
-
-(define-state-procedure (declare-package pkginfo)
-  (query-exec+ "insert into packages values (NULL, ?, ?, ?, ?, ?);"
-               (package-info-provider-name pkginfo)
-               (package-info-package-name pkginfo)
-               (package-info-edition-name pkginfo)))
 
 (define-state-procedure (declare-dependency input-id derivation-id)
   (query-exec+ "insert into dependencies values (?, ?);"
@@ -97,32 +89,20 @@
     void
     (λ ()
       (with-handlers ([values (λ (e) (delete-file* tmp) (raise e))])
-        (define transfer-output-with-messages
-          (call-with-output-file tmp #:exists 'truncate/replace
-            (λ (to-file)
-              (transfer in to-file
-                        #:transfer-name name
-                        #:max-size (mibibytes->bytes (XIDEN_FETCH_TOTAL_SIZE_MB))
-                        #:buffer-size (mibibytes->bytes (XIDEN_FETCH_BUFFER_SIZE_MB))
-                        #:timeout-ms (XIDEN_FETCH_TIMEOUT_MS)
-                        #:est-size est-size))))
+        (call-with-output-file tmp #:exists 'truncate/replace
+          (λ (to-file)
+            (transfer in to-file
+                      #:transfer-name name
+                      #:max-size (mibibytes->bytes (XIDEN_FETCH_TOTAL_SIZE_MB))
+                      #:buffer-size (mibibytes->bytes (XIDEN_FETCH_BUFFER_SIZE_MB))
+                      #:timeout-ms (XIDEN_FETCH_TIMEOUT_MS)
+                      #:est-size est-size))))
         (define digest (make-digest tmp 'sha384))
         (define path (build-object-path digest))
         (make-directory* (path-only path))
         (rename-file-or-directory tmp path #t)
-        (:merge transfer-output-with-messages
-                (:return path))))
+        path)
     (λ () (close-input-port in))))
-
-
-(define create-file-table #<<EOS
-CREATE TABLE IF NOT EXISTS files (
-       id INTEGER NOT NULL PRIMARY KEY,
-       path TEXT NOT NULL UNIQUE,
-       digest BLOB NOT NULL UNIQUE
-);
-EOS
-)
 
 
 (define create-package-table-query #<<EOS
@@ -174,7 +154,6 @@ EOS
 
 
 (define create-queries
-  (list create-file-table
-        create-package-table-query
+  (list create-package-table-query
         create-dependency-table-query
         create-derivations-table-query))

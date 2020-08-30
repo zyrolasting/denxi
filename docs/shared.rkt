@@ -6,6 +6,7 @@
 
 (define wsdir (tt CONVENTIONAL_WORKSPACE_NAME))
 (define binary (tt "xiden"))
+(define project-name "Xiden")
 
 (define (tech/reference tag)
   (tech #:doc '(lib "scribblings/reference/reference.scrbl") tag))

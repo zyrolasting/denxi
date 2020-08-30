@@ -13,24 +13,21 @@
 
 (provide (struct-out fetch-info)
          (contract-out
-          [fetch*
-           (-> (listof well-formed-fetch-info/c)
-               request-transfer/c
-               ($with-messages/c any/c))]
           [fetch
            (-> well-formed-fetch-info/c
                request-transfer/c
-               ($with-messages/c any/c))]
+               any/c)]
           [fetch-named-source
            (-> non-empty-string?
                string?
                request-transfer/c
-               ($with-messages/c any/c))]
+               any/c)]
           [well-formed-fetch-info/c
            flat-contract?]))
 
-; Define a message space to capture what goes wrong or right
-; when trying to procure bytes.
+
+;-----------------------------------------------------------------------
+; Define messages to capture relevant states.
 
 (require "message.rkt")
 
@@ -52,7 +49,8 @@
 (define+provide-message $unverified-host (url))
 
 
-; Implementation follows
+;-----------------------------------------------------------------------
+; Implementation
 
 (require racket/function
          net/head
@@ -62,7 +60,6 @@
          "integrity.rkt"
          "localstate.rkt"
          "mod.rkt"
-         "package-info.rkt"
          "path.rkt"
          "port.rkt"
          "query.rkt"
@@ -88,76 +85,36 @@
             (or/c #f well-formed-signature-info/c)))
 
 
-(define (fetch* infos request-transfer)
-  (for/fold ([links (:return (hash))])
-            ([info (in-list infos)])
-    (define fetch-res (fetch info request-transfer))
-    (:merge fetch-res
-            (:return
-             (hash-set ($with-messages-intermediate links)
-                       (fetch-info-name info)
-                       ($with-messages-intermediate fetch-res))))))
-
-
 (define (fetch info request-transfer)
-  (apply :do (map (λ (source)
-                    (fetch-exact-source info
-                                        (λ args
-                                          (apply request-transfer
-                                                 (fetch-info-name info)
-                                                 args))))
-                  (get-fetch-sources info))))
+  (define sources (get-fetch-sources info))
+  (fetch-exact-source info
+                      (λ args
+                        (apply request-transfer
+                               (fetch-info-name info)
+                               args))))
 
 
 (define (fetch-exact-source info source request-transfer)
-  (:do #:with (fetch-named-source
-               (format "~a <- ~a" (fetch-info-name info) source)
-               source
-               request-transfer)
-       (λ (path) (check-fetch-integrity info source path))
-       (λ (path) (check-fetch-signature info source path))))
+  (define path (fetch-named-source (format "~a <- ~a" (fetch-info-name info) source) source request-transfer))
+  (check-fetch-integrity info source path)
+  (check-fetch-signature info source path))
 
+(define (mod-fallback . _) (const #f))
 
 (define (fetch-named-source name source request-transfer)
-  (define (mod-fallback . _) (const #f))
   (define request-transfer/reduced (curry request-transfer name))
-
-  ; The fetch procedures can just return #f if they cannot
-  ; find something. This instruments the procedures so that
-  ; they can be composed below.
-  (define (lift-fetch-source-method f method-name)
-    (λ (status)
-      (if status
-          (:return status)
-          (with-handlers
-            ([exn:fail?
-              (λ (e)
-                (attach-message #f ($source-method-ruled-out source (exn->string e))))])
-            (let ([maybe-result (f source request-transfer/reduced)])
-              (if maybe-result
-                  (:return maybe-result)
-                  (attach-message #f
-                   ($source-method-ruled-out source
-                                             (format "Method produced nothing: ~a"
-                                                     method-name)))))))))
-
-  (:do #:with (:return #f)
-       (lift-fetch-source-method fetch-source/filesystem "Filesystem")
-       (lift-fetch-source-method fetch-source/http "HTTP")
-       (lift-fetch-source-method fetch-source/xiden-query "Package query")
-       (lift-fetch-source-method (load-plugin 'fetch-source mod-fallback mod-fallback) "Plugin")
-       (λ (maybe-path)
-         (attach-message maybe-path
-                         (if maybe-path
-                             ($source-fetched source)
-                             ($source-unfetched source))))))
+  (load-plugin 'fetch-source mod-fallback mod-fallback)
+  (define maybe-path (void))
+  (attach-message maybe-path
+                  (if maybe-path
+                      ($source-fetched source)
+                      ($source-unfetched source))))
 
 
 (define (fetch-source/filesystem source make-file)
-  (and (file-exists? source)
-       (make-file (open-input-file source)
-                  (+ (* 20 1024) ; for Mac OS resource forks
-                     (file-size source)))))
+  (make-file (open-input-file source)
+             (+ (* 20 1024) ; for Mac OS resource forks
+                (file-size source))))
 
 
 (define (fetch-source/http source make-file)
@@ -170,20 +127,6 @@
         "+inf.0"))
   (make-file (get-pure-port #:redirections (XIDEN_DOWNLOAD_MAX_REDIRECTS) (string->url source))
              est-size))
-
-
-(define (fetch-source/xiden-query source make-file)
-  (define pkginfo
-    (for/or ([u (in-list (map/service-endpoints source (XIDEN_SERVICE_ENDPOINTS)))])
-      (read-package-info (get-pure-port u #:redirections (XIDEN_DOWNLOAD_MAX_REDIRECTS)))))
-  (and pkginfo
-       (let-values ([(i o) (make-pipe)])
-         (write-config #:pretty? #t (package-info->hash pkginfo) null o)
-         (flush-output o)
-         (close-output-port o)
-         (make-file i (mibibytes->bytes (XIDEN_FETCH_PKGDEF_SIZE_MB))))))
-
-
 
 ; I add any cached path as a source so that it goes through
 ; validation. This captures local tampering.
@@ -219,9 +162,7 @@
               (raise (attach-message #f ($fetch-signature-mismatch info source)))))))
 
 
-
-
-(module+ test
+#;(module+ test
   (require racket/file
            racket/tcp
            rackunit
@@ -238,6 +179,8 @@
 
   (define (fetch-source source make-file)
     (fetch-named-source "anon" source make-file))
+
+  (define find-message void)
 
   (define (try-mod-fetch)
     (fetch-source mod-source

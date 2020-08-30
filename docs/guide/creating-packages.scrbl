@@ -5,44 +5,40 @@
 @title[#:tag "new-pkg"]{Defining Packages}
 
 @binary creates packages from @tech{package definitions}. The below
-example defines a hypothetical package for working with URIs. The
-package expects the source code and a setup program as input. Once
-that input is available, it will produce libraries, documentation, and
-tests in terms of the input setup programs.
+example defines a hypothetical package for working with URIs.
 
 @racketmod[
-info
+xiden
 
 (define racket-versions '(("6.0" . "7.7.0.5")))
 
-(define inputs
-  '((input "code.tar.gz"
-           (sources "https://example.com/packages/uri/artifacts/alpha.tgz"
-                    "https://mirror.example.com/uri/alpha.tgz")
+(input "code.tar.gz"
+  (sources "https://example.com/packages/uri/artifacts/alpha.tgz"
+           "https://mirror.example.com/uri/alpha.tgz")
            (integrity sha384 (base64 "KxAqYG79sTcKi8yuH/YkdKE+O9oiBsXIlwWs3pBwv/mXT9/jGuK0yqcwmjM/nNLe")))
-    (input "setup.rkt"
-           (sources "https://example.com/packages/uri/artifacts/setup.rkt"
-                    "https://mirror.example.com/uri/setup.rkt")
-           (integrity sha384 (base64 "IlknabsnNFuFTTuDOKSjdHUio2qBVXC82y6Z6kzWVlVzNW4p2wL/ldLiC5FgVFWk")))))
 
-(define outputs
-  '[(output "lib"  ("racket" "setup.rkt" "lib"))
-    (output "doc"  ("racket" "setup.rkt" "full"))
-    (output "test" ("racket" "setup.rkt" "full"))])
+(outputs "setup.rkt" '("lib" "doc" "all"))
 ]
+
+
+Read this file as if you were ordering a program as if it were a
+sandwich.
+
+When @project-name sees this file, it will generate a program that
+fetches the named inputs, and uses @racket{setup.rkt} to produce
+outputs. Those outputs are libraries, documentation, or both (all).
+
 
 @section{A Package Definition is not Coupled to Source Code}
 
-Notice that the source code is declared as an input. This means
-that source code does not have to be present when defining
-this package.
+Notice that the source code is declared as an input. The definition
+sits outside of the source code! This means that source code does not
+have to be present when defining a package.
 
 If you are accustomed to working with @tt{raco pkg}, then you leave
 @tt{info.rkt} files in your source code as if they were assembly
-instructions for @tt{raco pkg} and @tt{raco setup} to follow. That's
-not the case here. @binary views package definitions as input to
-generate a whole other program that expects @italic{exact bits}
-as input for some process.
+instructions for furniture. That's not the case here. The point of a
+package definition is to briefly declare a software distribution.
 
 
 @section{Package Inputs}
@@ -70,7 +66,7 @@ spoofed. Aim for SHA-384 as a baseline.
 
 Astute readers would have already noticed that package outputs do not
 declare integrity information. Since a package's output can serve as another
-package's input, the bits would be verified as inputs.
+package's input, the bits would be verified as inputs when it matters.
 
 
 @section{What About Nondeterministic Builds?}
@@ -86,6 +82,27 @@ different information across builds. If that happens, then that is an
 issue to take up with whoever owns that source. Package inputs are
 also not expected to be things like bytecode files, they are expected
 to be source code or other inputs to some build system.
+
+@section{Setup Module}
+
+@program-name binds input names to unique files in the filesystem.
+
+@racketmod[
+xiden/setup
+
+(define (extract input-name)
+  ( (input-ref input-name)))
+
+(define (all)
+  (lib)
+  (doc))
+
+(define (lib)
+  (unpack (inputs ))
+
+]
+
+A setup module will need
 
 
 @section{Authenticating Inputs}

@@ -1,6 +1,5 @@
 #lang racket/base
 
-
 (provide (all-defined-out)
          (all-from-out racket/format))
 

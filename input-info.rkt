@@ -1,9 +1,8 @@
 #lang racket/base
 
 (require "contract.rkt"
-         "integrity.rkt"
-         "signature.rkt"
-         "string.rkt")
+         "string.rkt"
+         "source.rkt")
 
 (provide (struct-out input-info)
          (contract-out
@@ -11,16 +10,12 @@
            flat-contract?]))
 
 (struct input-info
-  (name       ; The name of the link used to reference input bytes
-   sources    ; Where to look to get bytes
-   integrity  ; Integrity information: Did I get the right bytes?
-   signature) ; Signature for authentication: Did the bytes come from someone I trust?
+  (name        ; The name to bind to bytes
+   fetch-info) ; Defines where said bytes come from
   #:prefab)
 
 
 (define well-formed-input-info/c
   (struct/c input-info
-            non-empty-string?
-            (non-empty-listof any/c)
-            (or/c #f well-formed-integrity-info/c)
-            (or/c #f well-formed-signature-info/c)))
+            name-string?
+            well-formed-fetch-info/c))

@@ -10,7 +10,10 @@
          "input-info.rkt"
          "integrity.rkt"
          "output-info.rkt"
-         "signature.rkt")
+         "rc.rkt"
+         "signature.rkt"
+         "source.rkt"
+         "url.rkt")
 
 (provide #%app
          #%datum
@@ -26,13 +29,12 @@
                  (non-empty-listof string?))
                 ((or/c #f integrity-info?)
                  (or/c #f signature-info?))
-                input-info?)]
+                fetch-info?)]
 
           [output
-           (->* (non-empty-string?
-                 (non-empty-listof string?))
-                (list?)
-                output-info?)]
+           (-> non-empty-string?
+               any/c
+               pair?)]
 
           [integrity
            (-> xiden-hash-algorithm/c
@@ -55,15 +57,17 @@
            (-> (or/c non-empty-string? bytes?) bytes?)]))
 
 (define (input name sources [integrity #f] [signature #f])
-  (input-info name
-              sources
-              integrity
-              signature))
+  (fetch-info name sources integrity signature))
 
-(define (output name builder-name [exprs null])
-  (output-info name
-               builder-name
-               exprs))
+
+(define (input-package query-string)
+  (fetch-info query-string
+              (map url->string (map/service-endpoints query-string (XIDEN_SERVICE_ENDPOINTS)))
+              [integrity #f]
+              [signature #f]))
+
+(define (output name expr)
+  (cons name expr))
 
 (define integrity integrity-info)
 (define signature signature-info)
