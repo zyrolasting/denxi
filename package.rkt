@@ -11,7 +11,6 @@
          version/utils
          "config.rkt"
          "contract.rkt"
-         "derivation.rkt"
          "encode.rkt"
          "exn.rkt"
          "file.rkt"

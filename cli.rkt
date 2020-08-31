@@ -19,7 +19,6 @@
          "cmdline.rkt"
          "config.rkt"
          "contract.rkt"
-         "derivation.rkt"
          "file.rkt"
          "format.rkt"
          "integrity.rkt"
