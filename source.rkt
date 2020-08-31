@@ -1,29 +1,34 @@
 #lang racket/base
 
 ; Define means for fetching bytes from some origin.
+;
+; This addresses a core problem in dependency management: If you
+; didn't check your dependencies into version control, then how do you
+; get those EXACT dependencies later?
+;
+; At a high-level, this module defines a "fetch" as an operation that
+; tries to fulfill a request for bytes through various methods.
 
 (require "contract.rkt")
 
+; This procedure acts as an interface between a specific method (HTTP,
+; File read, etc.) and the part of Xiden that reads an estimated number
+; of bytes from a port.
 (define request-transfer/c
   (-> (or/c #f non-empty-string?)
       input-port?
       (or/c +inf.0 exact-positive-integer?)
-      any/c))
+      (or/c #f path?)))
 
 
-(provide (struct-out fetch-info)
+(provide (struct-out fetch-state)
          (contract-out
+          [request-transfer/c contract?]
           [fetch
-           (-> well-formed-fetch-info/c
-               request-transfer/c
-               any/c)]
-          [fetch-named-source
            (-> non-empty-string?
-               string?
+               (non-empty-listof any/c)
                request-transfer/c
-               any/c)]
-          [well-formed-fetch-info/c
-           flat-contract?]))
+               any/c)]))
 
 
 ;-----------------------------------------------------------------------
@@ -31,21 +36,10 @@
 
 (require "message.rkt")
 
-(define+provide-message $source (user-string))
+(define+provide-message $source (fetch-name user-string))
 (define+provide-message $source-method-ruled-out $source (reason))
 (define+provide-message $source-fetched $source ())
-(define+provide-message $source-unfetched $source ())
-(define+provide-message $fetch (info))
-(define+provide-message $fetch-integrity $fetch (source))
-(define+provide-message $fetch-integrity-assumed  $fetch-integrity ())
-(define+provide-message $fetch-integrity-mismatch $fetch-integrity ())
-(define+provide-message $fetch-integrity-verified $fetch-integrity ())
-(define+provide-message $fetch-signature $fetch (source))
-(define+provide-message $fetch-signature-mismatch $fetch-signature ())
-(define+provide-message $fetch-signature-missing $fetch-signature ())
-(define+provide-message $fetch-signature-trust-unsigned $fetch-signature ())
-(define+provide-message $fetch-signature-unchecked $fetch-signature ())
-(define+provide-message $fetch-signature-verified $fetch-signature ())
+(define+provide-message $fetch-failure (fetch-name))
 (define+provide-message $unverified-host (url))
 
 
@@ -53,6 +47,7 @@
 ; Implementation
 
 (require racket/function
+         racket/sequence
          net/head
          "config.rkt"
          "exn.rkt"
@@ -69,55 +64,87 @@
          "url.rkt")
 
 
-(struct fetch-info
-  (name       ; A name to bind to fetched bytes
-   sources    ; Where to look to get bytes
-   integrity  ; Integrity information: Did I get the right bytes?
-   signature) ; Signature for authentication: Did the bytes come from someone I trust?
-  #:prefab)
+(define (fetch name sources request-transfer)
+  (if (null? sources)
+      (fetch-state #f
+                   name
+                   #f
+                   request-transfer
+                   (list ($fetch-failure name)))
+      (let ([state (fetch-named-source name (car sources) request-transfer)])
+        (if (fetch-state-path state)
+            state
+            (fetch name (cdr sources) request-transfer)))))
 
-
-(define well-formed-fetch-info/c
-  (struct/c fetch-info
-            non-empty-string?
-            (non-empty-listof any/c)
-            (or/c #f well-formed-integrity-info/c)
-            (or/c #f well-formed-signature-info/c)))
-
-
-(define (fetch info request-transfer)
-  (define sources (get-fetch-sources info))
-  (fetch-exact-source info
-                      (λ args
-                        (apply request-transfer
-                               (fetch-info-name info)
-                               args))))
-
-
-(define (fetch-exact-source info source request-transfer)
-  (define path (fetch-named-source (format "~a <- ~a" (fetch-info-name info) source) source request-transfer))
-  (check-fetch-integrity info source path)
-  (check-fetch-signature info source path))
-
-(define (mod-fallback . _) (const #f))
 
 (define (fetch-named-source name source request-transfer)
-  (define request-transfer/reduced (curry request-transfer name))
-  (load-plugin 'fetch-source mod-fallback mod-fallback)
-  (define maybe-path (void))
-  (attach-message maybe-path
-                  (if maybe-path
-                      ($source-fetched source)
-                      ($source-unfetched source))))
+  (define from-plugin (fetch-method "Plugin" fetch-source/plugin))
+  (define from-web    (fetch-method "HTTP" fetch-source/http))
+  (define from-fs     (fetch-method "Filesystem" fetch-source/filesystem))
+  ((compose from-plugin from-web from-fs) (fetch-unit name source request-transfer)))
 
 
-(define (fetch-source/filesystem source make-file)
-  (make-file (open-input-file source)
-             (+ (* 20 1024) ; for Mac OS resource forks
-                (file-size source))))
+; Represents information gathered when trying to fetch bytes
+(struct fetch-state
+  (source               ; A user-defined string that a method should use to find bytes
+   name                 ; A human-friendly name for the fetch used in errors
+   path                 ; A path pointing to a fetch resource, or #f. If set, the fetch was successful.
+   request-transfer     ; A continuation procedure that takes a port and size estimate
+   messages)            ; A list of $message instances that logs what happened to produce a given instance.
+  #:transparent)
 
 
-(define (fetch-source/http source make-file)
+(define (attach-fetch-message fetch-st v)
+  (struct-copy fetch-state fetch-st
+               [messages (cons v (fetch-state-messages fetch-st))]))
+
+
+(define (fetch-exn-handler fetch-st)
+  (λ (e)
+    (attach-fetch-message fetch-st
+                          ($source-method-ruled-out
+                           (fetch-state-name fetch-st)
+                           (fetch-state-source fetch-st)
+                           (exn->string e)))))
+
+
+(define (fetch-method method-name f)
+  (λ (fetch-st)
+    (if (fetch-state-path fetch-st)
+        fetch-st
+        (with-handlers ([values (fetch-exn-handler fetch-st)])
+          (update-fetch-state method-name
+                              fetch-st
+                              (f (fetch-state-source fetch-st)
+                                 (fetch-state-request-transfer fetch-st)))))))
+
+
+(define (update-fetch-state method-name fetch-st path-or-#f)
+  (attach-fetch-message (struct-copy fetch-state fetch-st [path path-or-#f])
+                        (if path-or-#f
+                            ($source-fetched (fetch-state-name fetch-st)
+                                             (fetch-state-source fetch-st))
+                            ($source-method-ruled-out (fetch-state-name fetch-st)
+                                                      (fetch-state-source fetch-st)
+                                                      (format "~a did not produce a path"
+                                                              method-name)))))
+
+
+(define (fetch-unit name source request-transfer)
+  (fetch-state source
+               name
+               #f
+               request-transfer
+               null))
+
+
+(define (fetch-source/filesystem source request-transfer)
+  (request-transfer (open-input-file source)
+                    (+ (* 20 1024) ; for Mac OS resource forks
+                       (file-size source))))
+
+
+(define (fetch-source/http source request-transfer)
   (define in (head-impure-port (string->url source)))
   (define headers (extract-all-fields (port->string in)))
   (define content-length-pair (assf (λ (el) (equal? (string-downcase el) "content-length")) headers))
@@ -125,44 +152,17 @@
     (if content-length-pair
         (string->number (or (cdr content-length-pair) "+inf.0"))
         "+inf.0"))
-  (make-file (get-pure-port #:redirections (XIDEN_DOWNLOAD_MAX_REDIRECTS) (string->url source))
-             est-size))
-
-; I add any cached path as a source so that it goes through
-; validation. This captures local tampering.
-(define (get-fetch-sources info)
-  (with-handlers ([exn? (λ _ (fetch-info-sources info))])
-    (define path
-      (build-object-path
-       (integrity-info-digest
-        (fetch-info-integrity info))))
-    (if (file-exists? path)
-        (cons (path->string path)
-              (fetch-info-sources info))
-        (fetch-info-sources info))))
+  (request-transfer (get-pure-port #:redirections (XIDEN_DOWNLOAD_MAX_REDIRECTS) (string->url source))
+                    est-size))
 
 
-(define (check-fetch-integrity info source path)
-  (if (XIDEN_TRUST_BAD_DIGEST)
-      (attach-message path ($fetch-integrity-assumed info source))
-      (if (check-integrity (fetch-info-integrity info) path)
-          (attach-message path ($fetch-integrity-verified info source))
-          (raise (attach-message #f ($fetch-integrity-mismatch info source))))))
+(define (fetch-source/plugin source request-transfer)
+  (define (mod-fallback . _) (const #f))
+  ((load-plugin 'fetch-source mod-fallback mod-fallback)
+   source request-transfer))
 
 
-(define (check-fetch-signature info source path)
-  (if (XIDEN_TRUST_BAD_DIGEST)
-      (attach-message path ($fetch-signature-unchecked info source))
-      (if (XIDEN_TRUST_UNSIGNED)
-          (attach-message path ($fetch-signature-trust-unsigned info source))
-          (if (check-signature (integrity-info-digest (fetch-info-integrity info))
-                               (signature-info-body (fetch-info-signature info))
-                               (signature-info-pubkey (fetch-info-signature info)))
-              (attach-message path ($fetch-signature-verified info source))
-              (raise (attach-message #f ($fetch-signature-mismatch info source)))))))
-
-
-#;(module+ test
+(module+ test
   (require racket/file
            racket/tcp
            rackunit
@@ -177,43 +177,43 @@
 
   (define mod-source "====[{]::[}]====")
 
-  (define (fetch-source source make-file)
-    (fetch-named-source "anon" source make-file))
-
   (define find-message void)
 
   (define (try-mod-fetch)
-    (fetch-source mod-source
-                  (λ (name in est-size)
-                    (check-equal? est-size (string-length mod-source))
-                    (check-equal? (read-string est-size in) mod-source))))
+    (fetch "mod"
+           (list mod-source)
+           (λ (in est-size)
+             (check-equal? est-size (string-length mod-source))
+             (check-equal? (read-string est-size in) mod-source))))
 
   (call-with-temporary-file
    (λ (tmp)
      (write-to-file plugin-module-datum tmp #:exists 'truncate/replace)
      (parameterize ([(setting-derived-parameter XIDEN_MODS_MODULE) tmp])
        (define source (path->string tmp))
+       (define (request-transfer in est-size)
+         (test-equal? "Read file" (read in) plugin-module-datum)
+         (test-true "Estimate file size" (>= est-size (file-size tmp)))
+         tmp)
+
        (test-equal? "Fetch from file"
-                    (fetch-source
-                     source
-                     (λ (name in est-size)
-                       (test-equal? "See bound name" name "anon")
-                       (test-equal? "Read file" (read in) plugin-module-datum)
-                       (test-true "Estimate file size" (>= est-size (file-size tmp)))
-                       'some-value))
-                    (attach-message 'some-value ($source-fetched source)))
+                    (fetch "anon" (list source) request-transfer)
+                    (fetch-state source
+                                 "anon"
+                                 tmp
+                                 request-transfer
+                                 (list ($source-fetched "anon" source))))
 
        (test-equal? "Fetch from mod"
-                    (find-message $source-fetched? (try-mod-fetch))
-                    ($source-fetched mod-source)))))
+                    (car (fetch-state-messages (try-mod-fetch)))
+                    ($source-fetched "mod" mod-source)))))
 
   ; Notice we just left the parameterize that set the mod path
   (test-case "Investigate fetch failures"
-    (define fetch-output (try-mod-fetch))
+    (define messages (fetch-state-messages (try-mod-fetch)))
     (test-equal? "Fetch fails when mod is not available"
-                 (find-message $source-unfetched? fetch-output)
-                 ($source-unfetched mod-source))
-    (check-false (null? (filter $source-method-ruled-out? ($with-messages-accumulated fetch-output)))))
+                 messages
+                 (list ($fetch-failure "mod"))))
 
   (test-case "Fetch over HTTP"
     (define listener (tcp-listen 8018 1 #t))
@@ -237,13 +237,19 @@
 
     (define source "http://127.0.0.1:8018")
 
-    (define fetch-output
-      (fetch-source source
-                    (λ (name in est-size)
-                      (check-eq? est-size 5)
-                      (check-equal? (read-bytes est-size in) #"12345")
-                      (kill-thread th)
-                      (tcp-close listener))))
+    (define (request-transfer in est-size)
+      (check-eq? est-size 5)
+      (check-equal? (read-bytes est-size in) #"12345")
+      (kill-thread th)
+      (tcp-close listener)
+      "fake")
 
-    (check-equal? (find-message $source-fetched? fetch-output)
-                  ($source-fetched source))))
+    (define fetch-output (fetch "anon" (list source) request-transfer))
+
+    (check-equal? (struct-copy fetch-state fetch-output
+                               [messages (list (car (fetch-state-messages fetch-output)))])
+                  (fetch-state source
+                               "anon"
+                               "fake"
+                               request-transfer
+                               (list ($source-fetched "anon" source))))))
