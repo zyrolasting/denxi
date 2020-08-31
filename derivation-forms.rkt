@@ -35,10 +35,10 @@
                  (non-empty-listof string?))
                 ((or/c #f integrity-info?)
                  (or/c #f signature-info?))
-                fetch-info?)]
+                input-info?)]
 
           [input-ref
-           (-> fetch-info?
+           (-> input-info?
                complete-path?)]
 
           [integrity
@@ -84,13 +84,13 @@
          "url.rkt")
 
 (define (input name sources [integrity #f] [signature #f])
-  (fetch-info name sources integrity signature))
+  (input-info name sources integrity signature))
 
 (define (input-ref fetch)
   (void))
 
 (define (input-package query-string)
-  (fetch-info query-string
+  (input-info query-string
               (map url->string (map/service-endpoints query-string (XIDEN_SERVICE_ENDPOINTS)))
               [integrity #f]
               [signature #f]))

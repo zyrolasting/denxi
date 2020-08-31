@@ -1,7 +1,6 @@
 #lang racket/base
 
-(require racket/class
-         racket/function
+(require racket/function
          racket/path
          racket/pretty
          racket/list
@@ -30,6 +29,7 @@
          "printer.rkt"
          "query.rkt"
          "rc.rkt"
+         "sandbox.rkt"
          "sentry.rkt"
          "setting.rkt"
          "signature.rkt"
@@ -101,16 +101,7 @@ EOF
     XIDEN_ALLOW_UNSUPPORTED_RACKET)
    (λ (flags source output . outputs)
      (with-rc flags
-       (define pkginfo-path (fetch-package-definition source))
-       (define pkginfo (read-package-info pkginfo-path))
-       (define actual-outputs (package-info-outputs pkginfo))
-       (define expected-outputs (cons output outputs))
-       (for ([expected-output (in-list expected-outputs)])
-         (unless (member expected-output actual-outputs)
-           (error "Output not defined by package")))
-       (define seval (make-build-sandbox pkginfo-path))
-       (for ([output (in-list expected-outputs)])
-         (seval `(build ,output)))
+       (install-package-from-source source (cons output outputs))
        (halt 0 null)))))
 
 
@@ -258,9 +249,6 @@ EOF
 
 #;(define (format-xiden-message m)
   (match m
-    [($test-print v)
-     (format "Testing: ~a" v)]
-
     [($output v)
      (format-xiden-message v)]
 
@@ -268,11 +256,6 @@ EOF
      (cond [(exn? v) (exn->string v)]
            [(string? v) v]
            [else (~s v)])]
-
-    [($show-string v) v]
-
-    [($show-datum v)
-     (pretty-format #:mode 'write v)]
 
     [($module-compiled module-path)
      (format "Compiled: ~a" module-path)]

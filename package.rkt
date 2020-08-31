@@ -25,6 +25,7 @@
          "query.rkt"
          "racket-version.rkt"
          "rc.rkt"
+         "sandbox.rkt"
          "setting.rkt"
          "signature.rkt"
          "source.rkt"
@@ -37,6 +38,62 @@
 (define-message $unsupported-racket-version (info))
 (define-message $package (info))
 (define-message $package-installed $package ())
+
+(define+provide-message $consent-note ())
+(define+provide-message $no-package-info (source))
+
+(define (fetch-package-definition source)
+  (fetch (list source)
+         (λ (in est-size)
+           (make-addressable-file source in est-size))))
+
+(define (install-package-from-source source expected-outputs)
+  (define pkginfo-path (fetch-package-definition source))
+  (define pkginfo (read-package-info pkginfo-path))
+  (define actual-outputs (package-info-outputs pkginfo))
+  (for ([expected-output (in-list expected-outputs)])
+    (unless (member expected-output actual-outputs)
+      (error "Output not defined by package")))
+  (define seval (make-build-sandbox pkginfo-path))
+  (call-with-build-directory
+   (build-workspace-path "var/xiden/pkgs")
+   (for ([output (in-list expected-outputs)])
+     (seval `(build ,output)))))
+
+(define (call-with-build-directory containing-dir proc)
+  (call-with-temporary-directory
+   #:cd? #t #:base containing-dir
+   (λ (path)
+     (proc path)
+     (define dest
+       (build-path (path-only path)
+                   (encoded-file-name
+                    (make-directory-content-digest path))))
+
+     (with-handlers ([exn:fail?
+                      (λ (e)
+                        (copy-directory/files path dest #:preserve-links? #t)
+                        (delete-directory/files path))])
+       (rename-file-or-directory path dest #:exists-ok? #t)))))
+
+
+(define (make-directory-content-digest path)
+  (for/fold ([dig #""])
+            ([subpath (in-directory path)]
+             #:when (file-exists? subpath))
+    (call-with-input-file subpath
+      (λ (in) (make-digest (input-port-append (open-input-bytes dig) in))))))
+
+(define (encoded-file-name variant)
+  (define encoded (encode 'base32 variant))
+  (define as-string
+    (if (bytes? encoded)
+        (bytes->string/utf-8 encoded)
+        encoded))
+
+  (substring as-string 0
+             (min (string-length as-string) 32)))
+
 
 
 (define (transfer-package-info from-source est-size)
@@ -54,39 +111,6 @@
 (define (make-package-path pkginfo)
   (build-workspace-path "var/xiden/pkg"
                         (make-package-name pkginfo)))
-
-
-(define (fetch-sourced-package-info source)
-  (fetch-named-source source source transfer-package-info))
-
-; (Log (Maybe Derivation))
-(define (install-package-from-source source)
-  (do path <- (fetch-sourced-package-info source)
-      (return (make-package-derivation path))))
-
-(define (make-package-derivation pkginfo)
-  (do supported <- (check-racket-support pkginfo)
-       (λ (supported?)
-         (if supported?
-             (make-derivation-module (fold-inputs pkginfo)
-                                     (fold-outputs pkginfo))
-             (return #f)))))
-
-
-(define (fold-inputs pkginfo)
-  (for/fold ([bound (hash)])
-            ([input (package-info-inputs pkginfo)])
-    (hash-set bound
-              (car input)
-              (cadr input))))
-
-
-(define (fold-outputs pkginfo)
-  (for/fold ([bound (hash)])
-            ([output (package-info-outputs pkginfo)])
-    (hash-set bound
-              (car output)
-              (cadr output))))
 
 
 (define (check-racket-support pkginfo)

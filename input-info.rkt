@@ -1,6 +1,8 @@
 #lang racket/base
 
 (require "contract.rkt"
+         "integrity.rkt"
+         "signature.rkt"
          "string.rkt"
          "source.rkt")
 
@@ -10,8 +12,10 @@
            flat-contract?]))
 
 (struct input-info
-  (name        ; The name to bind to bytes
-   fetch-info) ; Defines where said bytes come from
+  (name       ; The name to bind to bytes
+   sources    ; Defines where said bytes come from
+   integrity  ; Integrity information: Did I get the right bytes?
+   signature) ; Signature for authentication: Did the bytes come from someone I trust?
   #:prefab)
 
 
