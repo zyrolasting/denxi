@@ -40,20 +40,14 @@
          "worker.rkt"
          "workspace.rkt")
 
-
 (module+ main
-  (exit (entry-point (current-command-line-arguments))))
+  (exit (entry-point (current-command-line-arguments)
+                     void
+                     top-level-cli)))
 
+(define-message $unrecognized-command (command))
 
-; Keep seperate for functional tests.
-(define (entry-point args)
-  (do (if (show-workspace-envvar-error?)
-          (attach-message args ($invalid-workspace-envvar))
-          (omit-message args))
-      top-level-cli))
-
-
-(define (top-level-cli args)
+(define (top-level-cli args halt)
   (run-command-line
    #:program "xiden"
    #:arg-help-strings '("action" "args")
@@ -73,8 +67,8 @@
            ["link" link-command]
            ["config" config-command]
            ["sandbox" sandbox-command]
-           [_ (const (attach-message 1 ($unrecognized-command action)))]))
-       (proc args)))
+           [_ (const (halt 1 ($unrecognized-command action)))]))
+       (proc args halt)))
 
    #<<EOF
 <action> is one of
@@ -89,11 +83,11 @@ EOF
    ))
 
 
-(define (install-command args)
+(define (install-command args halt)
   (run-command-line
    #:program "install"
    #:args args
-   #:arg-help-strings '("pkgdef-source")
+   #:arg-help-strings '("pkgdef-source" "output" "outputs")
    #:flags
    (settings->flag-specs
     XIDEN_SERVICE_ENDPOINTS
@@ -105,17 +99,22 @@ EOF
     XIDEN_LINK
     XIDEN_ALLOW_UNDECLARED_RACKET_VERSIONS
     XIDEN_ALLOW_UNSUPPORTED_RACKET)
-   (λ (flags . pkgdef-sources)
-     ; Source -> package definition
-     ; Package definition -> derivation
-     ; Run derivation
-     ; Find in trash if needed
+   (λ (flags source output . outputs)
      (with-rc flags
-       (do source  <- (return (in-list pkgdef-sources))
-           (return source))))))
+       (define pkginfo-path (fetch-package-definition source))
+       (define pkginfo (read-package-info pkginfo-path))
+       (define actual-outputs (package-info-outputs pkginfo))
+       (define expected-outputs (cons output outputs))
+       (for ([expected-output (in-list expected-outputs)])
+         (unless (member expected-output actual-outputs)
+           (error "Output not defined by package")))
+       (define seval (make-build-sandbox pkginfo-path))
+       (for ([output (in-list expected-outputs)])
+         (seval `(build ,output)))
+       (halt 0 null)))))
 
 
-(define (uninstall-command args)
+(define (uninstall-command args halt)
   (run-command-line
    #:program "uninstall"
    #:arg-help-strings '("query")
@@ -127,30 +126,27 @@ EOF
    ; dependents referencing the paths.
    ; Move to trash
    (λ (flags . sources)
-     (void))))
+     (halt 0 null))))
 
 
-(define (link-command args)
+(define (link-command args halt)
   (run-command-line
    #:program "link"
    #:args args
    #:arg-help-strings '("link-path" "query" "rel-path")
    (λ (flags link-path query rel-path)
-     (do mid <- (find-latest-package-id (coerce-xiden-query query))
-         (return
-          (if mid
-              (make-link/clobber (build-path (get-derivation-directory mid)
-                                             rel-path)
-                                 link-path)
-              (attach-message 1 ($show-string "No package found"))))))))
+     (define mid (find-latest-package-id (coerce-xiden-query query)))
+     (make-link/clobber (build-path (get-derivation-directory mid)
+                                    rel-path)
+                        link-path)
+     (halt 0 null)
+     (halt 1 ($show-string "No package found")))))
 
 
-(define (config-command args)
+(define (config-command args halt)
   (define (get-setting name)
-    (define maybe-selected-setting (setting-ref name))
-    (if maybe-selected-setting
-        (omit-message maybe-selected-setting)
-        (attach-message #f ($setting-not-found name))))
+    (or (setting-ref name)
+        (halt 1 ($setting-not-found name))))
 
   (run-command-line
    #:program "config"
@@ -165,10 +161,7 @@ EOF
          #:program "config-get"
          #:arg-help-strings '("key")
          (λ (flags name)
-           (define maybe-selected-setting (setting-ref name))
-           (if maybe-selected-setting
-               (attach-message 0 ($show-datum (maybe-selected-setting)))
-               (attach-message 1 ($setting-not-found name)))))]
+           (halt 0 ($show-datum ((get-setting name))))))]
 
 
        ["dump"
@@ -177,7 +170,7 @@ EOF
          #:program "config-dump"
          #:arg-help-strings '()
          (λ (flags)
-           (attach-message 0 ($show-datum (dump-xiden-settings)))))]
+           (halt 0 ($show-datum (dump-xiden-settings)))))]
 
 
        ["set"
@@ -186,25 +179,23 @@ EOF
          #:program "config-set"
          #:arg-help-strings '("key" "value")
          (λ (flags name value-string)
-           (define maybe-selected-setting (setting-ref name))
-           (if maybe-selected-setting
-               (with-handlers ([exn:fail?
-                                (λ (e)
-                                  (attach-message 1
-                                                  ($setting-value-rejected
-                                                   (setting-id maybe-selected-setting)
-                                                   value-string
-                                                   (if (exn:fail:contract? e)
-                                                       (cadr (regexp-match #px"expected:\\s+([^\n]+)"
-                                                                           (exn-message e)))
-                                                       (exn-message e)))))])
-                 (attach-message 0
-                                 (maybe-selected-setting (read (open-input-string value-string))
-                                                         save-xiden-settings!)))
-               (attach-message 1 ($setting-not-found name)))))]
+           (define selected-setting (get-setting name))
+           (with-handlers ([exn:fail?
+                            (λ (e)
+                              (halt 1
+                                    ($setting-value-rejected
+                                     (setting-id selected-setting)
+                                     value-string
+                                     (if (exn:fail:contract? e)
+                                         (cadr (regexp-match #px"expected:\\s+([^\n]+)"
+                                                             (exn-message e)))
+                                         (exn-message e)))))])
+             (halt 0
+                   (selected-setting (read (open-input-string value-string))
+                                     save-xiden-settings!)))))]
 
        [_
-        (attach-message 1 ($unrecognized-command action))]))
+        (halt 1 ($unrecognized-command action))]))
 
    #<<EOF
 <action> is one of
@@ -217,25 +208,23 @@ EOF
 
 
 
-
-(define (sandbox-command args)
+(define (sandbox-command args halt)
   (run-command-line
    #:program "sandbox"
-   #:arg-help-strings '("query")
+   #:arg-help-strings '("package-path" "build-directory")
    #:flags
    (settings->flag-specs
     XIDEN_SANDBOX_MEMORY_LIMIT_MB
     XIDEN_SANDBOX_EVAL_MEMORY_LIMIT_MB
     XIDEN_SANDBOX_EVAL_TIME_LIMIT_SECONDS)
    #:args args
-   (λ (flags query)
-     (define input-program "TODO")
-     (define build-directory "TODO")
+   (λ (flags input-program build-directory)
      (parameterize ([current-eval (make-build-sandbox input-program build-directory)])
-       (read-eval-print-loop)))))
+       (read-eval-print-loop))
+     (halt 0 null))))
 
 
-(define (show-command args)
+(define (show-command args halt)
   (run-command-line
    #:args args
    #:program "show"
@@ -243,13 +232,13 @@ EOF
    (λ (flags what)
      (match what
        ["workspace"
-        (attach-message 0 ($show-string (path->string ((workspace-directory)))))]
+        (halt 0 ($show-string (path->string ((workspace-directory)))))]
        ["installed"
         (define in-installed '(TODO database query))
-        (attach-message 0 (for/list ([path in-installed])
-                 ($show-string path)))]
+        (halt 0 (for/list ([path in-installed])
+                  ($show-string path)))]
        [_
-        (attach-message 1 ($unrecognized-command what))]))
+        (halt 1 ($unrecognized-command what))]))
    #<<EOF
 where <what> is one of
   workspace  The current target workspace directory
@@ -392,45 +381,51 @@ EOF
 
 ; Functional tests follow. Use to detect changes in the interface and
 ; verify high-level impact.
-#;(module+ test
+(module+ test
   (require racket/port
            racket/random
            rackunit
            (submod "file.rkt" test))
 
+
   (test-case "Configure xiden"
-    (test-workspace "Respond to an incomplete command with help"
-                    (define out (entry-point '("config")))
-                    (define help-message (findf $show-string? ($with-messages-accumulated out)))
-                    (check-eq? ($with-messages-intermediate out) 1)
-                    (check-true
-                     (andmap (λ (patt) (regexp-match? (regexp patt) ($show-string-message help-message)))
-                             '("given 0 arguments"
-                               "set"
-                               "get"
-                               "dump"))))
+    (test-case "Respond to an incomplete command with help"
+      (config-command
+       null
+       (λ (exit-code help-message)
+         (check-pred $show-string? help-message)
+         (check-eq? exit-code 1)
+         (check-true
+          (andmap (λ (patt) (regexp-match? (regexp patt) ($show-string-message help-message)))
+                  '("given 0 arguments"
+                    "set"
+                    "get"
+                    "dump"))))))
 
-    (test-workspace "Dump all (read)able configuration on request"
-                    (define out (entry-point '("config" "dump")))
-                    (check-eq? ($with-messages-intermediate out) 0)
-                    (check-equal? ($with-messages-accumulated out)
-                                  (list ($show-datum (dump-xiden-settings)))))
+    (test-case "Dump all (read)able configuration on request"
+      (config-command '("dump")
+                      (λ (exit-code msg)
+                        (check-eq? exit-code 0)
+                        (check-equal? msg ($show-datum (dump-xiden-settings))))))
 
-    (test-workspace "Return a (read)able config value"
-                    (define config-key (random-ref (in-hash-keys XIDEN_SETTINGS)))
-                    (define config-key/str (symbol->string config-key))
-                    (define out (entry-point `("config" "get" ,config-key/str)))
-                    (check-eq? ($with-messages-intermediate out) 0)
-                    (check-equal? (car ($with-messages-accumulated out))
-                                  ($show-datum ((hash-ref XIDEN_SETTINGS config-key)))))
+    (test-case "Return a (read)able config value"
+      (define config-key (random-ref (in-hash-keys XIDEN_SETTINGS)))
+      (define config-key/str (symbol->string config-key))
+      (config-command
+       `("get" ,config-key/str)
+       (λ (exit-code msg)
+         (check-eq? exit-code 0)
+         (check-equal? msg
+                       ($show-datum ((hash-ref XIDEN_SETTINGS config-key)))))))
 
     (test-workspace "Save a (write)able config value"
                     ; This confirms that a new workspace has different results.
                     (check-false (XIDEN_VERBOSE))
                     (check-false (file-exists? (get-xiden-settings-path)))
 
-                    (define get/output (entry-point '("config" "get" "XIDEN_VERBOSE")))
-                    (define set/output (entry-point '("config" "set" "XIDEN_VERBOSE" "#t")))
-
-                    (check-pred file-exists? (get-xiden-settings-path))
-                    (check-true ((load-xiden-rcfile) 'XIDEN_VERBOSE)))))
+                    (config-command
+                     '("set" "XIDEN_VERBOSE" "#t")
+                     (λ (exit-code msg)
+                       (check-eq? exit-code 0)
+                       (check-pred file-exists? (get-xiden-settings-path))
+                       (check-true ((load-xiden-rcfile) 'XIDEN_VERBOSE)))))))

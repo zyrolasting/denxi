@@ -3,17 +3,17 @@
 (require "contract.rkt")
 (provide
  with-rc
+ run-command-line
  (contract-out
-  [run-command-line
-   (->* ((unconstrained-domain-> (integer-in 0 255))
-         #:program non-empty-string?
-         #:arg-help-strings (listof non-empty-string?))
-        (#:flags list?
-         #:args (or/c (vectorof string?) (listof string?))
-         string?)
-        (integer-in 0 255))]))
+  [entry-point
+   (-> (or/c (vectorof string?) (listof string?))
+       (-> $message? string?)
+       (-> (or/c (vectorof string?) (listof string?))
+           any/c)
+       io-begin?)]))
 
 (require racket/cmdline
+         racket/format
          racket/vector
          "message.rkt"
          "monad.rkt"
@@ -23,14 +23,33 @@
          "string.rkt"
          "workspace.rkt")
 
-(define+provide-message $unrecognized-command (command))
+
+(define (entry-point args format-message run-args)
+  (run-io (make-entry-point args format-message run-args)))
+
+; A functional (as in "functional programming") entry point to the
+; project. Use for functional (as in "black box") tests.
+;
+; The code makes this obvious, but it's easy to forget that the I/O
+; marked with * is only meant for an end of program report.  Do not
+; count on them to include download progress, etc.
+(define (make-entry-point args format-message run-args)
+  (do (if (show-workspace-envvar-error?)
+          (mwrite-message ($invalid-workspace-envvar))
+          (io-return void))
+      (let-values ([(exit-code messages) ; CPS is easier to think about in the handlers.
+                    (call/cc (λ (k) (run-st (run-args args k) null)))])
+        (do (io-return ; *
+             (λ () (for ([m (if (list? messages) (in-list (reverse messages)) (in-value messages))])
+                     (write-message m format-message))))
+            (return exit-code)))))
 
 ; Define a transition from accumulated command line flags to a new
 ; parameterization in terms of those flags and a cached read of the
 ; rcfile. Capture any failure in this transition as main program
 ; output.
 (define-syntax-rule (with-rc flags body ...)
-  (with-handlers ([exn:fail? (λ (e) (attach-message 0 ($show-string (exn-message e))))])
+  (with-handlers ([exn:fail? (λ (e) (values 0 ($show-string (exn-message e))))])
     (with-xiden-rcfile (call-with-applied-settings flags (λ () body ...)))))
 
 
@@ -53,19 +72,6 @@
     (or (vector-member "-h" argv)
         (vector-member "--help" argv)))
 
-  ; parse-command-line does not show help when arguments are missing
-  ; and -h is not set.  Show help anyway.
-  (define (show-help-on-zero-arguments e)
-    (attach-message 1
-     ($show-string
-      (format "~a~n~a"
-              (exn-message e)
-              (if (and (regexp-match? #px"given 0 arguments" (exn-message e))
-                       suffix-is-index?
-                       (not help-requested?))
-                  help-suffix
-                  "")))))
-
 
   (call/cc
    ; The callback for showing the help string does not stop evaluation
@@ -73,6 +79,19 @@
    ; exit handler by default. Use a continuation to maintain a
    ; functional approach.
    (λ (force-output)
+     ; parse-command-line does not show help when arguments are missing
+     ; and -h is not set.  Show help anyway.
+     (define (show-help-on-zero-arguments e)
+       (force-output  1
+                      ($show-string
+                       (format "~a~n~a"
+                               (exn-message e)
+                               (if (and (regexp-match? #px"given 0 arguments" (exn-message e))
+                                        suffix-is-index?
+                                        (not help-requested?))
+                                   help-suffix
+                                   "")))))
+
      (with-handlers ([exn:fail:user? show-help-on-zero-arguments])
        (parse-command-line program argv
                            (if (null? flags)
@@ -81,6 +100,5 @@
                            handle-arguments
                            arg-help-strings
                            (λ (help-str)
-                             (force-output
-                              (return (attach-message (if help-requested? 0 1)
-                                                      ($show-string (format "~a~n~a" help-str help-suffix)))))))))))
+                             (force-output (if help-requested? 0 1)
+                                           ($show-string (format "~a~n~a" help-str help-suffix)))))))))
