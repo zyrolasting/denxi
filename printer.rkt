@@ -8,8 +8,10 @@
          (contract-out
           [default-message-formatter
             (-> $message? string?)]
+          [write-message
+           (->* ($message? (-> $message? string?)) (output-port?) void?)]
           [mwrite-message
-           (->* ($message? (-> $message? string?)) (output-port?) void?)]))
+           (->* ($message? (-> $message? string?)) (output-port?) io-return?)]))
 
 (require racket/date
          racket/fasl
