@@ -6,6 +6,8 @@
 
 (provide define-message-formatter
          (contract-out
+          [combine-message-formatters
+           (->* () #:rest (listof (-> $message? string?)) (-> $message? string?))]
           [default-message-formatter
             (-> $message? string?)]
           [write-message
@@ -26,6 +28,14 @@
 (define+provide-message $show-string (message))
 (define+provide-message $verbose     (message))
 
+(define (combine-message-formatters . formatters)
+  (λ (m) (format-message-aux m formatters)))
+
+(define (format-message-aux m formatters)
+  (if (null? formatters)
+      (error 'format-message "Unknown message type: ~s" m)
+      (with-handlers ([exn:misc:match? (λ (e) (format-message-aux m (cdr formatters)))])
+        ((car formatters) m))))
 
 (define (filter-output m)
   (if ($verbose? m)
@@ -56,8 +66,7 @@
 
 
 (define-syntax-rule (define-message-formatter id patts ...)
-  (define (id m)
-    (match m patts ... [_ (error 'id "Unknown message type: ~s" m)])))
+  (define (id m) (match m patts ...)))
 
 
 (define-message-formatter default-message-formatter
@@ -66,7 +75,8 @@
 
 
 (module+ test
-  (require rackunit
+  (require racket/format
+           rackunit
            "setting.rkt")
 
   (define dummy ($show-string "Testing: Blah"))
@@ -126,4 +136,15 @@
                    [(setting-derived-parameter XIDEN_READER_FRIENDLY_OUTPUT) #t])
       (test-output "Opt into verbose output"
                    ($verbose dummy)
-                   #px"\\$show-string"))))
+                   #px"\\$show-string")))
+
+  (test-case "Compose message formatters"
+    (define-message $other (message))
+    (define-message-formatter a [($show-string v) v])
+    (define-message-formatter b [($show-datum  v) (~s v)])
+    (define c (combine-message-formatters a b))
+    (check-equal? (c ($show-string "foo")) "foo")
+    (check-equal? (c ($show-datum  "bar")) "\"bar\"")
+    (check-exn
+     exn:fail?
+     (λ () (c ($other "whatever"))))))
