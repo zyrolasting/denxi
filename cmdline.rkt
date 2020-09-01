@@ -1,16 +1,21 @@
 #lang racket/base
 
 (require "contract.rkt")
+(define exit-code/c (integer-in 0 255))
 (provide
  with-rc
  run-command-line
  (contract-out
   [entry-point
-   (-> (or/c (vectorof string?) (listof string?))
+   (-> (or/c (vectorof string?)
+             (listof string?))
        (-> $message? string?)
        (-> (or/c (vectorof string?) (listof string?))
+           (-> exit-code/c
+               (or/c $message? (listof $message?))
+               exit-code/c)
            any/c)
-       io-begin?)]))
+       exit-code/c)]))
 
 (require racket/cmdline
          racket/format
@@ -56,6 +61,7 @@
 ; Base bindings follow
 
 (define (run-command-line #:program program
+                          #:halt halt
                           #:flags [flags null]
                           #:args [args (current-command-line-arguments)]
                           #:arg-help-strings arg-help-strings
@@ -73,32 +79,26 @@
         (vector-member "--help" argv)))
 
 
-  (call/cc
-   ; The callback for showing the help string does not stop evaluation
-   ; of the argument handler. This is why parse-command-line calls the
-   ; exit handler by default. Use a continuation to maintain a
-   ; functional approach.
-   (λ (force-output)
-     ; parse-command-line does not show help when arguments are missing
-     ; and -h is not set.  Show help anyway.
-     (define (show-help-on-zero-arguments e)
-       (force-output  1
-                      ($show-string
-                       (format "~a~n~a"
-                               (exn-message e)
-                               (if (and (regexp-match? #px"given 0 arguments" (exn-message e))
-                                        suffix-is-index?
-                                        (not help-requested?))
-                                   help-suffix
-                                   "")))))
+  ; parse-command-line does not show help when arguments are missing
+  ; and -h is not set.  Show help anyway.
+  (define (show-help-on-zero-arguments e)
+    (halt 1
+          ($show-string
+           (format "~a~n~a"
+                   (exn-message e)
+                   (if (and (regexp-match? #px"given 0 arguments" (exn-message e))
+                            suffix-is-index?
+                            (not help-requested?))
+                       help-suffix
+                       "")))))
 
-     (with-handlers ([exn:fail:user? show-help-on-zero-arguments])
-       (parse-command-line program argv
-                           (if (null? flags)
-                               null
-                               `((once-each . ,flags)))
-                           handle-arguments
-                           arg-help-strings
-                           (λ (help-str)
-                             (force-output (if help-requested? 0 1)
-                                           ($show-string (format "~a~n~a" help-str help-suffix)))))))))
+  (with-handlers ([exn:fail:user? show-help-on-zero-arguments])
+    (parse-command-line program argv
+                        (if (null? flags)
+                            null
+                            `((once-each . ,flags)))
+                        handle-arguments
+                        arg-help-strings
+                        (λ (help-str)
+                          (halt (if help-requested? 0 1)
+                                ($show-string (format "~a~n~a" help-str help-suffix)))))))

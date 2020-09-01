@@ -18,6 +18,7 @@
          "cmdline.rkt"
          "config.rkt"
          "contract.rkt"
+         "exn.rkt"
          "file.rkt"
          "format.rkt"
          "integrity.rkt"
@@ -28,11 +29,13 @@
          "package-info.rkt"
          "printer.rkt"
          "query.rkt"
+         "racket-version.rkt"
          "rc.rkt"
          "sandbox.rkt"
          "sentry.rkt"
          "setting.rkt"
          "signature.rkt"
+         "source.rkt"
          "string.rkt"
          "team.rkt"
          "url.rkt"
@@ -42,7 +45,8 @@
 
 (module+ main
   (exit (entry-point (current-command-line-arguments)
-                     void
+                     (combine-message-formatters format-xiden-message
+                                                 default-message-formatter)
                      top-level-cli)))
 
 (define-message $unrecognized-command (command))
@@ -52,6 +56,7 @@
    #:program "xiden"
    #:arg-help-strings '("action" "args")
    #:args args
+   #:halt halt
    #:flags
    (settings->flag-specs
     XIDEN_FASL_OUTPUT
@@ -87,7 +92,8 @@ EOF
   (run-command-line
    #:program "install"
    #:args args
-   #:arg-help-strings '("pkgdef-source" "output" "outputs")
+   #:halt halt
+   #:arg-help-strings '("pkgdef-source" "output" "output")
    #:flags
    (settings->flag-specs
     XIDEN_SERVICE_ENDPOINTS
@@ -108,10 +114,11 @@ EOF
 (define (uninstall-command args halt)
   (run-command-line
    #:program "uninstall"
+   #:args args
+   #:halt halt
    #:arg-help-strings '("query")
    #:flags
    (settings->flag-specs XIDEN_CONSENT)
-   #:args args
    ; Proceed as if you were installing, until you
    ; find package paths. Check database for
    ; dependents referencing the paths.
@@ -124,6 +131,7 @@ EOF
   (run-command-line
    #:program "link"
    #:args args
+   #:halt halt
    #:arg-help-strings '("link-path" "query" "rel-path")
    (λ (flags link-path query rel-path)
      (define mid (find-latest-package-id (coerce-xiden-query query)))
@@ -142,6 +150,7 @@ EOF
   (run-command-line
    #:program "config"
    #:args args
+   #:halt halt
    #:arg-help-strings '("action" "args")
 
    (λ (flags action . args)
@@ -149,6 +158,7 @@ EOF
        ["get"
         (run-command-line
          #:args args
+         #:halt halt
          #:program "config-get"
          #:arg-help-strings '("key")
          (λ (flags name)
@@ -158,6 +168,7 @@ EOF
        ["dump"
         (run-command-line
          #:args args
+         #:halt halt
          #:program "config-dump"
          #:arg-help-strings '()
          (λ (flags)
@@ -167,6 +178,7 @@ EOF
        ["set"
         (run-command-line
          #:args args
+         #:halt halt
          #:program "config-set"
          #:arg-help-strings '("key" "value")
          (λ (flags name value-string)
@@ -202,13 +214,14 @@ EOF
 (define (sandbox-command args halt)
   (run-command-line
    #:program "sandbox"
+   #:args args
+   #:halt halt
    #:arg-help-strings '("package-path" "build-directory")
    #:flags
    (settings->flag-specs
     XIDEN_SANDBOX_MEMORY_LIMIT_MB
     XIDEN_SANDBOX_EVAL_MEMORY_LIMIT_MB
     XIDEN_SANDBOX_EVAL_TIME_LIMIT_SECONDS)
-   #:args args
    (λ (flags input-program build-directory)
      (parameterize ([current-eval (make-build-sandbox input-program build-directory)])
        (read-eval-print-loop))
@@ -218,6 +231,7 @@ EOF
 (define (show-command args halt)
   (run-command-line
    #:args args
+   #:halt halt
    #:program "show"
    #:arg-help-strings '("what")
    (λ (flags what)
@@ -239,15 +253,15 @@ EOF
    ))
 
 
-#;(define (format-package-info info)
+(define (format-package-info info)
   (package-info-package-name info))
 
-#;(define (format-setting-flag-example s)
+(define (format-setting-flag-example s)
   (format "~a/~a"
           (setting-short-flag s)
           (setting-long-flag s)))
 
-#;(define (format-xiden-message m)
+(define (format-xiden-message m)
   (match m
     [($output v)
      (format-xiden-message v)]
@@ -265,39 +279,39 @@ EOF
              module-path
              message m)]
 
-    [($fetch-integrity-mismatch input source)
+    #;[($fetch-integrity-mismatch input source)
      (format (~a "~a failed its integrity check.~n"
                  "While unsafe, you can force installation using ~a.")
              (format-package-info source)
              (setting-long-flag XIDEN_TRUST_BAD_DIGEST))]
 
-    [($mod-load-failure path error-string)
+    #;[($mod-load-failure path error-string)
      (format (~a "Could not load plugin module ~a. Using default implementations.~n"
                  "Load error: ~a")
              path
              error-string)]
 
-    [($fetch-signature-mismatch input source)
+    #;[($fetch-signature-mismatch input source)
      (format (~a "~s's signature does not match any trusted public key.~n"
                  "While unsafe, you can trust bad signatures using ~a.")
              source
              (setting-long-flag XIDEN_TRUST_BAD_SIGNATURE))]
 
-    [($fetch-signature-missing (fetch-info name _ _ _) source)
+    #;[($fetch-signature-missing (fetch-info name _ _ _) source)
      (format (~a "~a does not have a signature. If you are testing a package, this is expected.~n"
                  "If you got the package from the Internet, then exercise caution!~n"
                  "To trust unsigned packages, use ~a.")
              name
              (setting-long-flag XIDEN_TRUST_UNSIGNED))]
 
-    [($unverified-host url)
+    #;[($unverified-host url)
      (format (~a "~a does not have a valid certificate.~n"
                  "Connections to this server are not secure.~n"
                  "To trust servers without valid certificates, use ~a.")
              url
              (setting-long-flag XIDEN_TRUST_UNVERIFIED_HOST))]
 
-    [($package-installed info)
+    #;[($package-installed info)
      (format "Installed package ~a"
              (format-package-info info))]
 
@@ -309,10 +323,10 @@ EOF
      (format "To consent to these changes, run again with ~a"
              (setting-short-flag XIDEN_CONSENT))]
 
-    [($source-unfetched user-string)
+    [($fetch-failure user-string)
      (format "Cannot find content for ~s" user-string)]
 
-    [($source-fetched user-string)
+    [($source-fetched name user-string)
      (format "Fetched ~s" user-string)]
 
     [($setting-not-found name)
@@ -357,9 +371,7 @@ EOF
                                         variant))
                             (package-info-racket-versions info)))))
             (format "To install this package anyway, run again with ~a"
-                    (setting-long-flag XIDEN_ALLOW_UNSUPPORTED_RACKET))))]
-
-    [_ (error 'format-xiden-message "Unknown message type: ~s" m)]))
+                    (setting-long-flag XIDEN_ALLOW_UNSUPPORTED_RACKET))))]))
 
 
 ; Functional tests follow. Use to detect changes in the interface and
