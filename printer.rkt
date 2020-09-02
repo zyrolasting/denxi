@@ -4,16 +4,21 @@
 
 (require "contract.rkt")
 
-(provide define-message-formatter
+(define message-formatter/c (-> $message? string?))
+
+(provide (all-from-out "contract.rkt") ; For define+provide expansion
+         define-message-formatter
+         define+provide-message-formatter
+         message-formatter
          (contract-out
+          [message-formatter/c
+           contract?]
           [combine-message-formatters
-           (->* () #:rest (listof (-> $message? string?)) (-> $message? string?))]
-          [default-message-formatter
-            (-> $message? string?)]
+           (->* () #:rest (listof message-formatter/c) message-formatter/c)]
           [write-message
-           (->* ($message? (-> $message? string?)) (output-port?) void?)]
+           (->* ($message? message-formatter/c) (output-port?) void?)]
           [mwrite-message
-           (->* ($message? (-> $message? string?)) (output-port?) io-return?)]))
+           (->* ($message? message-formatter/c) (output-port?) io-return?)]))
 
 (require racket/date
          racket/fasl
@@ -65,11 +70,17 @@
       (flush-output))))
 
 
+(define-syntax-rule (message-formatter patts ...)
+  (λ (m) (match m patts ...)))
+
 (define-syntax-rule (define-message-formatter id patts ...)
-  (define (id m) (match m patts ...)))
+  (define id (message-formatter patts ...)))
 
+(define-syntax-rule (define+provide-message-formatter id patts ...)
+  (begin (provide (contract-out [id message-formatter/c]))
+         (define-message-formatter id patts ...)))
 
-(define-message-formatter default-message-formatter
+(define+provide-message-formatter default-message-formatter
   [($show-string v) v]
   [($show-datum v) (pretty-format #:mode 'write v)])
 
