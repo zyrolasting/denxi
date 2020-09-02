@@ -2,19 +2,18 @@
 
 (require "contract.rkt")
 (define exit-code/c (integer-in 0 255))
+(define arguments/c (or/c (vectorof string?) (listof string?)))
+
 (provide
  with-rc
  run-command-line
  (contract-out
   [entry-point
-   (-> (or/c (vectorof string?)
-             (listof string?))
-       (-> $message? string?)
-       (-> (or/c (vectorof string?) (listof string?))
-           (-> exit-code/c
-               (or/c $message? (listof $message?))
-               exit-code/c)
-           any/c)
+   (-> arguments/c
+       message-formatter/c
+       (-> arguments/c
+           (-> exit-code/c (or/c $message? (listof $message?)) any)
+           (values exit-code/c (or/c $message? (listof $message?))))
        exit-code/c)]))
 
 (require racket/cmdline
@@ -43,7 +42,7 @@
           (mwrite-message ($invalid-workspace-envvar))
           (io-return void))
       (let-values ([(exit-code messages) ; CPS is easier to think about in the handlers.
-                    (call/cc (λ (k) (run-st (run-args args k) null)))])
+                    (call/cc (λ (k) (run-args args k)))])
         (do (io-return ; *
              (λ () (for ([m (if (list? messages) (in-list (reverse messages)) (in-value messages))])
                      (write-message m format-message))))
