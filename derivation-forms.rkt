@@ -19,6 +19,8 @@
          case
          list cons car cdr list* append reverse
          equal?
+         from-file
+         init!
          make-immutable-hash hash hash-set hash-set* hash-remove hash-clear hash-update
          string-append
          path->string
@@ -26,13 +28,14 @@
          collection-path
          system-library-subpath
          getenv
-         (all-from-out "archiving.rkt")
+         (all-from-out "archiving.rkt"
+                       file/untgz)
          (rename-out [#%module-begin* #%module-begin]
                      [list sources])
          (contract-out
           [input
            (->* (non-empty-string?
-                 (non-empty-listof string?))
+                 (non-empty-listof path-string?))
                 ((or/c #f integrity-info?)
                  (or/c #f signature-info?))
                 input-info?)]
@@ -40,6 +43,10 @@
           [input-ref
            (-> input-info?
                complete-path?)]
+
+          [from-package
+           (-> string?
+               (listof url-string?))]
 
           [integrity
            (-> xiden-hash-algorithm/c
@@ -66,35 +73,79 @@
 
 
 
-(require (for-syntax racket/base)
+(require (for-syntax racket/base
+                     syntax/location
+                     syntax/parse)
          (only-in file/sha1 hex-string->bytes)
+         file/untgz
          racket/function
+         racket/sequence
          racket/string
          "archiving.rkt"
          "encode.rkt"
          "compression.rkt"
+         "format.rkt"
          "input-info.rkt"
          "integrity.rkt"
          "localstate.rkt"
          "message.rkt"
+         "monad.rkt"
          "output-info.rkt"
+         "path.rkt"
          "printer.rkt"
          "rc.rkt"
+         "setting.rkt"
          "signature.rkt"
          "source.rkt"
          "url.rkt")
 
+
+
+(define (init! dump build-directory)
+  (current-directory build-directory)
+  (for ([(k v) (in-hash XIDEN_SETTINGS)])
+    ((setting-derived-parameter v) (hash-ref dump k))))
+
+
 (define (input name sources [integrity #f] [signature #f])
   (input-info name sources integrity signature))
 
-(define (input-ref fetch)
-  (void))
+(define format-message
+  (combine-message-formatters format-input-message
+                              format-fetch-message
+                              default-message-formatter))
 
-(define (input-package query-string)
-  (input-info query-string
-              (map url->string (map/service-endpoints query-string (XIDEN_SERVICE_ENDPOINTS)))
-              [integrity #f]
-              [signature #f]))
+(define (input-ref input)
+  (displayln (XIDEN_TRUST_UNSIGNED))
+  (write-message ($input-resolve-start (input-info-name input)) format-message)
+  (define-values (path messages) (run-log (resolve-input input) null))
+  (sequence-for-each
+   (λ (m) (write-message m format-message))
+   (in-list (reverse messages)))
+  (if (eq? path FAILURE)
+      (raise-user-error 'input-ref
+                        "Could not resolve input ~a~nSources:~n~a~n"
+                        (input-info-name input)
+                        (join-lines (map ~a (input-info-sources input))))
+      path))
+
+
+(define-syntax (from-file stx)
+  (syntax-parse stx
+    [(_ user-path:string)
+     (for ([el (in-list (explode-path (syntax-e #'user-path)))])
+       (when (eq? el 'up)
+         (raise-syntax-error 'from-file
+                             "A relative path source may not reference parent directories."
+                             #'user-path)))
+     (with-syntax ([wrt (syntax-source-directory stx)])
+       #'(normalize-path user-path wrt))]))
+
+
+(define (from-package query-string)
+  (map url->string
+       (map/service-endpoints query-string
+                              (XIDEN_SERVICE_ENDPOINTS))))
 
 (define (output name expr)
   (cons name expr))
