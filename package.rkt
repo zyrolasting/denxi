@@ -3,7 +3,7 @@
 (provide (all-defined-out))
 
 (require racket/function
-         racket/generator
+         racket/list
          racket/path
          racket/pretty
          racket/sequence
@@ -14,6 +14,7 @@
          "encode.rkt"
          "exn.rkt"
          "file.rkt"
+         "format.rkt"
          "integrity.rkt"
          "localstate.rkt"
          "message.rkt"
@@ -22,6 +23,7 @@
          "package-info.rkt"
          "path.rkt"
          "port.rkt"
+         "printer.rkt"
          "query.rkt"
          "racket-version.rkt"
          "rc.rkt"
@@ -34,102 +36,147 @@
          "openssl.rkt"
          "workspace.rkt")
 
-(define-message $undeclared-racket-version (info))
-(define-message $unsupported-racket-version (info))
-(define-message $package (info))
-(define-message $package-installed $package ())
-
 (define+provide-message $consent-note ())
 (define+provide-message $no-package-info (source))
+(define+provide-message $package (info))
+(define+provide-message $package-installed $package ())
+(define+provide-message $undeclared-racket-version $package ())
+(define+provide-message $unsupported-racket-version $package ())
+(define+provide-message $undefined-package-output $package (name))
 
-(define (fetch-package-definition source)
-  (fetch (list source)
-         (λ (in est-size)
-           (make-addressable-file source in est-size))))
 
 (define (install-package-from-source source expected-outputs)
-  (define pkginfo-path (fetch-package-definition source))
-  (define pkginfo (read-package-info pkginfo-path))
-  (define actual-outputs (package-info-outputs pkginfo))
-  (for ([expected-output (in-list expected-outputs)])
-    (unless (member expected-output actual-outputs)
-      (error "Output not defined by package")))
-  (define seval (make-build-sandbox pkginfo-path))
-  (call-with-build-directory
-   (build-workspace-path "var/xiden/pkgs")
-   (for ([output (in-list expected-outputs)])
-     (seval `(build ,output)))))
-
-(define (call-with-build-directory containing-dir proc)
-  (call-with-temporary-directory
-   #:cd? #t #:base containing-dir
-   (λ (path)
-     (proc path)
-     (define dest
-       (build-path (path-only path)
-                   (encoded-file-name
-                    (make-directory-content-digest path))))
-
-     (with-handlers ([exn:fail?
-                      (λ (e)
-                        (copy-directory/files path dest #:preserve-links? #t)
-                        (delete-directory/files path))])
-       (rename-file-or-directory path dest #:exists-ok? #t)))))
+  (do pkginfo-path    <- (fetch-package-definition source)
+      pkginfo         <- (read-package pkginfo-path)
+      checked-pkginfo <- (check-racket-support pkginfo)
+      checked-outputs <- (validate-output-request checked-pkginfo expected-outputs)
+      build-output    <- (build-package (if (file-exists? source) (path->complete-path source) pkginfo-path) checked-outputs)
+      (return build-output)))
 
 
-(define (make-directory-content-digest path)
-  (for/fold ([dig #""])
-            ([subpath (in-directory path)]
-             #:when (file-exists? subpath))
-    (call-with-input-file subpath
-      (λ (in) (make-digest (input-port-append (open-input-bytes dig) in))))))
+(define (validate-output-request pkginfo outs [original-outputs outs])
+  (cond [(null? outs)
+         (logged-unit original-outputs)]
 
-(define (encoded-file-name variant)
-  (define encoded (encode 'base32 variant))
-  (define as-string
-    (if (bytes? encoded)
-        (bytes->string/utf-8 encoded)
-        encoded))
+        [(member (car outs)
+                 (package-info-outputs pkginfo))
+         (validate-output-request pkginfo
+                                  (cdr outs)
+                                  original-outputs)]
 
-  (substring as-string 0
-             (min (string-length as-string) 32)))
+        [else
+         (logged-failure ($undefined-package-output pkginfo (car outs)))]))
 
 
+(define (build-package pkginfo-path expected-outputs)
+  (logged
+   (λ (messages)
+     (make-addressable-directory
+      (build-workspace-path "var/xiden/pkgs")
+      (λ (build-dir)
+        (define pkgeval (make-package-evaluator pkginfo-path build-dir))
+        (values SUCCESS
+                (cons (for/list ([output (in-list expected-outputs)])
+                        (build-package-output pkgeval
+                                              output
+                                              (build-path build-dir output)))
+                      messages)))))))
 
-(define (transfer-package-info from-source est-size)
-  (define max-size (mibibytes->bytes (XIDEN_FETCH_PKGDEF_SIZE_MB)))
-  (define-values (from-pipe to-pipe) (make-pipe max-size))
-  (transfer from-source to-pipe
-            #:transfer-name "package-info"
-            #:max-size max-size
-            #:buffer-size (mibibytes->bytes (max (/ (XIDEN_FETCH_PKGDEF_SIZE_MB) 5) 5))
-            #:timeout-ms (XIDEN_FETCH_TIMEOUT_MS)
-            #:est-size est-size)
-  (close-output-port to-pipe))
+
+(define (build-package-output pkgeval output-name output-dir)
+  (parameterize ([current-directory output-dir])
+    (make-directory* output-dir)
+    (pkgeval `(build ,output-name))))
 
 
-(define (make-package-path pkginfo)
-  (build-workspace-path "var/xiden/pkg"
-                        (make-package-name pkginfo)))
+(define (get-package-definition-from-source source)
+  (do pkginfo-path <- (fetch-package-definition source)
+      pkginfo      <- (read-package-info pkginfo-path)
+      (return pkginfo)))
+
+
+(define (read-package pkginfo-path)
+  (logged-unit (read-package-info pkginfo-path)))
+
+
+(define (fetch-package-definition source)
+  (logged
+   (λ (m)
+     (define fetch-st
+       (fetch source
+              (list source)
+              (λ (in est-size)
+                (make-addressable-file
+                 source in
+                 (min (mibibytes->bytes (XIDEN_FETCH_PKGDEF_SIZE_MB))
+                      est-size)))))
+
+     (define-values (result messages) (run-log fetch-st m))
+
+     (values (or (fetch-state-path result) FAILURE)
+             messages))))
+
+
+(define (make-package-evaluator pkginfo-variant build-dir)
+  (make-build-sandbox
+   (if (file-exists? pkginfo-variant)
+       (call-with-input-file pkginfo-variant
+         (λ (in) (read-info-module pkginfo-variant in)))
+       pkginfo-variant)
+   build-dir))
+
 
 
 (define (check-racket-support pkginfo)
   (let ([racket-support (check-racket-version-ranges (version) (package-info-racket-versions pkginfo))])
     (case racket-support
       [(supported)
-       (return pkginfo)]
+       (logged-unit pkginfo)]
       [(unsupported)
        (if (XIDEN_ALLOW_UNSUPPORTED_RACKET)
-           (return pkginfo)
-           (attach-message #f ($unsupported-racket-version pkginfo)))]
+           (logged-unit pkginfo)
+           (logged-failure ($unsupported-racket-version pkginfo)))]
       [(undeclared)
        (if (or (XIDEN_ALLOW_UNSUPPORTED_RACKET)
                (XIDEN_ALLOW_UNDECLARED_RACKET_VERSIONS))
-           (return pkginfo)
-           (attach-message #f ($undeclared-racket-version pkginfo)))])))
+           (logged-unit pkginfo)
+           (logged-failure ($undeclared-racket-version pkginfo)))])))
 
 
-#;(module+ test
+(define-message-formatter format-package-message
+  [($package-installed name)
+   (format "Installed package ~a"
+           name)]
+
+  [($undeclared-racket-version info)
+   (join-lines
+    (list (format "~a does not declare a supported Racket version."
+                  info)
+          (format "To install this package anyway, run again with ~a"
+                  (setting-short-flag XIDEN_ALLOW_UNDECLARED_RACKET_VERSIONS))))]
+
+  [($unsupported-racket-version info)
+   (join-lines
+    (list (format "~a claims that it does not support this version of Racket (~a)."
+                  info
+                  (version))
+          (format "Supported versions (ranges are inclusive):~n~a~n"
+                  (join-lines
+                   (map (λ (variant)
+                          (format "  ~a"
+                                  (if (pair? variant)
+                                      (format "~a - ~a"
+                                              (or (car variant)
+                                                  PRESUMED_MINIMUM_RACKET_VERSION)
+                                              (or (cdr variant)
+                                                  PRESUMED_MAXIMUM_RACKET_VERSION))
+                                      variant))
+                          (package-info-racket-versions info)))))
+          (format "To install this package anyway, run again with ~a"
+                  (setting-long-flag XIDEN_ALLOW_UNSUPPORTED_RACKET))))])
+
+
+(module+ test
   (require racket/runtime-path
            rackunit
            mzlib/etc
@@ -138,19 +185,38 @@
 
   (define me (build-path (this-expression-source-directory) (this-expression-file-name)))
 
+  (test-case "Reject requests for outputs that a package does not define"
+    (define pkginfo
+      (make-package-info #:provider-name "provider"
+                         #:package-name "pkg"
+                         #:outputs '("lib" "doc" "test")))
+
+    (check-equal? (get-log (validate-output-request pkginfo '("blah")))
+                  (list ($undefined-package-output pkginfo "blah"))))
+
+  (test-case "Allow requests for outputs that a package does define"
+    (define pkginfo
+      (make-package-info #:provider-name "provider"
+                         #:package-name "pkg"
+                         #:outputs '("lib" "doc" "test")))
+    (define request '("test" "lib" "doc"))
+    (call-with-values (λ () (run-log (validate-output-request pkginfo request)))
+                      (λ (v m)
+                        (check-equal? v request)
+                        (check-pred null? m))))
+
   (test-case "Detect packages that do not declare a supported Racket version"
     (define pkginfo
       (make-package-info #:provider-name "provider"
                          #:package-name "pkg"
                          #:racket-versions null))
-    (check-equal? (check-racket-support pkginfo)
-                  ($with-messages #f (list ($undeclared-racket-version pkginfo)))))
+    (check-equal? (get-log (check-racket-support pkginfo))
+                  (list ($undeclared-racket-version pkginfo))))
 
   (test-case "Detect packages that declare an unsupported Racket version"
     (define pkginfo
       (make-package-info #:provider-name "provider"
                          #:package-name "pkg"
                          #:racket-versions (list "0.0")))
-
-    (check-equal? (check-racket-support pkginfo)
-                  ($with-messages #f (list ($unsupported-racket-version pkginfo))))))
+    (check-equal? (get-log (check-racket-support pkginfo))
+                  (list ($unsupported-racket-version pkginfo)))))
