@@ -200,9 +200,12 @@ EOF
                                          (cadr (regexp-match #px"expected:\\s+([^\n]+)"
                                                              (exn-message e)))
                                          (exn-message e)))))])
-             (halt 0
-                   (selected-setting (read (open-input-string value-string))
-                                     save-xiden-settings!)))))]
+             (define value (read (open-input-string value-string)))
+             (selected-setting value
+                               (λ ()
+                                 (save-xiden-settings!)
+                                 (halt 0 ($setting-accepted (setting-id selected-setting)
+                                                            value)))))))]
 
        [_
         (halt 1 ($unrecognized-command action))]))
