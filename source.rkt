@@ -55,6 +55,7 @@
          "integrity.rkt"
          "localstate.rkt"
          "mod.rkt"
+         "monad.rkt"
          "path.rkt"
          "port.rkt"
          "printer.rkt"
@@ -68,22 +69,26 @@
 
 (define (fetch name sources request-transfer)
   (if (null? sources)
-      (fetch-state #f
-                   name
-                   #f
-                   request-transfer
-                   (list ($fetch-failure name)))
-      (let ([state (fetch-named-source name (car sources) request-transfer)])
-        (if (fetch-state-path state)
-            state
-            (fetch name (cdr sources) request-transfer)))))
+      (logged
+       (λ (m)
+         (values (fetch-state #f name #f request-transfer)
+                 (cons ($fetch-failure name) m))))
+      (logged
+       (λ (m)
+         (define logged-state (fetch-named-source name (car sources) request-transfer))
+         (define-values (state messages) (run-log logged-state m))
+         (if (fetch-state-path state)
+             (values state messages)
+             (run-log (fetch name (cdr sources) request-transfer) m))))))
 
-
+; This action will terminate on the first source to produce a file with
+; the requested bytes.
 (define (fetch-named-source name source request-transfer)
-  (define from-plugin (fetch-method "Plugin" fetch-source/plugin))
-  (define from-web    (fetch-method "HTTP" fetch-source/http))
-  (define from-fs     (fetch-method "Filesystem" fetch-source/filesystem))
-  ((compose from-plugin from-web from-fs) (fetch-unit name source request-transfer)))
+  (do initial       <- (logged-unit (fetch-unit name source request-transfer))
+      fs-result     <- ((fetch-method "Filesystem" fetch-source/filesystem) initial)
+      http-result   <- ((fetch-method "HTTP" fetch-source/http) fs-result)
+      plugin-result <- ((fetch-method "Plugin" fetch-source/plugin) http-result)
+      (return plugin-result)))
 
 
 ; Represents information gathered when trying to fetch bytes
@@ -91,29 +96,26 @@
   (source               ; A user-defined string that a method should use to find bytes
    name                 ; A human-friendly name for the fetch used in errors
    path                 ; A path pointing to a fetch resource, or #f. If set, the fetch was successful.
-   request-transfer     ; A continuation procedure that takes a port and size estimate
-   messages)            ; A list of $message instances that logs what happened to produce a given instance.
+   request-transfer)    ; A continuation procedure that takes a port and size estimate
   #:transparent)
-
-
-(define (attach-fetch-message fetch-st v)
-  (struct-copy fetch-state fetch-st
-               [messages (cons v (fetch-state-messages fetch-st))]))
 
 
 (define (fetch-exn-handler fetch-st)
   (λ (e)
-    (attach-fetch-message fetch-st
-                          ($source-method-ruled-out
-                           (fetch-state-name fetch-st)
-                           (fetch-state-source fetch-st)
-                           (exn->string e)))))
+    (logged
+     (λ (m)
+       (values fetch-st
+               (cons ($source-method-ruled-out
+                      (fetch-state-name fetch-st)
+                      (fetch-state-source fetch-st)
+                      (exn->string e))
+                     m))))))
 
 
 (define (fetch-method method-name f)
   (λ (fetch-st)
     (if (fetch-state-path fetch-st)
-        fetch-st
+        (logged-unit fetch-st)
         (with-handlers ([values (fetch-exn-handler fetch-st)])
           (update-fetch-state method-name
                               fetch-st
@@ -122,22 +124,28 @@
 
 
 (define (update-fetch-state method-name fetch-st path-or-#f)
-  (attach-fetch-message (struct-copy fetch-state fetch-st [path path-or-#f])
-                        (if path-or-#f
-                            ($source-fetched (fetch-state-name fetch-st)
-                                             (fetch-state-source fetch-st))
-                            ($source-method-ruled-out (fetch-state-name fetch-st)
-                                                      (fetch-state-source fetch-st)
-                                                      (format "~a did not produce a path"
-                                                              method-name)))))
+  (logged
+   (λ (messages)
+     (values (struct-copy fetch-state fetch-st [path path-or-#f])
+             (cons (log-fetch-update method-name fetch-st path-or-#f)
+                   messages)))))
+
+
+(define (log-fetch-update method-name fetch-st path-or-#f)
+  (if path-or-#f
+      ($source-fetched (fetch-state-name fetch-st)
+                       (fetch-state-source fetch-st))
+      ($source-method-ruled-out (fetch-state-name fetch-st)
+                                (fetch-state-source fetch-st)
+                                (format "~a did not produce a path"
+                                        method-name))))
 
 
 (define (fetch-unit name source request-transfer)
   (fetch-state source
                name
                #f
-               request-transfer
-               null))
+               request-transfer))
 
 
 (define (fetch-source/filesystem source request-transfer)
@@ -173,20 +181,23 @@
   (define plugin-module-datum
     '(module mods racket/base
        (provide fetch-source)
-       (define (fetch-source source make-file)
-         (make-file (open-input-string source)
-                    (string-length source)))))
+       (define (fetch-source source request-transfer)
+         (request-transfer (open-input-string source)
+                           (string-length source)))))
 
   (define mod-source "====[{]::[}]====")
 
-  (define find-message void)
+  (define (try-fetch l proc)
+    (call-with-values (λ () (run-log l null)) proc))
 
-  (define (try-mod-fetch)
-    (fetch "mod"
-           (list mod-source)
-           (λ (in est-size)
-             (check-equal? est-size (string-length mod-source))
-             (check-equal? (read-string est-size in) mod-source))))
+  (define (try-mod-fetch proc)
+    (try-fetch (fetch "mod"
+                      (list mod-source)
+                      (λ (in est-size)
+                        (check-equal? est-size (string-length mod-source))
+                        (check-equal? (read-string est-size in) mod-source)
+                        (build-path "fake-path"))) ; <- Must produce a path for a successful fetch
+               proc))
 
   (call-with-temporary-file
    (λ (tmp)
@@ -198,24 +209,29 @@
          (test-true "Estimate file size" (>= est-size (file-size tmp)))
          tmp)
 
-       (test-equal? "Fetch from file"
-                    (fetch "anon" (list source) request-transfer)
-                    (fetch-state source
-                                 "anon"
-                                 tmp
-                                 request-transfer
-                                 (list ($source-fetched "anon" source))))
+       (test-case "Fetch from file"
+         (try-fetch (fetch "anon" (list source) request-transfer)
+                    (λ (result messages)
+                      (check-equal? result
+                                    (fetch-state source
+                                                 "anon"
+                                                 tmp
+                                                 request-transfer))
+                      (check-equal? messages
+                                    (list ($source-fetched "anon" source))))))
 
-       (test-equal? "Fetch from mod"
-                    (car (fetch-state-messages (try-mod-fetch)))
-                    ($source-fetched "mod" mod-source)))))
+       (test-case "Fetch from mod"
+         (try-mod-fetch
+          (λ (result messages)
+            (check-equal? (findf $source-fetched? messages)
+                          ($source-fetched "mod" mod-source))))))))
 
   ; Notice we just left the parameterize that set the mod path
-  (test-case "Investigate fetch failures"
-    (define messages (fetch-state-messages (try-mod-fetch)))
+  (try-mod-fetch
+   (λ (result messages)
     (test-equal? "Fetch fails when mod is not available"
                  messages
-                 (list ($fetch-failure "mod"))))
+                 (list ($fetch-failure "mod")))))
 
   (test-case "Fetch over HTTP"
     (define listener (tcp-listen 8018 1 #t))
@@ -246,15 +262,15 @@
       (tcp-close listener)
       "fake")
 
-    (define fetch-output (fetch "anon" (list source) request-transfer))
-
-    (check-equal? (struct-copy fetch-state fetch-output
-                               [messages (list (car (fetch-state-messages fetch-output)))])
-                  (fetch-state source
-                               "anon"
-                               "fake"
-                               request-transfer
-                               (list ($source-fetched "anon" source))))))
+    (try-fetch (fetch "anon" (list source) request-transfer)
+               (λ (result messages)
+                 (check-equal? result
+                               (fetch-state source
+                                            "anon"
+                                            "fake"
+                                            request-transfer))
+                 (check-equal? (filter $source-fetched? messages)
+                               (list ($source-fetched "anon" source)))))))
 
 
 (define-message-formatter fetch-message-formatter

@@ -78,6 +78,7 @@
          "localstate.rkt"
          "message.rkt"
          "output-info.rkt"
+         "printer.rkt"
          "rc.rkt"
          "signature.rkt"
          "source.rkt"
