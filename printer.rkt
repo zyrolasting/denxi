@@ -29,9 +29,7 @@
          "monad.rkt"
          "rc.rkt")
 
-(define+provide-message $show-datum  (value))
-(define+provide-message $show-string (message))
-(define+provide-message $verbose     (message))
+(define+provide-message $verbose (message))
 
 (define (combine-message-formatters . formatters)
   (λ (m) (format-message-aux m formatters)))
