@@ -84,9 +84,9 @@
 
 
 (define (build-package-output pkgeval output-name output-dir)
-  (parameterize ([current-directory output-dir])
-    (make-directory* output-dir)
-    (pkgeval `(build ,output-name))))
+  (make-directory* output-dir)
+  (pkgeval `(cd ,output-dir))
+  (pkgeval `(build ,output-name)))
 
 
 (define (get-package-definition-from-source source)
