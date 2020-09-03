@@ -102,6 +102,7 @@
     void
     (λ ()
       (with-handlers ([values (λ (e) (delete-file* tmp) (raise e))])
+        (make-directory* (path-only tmp))
         (call-with-output-file tmp #:exists 'truncate/replace
           (λ (to-file)
             (transfer in to-file
