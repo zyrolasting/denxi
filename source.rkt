@@ -290,9 +290,15 @@
                                (list ($source-fetched "anon" source)))))))
 
 
-(define-message-formatter fetch-message-formatter
+(define+provide-message-formatter format-fetch-message
   [($source-fetched name user-string)
    (format "Fetched ~s" user-string)]
+
+  [($fetch-failure name)
+   (format "Failed to fetch ~s" name)]
+
+  [($source-method-ruled-out name user-string reason)
+   (format "Could not fetch ~s from source ~s: ~a" name user-string reason)]
 
   [($unverified-host url)
    (format (~a "~a does not have a valid certificate.~n"
