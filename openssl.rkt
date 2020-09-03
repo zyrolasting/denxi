@@ -20,7 +20,7 @@
 
 (define (run-openssl-command stdin-source . args)
   (define-values (sp from-stdout to-stdin from-stderr)
-    (apply subprocess #f #f #f openssl args))
+    (apply subprocess #f #f #f (and (subprocess-group-enabled) 'new) openssl args))
 
   (copy-port stdin-source to-stdin)
   (flush-output to-stdin)
