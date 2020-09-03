@@ -19,18 +19,9 @@
          "query.rkt")
 
 
-(define+provide-message $made-symlink (target-path link-path))
-(define+provide-message $deleted-file (path))
-
-
 (define (delete-file* path)
-  (attach-message
-   (if (or (file-exists? path)
-           (link-exists? path))
-       (begin (delete-file path)
-              path)
-       #f)
-   ($deleted-file path)))
+  (when (or (file-exists? path) (link-exists? path))
+    (delete-file path)))
 
 
 (define (in-acyclic-directory start-dir [use-dir? (λ _ #t)])
@@ -69,9 +60,7 @@
   (make-directory* (or (path-only link-path) (current-directory)))
   (when (link-exists? link-path)
     (delete-file link-path))
-  (make-file-or-directory-link to link-path)
-  (attach-message link-path
-                  ($made-symlink to link-path)))
+  (make-file-or-directory-link to link-path))
 
 
 (define (delete-directory/files/empty-parents path)
@@ -89,12 +78,15 @@
   (null? (directory-list path)))
 
 
-(define (call-with-temporary-directory f #:cd? [cd? #t])
-  (define tmp-dir (make-temporary-file "rktdir~a" 'directory))
+(define (call-with-temporary-directory f #:cd? [cd? #t] #:base [base #f])
+  (when base (make-directory* base))
+  (define tmp-dir (make-temporary-file "rktdir~a" 'directory base))
   (dynamic-wind void
                 (λ () (parameterize ([current-directory (if cd? tmp-dir (current-directory))])
                         (f tmp-dir)))
-                (λ () (delete-directory/files tmp-dir))))
+                (λ ()
+                  (when (directory-exists? tmp-dir)
+                    (delete-directory/files tmp-dir)))))
 
 (define (call-with-temporary-file proc)
   (define tmp (make-temporary-file "~a"))
