@@ -226,10 +226,8 @@
                     (λ (result messages)
                       (check-equal? result
                                     (fetch-state #f "crashes" #f raise-always))
-                      (check-match messages
-                                   (list ($fetch-failure "crashes")
-                                         ($source-method-ruled-out "crashes" source (pregexp "Context"))
-                                         ..1))
+                      (check-equal? (car messages)
+                                    ($fetch-failure "crashes"))
                       (check-not-false (findf (λ (m)
                                                 (and ($source-method-ruled-out? m)
                                                      (regexp-match? #rx"uh oh"
