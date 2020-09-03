@@ -7,7 +7,6 @@
 (provide (struct-out package-info)
          make-package-info
          read-package-info
-         make-package-name
          package-info->hash)
 
 
@@ -99,13 +98,6 @@
 (define-syntax-rule (copy-package-info i fields ...)
   (struct-copy package-info i
                fields ...))
-
-
-(define (make-package-name pkginfo)
-  (format "~a-~a"
-          (encoded-file-name
-           (make-digest (open-input-string (~s pkginfo)) 'sha384))
-          (package-info-package-name pkginfo)))
 
 
 (module+ test
