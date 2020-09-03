@@ -16,6 +16,7 @@
          "format.rkt"
          "integrity.rkt"
          "message.rkt"
+         "printer.rkt"
          "query.rkt"
          "racket-version.rkt"
          "rc.rkt"
@@ -30,6 +31,17 @@
 
 (define+provide-message $compilation-error (module-path message))
 (define+provide-message $module-compiled (module-path))
+
+
+(define-message-formatter format-worker-message
+  [($module-compiled module-path)
+   (format "Compiled: ~a" module-path)]
+
+  [($compilation-error module-path message)
+   (format "Bytecode compilation error in: ~a~n~a"
+           module-path
+           message)])
+
 
 (define xiden-worker%
   (class actor%
