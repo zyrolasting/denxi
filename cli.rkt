@@ -266,48 +266,60 @@ EOF
 (define (format-package-info info)
   (package-info-package-name info))
 
+
 (define (format-setting-flag-example s)
   (format "~a/~a"
           (setting-short-flag s)
           (setting-long-flag s)))
 
-(define (format-xiden-message m)
-  (match m
-    [($output v)
-     (format-xiden-message v)]
 
-    [($fail v)
-     (cond [(exn? v) (exn->string v)]
-           [(string? v) v]
-           [else (~s v)])]
+(define+provide-message-formatter format-rc-message
+  [($setting-not-found name)
+   (format "There is no setting called ~s.~n" name)]
 
-    [($unrecognized-command m)
-     (format "Unrecognized command: ~s. Run with -h for usage information.~n"
-             m)]
+  [($setting-accepted name value)
+   (format "Setting ~a to ~s"
+           name
+           value)]
 
-    [($consent-note)
-     (format "To consent to these changes, run again with ~a"
-             (setting-short-flag XIDEN_CONSENT))]
+  [($setting-value-unreadable name source-name)
+   (format "Could not read setting value for ~a from ~s"
+           name
+           source-name)]
 
-    [($fetch-failure user-string)
-     (format "Cannot find content for ~s" user-string)]
+  [($setting-value-rejected name value expected)
+   (format "Invalid value for ~a: ~a~n  expected: ~a~n"
+           name
+           value
+           expected)])
 
-    [($setting-not-found name)
-     (format "There is no setting called ~s.~n" name)]
 
-    [($init-localstate path)
-     (format "Initalizing local state at ~a" path)]
+(define+provide-message-formatter format-xiden-message
+  [($output v)
+   (format-xiden-message v)]
 
-    [($setting-value-rejected name value expected)
-     (format "Invalid value for ~a: ~a~n  expected: ~a~n  (Note: (void) only applies for `xiden config repl` use)"
-             name
-             value
-             expected)]
+  [($fail v)
+   (cond [(exn? v) (exn->string v)]
+         [(string? v) v]
+         [else (~s v)])]
 
-    [($invalid-workspace-envvar)
-     (format "Ignoring envvar value for XIDEN_WORKSPACE: ~a~n  falling back to ~a"
-             (getenv "XIDEN_WORKSPACE")
-             (workspace-directory))]))
+  [($unrecognized-command m)
+   (format "Unrecognized command: ~s. Run with -h for usage information.~n"
+           m)]
+
+  [($consent-note)
+   (format "To consent to these changes, run again with ~a"
+           (setting-short-flag XIDEN_CONSENT))]
+
+  [($init-localstate path)
+   (format "Initalizing local state at ~a" path)]
+
+  [($invalid-workspace-envvar)
+   (format "Ignoring envvar value for XIDEN_WORKSPACE: ~a~n  falling back to ~a"
+           (getenv "XIDEN_WORKSPACE")
+           (workspace-directory))])
+
+
 
 
 ; Functional tests follow. Use to detect changes in the interface and
