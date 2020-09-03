@@ -48,6 +48,7 @@
 
 (struct logged (thnk)
   #:transparent
+  #:property prop:procedure (λ (self [m null]) (run-log self m))
   #:methods gen:monad [(define (monad->monad-class m) Logged)])
 
 (define (logged-unit v)
