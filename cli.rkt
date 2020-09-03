@@ -277,53 +277,9 @@ EOF
            [(string? v) v]
            [else (~s v)])]
 
-    [($module-compiled module-path)
-     (format "Compiled: ~a" module-path)]
-
-    [($compilation-error module-path message)
-     (format "Bytecode compilation error in: ~a~n~a"
-             module-path
-             message m)]
-
-    #;[($fetch-integrity-mismatch input source)
-     (format (~a "~a failed its integrity check.~n"
-                 "While unsafe, you can force installation using ~a.")
-             (format-package-info source)
-             (setting-long-flag XIDEN_TRUST_BAD_DIGEST))]
-
-    #;[($mod-load-failure path error-string)
-     (format (~a "Could not load plugin module ~a. Using default implementations.~n"
-                 "Load error: ~a")
-             path
-             error-string)]
-
-    #;[($fetch-signature-mismatch input source)
-     (format (~a "~s's signature does not match any trusted public key.~n"
-                 "While unsafe, you can trust bad signatures using ~a.")
-             source
-             (setting-long-flag XIDEN_TRUST_BAD_SIGNATURE))]
-
-    #;[($fetch-signature-missing (fetch-info name _ _ _) source)
-     (format (~a "~a does not have a signature. If you are testing a package, this is expected.~n"
-                 "If you got the package from the Internet, then exercise caution!~n"
-                 "To trust unsigned packages, use ~a.")
-             name
-             (setting-long-flag XIDEN_TRUST_UNSIGNED))]
-
-    #;[($unverified-host url)
-     (format (~a "~a does not have a valid certificate.~n"
-                 "Connections to this server are not secure.~n"
-                 "To trust servers without valid certificates, use ~a.")
-             url
-             (setting-long-flag XIDEN_TRUST_UNVERIFIED_HOST))]
-
-    #;[($package-installed info)
-     (format "Installed package ~a"
-             (format-package-info info))]
-
     [($unrecognized-command m)
      (format "Unrecognized command: ~s. Run with -h for usage information.~n"
-             ($unrecognized-command-command m))]
+             m)]
 
     [($consent-note)
      (format "To consent to these changes, run again with ~a"
