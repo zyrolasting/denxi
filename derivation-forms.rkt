@@ -124,7 +124,6 @@
                               default-message-formatter))
 
 (define (input-ref input)
-  (displayln (XIDEN_TRUST_UNSIGNED))
   (write-message ($input-resolve-start (input-info-name input)) format-message)
   (define-values (path messages) (run-log (resolve-input input) null))
   (sequence-for-each
