@@ -24,6 +24,8 @@
   [load-config
    (->* ((or/c path? url? string? bytes? input-port?))
         config-closure/c)]
+  [read-info-module
+   (-> any/c input-port? (or/c syntax? eof-object?))]
   [make-config-closure
    (-> (hash/c symbol? place-message-allowed?)
        (listof symbol?)
@@ -148,25 +150,39 @@
 ;; Config input cases
 ;;;;;;;;;;;;;;;;;;;;;;;;
 
+(define (assert-lang datum)
+  (unless (member datum '((submod xiden reader)
+                          (submod info reader)
+                          xiden/lang/reader
+                          setup/infotab
+                          xiden/derivation-forms))
+    (error 'read-info-module
+           "Expected #lang xiden, #lang info, or a corresponding module language. Got ~s"
+           datum)))
+
+(define (read-info-module src in)
+  (parameterize ([current-reader-guard
+                  (λ (datum) (assert-lang datum) datum)])
+    (with-module-reading-parameterization
+      (λ ()
+        (check-module-form (read-syntax src in)
+                           'info
+                           "xiden module")))))
+
+
 (define (read-config in)
   (port-count-lines! in)
-  (with-module-reading-parameterization
-    (λ ()
-      (define decl (read-syntax #f in))
-      (define checked (check-module-form decl 'info "infotab module"))
-      (define partial (syntax-e checked))
-
-      (define infotab? (eq? (syntax->datum (caddr partial)) 'setup/infotab))
-      (define id (cadr partial))
-
-      (and infotab?
-           (let ([ns (make-base-namespace)])
-             (eval-syntax (namespace-syntax-introduce checked ns) ns)
-             (eval `(require ',(syntax->datum id)) ns)
-             (define read-order (eval '(#%info-domain) ns))
-             (make-config-closure (for/hasheq ([k (in-list read-order)])
-                                    (values k (eval `(#%info-lookup ',k) ns)))
-                                  read-order))))))
+  (define checked (read-info-module #f in))
+  (define partial (syntax-e checked))
+  (define id (cadr partial))
+  (assert-lang (syntax->datum (caddr partial)))
+  (define ns (make-base-namespace))
+  (eval-syntax (namespace-syntax-introduce checked ns) ns)
+  (eval `(require ',(syntax->datum id)) ns)
+  (define read-order (eval '(#%info-domain) ns))
+  (make-config-closure (for/hasheq ([k (in-list read-order)])
+                         (values k (eval `(#%info-lookup ',k) ns)))
+                       read-order))
 
 (define (load-remote-config u)
   (define-values (in headers)
@@ -339,15 +355,17 @@
     (check-pred procedure? lookup)
     (check-equal? (lookup 'table) (hash "coolio" 'marked)))
 
-  (test-case "Do not accept reader extensions that fail to produce setup/infotab"
-    (define buffer (open-input-string "#lang racket/base (define table #hash((\"coolio\" . marked)))"))
-    (define lookup (load-config buffer))
-    (check-false lookup))
+  (test-exn "Accept only prescribed reader extensions"
+            #rx"Expected #lang"
+            (λ ()
+              (define buffer (open-input-string "#lang racket/base (define table #hash((\"coolio\" . marked)))"))
+              (load-config buffer)))
 
-  (test-case "Do not accept anything other than setup/infotab"
-    (define buffer (open-input-string "(module content racket/base (define a 1))"))
-    (define lookup (load-config buffer))
-    (check-false lookup))
+  (test-exn "Do not accept anything other than setup/infotab"
+            #rx"Expected #lang"
+            (λ ()
+              (define buffer (open-input-string "(module content racket/base (define a 1))"))
+              (load-config buffer)))
 
   (test-case "Protect closure from domain violations"
     (define closure/contracted
