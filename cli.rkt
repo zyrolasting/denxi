@@ -49,6 +49,7 @@
                      (combine-message-formatters format-xiden-message
                                                  format-input-message
                                                  format-fetch-message
+                                                 format-rc-message
                                                  default-message-formatter)
                      top-level-cli)))
 
