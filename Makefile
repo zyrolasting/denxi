@@ -12,7 +12,7 @@ compile:
 	raco make -j 8 *.rkt
 
 exe: compile test
-	raco exe -o xiden -l cli.rkt
+	raco exe -o xiden -l --exf -U cli.rkt
 
 doc:
 	raco make docs/guide/*.scrbl docs/reference/*.scrbl
