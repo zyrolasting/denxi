@@ -220,6 +220,22 @@
                       (check-equal? messages
                                     (list ($source-fetched "anon" source))))))
 
+       (test-case "Show all errors if transfer crashes"
+         (define (raise-always . _) (error "uh oh"))
+         (try-fetch (fetch "crashes" (list source) raise-always)
+                    (λ (result messages)
+                      (check-equal? result
+                                    (fetch-state #f "crashes" #f raise-always))
+                      (check-match messages
+                                   (list ($fetch-failure "crashes")
+                                         ($source-method-ruled-out "crashes" source (pregexp "Context"))
+                                         ..1))
+                      (check-not-false (findf (λ (m)
+                                                (and ($source-method-ruled-out? m)
+                                                     (regexp-match? #rx"uh oh"
+                                                                    ($source-method-ruled-out-reason m))))
+                                              messages)))))
+
        (test-case "Fetch from mod"
          (try-mod-fetch
           (λ (result messages)
@@ -227,11 +243,12 @@
                           ($source-fetched "mod" mod-source))))))))
 
   ; Notice we just left the parameterize that set the mod path
-  (try-mod-fetch
-   (λ (result messages)
-    (test-equal? "Fetch fails when mod is not available"
-                 messages
-                 (list ($fetch-failure "mod")))))
+  (test-case "Fetch fails when mod is not available"
+    (try-mod-fetch
+     (λ (result messages)
+       (check-match messages
+                    (list ($fetch-failure "mod")
+                          (? $source-method-ruled-out? _ _ _) ..1)))))
 
   (test-case "Fetch over HTTP"
     (define listener (tcp-listen 8018 1 #t))
