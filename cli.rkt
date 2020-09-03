@@ -21,6 +21,7 @@
          "exn.rkt"
          "file.rkt"
          "format.rkt"
+         "input-info.rkt"
          "integrity.rkt"
          "localstate.rkt"
          "message.rkt"
@@ -46,6 +47,8 @@
 (module+ main
   (exit (entry-point (current-command-line-arguments)
                      (combine-message-formatters format-xiden-message
+                                                 format-input-message
+                                                 format-fetch-message
                                                  default-message-formatter)
                      top-level-cli)))
 
