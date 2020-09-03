@@ -33,6 +33,8 @@
          (rename-out [#%module-begin* #%module-begin]
                      [list sources])
          (contract-out
+          [cd
+           (-> path? void?)]
           [input
            (->* (non-empty-string?
                  (non-empty-listof path-string?))
@@ -100,12 +102,18 @@
          "url.rkt")
 
 
+; Must be called in sandbox.rkt to pass along configuration.
+; TODO: Find a way to prevent use in top-level of #lang xiden module
+(define init!
+  (let ([called? #f])
+    (λ (dump)
+      (if called? (void)
+          (begin (for ([(k v) (in-hash XIDEN_SETTINGS)])
+                   ((setting-derived-parameter v) (hash-ref dump k)))
+                 (set! called? #t))))))
 
-(define (init! dump build-directory)
-  (current-directory build-directory)
-  (for ([(k v) (in-hash XIDEN_SETTINGS)])
-    ((setting-derived-parameter v) (hash-ref dump k))))
-
+(define (cd path)
+  (current-directory path))
 
 (define (input name sources [integrity #f] [signature #f])
   (input-info name sources integrity signature))

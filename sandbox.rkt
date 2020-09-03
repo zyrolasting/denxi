@@ -35,7 +35,7 @@
                  [sandbox-make-environment-variables
                   (λ () (leak-environment-variables '(#"PATH")))])
     (define seval (make-module-evaluator #:language 'xiden/derivation-forms input-program))
-    (seval `(init! ,(dump-xiden-settings) ,build-directory))
+    (seval `(init! ,(dump-xiden-settings)))
     seval))
 
 
