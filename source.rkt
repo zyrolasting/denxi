@@ -15,8 +15,7 @@
 ; File read, etc.) and the part of Xiden that reads an estimated number
 ; of bytes from a port.
 (define request-transfer/c
-  (-> (or/c #f non-empty-string?)
-      input-port?
+  (-> input-port?
       (or/c +inf.0 exact-positive-integer?)
       (or/c #f path?)))
 
@@ -52,13 +51,16 @@
          "config.rkt"
          "exn.rkt"
          "file.rkt"
+         "format.rkt"
          "integrity.rkt"
          "localstate.rkt"
          "mod.rkt"
          "path.rkt"
          "port.rkt"
+         "printer.rkt"
          "query.rkt"
          "rc.rkt"
+         "setting.rkt"
          "signature.rkt"
          "string.rkt"
          "url.rkt")
@@ -253,3 +255,15 @@
                                "fake"
                                request-transfer
                                (list ($source-fetched "anon" source))))))
+
+
+(define-message-formatter fetch-message-formatter
+  [($source-fetched name user-string)
+   (format "Fetched ~s" user-string)]
+
+  [($unverified-host url)
+   (format (~a "~a does not have a valid certificate.~n"
+               "Connections to this server are not secure.~n"
+               "To trust servers without valid certificates, use ~a.")
+           url
+           (setting-long-flag XIDEN_TRUST_UNVERIFIED_HOST))])
