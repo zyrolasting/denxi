@@ -135,7 +135,7 @@ EOF
    #:arg-help-strings '("link-path" "query" "rel-path")
    (λ (flags link-path query rel-path)
      (define mid (find-latest-package-id (coerce-xiden-query query)))
-     (make-link/clobber (build-path (get-derivation-directory mid)
+     (make-link/clobber (build-path (get-objects-directory mid)
                                     rel-path)
                         link-path)
      (halt 0 null)
@@ -326,9 +326,6 @@ EOF
     [($fetch-failure user-string)
      (format "Cannot find content for ~s" user-string)]
 
-    [($source-fetched name user-string)
-     (format "Fetched ~s" user-string)]
-
     [($setting-not-found name)
      (format "There is no setting called ~s.~n" name)]
 
@@ -344,34 +341,7 @@ EOF
     [($invalid-workspace-envvar)
      (format "Ignoring envvar value for XIDEN_WORKSPACE: ~a~n  falling back to ~a"
              (getenv "XIDEN_WORKSPACE")
-             (workspace-directory))]
-
-    [($undeclared-racket-version info)
-     (join-lines
-      (list (format "~a does not declare a supported Racket version."
-                    (format-package-info info))
-            (format "To install this package anyway, run again with ~a"
-                    (setting-short-flag XIDEN_ALLOW_UNDECLARED_RACKET_VERSIONS))))]
-
-    [($unsupported-racket-version info)
-     (join-lines
-      (list (format "~a claims that it does not support this version of Racket (~a)."
-                    (format-package-info info)
-                    (version))
-            (format "Supported versions (ranges are inclusive):~n~a~n"
-                    (join-lines
-                     (map (λ (variant)
-                            (format "  ~a"
-                                    (if (pair? variant)
-                                        (format "~a - ~a"
-                                                (or (car variant)
-                                                    PRESUMED_MINIMUM_RACKET_VERSION)
-                                                (or (cdr variant)
-                                                    PRESUMED_MAXIMUM_RACKET_VERSION))
-                                        variant))
-                            (package-info-racket-versions info)))))
-            (format "To install this package anyway, run again with ~a"
-                    (setting-long-flag XIDEN_ALLOW_UNSUPPORTED_RACKET))))]))
+             (workspace-directory))]))
 
 
 ; Functional tests follow. Use to detect changes in the interface and
