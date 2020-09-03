@@ -110,8 +110,11 @@ EOF
     XIDEN_ALLOW_UNSUPPORTED_RACKET)
    (λ (flags source output . outputs)
      (with-rc flags
-       (install-package-from-source source (cons output outputs))
-       (halt 0 null)))))
+       (transact
+        (define-values (result messages)
+          (run-log (install-package-from-source source (cons output outputs))))
+        (halt (if (eq? result SUCCESS) 0 1)
+              (reverse (flatten messages))))))))
 
 
 (define (uninstall-command args halt)
