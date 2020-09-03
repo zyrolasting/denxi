@@ -29,7 +29,7 @@
                                             (XIDEN_SANDBOX_EVAL_MEMORY_LIMIT_MB))]
                  [sandbox-path-permissions (make-build-sandbox-path-permissions build-directory)]
                  [sandbox-make-environment-variables make-environment-variables])
-    (make-module-evaluator #:language 'xiden
+    (make-module-evaluator #:language 'xiden/derivation-forms
                            input-program)))
 
 (define (make-build-sandbox-path-permissions build-directory)
