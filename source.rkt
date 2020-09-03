@@ -79,7 +79,7 @@
          (define-values (state messages) (run-log logged-state m))
          (if (fetch-state-path state)
              (values state messages)
-             (run-log (fetch name (cdr sources) request-transfer) m))))))
+             (run-log (fetch name (cdr sources) request-transfer) messages))))))
 
 ; This action will terminate on the first source to produce a file with
 ; the requested bytes.
@@ -96,20 +96,20 @@
   (source               ; A user-defined string that a method should use to find bytes
    name                 ; A human-friendly name for the fetch used in errors
    path                 ; A path pointing to a fetch resource, or #f. If set, the fetch was successful.
-   request-transfer)    ; A continuation procedure that takes a port and size estimate
+   request-transfer)    ; A callback that takes a port and size estimate
   #:transparent)
 
 
 (define (fetch-exn-handler fetch-st)
   (λ (e)
     (logged
-     (λ (m)
+     (λ (messages)
        (values fetch-st
                (cons ($source-method-ruled-out
                       (fetch-state-name fetch-st)
                       (fetch-state-source fetch-st)
                       (exn->string e))
-                     m))))))
+                     messages))))))
 
 
 (define (fetch-method method-name f)
