@@ -40,6 +40,7 @@
 (define+provide-message $no-package-info (source))
 (define+provide-message $package (info))
 (define+provide-message $package-installed $package ())
+(define+provide-message $package-not-installed $package ())
 (define+provide-message $undeclared-racket-version $package ())
 (define+provide-message $unsupported-racket-version $package ())
 (define+provide-message $undefined-package-output $package (name))
@@ -50,8 +51,26 @@
       pkginfo         <- (read-package pkginfo-path)
       checked-pkginfo <- (check-racket-support pkginfo)
       checked-outputs <- (validate-output-request checked-pkginfo expected-outputs)
-      build-output    <- (build-package (if (file-exists? source) (path->complete-path source) pkginfo-path) checked-outputs)
-      (return build-output)))
+      build-output    <- (build-package (pick-sandbox-program source pkginfo-path) checked-outputs)
+      (return (report-installation-results pkginfo build-output))))
+
+
+; #lang xiden modules expand such that relative paths are made complete in terms
+; of their location. If I load them from the store (which is where pkginfo-path
+; points), then the relative paths won't point to anything. Using the original
+; source string from the command line (e.g. "../def.rkt") will expand the
+; relative paths w.r.t the correct directory.
+(define (pick-sandbox-program source pkginfo-path)
+  (if (file-exists? source)
+      (path->complete-path source)
+      pkginfo-path))
+
+
+(define (report-installation-results pkginfo build-output)
+  (logged-attachment build-output
+                     (if (eq? build-output SUCCESS)
+                         ($package-installed pkginfo)
+                         ($package-not-installed pkginfo))))
 
 
 (define (validate-output-request pkginfo outs [original-outputs outs])
@@ -68,25 +87,34 @@
          (logged-failure ($undefined-package-output pkginfo (car outs)))]))
 
 
-(define (build-package pkginfo-path expected-outputs)
+(define (build-package pkginfo sandbox-program expected-outputs)
   (logged
    (λ (messages)
      (make-addressable-directory
       (build-workspace-path "var/xiden/pkgs")
       (λ (build-dir)
-        (define pkgeval (make-package-evaluator pkginfo-path build-dir))
+        (define pkgeval (make-package-evaluator sandbox-program build-dir))
         (values SUCCESS
                 (cons (for/list ([output (in-list expected-outputs)])
                         (build-package-output pkgeval
+                                              pkginfo
                                               output
                                               (build-path build-dir output)))
                       messages)))))))
 
 
-(define (build-package-output pkgeval output-name output-dir)
+(define (build-package-output pkgeval pkginfo output-name output-dir)
   (make-directory* output-dir)
   (pkgeval `(cd ,output-dir))
-  (pkgeval `(build ,output-name)))
+  (pkgeval `(build ,output-name))
+  (declare-derivation (package-info-provider-name pkginfo)
+                      (package-info-package-name pkginfo)
+                      (package-info-edition-name pkginfo)
+                      (package-info-revision-number pkginfo)
+                      (package-info-revision-number pkginfo)
+                      (package-info-revision-names pkginfo)
+                      output-dir))
+
 
 
 (define (get-package-definition-from-source source)
