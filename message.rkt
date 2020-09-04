@@ -19,6 +19,7 @@
          Logged
          logged-unit
          logged-failure
+         logged-attachment
          run-log
          get-log)
 
@@ -83,6 +84,8 @@
   (with-handlers ([exn? (λ (e) (run-log (logged-failure e) messages))])
     ((logged-thnk (Logged m)) messages)))
 
+(define (logged-attachment v next)
+  (logged (λ (m) (values v (cons next m)))))
 
 (define (get-log m)
   (define-values (_ messages) (run-log m))
