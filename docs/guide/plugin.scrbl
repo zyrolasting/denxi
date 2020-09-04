@@ -2,10 +2,9 @@
 
 @require["../shared.rkt" @for-label[racket/base]]
 
-You can extend @binary using a Racket module as a @deftech{plugin}.
+@title{Writing a Plugin}
 
-There is no complicated format to learn. A plugin is just any old
-Racket module used by @binary to perform tasks in a different way.
+You can extend @binary using a Racket module as a @deftech{plugin}.
 
 
 @section{Security Warning}

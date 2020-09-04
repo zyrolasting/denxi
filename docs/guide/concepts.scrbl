@@ -4,7 +4,7 @@
 
 @title{Concepts}
 
-In the context of @|binary|, a @deftech{package} is a program.
+In the context of @|project-name|, a @deftech{package} is a program.
 Dependencies, setup instructions, scripts, and the output of
 @italic{other} packages are all @tech{inputs} to a package. The
 outputs of a package are unique files and directories named after the
@@ -15,26 +15,24 @@ appear atomic, because installation success or failure does not impact
 your Racket installation or the wider system. The @secref{workspace}
 section discusses the files that @binary @italic{does} impact.
 
-Another benefit to functional package management is the ability to
-override dependencies like you would with @racket[parameterize].  This
-gives users a way to leave out artifacts like docs or tests, or to
-reconfigure a downstream dependency.
+You can override dependencies like you would with
+@racket[parameterize].  This gives you a way to leave out artifacts
+like docs or tests, or to reconfigure a downstream dependency.
 
-Users do not write packages directly. They write @deftech{package
-definitions}, which are programs that expand to packages. The behavior
-of the package depends on your configuration. Doing it this way means
-that you only need to share a package definition to distribute your
-software. This adds an option to share packages via napkin or email,
-which is often not a good idea, but really useful when it is.
+@secref{new-pkg} covers how to write @deftech{package definitions},
+which act as metadata for packages, and as a limited programming
+language for distributing software. Doing it this way means that you
+only need to share a package definition to share your work. This adds
+an option to share packages via napkin, email, or a PasteBin. This is
+often not a good idea, but really useful when it is.
 
 That leads us to security. @project-name ships with a zero-trust
-configuration. This means it will halt for what will at first seem
-like bureaucratic reasons. In truth, it halts at any point it cannot
-ascertain your trust in a dependency (which is, again, presumed
-zero). @secref{config} covers how to configure @binary to strike your
-own balance between security and convenience, but it would be best to
-learn how to work with the zero-trust configuration when working with
-resources from the Internet.
+configuration. This means it will halt at any point it cannot
+ascertain your trust in a dependency. @secref{config} covers how to
+configure @binary to strike your own balance between security and
+convenience, but it would be best to learn how to work with the
+zero-trust configuration when working with resources from the
+Internet.
 
 
 @section{Comparison to @tt{raco pkg} and @tt{raco setup}}

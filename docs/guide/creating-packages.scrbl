@@ -12,12 +12,22 @@ xiden
 
 (define racket-versions '(("6.0" . "7.7.0.5")))
 
-(input "code.tar.gz"
-  (sources "https://example.com/packages/uri/artifacts/alpha.tgz"
-           "https://mirror.example.com/uri/alpha.tgz")
-           (integrity sha384 (base64 "KxAqYG79sTcKi8yuH/YkdKE+O9oiBsXIlwWs3pBwv/mXT9/jGuK0yqcwmjM/nNLe")))
+(define source-code
+  (input "code.tar.gz"
+    (sources "https://example.com/packages/uri/artifacts/alpha.tgz"
+             "https://mirror.example.com/uri/alpha.tgz")
+             (integrity sha384 (base64 "KxAqYG79sTcKi8yuH/YkdKE+O9oiBsXIlwWs3pBwv/mXT9/jGuK0yqcwmjM/nNLe"))))
 
-(outputs "setup.rkt" '("lib" "doc" "all"))
+(define minimal-source-code
+  (input "code-minimal.tar.gz"
+    (sources "https://example.com/packages/uri/artifacts/alpha.tgz"
+             "https://mirror.example.com/uri/alpha.tgz")
+             (integrity sha384 (base64 "KxAqYG79sTcKi8yuH/YkdKE+O9oiBsXIlwWs3pBwv/mXT9/jGuK0yqcwmjM/nNLe"))))
+
+
+(define inputs (list minimal-source-code source-code))
+
+(define outputs '("lib" "doc" "all"))
 ]
 
 
@@ -27,18 +37,6 @@ sandwich.
 When @project-name sees this file, it will generate a program that
 fetches the named inputs, and uses @racket{setup.rkt} to produce
 outputs. Those outputs are libraries, documentation, or both (all).
-
-
-@section{A Package Definition is not Coupled to Source Code}
-
-Notice that the source code is declared as an input. The definition
-sits outside of the source code! This means that source code does not
-have to be present when defining a package.
-
-If you are accustomed to working with @tt{raco pkg}, then you leave
-@tt{info.rkt} files in your source code as if they were assembly
-instructions for furniture. That's not the case here. The point of a
-package definition is to briefly declare a software distribution.
 
 
 @section{Package Inputs}
@@ -72,37 +70,17 @@ package's input, the bits would be verified as inputs when it matters.
 @section{What About Nondeterministic Builds?}
 
 If a package's output contains changing data like an embedded
-timestamp, then the digest of that output will change. That may
-prevent you from using the same integrity information to verify a
-package's output. It does not make sense to simply leave out integrity
-information because that can be an attack vector.
+timestamp, then the digest of that output will change. That prevents
+you from using the same integrity information to verify a package's
+output. It does not make sense to respond by leaving out integrity
+information, because that level of trust is a security vulnerability.
 
 In practice, this is only a problem if an input's source returns
 different information across builds. If that happens, then that is an
 issue to take up with whoever owns that source. Package inputs are
 also not expected to be things like bytecode files, they are expected
-to be source code or other inputs to some build system.
-
-@section{Setup Module}
-
-@program-name binds input names to unique files in the filesystem.
-
-@racketmod[
-xiden/setup
-
-(define (extract input-name)
-  ( (input-ref input-name)))
-
-(define (all)
-  (lib)
-  (doc))
-
-(define (lib)
-  (unpack (inputs ))
-
-]
-
-A setup module will need
+to be source code or other inputs to a Racket program acting
+@italic{as} a build system.
 
 
 @section{Authenticating Inputs}
