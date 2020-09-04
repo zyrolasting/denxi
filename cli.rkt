@@ -11,7 +11,7 @@
          racket/port
          racket/runtime-path
          racket/sequence
-         racket/set
+         racket/stream
          racket/vector
          (for-syntax racket/base)
          "archiving.rkt"
@@ -123,15 +123,14 @@ EOF
    #:program "uninstall"
    #:args args
    #:halt halt
-   #:arg-help-strings '("query")
+   #:arg-help-strings '("query" "output")
    #:flags
    (settings->flag-specs XIDEN_CONSENT)
-   ; Proceed as if you were installing, until you
-   ; find package paths. Check database for
-   ; dependents referencing the paths.
-   ; Move to trash
-   (λ (flags . sources)
-     (halt 0 null))))
+   (λ (flags query . outputs)
+     (define path-stream (in-valid-derivations (coerce-xiden-query query)))
+     (if (stream-empty? path-stream)
+         (halt 0 null)
+         (void)))))
 
 
 (define (link-command args halt)
@@ -141,12 +140,13 @@ EOF
    #:halt halt
    #:arg-help-strings '("link-path" "query" "rel-path")
    (λ (flags link-path query rel-path)
-     (define mid (find-latest-package-id (coerce-xiden-query query)))
-     (make-link/clobber (build-path (get-objects-directory mid)
-                                    rel-path)
-                        link-path)
-     (halt 0 null)
-     (halt 1 ($show-string "No package found")))))
+     (define path-stream (in-valid-derivations (coerce-xiden-query query)))
+     (if (stream-empty? path-stream)
+         (halt 1 ($show-string "No package found"))
+         (begin (make-link/clobber (build-path (build-workspace-path (stream-first path-stream))
+                                               rel-path)
+                                   link-path)
+                (halt 0 null))))))
 
 
 (define (config-command args halt)
