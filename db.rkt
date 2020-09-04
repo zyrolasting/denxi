@@ -8,6 +8,7 @@
          query-maybe-value+
          query-list+
          query-exec+
+         prepare+
          in-query+
          start-transaction!
          end-transaction!
@@ -56,3 +57,4 @@
 (define query-value+       (with-connection query-value))
 (define query-maybe-value+ (with-connection query-maybe-value))
 (define in-query+          (with-connection in-query))
+(define prepare+           (with-connection prepare))
