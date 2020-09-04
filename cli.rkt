@@ -324,6 +324,22 @@ EOF
            (submod "file.rkt" test))
 
 
+  (test-workspace "Install a package"
+    (define defn
+      '(module pkg xiden
+         (define inputs null)
+         (define outputs '("lib"))
+         (define (build output)
+           (void))))
+
+    (call-with-temporary-file
+     (λ (tmp)
+       (write-to-file defn tmp #:exists 'truncate/replace)
+       (install-command `(,(setting-short-flag XIDEN_CONSENT) "#t" ,(path->string tmp) "lib")
+         (λ (exit-code messages)
+           (check-eq? exit-code 0)
+           (check-equal? messages (list)))))))
+
   (test-case "Configure xiden"
     (test-case "Respond to an incomplete command with help"
       (config-command
