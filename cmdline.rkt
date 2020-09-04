@@ -17,6 +17,7 @@
        exit-code/c)]))
 
 (require racket/cmdline
+         racket/list
          racket/format
          racket/vector
          "message.rkt"
@@ -44,7 +45,7 @@
       (let-values ([(exit-code messages) ; CPS is easier to think about in the handlers.
                     (call/cc (λ (k) (run-args args k)))])
         (do (io-return ; *
-             (λ () (for ([m (if (list? messages) (in-list (reverse messages)) (in-value messages))])
+             (λ () (for ([m (if (list? messages) (in-list (reverse (flatten messages))) (in-value messages))])
                      (write-message m format-message))))
             (return exit-code)))))
 
