@@ -239,7 +239,6 @@
   (define vals (vector-drop (struct->vector record-inst) 1))
   (define insert? (not (vector-ref vals 0)))
   (define id (or (vector-ref vals 0) sql-null))
-
   (apply query-exec+
          (~a (if insert? "insert" "replace")
              " into " (relation-name (gen-relation record-inst))
@@ -247,7 +246,6 @@
              (string-join (build-list (vector-length vals) (const "?")) ",")
              ");")
          (cons id (cdr (vector->list vals))))
-
   (if insert?
       (query-value+ "SELECT last_insert_rowid();")
       id))
@@ -288,14 +286,6 @@
        (stream-empty? (stream-first (stream-rest seq)))
        (stream-first seq)))
 
-
-(module+ test
-  (test-case "Infer clauses for a SELECT query to find missing information"
-    (call-with-values (λ () (infer-select-clauses '(192 #f "mark") '("id" "foo" "bar")))
-                      (λ (cols conditions params)
-                        (check-equal? cols '("foo"))
-                        (check-equal? conditions '("bar=?" "id=?"))
-                        (check-equal? params '("mark" 192))))))
 
 
 (define (infer-select-clauses available-values cols)
@@ -349,17 +339,6 @@
             (fill-holes (cons v built-args)
                         from-db
                         (cdr from-template))))))
-
-
-(module+ test
-  (test-case "Fill holes in available values from a record"
-    (check-equal? (fill-holes null '(1 2 3) '(a #f 8 #f b #f))
-                  '(a 1 8 2 b 3))
-    (check-equal? (fill-holes null '(1 2 3) '(#f #f #f))
-                  '(1 2 3)))
-  (test-exn "Raise an error if there are more holes than data"
-            exn:fail?
-            (λ () (fill-holes null '(1 2 3) '(#f #f #f #f)))))
 
 
 
@@ -431,8 +410,6 @@
 ;  - If DB does not declare P
 ;    * P exists: Filesystem integrity is fine.
 ;    * P does not exist: Should delete P.
-;
-
 
 (define (make-addressable-file name in est-size)
   (define tmp (build-object-path #"tmp"))
@@ -557,7 +534,7 @@
   (call/cc
    (λ (return)
      ; A failure to match some queries
-     ; implies that no derivations will match
+     ; implies that no derivations will match.
      (define (q arg)
        (define rec-or-#f (find-exactly-one arg))
        (if rec-or-#f
@@ -582,11 +559,37 @@
                                      (revision->revision-number revision-max)))
 
      (define revision-id
-       (query-value+
-        "select id from " (gen-relation revisions)
-        " where edition_id=? and revision_number >= ? and revision_number <= ?;"
+       (query-maybe-value+
+        (~a "select id from "
+            (gen-relation revisions)
+            " where edition_id=? and"
+            " revision_number >= ? and"
+            " revision_number <= ?"
+            " order by revision_number desc;")
         edition-id
         lo
         hi))
 
-     (search-by-record (derivation-record #f revision-id)))))
+     (if revision-id
+         empty-stream ; TODO: Write with joins
+         empty-stream))))
+
+
+
+(module+ test
+  (require rackunit)
+  (test-case "Infer clauses for a SELECT query to find missing information"
+    (call-with-values (λ () (infer-select-clauses '(192 #f "mark") '("id" "foo" "bar")))
+                      (λ (cols conditions params)
+                        (check-equal? cols '("foo"))
+                        (check-equal? conditions '("bar=?" "id=?"))
+                        (check-equal? params '("mark" 192)))))
+
+  (test-case "Fill holes in available values from a record"
+    (check-equal? (fill-holes null '(1 2 3) '(a #f 8 #f b #f))
+                  '(a 1 8 2 b 3))
+    (check-equal? (fill-holes null '(1 2 3) '(#f #f #f))
+                  '(1 2 3))
+    (test-exn "Raise an error if there are more holes than data"
+              exn:fail?
+              (λ () (fill-holes null '(1 2 3) '(#f #f #f #f))))))
