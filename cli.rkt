@@ -307,13 +307,6 @@ EOF
    (format "Unrecognized command: ~s. Run with -h for usage information.~n"
            m)]
 
-  [($consent-note)
-   (format "To consent to these changes, run again with ~a"
-           (setting-short-flag XIDEN_CONSENT))]
-
-  [($init-localstate path)
-   (format "Initalizing local state at ~a" path)]
-
   [($invalid-workspace-envvar)
    (format "Ignoring envvar value for XIDEN_WORKSPACE: ~a~n  falling back to ~a"
            (getenv "XIDEN_WORKSPACE")
