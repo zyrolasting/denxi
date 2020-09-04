@@ -115,7 +115,7 @@ EOF
         (define-values (result messages)
           (run-log (install-package-from-source source (cons output outputs))))
         (halt (if (eq? result SUCCESS) 0 1)
-              (reverse (flatten messages))))))))
+              messages))))))
 
 
 (define (uninstall-command args halt)
