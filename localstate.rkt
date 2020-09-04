@@ -15,10 +15,18 @@
 ; never provide */unsafe procedures from this module.
 
 (require racket/contract)
-(module+ test (require rackunit))
 
+; Provided ids include relation structs. See use of define-relation.
 (provide transact
          (contract-out
+          [declare-derivation
+           (-> non-empty-string?
+               non-empty-string?
+               non-empty-string?
+               exact-nonnegative-integer?
+               (listof non-empty-string?)
+               path?
+               exact-positive-integer?)]
           [halt-transaction
            (-> any)]
           [get-objects-directory
