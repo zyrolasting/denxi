@@ -92,7 +92,6 @@
          "localstate.rkt"
          "message.rkt"
          "monad.rkt"
-         "output-info.rkt"
          "path.rkt"
          "printer.rkt"
          "rc.rkt"
