@@ -27,9 +27,9 @@
   [read-info-module
    (-> any/c input-port? (or/c syntax? eof-object?))]
   [make-config-closure
-   (-> (hash/c symbol? place-message-allowed?)
-       (listof symbol?)
-       config-closure/c)]))
+   (->* ((hash/c symbol? place-message-allowed?))
+        ((listof symbol?))
+        config-closure/c)]))
 
 
 (require racket/file
@@ -206,7 +206,7 @@
          line col args))
 
 
-(define (make-config-closure hash-table read-order)
+(define (make-config-closure hash-table [read-order null])
   (define get-by-key
     (case-lambda
       [() hash-table]
