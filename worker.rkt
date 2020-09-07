@@ -10,7 +10,6 @@
          compiler/cm
          "actor.rkt"
          "archiving.rkt"
-         "config.rkt"
          "contract.rkt"
          "file.rkt"
          "format.rkt"
@@ -159,13 +158,13 @@
   (test-workspace "Initialize worker with workspace and configuration"
     (call-for-active-worker (λ (v)
                               (check-equal? (workspace-directory) (current-directory))
-                              (check-eq? (XIDEN_SANDBOX_EVAL_TIME_LIMIT_SECONDS) 10))
+                              (check-eq? (XIDEN_FETCH_TIMEOUT_MS) 10))
                             (λ ()
                               (place-channel-put for-tests ($stop))
                               (send worker
                                     handle-$start
                                     (current-directory)
-                                    (hash XIDEN_SANDBOX_EVAL_TIME_LIMIT_SECONDS 10)))))
+                                    (hash XIDEN_FETCH_TIMEOUT_MS 10)))))
 
   (test-workspace "Compile Racket modules"
     (display-to-file "#lang racket/base" "a.rkt")
