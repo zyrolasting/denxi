@@ -17,7 +17,7 @@
 (define request-transfer/c
   (-> input-port?
       (or/c +inf.0 exact-positive-integer?)
-      (or/c #f path?)))
+      any/c))
 
 
 (provide (struct-out fetch-state)
@@ -48,7 +48,6 @@
 (require racket/function
          racket/sequence
          net/head
-         "config.rkt"
          "exn.rkt"
          "file.rkt"
          "format.rkt"
@@ -77,7 +76,7 @@
        (λ (m)
          (define logged-state (fetch-named-source name (car sources) request-transfer))
          (define-values (state messages) (run-log logged-state m))
-         (if (fetch-state-path state)
+         (if (fetch-state-result state)
              (values state messages)
              (run-log (fetch name (cdr sources) request-transfer) messages))))))
 
@@ -95,7 +94,7 @@
 (struct fetch-state
   (source               ; A user-defined string that a method should use to find bytes
    name                 ; A human-friendly name for the fetch used in errors
-   path                 ; A path pointing to a fetch resource, or #f. If set, the fetch was successful.
+   result               ; A value representing a fetched resource, or #f. If not #f, the fetch was successful.
    request-transfer)    ; A callback that takes a port and size estimate
   #:transparent)
 
@@ -114,7 +113,7 @@
 
 (define (fetch-method method-name f)
   (λ (fetch-st)
-    (if (fetch-state-path fetch-st)
+    (if (fetch-state-result fetch-st)
         (logged-unit fetch-st)
         (with-handlers ([values (fetch-exn-handler fetch-st)])
           (update-fetch-state method-name
@@ -123,11 +122,11 @@
                                  (fetch-state-request-transfer fetch-st)))))))
 
 
-(define (update-fetch-state method-name fetch-st path-or-#f)
+(define (update-fetch-state method-name fetch-st next-result)
   (logged
    (λ (messages)
-     (values (struct-copy fetch-state fetch-st [path path-or-#f])
-             (cons (log-fetch-update method-name fetch-st path-or-#f)
+     (values (struct-copy fetch-state fetch-st [result next-result])
+             (cons (log-fetch-update method-name fetch-st next-result)
                    messages)))))
 
 
