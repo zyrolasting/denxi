@@ -10,9 +10,9 @@
          racket/path
          racket/set
          racket/sequence
-         "config.rkt"
          "message.rkt"
          "path.rkt"
+         "sandbox.rkt"
          "setting.rkt"
          "string.rkt"
          "workspace.rkt"
