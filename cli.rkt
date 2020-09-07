@@ -16,7 +16,6 @@
          (for-syntax racket/base)
          "archiving.rkt"
          "cmdline.rkt"
-         "config.rkt"
          "contract.rkt"
          "exn.rkt"
          "file.rkt"

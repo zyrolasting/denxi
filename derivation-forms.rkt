@@ -191,12 +191,14 @@
        (let ([dup (check-duplicate-identifier names)])
          (when dup
            (raise-syntax-error 'xiden "duplicate definition" stx dup)))
-       (with-syntax ([(name ...) names])
+       (with-syntax ([(name ...) names]
+                     [#%info-domain (datum->syntax stx '#%info-domain)]
+                     [#%info-lookup (datum->syntax stx '#%info-lookup)])
          #'(#%plain-module-begin
             defn ...
             (define #%info-lookup
               (case-lambda
-                [(n) (#%info-lookup n (λ () (error 'xiden "no info for ~a" n)))]
+                [(n) (#%info-lookup n (λ () (error 'xiden "~a not set" n)))]
                 [(n fail)
                  (unless (and (procedure? fail)
                               (procedure-arity-includes? fail 0))
