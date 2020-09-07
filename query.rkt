@@ -1,7 +1,6 @@
 #lang racket/base
 
-; Define a data type used to match against xiden-package-info
-; instances.
+; Define a data type to match against package definitions.
 
 (require "contract.rkt")
 
