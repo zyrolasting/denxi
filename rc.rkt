@@ -14,7 +14,7 @@
   [get-xiden-settings-path
    (-> complete-path?)]
   [load-xiden-rcfile
-   (-> config-closure/c)]
+   (-> (-> any/c any))]
   [dump-xiden-settings
    (-> (hash/c symbol? any/c))]
   [save-xiden-settings!
@@ -25,9 +25,9 @@
          racket/match
          racket/pretty
          (only-in racket/tcp listen-port-number?)
-         "config.rkt"
          "exn.rkt"
          "message.rkt"
+         "sandbox.rkt"
          "setting.rkt"
          "url.rkt"
          "workspace.rkt")
@@ -62,7 +62,7 @@
 ; Checks environment variable, then rcfile, then hard-coded value.
 (define (in-xiden-setting-value-sources id default-value)
   (in-list (list (λ () (maybe-get-setting-value-from-envvar (symbol->string id)))
-                 (λ () ((current-xiden-rcfile-cache) id any/c (void)))
+                 (λ () ((current-xiden-rcfile-cache) `(#%info-lookup ',id void)))
                  (const default-value))))
 
 
@@ -81,7 +81,6 @@
             #f))
 
 
-
 (define (get-xiden-settings-path)
   (build-workspace-path "etc/xiden.rkt"))
 
@@ -90,8 +89,8 @@
 (define (load-xiden-rcfile)
   (let ([path (get-xiden-settings-path)])
     (if (file-exists? path)
-        (load-config path)
-        (make-config-closure (hasheq) null))))
+        (load-xiden-module path)
+        void)))
 
 
 (define-syntax-rule (with-xiden-rcfile body ...)
@@ -107,11 +106,10 @@
 ; This implementation preserves the reading order of
 ; any rcfile on disk, as a courtesy to the user.
 (define (save-xiden-settings!)
-  (save-config! (make-config-closure
-                 (dump-xiden-settings)
-                 (filter (curry hash-has-key? XIDEN_SETTINGS)
-                         ((load-xiden-rcfile) READ_ORDER)))
-                (get-xiden-settings-path)))
+  (define domain-or-void ((load-xiden-rcfile) '(#%info-domain)))
+  (save-xiden-module!
+   (hash+list->xiden-evaluator (dump-xiden-settings) (if (void? domain-or-void) null domain-or-void))
+   (get-xiden-settings-path)))
 
 
 ; For boolean options, since they all use the same help string.
@@ -305,9 +303,6 @@
   (require rackunit
            (submod "file.rkt" test))
 
-  (test-workspace "Represent a lack of rcfile as an empty hash"
-    (check-equal? ((load-xiden-rcfile)) (hasheq)))
-
 
   (test-not-exn "Group all runtime configuration in a hash table"
                 (λ ()
@@ -352,11 +347,7 @@
                 (XIDEN_PRIVATE_KEY_PATH))
 
     (test-case "Override hard-coded value with rcfile"
-      (XIDEN_PRIVATE_KEY_PATH "foo"
-                              (λ ()
-                                (check-false ((load-xiden-rcfile) 'XIDEN_PRIVATE_KEY_PATH any/c #f))
-                                (save-xiden-settings!)
-                                (check-equal? ((load-xiden-rcfile) 'XIDEN_PRIVATE_KEY_PATH) "foo")))
+      (XIDEN_PRIVATE_KEY_PATH "foo" save-xiden-settings!)
       (with-xiden-rcfile (check-equal? (XIDEN_PRIVATE_KEY_PATH) "foo")))
 
     (test-case "Override rcfile value with envvar value"
