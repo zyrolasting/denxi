@@ -191,7 +191,10 @@
              (url->string u))))
 
 (define (load-local-xiden-module path)
-  (call-with-input-file path read-xiden-module))
+  (parameterize ([sandbox-path-permissions
+                  (let ([pp (sandbox-path-permissions)])
+                    (cons `(read ,path) pp))])
+    (call-with-input-file path read-xiden-module)))
 
 
 (module+ test
@@ -271,15 +274,11 @@
     (dynamic-wind
       void
       (λ ()
-        (parameterize ([sandbox-path-permissions
-                        (let ([pp (sandbox-path-permissions)])
-                          (cons `(read ,tmp-file)
-                                pp))])
-          (save-xiden-module! closure tmp-file)
-          (define-values (h0 l0) (xiden-evaluator->hash+list closure))
-          (define-values (h1 l1) (xiden-evaluator->hash+list (load-xiden-module tmp-file)))
-          (check-equal? h0 h1)
-          (check-equal? l0 l1)))
+        (save-xiden-module! closure tmp-file)
+        (define-values (h0 l0) (xiden-evaluator->hash+list closure))
+        (define-values (h1 l1) (xiden-evaluator->hash+list (load-xiden-module tmp-file)))
+        (check-equal? h0 h1)
+        (check-equal? l0 l1))
       (λ () (delete-file tmp-file))))
 
   (test-equal? "Create infotab from associative list"
