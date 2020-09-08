@@ -4,154 +4,131 @@
 
 @title[#:tag "asking"]{Package Queries}
 
-Under the hood, @project-name understands finding packages from the
-file system or over HTTP. If you have a different protocol such as
-SFTP, Git, SVN, etc, define a @tech{plugin}.
-
 To aid package discovery, you can request package definitions from
 configured hosts a colon-separated @deftech{package query} string.
 
 @section{Simple Queries}
 
-@tt{john.doe:calculator} means "the @tt{calculator} package by
-@tt{john.doe}". But @tt{john.doe:calculator} is actually an
-abbreviation for @tt{john.doe:calculator:draft:newest}.  @tt{draft} is
-the package's @tech{edition}. @tt{newest} is the edition's
-@tech{revision}.  Both @tt{draft} and @tt{newest} are just default
-values.
+In the simplest case, a query string contains only a provider name and
+a package name, like @tt{example.com:calculator}. Such a query is
+understood to mean "the @tt{calculator} package provided by @tt{example.com}".
 
-So, if we did not abbreviate, @tt{john.doe:calculator:draft:newest}
-means "the @tt{newest} revision of the @tt{draft} edition of the
-@tt{calculator} package by @tt{john.doe}."
+Why not just say @tt{calculator}? Because providers are presumed
+unique, and using a verifiable identity to scope packages precludes
+the need for a naming authority.
 
 
 @section{Specifying an Edition}
 
 If you prefer a scientific calculator, the package author can provide
-that design as a diferent @tech{edition}. If John Doe releases a
-@tt{scientific} edition for the @tt{calculator} package, then you can
-replace @tt{draft} with @tt{scientific}.
+that design as a diferent @tech{edition}. Specify an edition using
+the next field.
 
 @verbatim|{
-john.doe:calculator:scientific:newest
+example.com:calculator:scientific
 }|
 
-
-@section{Specifying a Revision}
-
-To request a specific @tech{revision} of a package, replace
-@tt{newest} with a @tech{revision number} or another @tech{revision
-name}.
+The next field is for requesting a specific @tech{revision} of a package.
 
 @verbatim|{
-john.doe:calculator:scientific:288
-john.doe:calculator:scientific:with-trig
+example.com:calculator:scientific:288
+example.com:calculator:scientific:open-beta
 }|
 
-Revision names are aliases or revision numbers, but the numbers are necessary
-to comparing versions and provide a standard form for revisions. @tt{newest} is
-special for being the only @tech{revision name} that can refer to more than one
-implementation. In other words, all queries that use @tt{newest} are
-@tech{inexact queries}.
+A revision can be an exact nonnegative integer or a name. Names are
+aliases for numbers.
 
-
-@section{Specifying a Version Range}
-
-What about version ranges? When you ask for
-@tt{john.doe:calculator:scientific:288}, you are actually asking for the latest
-package in an inclusive interval that just happens to contain only one
-package. You can rewrite the query to make this interval explicit.
+What about version ranges? Just add another revision to act as the
+maximum accepted revision.
 
 @verbatim|{
-john.doe:calculator:scientific:288:288
+example.com:calculator:scientific:288:288
 }|
 
 From here we can change the endpoints of the interval to accept alternative
 packages.  This is useful if some implementations are not available.
 
 @verbatim|{
-john.doe:calculator:scientific:102:288
+example.com:calculator:scientific:102:288
 }|
 
 
 @section{Marking Inclusive and Exclusive Endpoints}
 
+By default, revision intervals are inclusive of their endpoints.
 You can add flags to mark the interval as inclusive or exclusive of
 each endpoint. Use the letter @tt{i} for inclusive, and @tt{e} for
 exclusive.  In the below form, revision @tt{288} will @italic{not} be
-included because of the @tt{e} right next to it.
+included because of the @tt{e} on the right side of the two flags.
 
 @verbatim|{
-john.doe:calculator:scientific:i:102:e:288
+example.com:calculator:scientific:102:288:ie
 }|
 
+In integer interval notation:
 
-@section{Revision Names Create Human-Readable Intervals}
+@itemlist[
+@item{@tt{ii} means @litchar|{{102 ... 208}}|}
+@item{@tt{ie} means @litchar|{{102 ... 207}}|}
+@item{@tt{ei} means @litchar|{{103 ... 208}}|}
+@item{@tt{ee} means @litchar|{{103 ... 207}}|}
+]
 
-There's a problem: Someone can't read this and know why this query makes sense
-for your project. You can write a comment, but let's say John developed his
-scientific calculator through an invite-only beta. John later put out a
-production-ready copy in response to feedback, along with the beta revisions
-for posterity. You can still use names in place of the numbers to express a
-preference for revisions made during the closed beta.
+Marking exclusive bounds are useful when compared with revision names.
+This query requests a scientific calculator's beta implementation, up
+to but not including the production-ready revision. If the author did
+not define a revision name marking the end of a beta, then you would
+have to know the revision number in advance of writing the query. With
+the interval flags, you do not have to know any revision numbers.
 
 @verbatim|{
-john.doe:calculator:scientific:i:closed-beta:e:production
+example.com:calculator:scientific:closed-beta:production:ie
 }|
 
-
-@section{Catching Reversed Intervals}
 
 When resolving @tech{revision names}, @binary will reject queries
 like these because they each create an invalid interval:
 
 @verbatim|{
-john.doe:calculator:scientific:production:closed-beta
-john.doe:calculator:scientific:9:0
-john.doe:calculator:scientific:e:3:e:3
+example.com:calculator:scientific:production:closed-beta
+example.com:calculator:scientific:9:0
+example.com:calculator:scientific:3:3:ee
 }|
 
+@section{Specifying an output}
 
-@section{What if Two Queries Return Different Definitions?}
-
-No matter how specific you are, the Internet is a fickle beast,
-full of inconsistencies. But if @binary uses the same queries
-to collect information from more than one server, it's possible that
-both servers will return conflicting information.
-
-To help protect packages from the effects of change over time, see
-@secref{inputs}.
-
-@section{Query Grammar}
-
-A @tech{query} string follows this EBNF grammar:
+The last field of a query is the intended output of a package.  This
+allows you to request a named deliverable.
 
 @verbatim|{
-<package-query> ::= <package-identity> | <package-identity> ":" <version>
-
-<package-identity> ::= <name> ":" <name>
-
-<version> ::= <name> | <name> ":" <revision>
-
-<revision> ::= <revision-boundary> | <inclusive-revision-range> | <general-revision-range>
-
-<revision-boundary> ::= <name> | <revision-number>
-
-<revision-number> ::= <non-zero-digit> <digit>*
-
-<inclusive-revision-range> ::= <revision-boundary> ":" <revision-boundary>
-
-<general-revision-range> ::= <interval-flag> ":" <revision-boundary> ":" <interval-flag> ":" <revision-boundary>
-
-<interval-flag> ::= "e" | "i"
-
-<non-zero-digit> ::= "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
-
-<digit> ::= "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
-
-<name> ::= ? A string representing a legal file name ?
+example.com:calculator:scientific:9:0:doc
+example.com:calculator:scientific:9:0:test
+example.com:calculator:scientific:9:0:lib
+example.com:calculator:scientific:9:0:all
 }|
 
-@binary uses @tt{<name>}s for directory and link names on file systems. For
-that reason, a package named @tt{aux} cannot appear on a Windows system.
-@binary will alert you if a package uses a reserved file name.
+
+@section{Omitting Information}
+
+You may omit certain fields for convenience to accept reasonable
+defaults.  Two contiguous colons will set the associated field to the
+empty string. Any contiguous colon sequence at the end of a query is
+implied and does not need to be typed.
+
+@verbatim|{
+example.com:calculator::production
+}|
+
+When searching for exactly one package, @project-name will infer values according to the following rules:
+
+@itemlist[
+@item{If no edition is set, @project-name will assume it is @racket{default}.}
+@item{If no revision is set, @project-name will use the largest available revision number}
+@item{If a minimum revision is set, but not a maximimum, @project-name will assume the maximum revision is equal to the minimum revision (creating a request for an exact revision).}
+@item{If no interval boundaries are set, @project-name will assume @racket{ii}.}
+@item{If no output is set, @project-name will assume @racket{default}.}
+]
+
+When searching for multiple packages, omitting information will cause
+@project-name to match against more packages. In that case, omitting
+revision information will result in matching against all revisions.

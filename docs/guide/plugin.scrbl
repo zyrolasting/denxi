@@ -68,9 +68,11 @@ arguments.
 
 @subsection{Source Fetching}
 
-A user might express a package definition source at the command line
-that @binary does not understand. A @tech{plugin} can process that
-source on behalf of @|binary|.
+Under the hood, @project-name understands finding packages from the
+file system or over HTTP.  A user might express a package definition
+source at the command line that @binary does not understand, such as
+an SFTP URL. A @tech{plugin} can process that source on behalf of
+@|binary|.
 
 You will want a plugin to process sources if you want @binary to obey
 your conventions when referring to external resources. For example,
