@@ -41,6 +41,7 @@
 (define+provide-message $package (info))
 (define+provide-message $package-installed $package ())
 (define+provide-message $built-package-output $package (output-name))
+(define+provide-message $reused-package-output $package (output-name))
 (define+provide-message $package-not-installed $package ())
 (define+provide-message $undeclared-racket-version $package ())
 (define+provide-message $unsupported-racket-version $package (versions))
@@ -131,10 +132,19 @@
        void
        (λ ()
          (values SUCCESS
-                 (cons (for/list ([output (in-list expected-outputs)])
-                         (build-package-output pkgeval output))
+                 (cons (for/list ([output-name (in-list expected-outputs)])
+                         (get-package-output pkgeval output-name))
                        messages)))
        (λ () (kill-evaluator pkgeval))))))
+
+
+(define (get-package-output pkgeval output-name)
+  (define v (use-output (package-evaluator->xiden-query pkgeval output-name)
+                        (λ () #f)))
+  (if v
+      ($reused-package-output v)
+      (build-package-output pkgeval output-name)))
+
 
 
 ; This is the heart of filesystem changes for a package installation.
@@ -149,12 +159,12 @@
        (pkgeval `(cd ,build-dir))
        (pkgeval `(build ,output-name)))))
 
-  (declare-derivation (xiden-evaluator-ref pkgeval 'provider)
-                      (xiden-evaluator-ref pkgeval 'package)
-                      (xiden-evaluator-ref pkgeval 'edition "draft")
-                      (xiden-evaluator-ref pkgeval 'revision-number)
-                      (xiden-evaluator-ref pkgeval 'revision-names null)
-                      directory-record)
+  (declare-output (xiden-evaluator-ref pkgeval 'provider)
+                  (xiden-evaluator-ref pkgeval 'package)
+                  (xiden-evaluator-ref pkgeval 'edition "default")
+                  (xiden-evaluator-ref pkgeval 'revision-number)
+                  (xiden-evaluator-ref pkgeval 'revision-names null)
+                  directory-record)
 
   ($built-package-output (package-name pkgeval) output-name))
 

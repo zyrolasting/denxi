@@ -148,11 +148,12 @@ EOF
    (λ (flags)
      (define-values (bytes-recovered directories-deleted files-deleted links-deleted)
        (xiden-collect-garbage))
-     (halt 0 ($show-string (format "Deleted ~a directories, ~a files, and ~a links (~~~a bytes)."
+     (halt 0 ($show-string (format "Deleted ~a directories, ~a files, and ~a links (~~~a mibibytes)"
                                    directories-deleted
                                    files-deleted
                                    links-deleted
-                                   bytes-recovered))))))
+                                   (~r (/ bytes-recovered (* 1024 1024))
+                                       #:precision 2)))))))
 
 
 (define (link-command args halt)
@@ -162,7 +163,7 @@ EOF
    #:halt halt
    #:arg-help-strings '("link-path" "query" "rel-path")
    (λ (flags link-path query rel-path)
-     (define path-stream (in-xiden-objects query))
+     (define path-stream (sequence->stream (sequence-map (λ (rid on path) path) (in-xiden-objects query))))
      (if (stream-empty? path-stream)
          (halt 1 ($show-string "No package found"))
          (begin (make-link/clobber (build-path (build-workspace-path (stream-first path-stream))

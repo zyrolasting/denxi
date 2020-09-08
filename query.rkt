@@ -14,6 +14,7 @@
           [xiden-query-variant? predicate/c]
           [coerce-xiden-query (-> xiden-query-variant? xiden-query?)]
           [xiden-query->string (-> xiden-query? string?)]
+          [package-evaluator->xiden-query (->* ((-> any/c any)) (string?) xiden-query?)]
           [get-xiden-query-revision-range
            (->* (xiden-query?)
                 (#:lo revision-number?
@@ -30,6 +31,7 @@
          racket/match
          racket/sequence
          "exn.rkt"
+         "sandbox.rkt"
          "string.rkt")
 
 (define-exn exn:fail:xiden:invalid-revision-interval exn:fail:xiden (lo hi))
@@ -73,11 +75,22 @@
 
 
 (define (xiden-query-variant? v)
-  ((disjoin string? xiden-query?) v))
+  ((disjoin string? xiden-query? procedure?) v))
 
 (define (coerce-xiden-query v)
   (cond [(xiden-query? v) v]
-        [(string? v) (string->xiden-query v)]))
+        [(string? v) (string->xiden-query v)]
+        [(procedure? v) (package-evaluator->xiden-query v)]))
+
+(define (package-evaluator->xiden-query pkgeval [assume-output "default"])
+  (xiden-query (xiden-evaluator-ref pkgeval 'provider)
+               (xiden-evaluator-ref pkgeval 'package)
+               (xiden-evaluator-ref pkgeval 'edition "default")
+               (xiden-evaluator-ref pkgeval 'revision-number)
+               (xiden-evaluator-ref pkgeval 'revision-number)
+               "ii"
+               assume-output))
+
 
 (define (xiden-query-string? s)
   (with-handlers ([values (const #f)])
