@@ -62,7 +62,7 @@
 
 
 (define (gc-path-stream)
-  (sequence->stream (in-list (directory-list (get-objects-directory)))))
+  (sequence->stream (in-list (directory-list (build-object-path)))))
 
 
 ;----------------------------------------------------------------------

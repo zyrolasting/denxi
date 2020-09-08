@@ -2,11 +2,13 @@
 
 (provide build-workspace-path
          find-workspace-directory
+         make-workspace-path-builder
          workspace-directory
          CONVENTIONAL_WORKSPACE_NAME
          show-workspace-envvar-error?)
 
 (require racket/contract
+         racket/file
          racket/path
          "encode.rkt"
          "message.rkt")
@@ -58,6 +60,13 @@
 (define (build-workspace-path . paths)
   (apply build-path (workspace-directory)
          paths))
+
+(define (make-workspace-path-builder base)
+  (λ paths
+    (define dir (build-workspace-path base))
+    (make-directory* dir)
+    (apply build-path dir paths)))
+
 
 (module+ test
   (require racket/file

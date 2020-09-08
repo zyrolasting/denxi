@@ -142,7 +142,7 @@
   (define v (use-output (package-evaluator->xiden-query pkgeval output-name)
                         (λ () #f)))
   (if v
-      ($reused-package-output v)
+      ($reused-package-output (package-name pkgeval) output-name)
       (build-package-output pkgeval output-name)))
 
 
@@ -164,6 +164,7 @@
                   (xiden-evaluator-ref pkgeval 'edition "default")
                   (xiden-evaluator-ref pkgeval 'revision-number)
                   (xiden-evaluator-ref pkgeval 'revision-names null)
+                  output-name
                   directory-record)
 
   ($built-package-output (package-name pkgeval) output-name))
@@ -227,11 +228,10 @@
                   workspace))
 
   (λ (op link-path target-path)
-    (unless (and (path-ok? target-path) (path-ok? link-path))
+    (unless (path-ok? (normalize-path target-path))
       (raise-user-error 'security
-                        "Cannot create link. Both paths must be in ~a~n  link path: ~a~n  target path: ~a"
+                        "Cannot create link. Target must be in ~a~n  target path: ~a"
                         workspace
-                        link-path
                         target-path))))
 
 
@@ -280,6 +280,11 @@
 (define-message-formatter format-package-message
   [($built-package-output name output-name)
    (format "Built output ~a for package ~a"
+           output-name
+           name)]
+
+  [($reused-package-output name output-name)
+   (format "Reused output ~a for package ~a"
            output-name
            name)]
 

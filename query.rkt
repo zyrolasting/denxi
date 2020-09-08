@@ -70,17 +70,19 @@
             string?
             string?
             string?
-            (or/c "" "ii" "ee" "ie" "ei")
+            (or/c "ii" "ee" "ie" "ei")
             string?))
 
 
 (define (xiden-query-variant? v)
   ((disjoin string? xiden-query? procedure?) v))
 
+
 (define (coerce-xiden-query v)
   (cond [(xiden-query? v) v]
         [(string? v) (string->xiden-query v)]
         [(procedure? v) (package-evaluator->xiden-query v)]))
+
 
 (define (package-evaluator->xiden-query pkgeval [assume-output "default"])
   (xiden-query (xiden-evaluator-ref pkgeval 'provider)
@@ -95,6 +97,7 @@
 (define (xiden-query-string? s)
   (with-handlers ([values (const #f)])
     (and (string->xiden-query s) #t)))
+
 
 (define (string->xiden-query s)
   (define user-defined (string-split s ":"))
@@ -132,6 +135,7 @@
                                 lo
                                 hi))
 
+
 (define (get-inclusive-revision-range #:named-interval [named-interval #f]
                                       min-exclusive?
                                       max-exclusive?
@@ -166,7 +170,6 @@
 
 (module+ test
   (require rackunit)
-
 
   (test-case "Convert between queries and strings"
     (define (verify s expected) (check-equal? (xiden-query->string (string->xiden-query s)) expected))

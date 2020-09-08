@@ -25,6 +25,7 @@
                non-empty-string?
                exact-nonnegative-integer?
                (listof non-empty-string?)
+               string?
                path-record?
                output-record?)]
           [use-output
@@ -37,9 +38,9 @@
            (->* (record?) (procedure?) (or/c #f record?))]
           [start-fs-transaction
            (-> (values (-> void?) (-> void?)))]
-          [get-objects-directory
-           (-> complete-path?)]
           [build-object-path
+           (->* () #:rest (listof path-string?) complete-path?)]
+          [build-addressable-path
            (-> bytes? complete-path?)]
           [in-xiden-objects
            (-> xiden-query? (sequence/c revision-number? path-string? path-string?))]
@@ -357,15 +358,11 @@
   (make-parameter (λ () (build-workspace-path "var/xiden/db"))))
 
 
-(define (get-objects-directory)
-  (build-workspace-path
-   "var/xiden/objects"))
+(define build-object-path
+  (make-workspace-path-builder "var/xiden/objects"))
 
-
-(define (build-object-path digest)
-  (build-path (get-objects-directory)
-              (encoded-file-name digest)))
-
+(define (build-addressable-path digest)
+  (build-object-path (encoded-file-name digest)))
 
 
 ;----------------------------------------------------------------------------------
@@ -376,7 +373,7 @@
 
 (define-db-procedure (rollback-fs-transaction)
   (with-handlers ([exn:fail:sql? void]) (query-exec+ "rollback transaction;"))
-  (for ([path (in-directory (get-objects-directory))])
+  (for ([path (in-directory (build-object-path))])
     (unless (find-exactly-one (path-record #f (normalize-path-for-db path) #f))
       (delete-directory/files #:must-exist? #f path))))
 
@@ -400,7 +397,7 @@
 ;    * P does not exist: Should delete P.
 
 (define-db-procedure (make-addressable-file name in est-size)
-  (define tmp (build-object-path #"tmp"))
+  (define tmp (build-addressable-path #"tmp"))
   (dynamic-wind
     void
     (λ ()
@@ -416,7 +413,7 @@
                       #:timeout-ms (XIDEN_FETCH_TIMEOUT_MS)
                       #:est-size est-size))))
         (define digest (make-digest tmp 'sha384))
-        (define path (build-object-path digest))
+        (define path (build-addressable-path digest))
         (make-directory* (path-only path))
         (rename-file-or-directory tmp path #t)
         (declare-path (find-relative-path (workspace-directory) path) digest))
@@ -425,7 +422,7 @@
 
 (define-db-procedure (make-addressable-directory output-name proc)
   (call-with-temporary-directory
-   #:cd? #t #:base (get-objects-directory)
+   #:cd? #t #:base (build-object-path)
    (λ (path)
      (proc path)
      (define digest (make-directory-content-digest output-name path))
@@ -442,8 +439,10 @@
 
 
 (define-db-procedure (make-addressable-link target-path-record link-path)
-  (make-file-or-directory-link (build-workspace-path (path-record-path target-path-record))
-                               link-path)
+  (make-file-or-directory-link
+   (find-relative-path (path-only (simplify-path (path->complete-path link-path)))
+                       (build-workspace-path (path-record-path target-path-record)))
+   link-path)
   (gen-save (link-record #f
                          (record-id target-path-record)
                          (record-id (declare-path link-path
@@ -563,8 +562,7 @@
        (define rec-or-#f (find-exactly-one arg))
        (if rec-or-#f
            (record-id rec-or-#f)
-           (begin (writeln arg)
-             (fail))))
+           (fail)))
 
      (define provider-id (q (provider-record #f provider-name)))
      (define package-id  (q (package-record  #f package-name provider-id)))
@@ -581,31 +579,37 @@
                                          #:hi (revision->revision-number revision-max)
                                          query)))
 
+     (define sql
+       (~a "select R.id, R.number, O.output_name, P.path from "
+           (relation-name paths) " as P"
+           " inner join " (relation-name outputs) " as O"
+           " on O.path_id = P.id"
+           " inner join " (relation-name revisions) " as R"
+           " on R.id = O.revision_id "
+           " where R.edition_id=? and"
+           " R.number >= ? and"
+           " R.number <= ?"
+           " order by R.number desc;"))
 
-     (in-query+
-      (~a "select R.number, O.output_name, P.path from "
-          (relation-name paths) " as P"
-          " inner join " (relation-name outputs) " as O"
-          " on O.path_id = P.id"
-          " inner join " (relation-name revisions) " as R"
-          " on R.id = O.revision_id "
-          " where R.edition_id=? and"
-          " R.number >= ? and"
-          " R.number <= ?"
-          " order by R.number desc;")
-      edition-id lo hi))))
+     (define params
+       (list edition-id lo hi))
 
+     (apply in-query+ sql params))))
 
 (define-db-procedure (use-output query fail)
-  (with-handlers ([values fail])
+  (call/cc
+   (λ (k)
     (define seq (in-xiden-objects query))
-    (define-values (rev-no output-name path)
-      (sequence-ref seq 0))
-    (define rec (find-exactly-one (output-record #f rev-no #f output-name)))
+
+    (define-values (rev-id rev-no output-name path)
+      (with-handlers ([values (λ (e) (k (fail)))])
+        (sequence-ref seq 0)))
+
+    (define rec (find-exactly-one (output-record #f rev-id #f output-name #f)))
     (if rec
         (gen-save (struct-copy output-record rec
                                [state OUTPUT_STATE_INSTALLED]))
-        (fail))))
+        (fail)))))
 
 (module+ test
   (require rackunit)
@@ -684,7 +688,7 @@
        (in-values-sequence
         (in-xiden-objects "a.example.com:widget:default:rev-3:7:ei:lib"))))
 
-    (check-equal? actual-results
+    (check-equal? (map cdr actual-results)
                   (build-list 4
                               (λ (i [n (- 7 i)])
                                 (list n (~a "out" n) (~a "path" n))))))
