@@ -27,7 +27,7 @@
                path-record?
                derivation-record?)]
           [find-exactly-one
-           (->* (record?) (procedure?) record?)]
+           (->* (record?) (procedure?) (or/c #f record?))]
           [start-fs-transaction
            (-> (values (-> void?) (-> void?)))]
           [get-objects-directory
@@ -203,7 +203,7 @@
       (apply f formals))))
 
 
-(define-db-procedure (create has-relation)
+(define (create has-relation)
   (define relation-inst (gen-relation has-relation))
   (query-exec+
    (format "CREATE TABLE IF NOT EXISTS ~a (\n~a\n);"
@@ -211,12 +211,6 @@
            (string-join (map (λ (i) (format "    ~a" i))
                              (relation-fields relation-inst))
                         ",\n"))))
-
-
-
-(define (exists?/unsafe subquery . args)
-  (eq? 1 (apply query-value+ (format "select exists (select 1 from ~a);" subquery)
-                args)))
 
 
 (define-db-procedure (in-relation/unsafe relation-inst what)
@@ -262,10 +256,6 @@
          (~a "delete from " (relation-name (gen-relation record-inst)) " where id=?;")
          (record-id record-inst)))
 
-
-(define-db-procedure (path-declared? path)
-  (exists?/unsafe (~a (relation-name paths) " where path=?")
-                  (~a path)))
 
 
 ;------------------------------------------------------------------
@@ -375,7 +365,7 @@
 (define-db-procedure (rollback-fs-transaction)
   (with-handlers ([exn:fail:sql? void]) (query-exec+ "rollback transaction;"))
   (for ([path (in-directory (get-objects-directory))])
-    (unless (path-declared? path)
+    (unless (find-exactly-one (path-record #f (normalize-path-for-db path) #f))
       (delete-directory/files #:must-exist? #f path))))
 
 
@@ -397,7 +387,7 @@
 ;    * P exists: Filesystem integrity is fine.
 ;    * P does not exist: Should delete P.
 
-(define (make-addressable-file name in est-size)
+(define-db-procedure (make-addressable-file name in est-size)
   (define tmp (build-object-path #"tmp"))
   (dynamic-wind
     void
@@ -421,7 +411,7 @@
     (λ () (close-input-port in))))
 
 
-(define (make-addressable-directory output-name proc)
+(define-db-procedure (make-addressable-directory output-name proc)
   (call-with-temporary-directory
    #:cd? #t #:base (get-objects-directory)
    (λ (path)
@@ -432,15 +422,15 @@
                    (encoded-file-name digest)))
      (with-handlers ([exn:fail:filesystem?
                       (λ (e)
-                        (displayln (exn->string e))
                         (copy-directory/files path dest #:preserve-links? #t)
                         (delete-directory/files path))])
        (rename-file-or-directory path dest #t)
        (declare-path dest digest)))))
 
 
-(define (make-addressable-link target-path-record link-path)
-  (make-file-or-directory-link (path-record-path target-path-record) link-path)
+(define-db-procedure (make-addressable-link target-path-record link-path)
+  (make-file-or-directory-link (build-workspace-path (path-record-path target-path-record))
+                               link-path)
   (gen-save (link-record #f
                          (record-id target-path-record)
                          (record-id (declare-path link-path
@@ -480,6 +470,7 @@
   ; performance difference is between allowing SQLite to raise an error
   ; vs. running an existential query in advance.
   (define path (normalize-path-for-db unnormalized-path))
+  (printf "Declaring path ~a~n" path)
   (with-handlers ([exn:fail:sql?
                    (λ (e)
                      (if (equal? (cdr (assoc 'errcode (exn:fail:sql-info e))) 2067)
@@ -489,18 +480,15 @@
     (gen-save (path-record #f path digest))))
 
 
-(define-db-procedure (get-path-id path)
-  (record-id (find-exactly-one (path-record #f (normalize-path-for-db path) #f))))
-
 
 (define (normalize-path-for-db path)
   (define workspace-relative
     (if (complete-path? path)
         (find-relative-path (workspace-directory) path)
         path))
-  (if (string? path)
-      path
-      (path->string path)))
+  (if (string? workspace-relative)
+      workspace-relative
+      (path->string workspace-relative)))
 
 
 (define-db-procedure (declare-derivation provider-name

@@ -11,7 +11,8 @@
          "setting.rkt"
          "signature.rkt"
          "string.rkt"
-         "source.rkt")
+         "source.rkt"
+         "workspace.rkt")
 
 (provide (struct-out input-info)
          (contract-out
@@ -54,25 +55,26 @@
 
 
 (define (resolve-input info)
-  (do path-or-#f  <- (logged-unit (get-anticipated-input-path info))
-      link-name   <- (logged-unit (input-info-name info))
-      file-record <- (fetch-exact-input info path-or-#f)
-      link-record <- (logged-unit (make-addressable-link file-record link-name))
+  (do pathrec-or-#f  <- (logged-unit (find-existing-path-record info))
+      link-name      <- (logged-unit (input-info-name info))
+      file-record    <- (fetch-exact-input info pathrec-or-#f)
+      link-record    <- (logged-unit (make-addressable-link file-record link-name))
       (return link-name)))
 
 
-(define (fetch-exact-input info path-or-#f)
-  (if (and path-or-#f (file-exists? path-or-#f))
+(define (fetch-exact-input info pathrec-or-#f)
+  (if (path-record? pathrec-or-#f)
       (logged
        (λ (messages)
          (check-input-integrity info
-                                (find-exactly-one (path-record #f (path->string path-or-#f) #f))
-                                (path->string path-or-#f)
+                                pathrec-or-#f
+                                (path->string (path-record-path pathrec-or-#f))
                                 messages)))
       (logged
        (λ (messages)
-         (define-values (fetch-result logged) (run-log (fetch-input info) messages))
-         (if (fetch-state-result fetch-result)
+         (define-values (fetch-result logged)
+           (run-log (fetch-input info) messages))
+         (if (path-record? (fetch-state-result fetch-result))
              (check-input-integrity info
                                     (fetch-state-result fetch-result)
                                     (fetch-state-source fetch-result)
@@ -89,12 +91,12 @@
             in est-size))))
 
 
-(define (get-anticipated-input-path info)
+(define (find-existing-path-record info)
   (and (input-info-integrity info)
        (integrity-info-digest (input-info-integrity info))
-       (build-object-path
-        (integrity-info-digest
-         (input-info-integrity info)))))
+       (find-exactly-one (path-record #f #f
+                                      (integrity-info-digest
+                                       (input-info-integrity info))))))
 
 
 (define (check-input-integrity input file-record source messages)
@@ -102,7 +104,8 @@
     (if (XIDEN_TRUST_BAD_DIGEST)
         $input-integrity-assumed
         (if (input-info-integrity input)
-            (if (check-integrity (input-info-integrity input) (path-record-path file-record))
+            (if (check-integrity (input-info-integrity input)
+                                 (build-workspace-path (path-record-path file-record)))
                 $input-integrity-verified
                 $input-integrity-violation)
             $input-integrity-missing)))
