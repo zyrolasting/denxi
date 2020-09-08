@@ -20,6 +20,7 @@
          "exn.rkt"
          "file.rkt"
          "format.rkt"
+         "gc.rkt"
          "input-info.rkt"
          "integrity.rkt"
          "localstate.rkt"
@@ -72,6 +73,7 @@
            ["install" install-command]
            ["uninstall" uninstall-command]
            ["show" show-command]
+           ["gc" gc-command]
            ["link" link-command]
            ["config" config-command]
            ["sandbox" sandbox-command]
@@ -83,6 +85,7 @@
   install    Install packages
   uninstall  Uninstall packages
   show       Print helpful information
+  gc         Collect garbage
   link       Create symlink to package file
   config     Manage configuration
   sandbox    Start sandboxed REPL in package
@@ -134,6 +137,22 @@ EOF
      (if (stream-empty? path-stream)
          (halt 0 null)
          (void)))))
+
+
+(define (gc-command args halt)
+  (run-command-line
+   #:program "gc"
+   #:args args
+   #:halt halt
+   #:arg-help-strings '()
+   (λ (flags)
+     (define-values (bytes-recovered directories-deleted files-deleted links-deleted)
+       (xiden-collect-garbage))
+     (halt 0 ($show-string (format "Deleted ~a directories, ~a files, and ~a links (~~~a bytes)."
+                                   directories-deleted
+                                   files-deleted
+                                   links-deleted
+                                   bytes-recovered))))))
 
 
 (define (link-command args halt)
