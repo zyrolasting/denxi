@@ -17,7 +17,8 @@
 (require racket/contract)
 
 ; Provided ids include relation structs. See use of define-relation.
-(provide (contract-out
+(provide (struct-out record)
+         (contract-out
           [declare-derivation
            (-> non-empty-string?
                non-empty-string?
@@ -26,6 +27,8 @@
                (listof non-empty-string?)
                path-record?
                derivation-record?)]
+          [in-path-links
+           (-> path-record? (sequence/c link-record?))]
           [find-exactly-one
            (->* (record?) (procedure?) (or/c #f record?))]
           [start-fs-transaction
@@ -34,12 +37,14 @@
            (-> complete-path?)]
           [build-object-path
            (-> bytes? complete-path?)]
-          [in-valid-derivations
+          [in-xiden-objects
            (-> xiden-query? sequence?)]
           [make-addressable-file
            (-> non-empty-string? input-port? (or/c +inf.0 exact-positive-integer?) path-record?)]
           [make-addressable-directory
            (-> string? (-> complete-path? any) path-record?)]
+          [delete-record
+           (-> record? void?)]
           [make-addressable-link
            (-> path-record? path-string? link-record?)]))
 
@@ -251,7 +256,7 @@
       id))
 
 
-(define-db-procedure (delete record-inst)
+(define-db-procedure (delete-record record-inst)
   (apply query-exec+
          (~a "delete from " (relation-name (gen-relation record-inst)) " where id=?;")
          (record-id record-inst)))
@@ -407,7 +412,7 @@
         (define path (build-object-path digest))
         (make-directory* (path-only path))
         (rename-file-or-directory tmp path #t)
-        (declare-path path digest))
+        (declare-path (find-relative-path (workspace-directory) path) digest))
     (λ () (close-input-port in))))
 
 
@@ -425,7 +430,8 @@
                         (copy-directory/files path dest #:preserve-links? #t)
                         (delete-directory/files path))])
        (rename-file-or-directory path dest #t)
-       (declare-path dest digest)))))
+       (declare-path (find-relative-path (workspace-directory) path)
+                     digest)))))
 
 
 (define-db-procedure (make-addressable-link target-path-record link-path)
@@ -470,7 +476,6 @@
   ; performance difference is between allowing SQLite to raise an error
   ; vs. running an existential query in advance.
   (define path (normalize-path-for-db unnormalized-path))
-  (printf "Declaring path ~a~n" path)
   (with-handlers ([exn:fail:sql?
                    (λ (e)
                      (if (equal? (cdr (assoc 'errcode (exn:fail:sql-info e))) 2067)
@@ -480,15 +485,14 @@
     (gen-save (path-record #f path digest))))
 
 
+(define-db-procedure (in-path-links path-record-inst)
+  (search-by-record (link-record #f (record-id path-record-inst) #f)))
+
 
 (define (normalize-path-for-db path)
-  (define workspace-relative
-    (if (complete-path? path)
-        (find-relative-path (workspace-directory) path)
-        path))
-  (if (string? workspace-relative)
-      workspace-relative
-      (path->string workspace-relative)))
+  (if (string? path)
+      path
+      (path->string path)))
 
 
 (define-db-procedure (declare-derivation provider-name
@@ -508,16 +512,16 @@
 
 
 
-(define-db-procedure (in-valid-derivations query)
+(define-db-procedure (in-xiden-objects query)
   (match-define
     (xiden-query
      provider-name
      package-name
      edition-name
-     revision-min-exclusive?
      revision-min
-     revision-max-exclusive?
-     revision-max)
+     revision-max
+     interval-bounds
+     output-name)
     (coerce-xiden-query query))
 
   (call/cc
@@ -528,7 +532,7 @@
        (define rec-or-#f (find-exactly-one arg))
        (if rec-or-#f
            (record-id rec-or-#f)
-           (return empty-stream)))
+           (return empty-sequence)))
 
      (define provider-id (q (provider-record #f provider-name)))
      (define package-id  (q (package-record  #f package-name provider-id)))
@@ -537,15 +541,13 @@
      (define (revision->revision-number v)
        (cond [(revision-number? v) v]
              [(revision-number-string? v) (string->number v)]
-             [else
-              (q (revision-record #f v edition-id))]))
+             [else (q (revision-record #f v edition-id))]))
 
      (define-values (lo hi)
-       (get-inclusive-revision-range #:named-interval "db"
-                                     revision-min-exclusive?
-                                     revision-max-exclusive?
-                                     (revision->revision-number revision-min)
-                                     (revision->revision-number revision-max)))
+       (get-xiden-query-revision-range #:named-interval "db"
+                                       #:lo (revision->revision-number revision-min)
+                                       #:hi (revision->revision-number revision-max)
+                                       query))
 
      (define revision-id
        (query-maybe-value+
@@ -555,15 +557,11 @@
             " revision_number >= ? and"
             " revision_number <= ?"
             " order by revision_number desc;")
-        edition-id
-        lo
-        hi))
+        edition-id lo hi))
 
      (if revision-id
-         empty-sequence ; TODO: Write with joins
+         (search-by-record (derivation-record revision-id #f))
          empty-sequence))))
-
-
 
 (module+ test
   (require rackunit)

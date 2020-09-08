@@ -133,7 +133,7 @@ EOF
    #:flags
    (settings->flag-specs XIDEN_CONSENT)
    (λ (flags query . outputs)
-     (define path-stream (in-valid-derivations (coerce-xiden-query query)))
+     (define path-stream (in-xiden-objects query))
      (if (stream-empty? path-stream)
          (halt 0 null)
          (void)))))
@@ -162,7 +162,7 @@ EOF
    #:halt halt
    #:arg-help-strings '("link-path" "query" "rel-path")
    (λ (flags link-path query rel-path)
-     (define path-stream (in-valid-derivations (coerce-xiden-query query)))
+     (define path-stream (in-xiden-objects query))
      (if (stream-empty? path-stream)
          (halt 1 ($show-string "No package found"))
          (begin (make-link/clobber (build-path (build-workspace-path (stream-first path-stream))
