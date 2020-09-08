@@ -19,14 +19,18 @@
 ; Provided ids include relation structs. See use of define-relation.
 (provide (struct-out record)
          (contract-out
-          [declare-derivation
+          [declare-output
            (-> non-empty-string?
                non-empty-string?
                non-empty-string?
                exact-nonnegative-integer?
                (listof non-empty-string?)
                path-record?
-               derivation-record?)]
+               output-record?)]
+          [use-output
+           (-> xiden-query-variant?
+               (-> any)
+               any)]
           [in-path-links
            (-> path-record? (sequence/c link-record?))]
           [find-exactly-one
@@ -38,7 +42,7 @@
           [build-object-path
            (-> bytes? complete-path?)]
           [in-xiden-objects
-           (-> xiden-query? sequence?)]
+           (-> xiden-query? (sequence/c revision-number? path-string? path-string?))]
           [make-addressable-file
            (-> non-empty-string? input-port? (or/c +inf.0 exact-positive-integer?) path-record?)]
           [make-addressable-directory
@@ -162,12 +166,20 @@
   "FOREIGN KEY (target_path_id) REFERENCES paths(id) ON DELETE RESTRICT ON UPDATE RESTRICT"
   "FOREIGN KEY (link_path_id)   REFERENCES paths(id) ON DELETE RESTRICT ON UPDATE RESTRICT")
 
-(define-relation derivations (revision-id path-id)
+(define-relation outputs (revision-id path-id output-name state)
   "revision_id INTEGER NOT NULL"
   "path_id INTEGER NOT NULL"
+  "output_name TEXT NOT NULL"
+  "state INTEGER NOT NULL"
   "FOREIGN KEY (revision_id) REFERENCES revisions(id) ON DELETE CASCADE ON UPDATE CASCADE"
   "FOREIGN KEY (path_id)     REFERENCES paths(id) ON DELETE CASCADE ON UPDATE CASCADE")
 
+
+;------------------------------------------------------------------------------
+; Output states aid garbage collection and file reuse.
+
+(define OUTPUT_STATE_INSTALLED   0)
+(define OUTPUT_STATE_UNINSTALLED 1)
 
 
 ;----------------------------------------------------------------------------------
@@ -179,17 +191,12 @@
 
 
 (define (connect)
-  (define db-path (get-localstate-path))
+  (define db-path ((current-get-localstate-path)))
   (make-directory* (path-only db-path))
   (sqlite3-connect #:database db-path
                    #:mode 'create
                    #:use-place #f))
 
-
-; This is the Big Red Button. Only press when prototyping in the REPL.
-(define (delete-localstate!)
-  (delete-file* (get-localstate-path))
-  (current-db-connection #f))
 
 
 (define (make-db-procedure f)
@@ -346,8 +353,8 @@
 ;----------------------------------------------------------------------------------
 ; Paths
 
-(define (get-localstate-path)
-  (build-workspace-path "var/xiden/db"))
+(define current-get-localstate-path ; Is a parameter for testing reasons.
+  (make-parameter (λ () (build-workspace-path "var/xiden/db"))))
 
 
 (define (get-objects-directory)
@@ -495,12 +502,13 @@
       (path->string path)))
 
 
-(define-db-procedure (declare-derivation provider-name
-                                         package-name
-                                         edition-name
-                                         revision-number
-                                         revision-names
-                                         output-path-record)
+(define-db-procedure (declare-output provider-name
+                                     package-name
+                                     edition-name
+                                     revision-number
+                                     revision-names
+                                     output-name
+                                     output-path-record)
   (define provider-id  (save (provider-record #f provider-name)))
   (define package-id   (save (package-record  #f package-name provider-id)))
   (define edition-id   (save (edition-record  #f edition-name package-id)))
@@ -508,11 +516,32 @@
   (define revision-name-ids
     (for/list ([name (in-list revision-names)])
       (save (revision-name-record #f name revision-id))))
-  (gen-save (derivation-record #f revision-id (record-id output-path-record))))
+  (gen-save (output-record #f
+                           revision-id
+                           (record-id output-path-record)
+                           output-name
+                           OUTPUT_STATE_INSTALLED)))
 
 
 
-(define-db-procedure (in-xiden-objects query)
+(define (find-revision-number v edition-id)
+  (cond [(revision-number? v) v]
+        [(revision-number-string? v) (string->number v)]
+        [else (query-maybe-value+
+               (~a "select R.number from "
+                   (relation-name revisions) " as R "
+                   " inner join "
+                   (relation-name revision-names) " as N "
+                   " on R.id = N.revision_id "
+                   " where R.edition_id=? and "
+                   " N.name=? "
+                   " limit 1;")
+               edition-id v)]))
+
+
+
+(define-db-procedure (in-xiden-objects query-variant)
+  (define query (coerce-xiden-query query-variant))
   (match-define
     (xiden-query
      provider-name
@@ -522,49 +551,146 @@
      revision-max
      interval-bounds
      output-name)
-    (coerce-xiden-query query))
+    query)
 
   (call/cc
    (λ (return)
+     (define (fail . _) (return empty-sequence))
+
      ; A failure to match some queries
-     ; implies that no derivations will match.
+     ; implies that no outputs will match.
      (define (q arg)
        (define rec-or-#f (find-exactly-one arg))
        (if rec-or-#f
            (record-id rec-or-#f)
-           (return empty-sequence)))
+           (begin (writeln arg)
+             (fail))))
 
      (define provider-id (q (provider-record #f provider-name)))
      (define package-id  (q (package-record  #f package-name provider-id)))
      (define edition-id  (q (edition-record  #f edition-name package-id)))
 
      (define (revision->revision-number v)
-       (cond [(revision-number? v) v]
-             [(revision-number-string? v) (string->number v)]
-             [else (q (revision-record #f v edition-id))]))
+       (or (find-revision-number v edition-id)
+           (fail)))
 
      (define-values (lo hi)
-       (get-xiden-query-revision-range #:named-interval "db"
-                                       #:lo (revision->revision-number revision-min)
-                                       #:hi (revision->revision-number revision-max)
-                                       query))
+       (with-handlers ([exn:fail? fail])
+         (get-xiden-query-revision-range #:named-interval "db"
+                                         #:lo (revision->revision-number revision-min)
+                                         #:hi (revision->revision-number revision-max)
+                                         query)))
 
-     (define revision-id
-       (query-maybe-value+
-        (~a "select id from "
-            (gen-relation revisions)
-            " where edition_id=? and"
-            " revision_number >= ? and"
-            " revision_number <= ?"
-            " order by revision_number desc;")
-        edition-id lo hi))
 
-     (if revision-id
-         (search-by-record (derivation-record revision-id #f))
-         empty-sequence))))
+     (in-query+
+      (~a "select R.number, O.output_name, P.path from "
+          (relation-name paths) " as P"
+          " inner join " (relation-name outputs) " as O"
+          " on O.path_id = P.id"
+          " inner join " (relation-name revisions) " as R"
+          " on R.id = O.revision_id "
+          " where R.edition_id=? and"
+          " R.number >= ? and"
+          " R.number <= ?"
+          " order by R.number desc;")
+      edition-id lo hi))))
+
+
+(define-db-procedure (use-output query fail)
+  (with-handlers ([values fail])
+    (define seq (in-xiden-objects query))
+    (define-values (rev-no output-name path)
+      (sequence-ref seq 0))
+    (define rec (find-exactly-one (output-record #f rev-no #f output-name)))
+    (if rec
+        (gen-save (struct-copy output-record rec
+                               [state OUTPUT_STATE_INSTALLED]))
+        (fail))))
 
 (module+ test
   (require rackunit)
+
+  (define (run-db-test msg p)
+    (test-case msg
+      (define t (make-temporary-file))
+      (dynamic-wind void
+                    (λ ()
+                      (parameterize ([current-db-connection #f]
+                                     [current-get-localstate-path (const t)])
+                        (p)))
+                    (λ () (delete-file t)))))
+
+  (define-syntax-rule (test-db msg body ...)
+    (run-db-test msg (λ () body ...)))
+
+  (test-db "Declare a path"
+    (declare-path "a/b/c" #"digest")
+    (check-equal? (find-exactly-one (path-record #f "a/b/c" #f))
+                  (path-record 1 "a/b/c" #"digest"))
+    (test-exn "Forbid duplicate paths"
+              exn:fail?
+              (λ ()
+                (declare-path "a/b/c" #"different"))))
+
+
+  (test-db "Declare an output"
+    (define pathrec
+      (declare-path "outpath" #"abcd"))
+
+    (define revision-names
+      '("prod" "live"))
+
+    ; We can assume the ID is 1 because this is always a fresh database
+    (define edition-id 1)
+
+    (define outrec
+      (declare-output "example.com"
+                      "widget"
+                      "default"
+                      12
+                      revision-names
+                      "lib"
+                      pathrec))
+
+    (check-equal? outrec (output-record 1 1 1 "lib" OUTPUT_STATE_INSTALLED))
+
+    (for ([name (in-list revision-names)])
+      (test-equal? (format "Resolve revision name ~a" name)
+                   (find-revision-number name edition-id)
+                   12)))
+
+
+  (test-db "Query installed outputs"
+    (define (mock-install query revision-number revision-names)
+      (declare-output (xiden-query-provider-name query)
+                      (xiden-query-package-name query)
+                      (xiden-query-edition-name query)
+                      revision-number
+                      revision-names
+                      (~a "out" revision-number)
+                      (declare-path (~a "path" revision-number)
+                                    #"abcd")))
+
+    (define (mock-install-line qs N)
+      (define query (coerce-xiden-query qs))
+      (for ([i (in-range N)])
+        (mock-install query i (list (format "rev-~a" i)
+                                    (format "alt-~a" i)))))
+
+    (mock-install-line "a.example.com:widget:default" 10)
+
+    (define actual-results
+      (sequence->list
+       (in-values-sequence
+        (in-xiden-objects "a.example.com:widget:default:rev-3:7:ei:lib"))))
+
+    (check-equal? actual-results
+                  (build-list 4
+                              (λ (i [n (- 7 i)])
+                                (list n (~a "out" n) (~a "path" n))))))
+
+
+
   (test-case "Infer clauses for a SELECT query to find missing information"
     (call-with-values (λ () (infer-select-clauses '(192 #f "mark") '("id" "foo" "bar")))
                       (λ (cols conditions params)
