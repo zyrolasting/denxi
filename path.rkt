@@ -26,6 +26,7 @@
          (equal? (list-ref maybe-prefixed index)
                  el))))
 
+
 (define (path-cycles? path [previous #f] [encountered (set)])
   ; Do not let simplify-path consult filesystem, because that would
   ; follow any link present. We would not get its identity then.

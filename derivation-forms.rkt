@@ -7,6 +7,7 @@
 
 (provide #%app #%datum #%top #%top-interaction
          define define-values
+         current-info-lookup
          error
          eval
          hash
@@ -20,14 +21,15 @@
          list cons car cdr list* append reverse
          equal?
          from-file
-         init!
          make-immutable-hash hash hash-set hash-set* hash-remove hash-clear hash-update
+         void
          string-append
          path->string
          build-path
          collection-path
          system-library-subpath
          getenv
+         XIDEN_SANDBOX_MEMORY_LIMIT_MB
          (all-from-out "archiving.rkt"
                        file/untgz)
          (rename-out [#%module-begin* #%module-begin]
@@ -35,6 +37,7 @@
          (contract-out
           [cd
            (-> path? void?)]
+
           [input
            (->* (non-empty-string?
                  (non-empty-listof path-string?))
@@ -43,8 +46,8 @@
                 input-info?)]
 
           [input-ref
-           (-> input-info?
-               complete-path?)]
+           (-> (or/c path-string? input-info?)
+               path-string?)]
 
           [from-package
            (-> string?
@@ -92,6 +95,7 @@
          "localstate.rkt"
          "message.rkt"
          "monad.rkt"
+         "package.rkt"
          "path.rkt"
          "printer.rkt"
          "rc.rkt"
@@ -100,16 +104,7 @@
          "source.rkt"
          "url.rkt")
 
-
-; Must be called in sandbox.rkt to pass along configuration.
-; TODO: Find a way to prevent use in top-level of #lang xiden module
-(define init!
-  (let ([called? #f])
-    (λ (dump)
-      (if called? (void)
-          (begin (for ([(k v) (in-hash XIDEN_SETTINGS)])
-                   ((setting-derived-parameter v) (hash-ref dump k)))
-                 (set! called? #t))))))
+(define current-info-lookup (make-parameter (λ (k f) (f))))
 
 (define (cd path)
   (current-directory path))
@@ -122,9 +117,27 @@
                               format-fetch-message
                               default-message-formatter))
 
+
 (define (input-ref input)
+  (if (path-string? input)
+      (input-ref/search input)
+      (input-ref/use input)))
+
+
+(define (input-ref/search str)
+  (define lookup (current-info-lookup))
+  (define inputs (lookup 'inputs (const null)))
+  (define input (findf (λ (info) (equal? str (input-info-name info))) inputs))
+  (if input
+      (input-ref/use input)
+      (raise-user-error 'input-ref
+                        "~s does not match a declared input"
+                        str)))
+
+
+(define (input-ref/use input)
   (write-message ($input-resolve-start (input-info-name input)) format-message)
-  (define-values (path messages) (run-log (resolve-input input) null))
+  (define-values (path messages) (run-log (resolve-input input)))
   (sequence-for-each
    (λ (m) (write-message m format-message))
    (in-list (reverse messages)))
@@ -152,9 +165,6 @@
   (map url->string
        (map/service-endpoints query-string
                               (XIDEN_SERVICE_ENDPOINTS))))
-
-(define (output name expr)
-  (cons name expr))
 
 (define integrity integrity-info)
 (define signature signature-info)

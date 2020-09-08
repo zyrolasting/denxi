@@ -107,7 +107,9 @@
                (cons ($source-method-ruled-out
                       (fetch-state-name fetch-st)
                       (fetch-state-source fetch-st)
-                      (exn->string e))
+                      (if (XIDEN_VERBOSE)
+                          (exn->string e)
+                          (exn-message e)))
                      messages))))))
 
 
@@ -136,7 +138,7 @@
                        (fetch-state-source fetch-st))
       ($source-method-ruled-out (fetch-state-name fetch-st)
                                 (fetch-state-source fetch-st)
-                                (format "~a did not produce a path"
+                                (format "~a did not produce a value"
                                         method-name))))
 
 

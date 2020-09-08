@@ -26,7 +26,6 @@
          "message.rkt"
          "monad.rkt"
          "package.rkt"
-         "package-info.rkt"
          "printer.rkt"
          "query.rkt"
          "racket-version.rkt"
@@ -48,6 +47,7 @@
                      (combine-message-formatters format-xiden-message
                                                  format-input-message
                                                  format-fetch-message
+                                                 format-package-message
                                                  format-rc-message
                                                  default-message-formatter)
                      top-level-cli)))
@@ -107,7 +107,10 @@ EOF
     XIDEN_CONSENT
     XIDEN_LINK
     XIDEN_ALLOW_UNDECLARED_RACKET_VERSIONS
-    XIDEN_ALLOW_UNSUPPORTED_RACKET)
+    XIDEN_ALLOW_UNSUPPORTED_RACKET
+    XIDEN_SANDBOX_MEMORY_LIMIT_MB
+    XIDEN_SANDBOX_EVAL_MEMORY_LIMIT_MB
+    XIDEN_SANDBOX_EVAL_TIME_LIMIT_SECONDS)
    (λ (flags source output . outputs)
      (with-rc flags
        (transact
@@ -225,15 +228,24 @@ EOF
    #:program "sandbox"
    #:args args
    #:halt halt
-   #:arg-help-strings '("package-path" "build-directory")
+   #:arg-help-strings '("package-path")
    #:flags
    (settings->flag-specs
     XIDEN_SANDBOX_MEMORY_LIMIT_MB
     XIDEN_SANDBOX_EVAL_MEMORY_LIMIT_MB
     XIDEN_SANDBOX_EVAL_TIME_LIMIT_SECONDS)
-   (λ (flags input-program build-directory)
-     (parameterize ([current-eval (make-build-sandbox input-program build-directory)])
-       (read-eval-print-loop))
+   (λ (flags input-program)
+     (with-rc flags
+       (call-with-build-sandbox-parameterization
+        (λ ()
+          (parameterize ([current-eval (make-xiden-sandbox (build-path input-program))])
+            (let loop ()
+              (with-handlers ([(negate exn:break?)
+                               (λ (e)
+                                 (displayln (exn->string e))
+                                 (loop))]
+                              [exn:break? void])
+                (read-eval-print-loop)))))))
      (halt 0 null))))
 
 
@@ -261,9 +273,6 @@ where <what> is one of
 EOF
    ))
 
-
-(define (format-package-info info)
-  (package-info-package-name info))
 
 
 (define (format-setting-flag-example s)

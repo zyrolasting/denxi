@@ -9,18 +9,17 @@
          racket/sequence
          net/head
          version/utils
-         "config.rkt"
          "contract.rkt"
          "encode.rkt"
          "exn.rkt"
          "file.rkt"
          "format.rkt"
+         "input-info.rkt"
          "integrity.rkt"
          "localstate.rkt"
          "message.rkt"
          "mod.rkt"
          "monad.rkt"
-         "package-info.rkt"
          "path.rkt"
          "port.rkt"
          "printer.rkt"
@@ -32,6 +31,7 @@
          "signature.rkt"
          "source.rkt"
          "string.rkt"
+         "team.rkt"
          "url.rkt"
          "openssl.rkt"
          "workspace.rkt")
@@ -42,133 +42,227 @@
 (define+provide-message $package-installed $package ())
 (define+provide-message $package-not-installed $package ())
 (define+provide-message $undeclared-racket-version $package ())
-(define+provide-message $unsupported-racket-version $package ())
+(define+provide-message $unsupported-racket-version $package (versions))
 (define+provide-message $undefined-package-output $package (name))
+(define+provide-message $package-malformed $package (errors))
 
 
 (define (install-package-from-source source expected-outputs)
-  (do pkginfo-path    <- (fetch-package-definition source)
-      pkginfo         <- (read-package pkginfo-path)
-      checked-pkginfo <- (check-racket-support pkginfo)
-      checked-outputs <- (validate-output-request checked-pkginfo expected-outputs)
-      build-output    <- (build-package (pick-sandbox-program source pkginfo-path) checked-outputs)
-      (return (report-installation-results pkginfo build-output))))
+  (do pkgeval         <- (make-package-evaluator source)
+      checked-outputs <- (validate-output-request pkgeval expected-outputs)
+      build-output    <- (build-package pkgeval checked-outputs)
+      (return (report-installation-results pkgeval build-output))))
 
 
-; #lang xiden modules expand such that relative paths are made complete in terms
-; of their location. If I load them from the store (which is where pkginfo-path
-; points), then the relative paths won't point to anything. Using the original
-; source string from the command line (e.g. "../def.rkt") will expand the
-; relative paths w.r.t the correct directory.
-(define (pick-sandbox-program source pkginfo-path)
-  (if (file-exists? source)
-      (path->complete-path source)
-      pkginfo-path))
+(define (make-package-evaluator source)
+  (do sourced-eval    <- (fetch-package-definition source)
+      validated-eval  <- (validate-evaluator sourced-eval)
+      supported-eval  <- (check-racket-support validated-eval)
+      (return supported-eval)))
 
 
-(define (report-installation-results pkginfo build-output)
+(define (validate-evaluator pkgeval)
+  (define errors null)
+  (define (assert #:optional? [optional? #f] k predicate msg)
+    (with-handlers ([values (λ (e) (unless optional? (set! errors (cons (exn-message e) errors))))])
+      (define v (pkgeval k))
+      (unless (predicate v)
+        (set! errors (cons (format "~a: Expected ~a. Got ~e" k msg v)
+                           errors)))))
+
+  (assert 'provider string? "a string")
+  (assert 'package string? "a string")
+  (assert 'edition string? "a string")
+  (assert 'revision-number exact-nonnegative-integer? "an exact, nonnegative integer")
+  (assert 'inputs (listof well-formed-input-info/c) "a list of inputs")
+  (assert 'outputs (listof name-string?) "a list of valid directory names")
+  (assert 'build
+          (λ (p) (and (procedure? p) (= 1 (procedure-arity p))))
+          "a unary procedure")
+
+  (assert #:optional? #t 'revision-names (listof string?) "a list of strings")
+  (assert #:optional? (XIDEN_ALLOW_UNDECLARED_RACKET_VERSIONS)
+          'racket-versions
+          racket-version-ranges/c
+          "a list of Racket version range pairs, e.g. '((\"7.0\" . \"7.8\") ...) (Use #f to remove bound).")
+
+  (if (null? errors)
+      (logged-unit pkgeval)
+      (logged-failure ($package-malformed (package-name pkgeval) errors))))
+
+
+(define (package-name seval)
+  (seval `(#%info-lookup 'package ,(λ () "???"))))
+
+
+(define (report-installation-results pkgeval build-output)
   (logged-attachment build-output
                      (if (eq? build-output SUCCESS)
-                         ($package-installed pkginfo)
-                         ($package-not-installed pkginfo))))
+                         ($package-installed (package-name pkgeval))
+                         ($package-not-installed (package-name pkgeval)))))
 
 
-(define (validate-output-request pkginfo outs [original-outputs outs])
+(define (validate-output-request pkgeval outs [original-outputs outs])
   (cond [(null? outs)
          (logged-unit original-outputs)]
 
         [(member (car outs)
-                 (package-info-outputs pkginfo))
-         (validate-output-request pkginfo
+                 (pkgeval 'outputs))
+         (validate-output-request pkgeval
                                   (cdr outs)
                                   original-outputs)]
 
         [else
-         (logged-failure ($undefined-package-output pkginfo (car outs)))]))
+         (logged-failure
+          ($undefined-package-output
+           (package-name pkgeval)
+           (car outs)))]))
 
 
-(define (build-package pkginfo sandbox-program expected-outputs)
+(define (build-package pkgeval expected-outputs)
   (logged
    (λ (messages)
-     (make-addressable-directory
-      (build-workspace-path "var/xiden/pkgs")
-      (λ (build-dir)
-        (define pkgeval (make-package-evaluator sandbox-program build-dir))
-        (values SUCCESS
-                (cons (for/list ([output (in-list expected-outputs)])
-                        (build-package-output pkgeval
-                                              pkginfo
-                                              output
-                                              (build-path build-dir output)))
-                      messages)))))))
+     ; Instrument top-level bindings as a hash table because evaluator calls cannot nest.
+     (pkgeval `(current-info-lookup
+                (let ([h ,(xiden-evaluator->hash pkgeval)])
+                  (λ (k f) (hash-ref h k f)))))
+     (dynamic-wind
+       void
+       (λ ()
+         (values SUCCESS
+                 (cons (for/list ([output (in-list expected-outputs)])
+                         (build-package-output pkgeval output))
+                       messages)))
+       (λ () (kill-evaluator pkgeval))))))
 
 
-(define (build-package-output pkgeval pkginfo output-name output-dir)
-  (make-directory* output-dir)
-  (pkgeval `(cd ,output-dir))
-  (pkgeval `(build ,output-name))
-  (declare-derivation (package-info-provider-name pkginfo)
-                      (package-info-package-name pkginfo)
-                      (package-info-edition-name pkginfo)
-                      (package-info-revision-number pkginfo)
-                      (package-info-revision-number pkginfo)
-                      (package-info-revision-names pkginfo)
-                      output-dir))
+; This is the heart of filesystem changes for a package installation.
+; It concludes by declaring all related info in the database. If
+; that succeeds and the program survives to the end of the database
+; transaction, the whole operation is successful.
+(define (build-package-output pkgeval output-name)
+  (define directory-record
+    (make-addressable-directory
+     (λ (build-dir)
+       (pkgeval `(cd ,build-dir))
+       (pkgeval `(build ,output-name)))))
+
+  (displayln directory-record)
+
+  (declare-derivation (xiden-evaluator-ref pkgeval 'provider)
+                      (xiden-evaluator-ref pkgeval 'package)
+                      (xiden-evaluator-ref pkgeval 'edition "draft")
+                      (xiden-evaluator-ref pkgeval 'revision-number)
+                      (xiden-evaluator-ref pkgeval 'revision-names null)
+                      directory-record))
+
+
+; This is the inflection point between restricted and unrestricted
+; resources for an evaluator.
+(define (call-with-build-sandbox-parameterization proc)
+  (parameterize ([sandbox-memory-limit (XIDEN_SANDBOX_MEMORY_LIMIT_MB)]
+                 [sandbox-eval-limits (list (XIDEN_SANDBOX_EVAL_TIME_LIMIT_SECONDS)
+                                            (XIDEN_SANDBOX_EVAL_MEMORY_LIMIT_MB))]
+                 [sandbox-security-guard
+                  (make-security-guard
+                   (current-security-guard)
+                   (make-pkgeval-file-guard (make-bin-path-permissions '("openssl"))
+                                            (build-workspace-path "var/xiden"))
+                   (make-pkgeval-network-guard)
+                   (make-pkgeval-link-guard (workspace-directory)))]
+
+                 [sandbox-make-environment-variables
+                  (bind-envvar-subset '(#"PATH"))]
+                 [sandbox-namespace-specs
+                  (append (sandbox-namespace-specs)
+                          '(xiden/rc xiden/package))])
+    (proc)))
 
 
 
-(define (get-package-definition-from-source source)
-  (do pkginfo-path <- (fetch-package-definition source)
-      pkginfo      <- (read-package-info pkginfo-path)
-      (return pkginfo)))
+(define (make-pkgeval-file-guard allowed-executables write-dir)
+  (λ (sym path-or-#f ops)
+    (when path-or-#f
+      (cond [(member 'execute ops)
+             (unless (member path-or-#f allowed-executables)
+               (raise-user-error 'security
+                                 "Unauthorized attempt to execute ~a"
+                                 path-or-#f))]
+
+            [(member 'write ops)
+             (unless (path-prefix? (normalize-path path-or-#f) write-dir)
+               (raise-user-error 'security
+                                 "Unauthorized attempt to write in ~a"
+                                 path-or-#f))]
+
+            [(member 'delete ops)
+             (raise-user-error 'security
+                               "Unauthorized attempt to delete ~a"
+                               path-or-#f)]))))
 
 
-(define (read-package pkginfo-path)
-  (logged-unit (read-package-info pkginfo-path)))
+(define (make-pkgeval-network-guard)
+  (λ (sym hostname-or-#f port-or-#f client-or-server)
+    (unless hostname-or-#f
+      (raise-user-error 'security
+                        "Unauthorized attempt to listen for connections"))
+    ; TODO: Certificate checks, etc.
+    ))
+
+(define (make-pkgeval-link-guard workspace)
+  (define (path-ok? p)
+    (path-prefix? (simplify-path (if (complete-path? p) p (build-path workspace p)))
+                  workspace))
+
+  (λ (op link-path target-path)
+    (unless (and (path-ok? target-path) (path-ok? link-path))
+      (raise-user-error 'security
+                        "Cannot create link. Both paths must be in ~a~n  link path: ~a~n  target path: ~a"
+                        workspace
+                        link-path
+                        target-path))))
 
 
 (define (fetch-package-definition source)
   (logged
    (λ (m)
-     (define fetch-st
+     (define logged/fetch-st
        (fetch source
               (list source)
-              (λ (in est-size)
-                (make-addressable-file
-                 source in
-                 (min (mibibytes->bytes (XIDEN_FETCH_PKGDEF_SIZE_MB))
-                      est-size)))))
+              (λ (from-source est-size)
+                (call-with-build-sandbox-parameterization
+                 (λ ()
+                   (load-xiden-module
+                    (make-limited-input-port from-source
+                                             (min (mibibytes->bytes (XIDEN_FETCH_PKGDEF_SIZE_MB))
+                                                  est-size)
+                                             #t)))))))
 
-     (define-values (result messages) (run-log fetch-st m))
+     (define-values (fetch-st messages) (run-log logged/fetch-st m))
 
-     (values (or (fetch-state-path result) FAILURE)
-             messages))))
-
-
-(define (make-package-evaluator pkginfo-variant build-dir)
-  (make-build-sandbox
-   (if (file-exists? pkginfo-variant)
-       (call-with-input-file pkginfo-variant
-         (λ (in) (read-info-module pkginfo-variant in)))
-       pkginfo-variant)
-   build-dir))
+     (values (or (fetch-state-result fetch-st) FAILURE)
+             (cons messages m)))))
 
 
-
-(define (check-racket-support pkginfo)
-  (let ([racket-support (check-racket-version-ranges (version) (package-info-racket-versions pkginfo))])
+(define (check-racket-support pkgeval)
+  (let ([racket-support
+         (check-racket-version-ranges
+          (version)
+          (pkgeval 'racket-versions))])
     (case racket-support
       [(supported)
-       (logged-unit pkginfo)]
+       (logged-unit pkgeval)]
       [(unsupported)
        (if (XIDEN_ALLOW_UNSUPPORTED_RACKET)
-           (logged-unit pkginfo)
-           (logged-failure ($unsupported-racket-version pkginfo)))]
+           (logged-unit pkgeval)
+           (logged-failure ($unsupported-racket-version
+                            (package-name pkgeval)
+                            (pkgeval 'racket-versions))))]
       [(undeclared)
        (if (or (XIDEN_ALLOW_UNSUPPORTED_RACKET)
                (XIDEN_ALLOW_UNDECLARED_RACKET_VERSIONS))
-           (logged-unit pkginfo)
-           (logged-failure ($undeclared-racket-version pkginfo)))])))
+           (logged-unit pkgeval)
+           (logged-failure ($undeclared-racket-version (package-name pkgeval))))])))
 
 
 (define-message-formatter format-package-message
@@ -183,10 +277,15 @@
           (format "To install this package anyway, run again with ~a"
                   (setting-short-flag XIDEN_ALLOW_UNDECLARED_RACKET_VERSIONS))))]
 
-  [($unsupported-racket-version info)
+  [($package-malformed name errors)
+   (format "~a has an invalid definition. Here are the errors for each field:~n~a"
+           name
+           (join-lines (indent-lines errors)))]
+
+  [($unsupported-racket-version name versions)
    (join-lines
     (list (format "~a claims that it does not support this version of Racket (~a)."
-                  info
+                  name
                   (version))
           (format "Supported versions (ranges are inclusive):~n~a~n"
                   (join-lines
@@ -199,7 +298,7 @@
                                               (or (cdr variant)
                                                   PRESUMED_MAXIMUM_RACKET_VERSION))
                                       variant))
-                          (package-info-racket-versions info)))))
+                          versions))))
           (format "To install this package anyway, run again with ~a"
                   (setting-long-flag XIDEN_ALLOW_UNSUPPORTED_RACKET))))])
 
@@ -207,44 +306,39 @@
 (module+ test
   (require racket/runtime-path
            rackunit
-           mzlib/etc
            (submod "file.rkt" test)
            "setting.rkt")
 
-  (define me (build-path (this-expression-source-directory) (this-expression-file-name)))
-
   (test-case "Reject requests for outputs that a package does not define"
-    (define pkginfo
-      (make-package-info #:provider-name "provider"
-                         #:package-name "pkg"
-                         #:outputs '("lib" "doc" "test")))
+    (define (make-dummy-pkginfo outputs)
+      (hash+list->xiden-evaluator
+       (hash 'outputs outputs
+             'package-name "whatever")))
 
+    (define pkginfo (make-dummy-pkginfo '("lib" "doc" "test")))
     (check-equal? (get-log (validate-output-request pkginfo '("blah")))
-                  (list ($undefined-package-output pkginfo "blah"))))
+                  (list ($undefined-package-output (package-name pkginfo) "blah")))
 
-  (test-case "Allow requests for outputs that a package does define"
-    (define pkginfo
-      (make-package-info #:provider-name "provider"
-                         #:package-name "pkg"
-                         #:outputs '("lib" "doc" "test")))
-    (define request '("test" "lib" "doc"))
-    (call-with-values (λ () (run-log (validate-output-request pkginfo request)))
-                      (λ (v m)
-                        (check-equal? v request)
-                        (check-pred null? m))))
+    (test-case "Allow requests for outputs that a package does define"
+      (define request '("test" "lib" "doc"))
+      (call-with-values (λ () (run-log (validate-output-request pkginfo request)))
+                        (λ (v m)
+                          (check-equal? v request)
+                          (check-pred null? m)))))
 
-  (test-case "Detect packages that do not declare a supported Racket version"
-    (define pkginfo
-      (make-package-info #:provider-name "provider"
-                         #:package-name "pkg"
-                         #:racket-versions null))
-    (check-equal? (get-log (check-racket-support pkginfo))
-                  (list ($undeclared-racket-version pkginfo))))
+  (test-case "Check Racket version support"
+    (define (make-dummy-pkginfo versions)
+      (hash+list->xiden-evaluator
+       (hash 'racket-versions versions
+             'package-name "whatever")))
 
-  (test-case "Detect packages that declare an unsupported Racket version"
-    (define pkginfo
-      (make-package-info #:provider-name "provider"
-                         #:package-name "pkg"
-                         #:racket-versions (list "0.0")))
-    (check-equal? (get-log (check-racket-support pkginfo))
-                  (list ($unsupported-racket-version pkginfo)))))
+    (test-case "Detect packages that do not declare a supported Racket version"
+      (define pkginfo (make-dummy-pkginfo null))
+      (check-equal? (get-log (check-racket-support pkginfo))
+                    (list ($undeclared-racket-version (package-name pkginfo)))))
+
+    (test-case "Detect packages that declare an unsupported Racket version"
+      (define pkginfo (make-dummy-pkginfo (list "0.0")))
+      (check-equal? (get-log (check-racket-support pkginfo))
+                    (list ($unsupported-racket-version (package-name pkginfo)
+                                                       (pkginfo 'racket-versions)))))))

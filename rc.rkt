@@ -125,7 +125,7 @@
     "mibibytes"))
 
 
-(define-xiden-setting XIDEN_SANDBOX_EVAL_MEMORY_LIMIT_MB (>=/c 0) "-e" 10
+(define-xiden-setting XIDEN_SANDBOX_EVAL_MEMORY_LIMIT_MB (>=/c 0) "-e" 200
   '("Memory quota for each sandboxed expression"
     "mibibytes"))
 

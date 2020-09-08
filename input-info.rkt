@@ -54,9 +54,11 @@
 
 
 (define (resolve-input info)
-  (do path-or-#f <- (logged-unit (get-anticipated-input-path info))
-      result <- (fetch-exact-input info path-or-#f)
-      (return result)))
+  (do path-or-#f  <- (logged-unit (get-anticipated-input-path info))
+      link-name   <- (logged-unit (input-info-name info))
+      file-record <- (fetch-exact-input info path-or-#f)
+      link-record <- (logged-unit (make-addressable-link file-record link-name))
+      (return link-name)))
 
 
 (define (fetch-exact-input info path-or-#f)
@@ -64,16 +66,16 @@
       (logged
        (λ (messages)
          (check-input-integrity info
-                                path-or-#f
+                                (find-exactly-one (path-record #f (path->string path-or-#f) #f))
                                 (path->string path-or-#f)
                                 messages)))
       (logged
        (λ (messages)
-         (define-values (result logged) (run-log (fetch-input info) messages))
-         (if (fetch-state-path result)
+         (define-values (fetch-result logged) (run-log (fetch-input info) messages))
+         (if (fetch-state-result fetch-result)
              (check-input-integrity info
-                                    (fetch-state-path result)
-                                    (fetch-state-source result)
+                                    (fetch-state-result fetch-result)
+                                    (fetch-state-source fetch-result)
                                     logged)
              (values FAILURE logged))))))
 
@@ -95,12 +97,12 @@
          (input-info-integrity info)))))
 
 
-(define (check-input-integrity input path source messages)
+(define (check-input-integrity input file-record source messages)
   (define $message-ctor
     (if (XIDEN_TRUST_BAD_DIGEST)
         $input-integrity-assumed
         (if (input-info-integrity input)
-            (if (check-integrity (input-info-integrity input) path)
+            (if (check-integrity (input-info-integrity input) (path-record-path file-record))
                 $input-integrity-verified
                 $input-integrity-violation)
             $input-integrity-missing)))
@@ -112,11 +114,11 @@
   (if (member $message-ctor
               (list $input-integrity-verified
                     $input-integrity-assumed))
-      (check-input-signature input path source updated-messages)
+      (check-input-signature input file-record source updated-messages)
       (values FAILURE updated-messages)))
 
 
-(define (check-input-signature input path source messages)
+(define (check-input-signature input file-record source messages)
   (define $message-ctor
     (if (XIDEN_TRUST_BAD_DIGEST)
         $input-signature-unchecked
@@ -134,7 +136,7 @@
                       (list $input-signature-verified
                             $input-signature-unchecked
                             $input-signature-trust-unsigned))
-              path
+              file-record
               FAILURE)
           (cons ($message-ctor (input-info-name input) source)
                 messages)))

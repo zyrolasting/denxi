@@ -2,10 +2,27 @@
 
 (require "contract.rkt")
 (provide (all-from-out racket/sandbox)
-         make-build-sandbox
          (contract-out
+          [make-xiden-sandbox
+           (-> (or/c syntax? pair? path? input-port? string? bytes?)
+               (-> any/c any))]
+          [make-bin-path-permissions
+           (-> (listof path-string?)
+               (listof path?))]
+          [bind-envvar-subset
+           (-> (listof (or/c bytes? string?))
+               (-> environment-variables?))]
           [hash+list->xiden-evaluator
            (->* (hash?) (list?) (-> any/c any))]
+          [xiden-evaluator->hash
+           (->* ((-> any/c any))
+                ((listof symbol?))
+                (hash/c symbol? any/c))]
+          [xiden-evaluator-ref
+           (->* ((-> any/c any/c)
+                 symbol?)
+                (failure-result/c)
+                any/c)]
           [save-xiden-module!
            (->* ((-> any/c any)
                  (or/c path-string? url? output-port?))
@@ -34,21 +51,23 @@
          "url.rkt")
 
 
-(define (make-build-sandbox input-program)
-  (make-module-evaluator #:language 'xiden/derivation-forms input-program))
+(define (make-xiden-sandbox input-program)
+  (parameterize ([sandbox-input #f]
+                 [sandbox-output (current-output-port)]
+                 [sandbox-error-output #f])
+    (make-module-evaluator #:language 'xiden/derivation-forms input-program)))
 
 
-; This lets sandboxed evaluators reuse current settings & parameters
-(define (make-build-sandbox-namespace-specs)
-  (append (sandbox-namespace-specs)
-          '(xiden/rc)))
 
-
-(define (bind-environment-variables allowed)
+(define (bind-envvar-subset allowed)
   (λ ()
     (apply make-environment-variables
            (for/fold ([mappings null])
-                     ([name (in-list allowed)])
+                     ([unnormalized-name (in-list allowed)])
+             (define name
+               (if (string? unnormalized-name)
+                   (string->bytes/utf-8 unnormalized-name)
+                   unnormalized-name))
              (cons name
                    (cons (environment-variables-ref (current-environment-variables) name)
                          mappings))))))
@@ -57,14 +76,14 @@
 ; Allow access to some binaries in PATH
 (define (make-bin-path-permissions binaries)
   (define windows? (eq? (system-type 'os) 'windows))
-  (foldl (λ (s res)
-           (append (map (λ (bin) (list 'execute (build-path s bin)))
-                      binaries)
-                   res))
-         null
-         (string-split (getenv "PATH")
-                       (if windows? ";" ":"))))
-
+  (filter file-exists?
+          (foldl (λ (s res)
+                   (append (map (λ (bin) (build-path s bin))
+                                binaries)
+                           res))
+                 null
+                 (string-split (getenv "PATH")
+                               (if windows? ";" ":")))))
 
 
 ;------------------------------------------------------------------------
@@ -97,10 +116,16 @@
 
 (define (xiden-evaluator->hash+list seval)
   (define domain (seval '(#%info-domain)))
-  (values (for/hash ([k (in-list domain)])
-            (values k (seval `(#%info-lookup ',k))))
+  (values (xiden-evaluator->hash seval domain)
           domain))
 
+
+(define (xiden-evaluator->hash seval [domain (seval '(#%info-domain))])
+  (for/hash ([k (in-list domain)])
+            (values k (seval `(#%info-lookup ',k)))))
+
+(define (xiden-evaluator-ref seval sym [fail (λ () (error 'xiden-evaluator-ref "~a not set" sym))])
+  (seval `(#%info-lookup ',sym ,(if (procedure? fail) fail (λ () fail)))))
 
 ;------------------------------------------------------------------------
 ; Module output
@@ -179,7 +204,7 @@
   (parameterize ([sandbox-path-permissions
                   (let ([pp (sandbox-path-permissions)])
                     (cons '(exists "/") pp))])
-    (make-build-sandbox in)))
+    (make-xiden-sandbox in)))
 
 (define (load-remote-xiden-module u)
   (define-values (in headers)

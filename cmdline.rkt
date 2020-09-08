@@ -12,7 +12,7 @@
    (-> arguments/c
        message-formatter/c
        (-> arguments/c
-           (-> exit-code/c (or/c $message? (listof $message?)) any)
+           (-> exit-code/c (or/c $message? list?) any)
            (values exit-code/c (or/c $message? (listof $message?))))
        exit-code/c)]))
 

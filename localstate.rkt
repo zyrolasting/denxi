@@ -25,8 +25,10 @@
                non-empty-string?
                exact-nonnegative-integer?
                (listof non-empty-string?)
-               path?
-               exact-positive-integer?)]
+               exact-positive-integer?
+               derivation-record?)]
+          [find-exactly-one
+           (->* (record?) (procedure?) record?)]
           [halt-transaction
            (-> any)]
           [get-objects-directory
@@ -36,9 +38,11 @@
           [in-valid-derivations
            (-> xiden-query? sequence?)]
           [make-addressable-file
-           (-> non-empty-string? input-port? (or/c +inf.0 exact-positive-integer?) complete-path?)]
+           (-> non-empty-string? input-port? (or/c +inf.0 exact-positive-integer?) path-record?)]
           [make-addressable-directory
-           (-> complete-path? (-> complete-path? any) complete-path?)]))
+           (-> (-> complete-path? any) path-record?)]
+          [make-addressable-link
+           (-> path-record? path-string? link-record?)]))
 
 
 (require (for-syntax racket/base
@@ -128,35 +132,33 @@
 (define-relation providers (provider-name)
   "name TEXT NOT NULL")
 
-(define-relation packages (provider-id)
+(define-relation packages (name provider-id)
   "name TEXT NOT NULL"
   "provider_id INTEGER NOT NULL"
   "FOREIGN KEY (provider_id) REFERENCES providers(id)")
 
-(define-relation editions (package-id)
+(define-relation editions (name package-id)
   "name TEXT NOT NULL"
   "package_id INTEGER NOT NULL"
   "FOREIGN KEY (package_id) REFERENCES packages(id)")
 
-(define-relation revisions (revision-number edition-id)
+(define-relation revisions (number edition-id)
   "number INTEGER NOT NULL"
   "edition_id INTEGER NOT NULL"
   "FOREIGN KEY (edition_id) REFERENCES editions(id)")
 
-(define-relation revision-names (revision-id revision-name)
+(define-relation revision-names (revision-name revision-id)
   "name TEXT NOT NULL"
   "revision_id INTEGER NOT NULL"
   "FOREIGN KEY (revision_id) REFERENCES revisions(id)")
 
-(define-relation links (link-id target-path-id link-path-id)
-  "link_id INTEGER NOT NULL PRIMARY KEY"
+(define-relation links (target-path-id link-path-id)
   "target_path_id INTEGER NOT NULL"
   "link_path_id INTEGER NOT NULL"
   "FOREIGN KEY (target_path_id) REFERENCES paths(id) ON DELETE RESTRICT ON UPDATE RESTRICT"
   "FOREIGN KEY (link_path_id)   REFERENCES paths(id) ON DELETE RESTRICT ON UPDATE RESTRICT")
 
 (define-relation derivations (revision-id path-id)
-  "id INTEGER NOT NULL PRIMARY KEY"
   "revision_id INTEGER NOT NULL"
   "path_id INTEGER NOT NULL"
   "FOREIGN KEY (revision_id) REFERENCES revisions(id) ON DELETE CASCADE ON UPDATE CASCADE"
@@ -280,12 +282,11 @@
                     (apply in-query+ query-args))))
 
 
+; Take the name literally! This returns #f if a query returns more than one record.
 (define-db-procedure (find-exactly-one record-inst [ctor (gen-constructor record-inst)])
   (define seq (search-by-record record-inst ctor))
-  (and (not (stream-empty? seq))
-       (stream-empty? (stream-first (stream-rest seq)))
-       (stream-first seq)))
-
+  (and (with-handlers ([values (const #t)]) (sequence-ref seq 1) #f)
+       (with-handlers ([values (const #f)]) (sequence-ref seq 0))))
 
 
 (define (infer-select-clauses available-values cols)
@@ -431,14 +432,13 @@
         (define path (build-object-path digest))
         (make-directory* (path-only path))
         (rename-file-or-directory tmp path #t)
-        (declare-path path digest)
-        path)
+        (declare-path path digest))
     (λ () (close-input-port in))))
 
 
-(define (make-addressable-directory containing-dir proc)
+(define (make-addressable-directory proc)
   (call-with-temporary-directory
-   #:cd? #t #:base containing-dir
+   #:cd? #t #:base (get-objects-directory)
    (λ (path)
      (proc path)
      (define digest (make-directory-content-digest path))
@@ -451,8 +451,15 @@
                         (copy-directory/files path dest #:preserve-links? #t)
                         (delete-directory/files path))])
        (rename-file-or-directory path dest #:exists-ok? #t)
-       (declare-path dest digest)
-       dest))))
+       (declare-path dest digest)))))
+
+
+(define (make-addressable-link target-path-record link-path)
+  (make-file-or-directory-link (path-record-path target-path-record) link-path)
+  (gen-save (link-record #f
+                         (record-id target-path-record)
+                         (record-id (declare-path link-path
+                                                  (path-record-digest target-path-record))))))
 
 
 (define (make-directory-content-digest path)
@@ -482,12 +489,32 @@
 
 
 (define-db-procedure (declare-path path digest)
-  (gen-save (path-record #f
-                         (path->string
-                          (if (complete-path? path)
-                              (find-relative-path (workspace-directory) path)
-                              path))
-                         digest)))
+  ; (*) Error code 2067 in SQLite means that the UNIQUE constraint was
+  ; violated. Non-unique path declarations are ignored because it's
+  ; not unusual to revisit the same paths. I'm not sure what the
+  ; performance difference is between allowing SQLite to raise an error
+  ; vs. running an existential query in advance.
+  (with-handlers ([exn:fail:sql?
+                   (λ (e)
+                     (if (equal? (cdr (assoc 'errcode (exn:fail:sql-info e))) 2067)
+                         (or (find-exactly-one (path-record #f path digest))
+                             (error 'declare-path "Attempted to redeclare path ~a on conflicting digest" path))
+                         (raise e)))])
+    (gen-save (path-record #f (normalize-path-for-db path) digest))))
+
+
+(define-db-procedure (get-path-id path)
+  (record-id (find-exactly-one (path-record #f (normalize-path-for-db path) #f))))
+
+
+(define (normalize-path-for-db path)
+  (define workspace-relative
+    (if (complete-path? path)
+        (find-relative-path (workspace-directory) path)
+        path))
+  (if (string? path)
+      path
+      (path->string path)))
 
 
 (define-db-procedure (declare-derivation provider-name
@@ -495,28 +522,16 @@
                                          edition-name
                                          revision-number
                                          revision-names
-                                         output-path)
-  (define provider-id  (save (provider-record provider-name)))
-  (define package-id   (save (package-record package-name provider-id)))
-  (define edition-id   (save (edition-record edition-name package-id)))
-  (define revision-id  (save (revision-record revision-number edition-id)))
-
+                                         output-path-id)
+  (define provider-id  (save (provider-record #f provider-name)))
+  (define package-id   (save (package-record  #f package-name provider-id)))
+  (define edition-id   (save (edition-record  #f edition-name package-id)))
+  (define revision-id  (save (revision-record #f revision-number edition-id)))
   (define revision-name-ids
     (for/list ([name (in-list revision-names)])
-      (save (revision-name-record name revision-id))))
+      (save (revision-name-record #f name revision-id))))
+  (gen-save (derivation-record #f revision-id output-path-id)))
 
-  (save (derivation-record output-path revision-id)))
-
-
-(define-db-procedure (declare-link target link-path)
-  (match-define (vector target-id digest)
-    (query-row+ "select id, digest from "
-                (relation-name paths)
-                " where path=?;" target))
-
-  (declare-path link-path digest)
-  (define link-id (query-value+ "select id from " (relation-name paths) " where path=?;" link-path))
-  (gen-save (link-record link-id target-id)))
 
 
 (define-db-procedure (in-valid-derivations query)
@@ -571,8 +586,8 @@
         hi))
 
      (if revision-id
-         empty-stream ; TODO: Write with joins
-         empty-stream))))
+         empty-sequence ; TODO: Write with joins
+         empty-sequence))))
 
 
 
