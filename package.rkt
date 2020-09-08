@@ -40,6 +40,7 @@
 (define+provide-message $no-package-info (source))
 (define+provide-message $package (info))
 (define+provide-message $package-installed $package ())
+(define+provide-message $built-package-output $package (output-name))
 (define+provide-message $package-not-installed $package ())
 (define+provide-message $undeclared-racket-version $package ())
 (define+provide-message $unsupported-racket-version $package (versions))
@@ -143,18 +144,19 @@
 (define (build-package-output pkgeval output-name)
   (define directory-record
     (make-addressable-directory
+     output-name
      (λ (build-dir)
        (pkgeval `(cd ,build-dir))
        (pkgeval `(build ,output-name)))))
-
-  (displayln directory-record)
 
   (declare-derivation (xiden-evaluator-ref pkgeval 'provider)
                       (xiden-evaluator-ref pkgeval 'package)
                       (xiden-evaluator-ref pkgeval 'edition "draft")
                       (xiden-evaluator-ref pkgeval 'revision-number)
                       (xiden-evaluator-ref pkgeval 'revision-names null)
-                      directory-record))
+                      directory-record)
+
+  ($built-package-output (package-name pkgeval) output-name))
 
 
 ; This is the inflection point between restricted and unrestricted
@@ -266,8 +268,9 @@
 
 
 (define-message-formatter format-package-message
-  [($package-installed name)
-   (format "Installed package ~a"
+  [($built-package-output name output-name)
+   (format "Built output ~a for package ~a"
+           output-name
            name)]
 
   [($undeclared-racket-version info)

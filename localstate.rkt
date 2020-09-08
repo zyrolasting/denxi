@@ -17,20 +17,19 @@
 (require racket/contract)
 
 ; Provided ids include relation structs. See use of define-relation.
-(provide transact
-         (contract-out
+(provide (contract-out
           [declare-derivation
            (-> non-empty-string?
                non-empty-string?
                non-empty-string?
                exact-nonnegative-integer?
                (listof non-empty-string?)
-               exact-positive-integer?
+               path-record?
                derivation-record?)]
           [find-exactly-one
            (->* (record?) (procedure?) record?)]
-          [halt-transaction
-           (-> any)]
+          [start-fs-transaction
+           (-> (values (-> void?) (-> void?)))]
           [get-objects-directory
            (-> complete-path?)]
           [build-object-path
@@ -40,7 +39,7 @@
           [make-addressable-file
            (-> non-empty-string? input-port? (or/c +inf.0 exact-positive-integer?) path-record?)]
           [make-addressable-directory
-           (-> (-> complete-path? any) path-record?)]
+           (-> string? (-> complete-path? any) path-record?)]
           [make-addressable-link
            (-> path-record? path-string? link-record?)]))
 
@@ -216,7 +215,7 @@
 
 
 (define (exists?/unsafe subquery . args)
-  (eq? 1 (apply query-value+ (format "select exists from (select 1 from ~a);" subquery)
+  (eq? 1 (apply query-value+ (format "select exists (select 1 from ~a);" subquery)
                 args)))
 
 
@@ -239,8 +238,13 @@
 
 (define-db-procedure (save record-inst)
   (define vals (vector-drop (struct->vector record-inst) 1))
-  (define insert? (not (vector-ref vals 0)))
-  (define id (or (vector-ref vals 0) sql-null))
+  (define existing-or-#f (find-exactly-one record-inst))
+  (define id (or (vector-ref vals 0)
+                 (if existing-or-#f
+                     (record-id existing-or-#f)
+                     sql-null)))
+  (define insert? (sql-null? id))
+
   (apply query-exec+
          (~a (if insert? "insert" "replace")
              " into " (relation-name (gen-relation record-inst))
@@ -261,7 +265,7 @@
 
 (define-db-procedure (path-declared? path)
   (exists?/unsafe (~a (relation-name paths) " where path=?")
-                  path))
+                  (~a path)))
 
 
 ;------------------------------------------------------------------
@@ -367,15 +371,6 @@
 ; leaves a discrepency between paths in the DB and existing paths on the filesystem.
 ; To roll back the filesystem, delete every file not declared in the database.
 
-(define current-halt-transaction (make-parameter #f))
-
-(define (halt-transaction)
-  ((current-halt-transaction)))
-
-
-(define-syntax-rule (transact body ...)
-  (call-with-fs-transaction (λ () body ...)))
-
 
 (define-db-procedure (rollback-fs-transaction)
   (with-handlers ([exn:fail:sql? void]) (query-exec+ "rollback transaction;"))
@@ -384,20 +379,10 @@
       (delete-directory/files #:must-exist? #f path))))
 
 
-(define-db-procedure (call-with-fs-transaction act!)
-  (if (eq? current-halt-transaction void) ; Prevents nesting transactions
-      (begin (query-exec+ "begin exclusive transaction;")
-             (call/cc
-              (λ (k)
-                (parameterize ([current-halt-transaction
-                                (λ () (rollback-fs-transaction) (k (void)))])
-                  (with-handlers ([values (λ (e) (rollback-fs-transaction) (raise e))])
-                    (act!)
-                    (query-exec+ "commit transaction;")
-                    (void))))))
-      (begin (act!)
-             (void))))
-
+(define-db-procedure (start-fs-transaction)
+  (with-handlers ([values void]) (query-exec+ "begin exclusive transaction;"))
+  (values (λ () (query-exec+ "commit transaction;"))
+          (λ () (rollback-fs-transaction))))
 
 ;----------------------------------------------------------------------------------
 ; These procedures control file output, such that each written file comes
@@ -436,21 +421,21 @@
     (λ () (close-input-port in))))
 
 
-(define (make-addressable-directory proc)
+(define (make-addressable-directory output-name proc)
   (call-with-temporary-directory
    #:cd? #t #:base (get-objects-directory)
    (λ (path)
      (proc path)
-     (define digest (make-directory-content-digest path))
+     (define digest (make-directory-content-digest output-name path))
      (define dest
        (build-path (path-only path)
-                   (encoded-file-name
-                    (make-directory-content-digest path))))
-     (with-handlers ([exn:fail?
+                   (encoded-file-name digest)))
+     (with-handlers ([exn:fail:filesystem?
                       (λ (e)
+                        (displayln (exn->string e))
                         (copy-directory/files path dest #:preserve-links? #t)
                         (delete-directory/files path))])
-       (rename-file-or-directory path dest #:exists-ok? #t)
+       (rename-file-or-directory path dest #t)
        (declare-path dest digest)))))
 
 
@@ -462,12 +447,12 @@
                                                   (path-record-digest target-path-record))))))
 
 
-(define (make-directory-content-digest path)
-  (for/fold ([dig #""])
+(define (make-directory-content-digest output-name path)
+  (for/fold ([dig (make-digest (open-input-bytes (string->bytes/utf-8 output-name)) 'sha384)])
             ([subpath (in-directory path)]
              #:when (file-exists? subpath))
     (call-with-input-file subpath
-      (λ (in) (make-digest (input-port-append (open-input-bytes dig) in)
+      (λ (in) (make-digest (input-port-append #t (open-input-bytes dig) in)
                            'sha384)))))
 
 
@@ -488,19 +473,20 @@
              name bytes-read)])))
 
 
-(define-db-procedure (declare-path path digest)
+(define-db-procedure (declare-path unnormalized-path digest)
   ; (*) Error code 2067 in SQLite means that the UNIQUE constraint was
   ; violated. Non-unique path declarations are ignored because it's
   ; not unusual to revisit the same paths. I'm not sure what the
   ; performance difference is between allowing SQLite to raise an error
   ; vs. running an existential query in advance.
+  (define path (normalize-path-for-db unnormalized-path))
   (with-handlers ([exn:fail:sql?
                    (λ (e)
                      (if (equal? (cdr (assoc 'errcode (exn:fail:sql-info e))) 2067)
                          (or (find-exactly-one (path-record #f path digest))
                              (error 'declare-path "Attempted to redeclare path ~a on conflicting digest" path))
                          (raise e)))])
-    (gen-save (path-record #f (normalize-path-for-db path) digest))))
+    (gen-save (path-record #f path digest))))
 
 
 (define-db-procedure (get-path-id path)
@@ -522,7 +508,7 @@
                                          edition-name
                                          revision-number
                                          revision-names
-                                         output-path-id)
+                                         output-path-record)
   (define provider-id  (save (provider-record #f provider-name)))
   (define package-id   (save (package-record  #f package-name provider-id)))
   (define edition-id   (save (edition-record  #f edition-name package-id)))
@@ -530,7 +516,7 @@
   (define revision-name-ids
     (for/list ([name (in-list revision-names)])
       (save (revision-name-record #f name revision-id))))
-  (gen-save (derivation-record #f revision-id output-path-id)))
+  (gen-save (derivation-record #f revision-id (record-id output-path-record))))
 
 
 

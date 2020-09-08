@@ -113,12 +113,13 @@ EOF
     XIDEN_SANDBOX_EVAL_TIME_LIMIT_SECONDS)
    (λ (flags source output . outputs)
      (with-rc flags
-       (transact
-        (define-values (result messages)
-          (run-log (install-package-from-source source (cons output outputs))))
-        (halt (if (eq? result SUCCESS) 0 1)
-              messages))))))
-
+       (define-values (commit rollback) (start-fs-transaction))
+       (define-values (result messages) (run-log (install-package-from-source source (cons output outputs))))
+       (if (eq? result SUCCESS)
+           (begin (commit)
+                  (halt 0 messages))
+           (begin (rollback)
+                  (halt 1 messages)))))))
 
 (define (uninstall-command args halt)
   (run-command-line
