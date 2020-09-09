@@ -245,17 +245,18 @@ EOF
     XIDEN_SANDBOX_EVAL_TIME_LIMIT_SECONDS)
    (λ (flags input-program)
      (with-rc flags
-       (call-with-build-sandbox-parameterization
-        (λ ()
-          (parameterize ([current-eval (make-xiden-sandbox (build-path input-program))])
-            (let loop ()
-              (with-handlers ([(negate exn:break?)
-                               (λ (e)
-                                 (displayln (exn->string e))
-                                 (loop))]
-                              [exn:break? void])
-                (read-eval-print-loop)))))))
-     (halt 0 null))))
+       (with-handlers ([values (λ (e) (halt 1 ($show-string (exn->string e))))])
+         (call-with-build-sandbox-parameterization
+          (λ ()
+            (parameterize ([current-eval (make-module-evaluator (build-path input-program))])
+              (let loop ()
+                (with-handlers ([(negate exn:break?)
+                                 (λ (e)
+                                   (displayln (exn->string e))
+                                   (loop))]
+                                [exn:break? void])
+                  (read-eval-print-loop)))))))
+       (halt 0 null)))))
 
 
 (define (show-command args halt)
