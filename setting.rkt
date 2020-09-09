@@ -9,6 +9,10 @@
          define-setting
          define-setting-group
          (contract-out
+          [setting-short-flag
+           (-> setting? string?)]
+          [setting-format-all-flags
+           (-> setting? string?)]
           [call-with-applied-settings
            (-> (if/c hash?
                      (hash/c setting? any/c)
@@ -27,14 +31,27 @@
          "url.rkt")
 
 
-(struct setting (id valid? parameter derived-parameter short-flag long-flag help-strings)
+(struct setting (id valid? parameter derived-parameter flag-kind flag-strings help-strings)
   #:property prop:procedure
   (case-lambda [(self) ((setting-derived-parameter self))]
                [(self v proc) (parameterize ([(setting-derived-parameter self) v]) (proc))]))
 
 
+(define (setting-short-flag s)
+  (for/fold ([shortest (car (setting-flag-strings s))])
+            ([next (in-list (cdr (setting-flag-strings s)))])
+    (if (< (string-length next) (string-length shortest))
+        next
+        shortest)))
 
-(define (make-setting id-sym get-default valid? short-flag help-strings)
+(define (setting-format-all-flags s)
+  (string-join
+   (sort (setting-flag-strings s)
+         < #:key string-length)
+   "/"))
+
+
+(define (make-setting id-sym get-default valid? flag-kind flag-strings help-strings)
   (define param (make-parameter (void)))
   (define derived-parameter
     (make-derived-parameter
@@ -45,8 +62,8 @@
            valid?
            param
            derived-parameter
-           short-flag
-           (format "--~a" id-sym)
+           flag-kind
+           (cons (format "--~a" id-sym) flag-strings)
            help-strings))
 
 
@@ -69,21 +86,33 @@
 
 
 (define (make-flag-spec s)
-  (list (let ([long (setting-long-flag s)]
-              [short (setting-short-flag s)])
-          (if short
-              (list short long)
-              (list long)))
+  (list (setting-flag-strings s)
         (λ (flag user-asserted-value)
           (cons s (read (open-input-string user-asserted-value))))
         (setting-help-strings s)))
 
 
+; When using a setting as a (multi) flag in parse-command-line,
+; this will accumulate repeated values for a setting into lists.
+(define (fold-setting-values may-contain-multis)
+  (for/fold ([wip (hasheq)])
+            ([pair (in-list may-contain-multis)])
+    (define setting-inst (car pair))
+    (define setting-val  (cdr pair))
+    (hash-set wip setting-inst
+              (if (eq? 'multi (setting-flag-kind setting-inst))
+                  (cons setting-val
+                        (hash-ref wip setting-inst null))
+                  setting-val))))
+
+; Calls proc in a parameterization where an alist or hash
+; determines a new value for each setting.
 (define (call-with-applied-settings variant proc)
   (define h
-    (if (list? variant)
-        (make-immutable-hash variant)
-        variant))
+    (fold-setting-values
+     (if (list? variant)
+         variant
+         (hash->list variant))))
 
   ((for/fold ([wip proc])
              ([(s v) (in-hash h)])
@@ -98,8 +127,8 @@
 
 (define-syntax (define-setting stx)
   (syntax-parse stx
-    [(_ name:id cnt:expr short-flag:expr get-default:expr help-strs:expr)
-     #'(define name (make-setting 'name get-default cnt short-flag help-strs))]))
+    [(_ name:id cnt:expr kind:expr flag-strings:expr get-default:expr help-strs:expr)
+     #'(define name (make-setting 'name get-default cnt kind flag-strings help-strs))]))
 
 
 (define-syntax-rule (define-setting-group id (s ...))
@@ -112,6 +141,14 @@
            racket/match
            rackunit)
 
+  (test-case "Fold setting values"
+    (define-setting A real? 'multi '("-A") #f '("blah" "blah"))
+    (define-setting B real? 'once-each '("-B") #f '("blah" "blah"))
+
+    (check-equal? (fold-setting-values (list (cons A 1) (cons A 5) (cons B 10) (cons B 12)))
+                  (hasheq A '(5 1)
+                          B 12)))
+
   ; Below you'll see a pattern of the form (SETTING <value> SETTING).
   ; (SETTING <value> <proc>) means "Call <proc> with SETTING bound to
   ; <value>". Since (SETTING) returns the current value of the setting
@@ -122,14 +159,13 @@
 
   (test-case "Define a setting"
     (define help-strings '("desc" "list"))
-    (define-setting TAKES_LIST (list/c real? string?) "-L" '(1 "foo") help-strings)
+    (define-setting TAKES_LIST (list/c real? string?) 'once-each '("-L") '(1 "foo") help-strings)
     (check-eq? (setting-id TAKES_LIST) 'TAKES_LIST)
     (check-pred (setting-valid? TAKES_LIST) '(1 "foo"))
     (check-pred (negate (setting-valid? TAKES_LIST)) '("foo" 1))
     (check-pred parameter? (setting-parameter TAKES_LIST))
     (check-pred parameter? (setting-derived-parameter TAKES_LIST))
-    (check-equal? (setting-short-flag TAKES_LIST) "-L")
-    (check-equal? (setting-long-flag TAKES_LIST) "--TAKES_LIST")
+    (check-equal? (setting-flag-strings TAKES_LIST) '("--TAKES_LIST" "-L"))
     (check-equal? (setting-help-strings TAKES_LIST) help-strings)
 
     (test-exn "Reject invalid values"
@@ -147,36 +183,36 @@
       (match-define (list flags handler help) spec)
       (check-eq? (procedure-arity handler) 2)
       (check-equal? (handler "-L" "(2 \"bar\")") (cons TAKES_LIST '(2 "bar")))
-      (check-equal? flags (list "-L" "--TAKES_LIST"))
+      (check-equal? flags (list  "--TAKES_LIST" "-L"))
       (check-equal? help help-strings)))
 
-  (test-equal? "#f for a short flag means no short flag is defined"
-    (car (make-flag-spec (setting 'FOO void void void #f "--FOO" '("desc" "val"))))
+  (test-equal? "Always include longform flag"
+    (car (make-flag-spec (setting 'FOO void void void 'once-each '("--FOO") '("desc" "val"))))
     '("--FOO"))
 
   (test-case "Define fallback values"
     (test-case "Compute fallback values using procedures"
-      (define-setting NUM real? "-N" (const 1) '("number!" "<num>"))
+      (define-setting NUM real? 'once-each '("-N") (const 1) '("number!" "<num>"))
       ; (void) represents an unset setting
       (check-equal? (NUM (void) NUM) 1))
     (test-case "Use exact fallback values"
-      (define-setting NUM real? "-N" 1 '("number!" "<num>"))
+      (define-setting NUM real? 'once-each '("-N") 1 '("number!" "<num>"))
       (check-equal? (NUM (void) NUM) 1))
 
     (test-exn "Validate computed fallback values"
               exn:fail:contract?
               (λ ()
-                (define-setting NUM real? "-N" (const "not a number") '("number!" "<num>"))
+                (define-setting NUM real? 'once-each '("-N") (const "not a number") '("number!" "<num>"))
                 (NUM (void) NUM)))
 
     (test-exn "Validate exact fallback values"
               exn:fail:contract?
               (λ ()
-                (define-setting NUM real? "-N" "not a number" '("number!" "<num>"))
+                (define-setting NUM real? 'once-each '("-N") "not a number" '("number!" "<num>"))
                 (NUM (void) NUM))))
 
-  (define-setting GROUP_A boolean? "-a" #f '("Fuh" "#t-or-#f"))
-  (define-setting GROUP_B boolean? "-b" #f '("Buh" "#t-or-#f"))
+  (define-setting GROUP_A boolean? 'once-each '("-a") #f '("Fuh" "#t-or-#f"))
+  (define-setting GROUP_B boolean? 'once-each '("-b") #f '("Buh" "#t-or-#f"))
   (define-setting-group GROUP [GROUP_A GROUP_B])
 
   (test-true "Define settings in groups"
@@ -193,10 +229,10 @@
 
 
   (test-case "Accumulate setting values using racket/cmdline"
-    (define-setting FOO symbol? "-f" 'default '("A symbol" "symbol"))
-    (define-setting BAR symbol? "-b" 'default '("A symbol" "symbol"))
-    (define-setting ZAP real?   "-z"        0 '("A number" "number"))
-    (define-setting DEF symbol? "-d" 'default '("A symbol" "symbol"))
+    (define-setting FOO symbol? 'once-each '("-f") 'default '("A symbol" "symbol"))
+    (define-setting BAR symbol? 'once-each '("-b") 'default '("A symbol" "symbol"))
+    (define-setting ZAP real?   'once-each '("-z")        0 '("A number" "number"))
+    (define-setting DEF symbol? 'once-each '("-d") 'default '("A symbol" "symbol"))
 
     ; Notice DEF is added as a flag, but is not set in the command line.
     (parse-command-line "whatever"

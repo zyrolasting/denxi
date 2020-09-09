@@ -94,9 +94,7 @@
 
   (with-handlers ([exn:fail:user? show-help-on-zero-arguments])
     (parse-command-line program argv
-                        (if (null? flags)
-                            null
-                            `((once-each . ,flags)))
+                        flags
                         handle-arguments
                         arg-help-strings
                         (λ (help-str)

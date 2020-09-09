@@ -153,21 +153,21 @@
    (format (~a "~a failed its integrity check.~n"
                "While unsafe, you can force installation using ~a.")
            name
-           (setting-long-flag XIDEN_TRUST_BAD_DIGEST))]
+           (setting-format-all-flags XIDEN_TRUST_BAD_DIGEST))]
 
   [($input-signature-mismatch name source)
    (format (~a "~s's signature on ~s does not match any trusted public key.~n"
                "While unsafe, you can trust bad signatures using ~a.")
            name
            source
-           (setting-long-flag XIDEN_TRUST_BAD_SIGNATURE))]
+           (setting-format-all-flags XIDEN_TRUST_BAD_SIGNATURE))]
 
   [($input-signature-missing name source)
    (format (~a "~a does not have a signature. If you are prototyping your own package, this is expected.~n"
                "If you got the package from the Internet, then exercise caution!~n"
                "To trust unsigned packages, use ~a.")
            name
-           (setting-long-flag XIDEN_TRUST_UNSIGNED))]
+           (setting-format-all-flags XIDEN_TRUST_UNSIGNED))]
 
   [($input-integrity-verified name source)
    (format "Integrity verified for input ~s from ~s" name source)]

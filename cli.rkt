@@ -62,16 +62,16 @@
    #:args args
    #:halt halt
    #:flags
-   (settings->flag-specs
-    XIDEN_FASL_OUTPUT
-    XIDEN_READER_FRIENDLY_OUTPUT
-    XIDEN_VERBOSE)
+   `((once-each .
+      ,(settings->flag-specs
+        XIDEN_FASL_OUTPUT
+        XIDEN_READER_FRIENDLY_OUTPUT
+        XIDEN_VERBOSE)))
    (λ (flags action . args)
      (with-rc flags
        (define proc
          (match action
-           ["install" install-command]
-           ["uninstall" uninstall-command]
+           ["pkg" pkg-command]
            ["show" show-command]
            ["gc" gc-command]
            ["link" link-command]
@@ -82,61 +82,90 @@
 
    #<<EOF
 <action> is one of
-  install    Install packages
-  uninstall  Uninstall packages
-  show       Print helpful information
-  gc         Collect garbage
-  link       Create symlink to package file
-  config     Manage configuration
-  sandbox    Start sandboxed REPL in package
+  pkg      Manage packages
+  show     Print helpful information
+  gc       Collect garbage
+  link     Create symlink to package file
+  config   Manage configuration
+  sandbox  Start sandboxed REPL in package
 
 EOF
    ))
 
 
-(define (install-command args halt)
-  (run-command-line
-   #:program "install"
-   #:args args
-   #:halt halt
-   #:arg-help-strings '("pkgdef-source" "output" "output")
-   #:flags
-   (settings->flag-specs
-    XIDEN_SERVICE_ENDPOINTS
-    XIDEN_DOWNLOAD_MAX_REDIRECTS
-    XIDEN_TRUST_BAD_DIGEST
-    XIDEN_TRUST_BAD_SIGNATURE
-    XIDEN_TRUST_UNSIGNED
-    XIDEN_CONSENT
-    XIDEN_LINK
-    XIDEN_ALLOW_UNDECLARED_RACKET_VERSIONS
-    XIDEN_ALLOW_UNSUPPORTED_RACKET
-    XIDEN_SANDBOX_MEMORY_LIMIT_MB
-    XIDEN_SANDBOX_EVAL_MEMORY_LIMIT_MB
-    XIDEN_SANDBOX_EVAL_TIME_LIMIT_SECONDS)
-   (λ (flags source output . outputs)
-     (with-rc flags
-       (define-values (commit rollback) (start-fs-transaction))
-       (define-values (result messages) (run-log (install-package-from-source source (cons output outputs))))
-       (if (eq? result SUCCESS)
-           (begin (commit)
-                  (halt 0 messages))
-           (begin (rollback)
-                  (halt 1 messages)))))))
+(define (pkg-command args halt)
+  (define (transact sources)
+    (define-values (commit rollback) (start-fs-transaction))
 
-(define (uninstall-command args halt)
+    (define (finish messages)
+      (commit)
+      (halt 0 messages))
+
+    (define (fail messages)
+      (rollback)
+      (halt 1 messages))
+
+    (define (update item remaining accum-messages)
+      (define mode   (car item))
+      (define source (cdr item))
+      (define-values (result messages)
+        (run-log
+         (if (eq? mode #\+)
+             (install-package-with-source source)
+             (uninstall-package-with-source source))))
+      (if (eq? result SUCCESS)
+          (enter remaining (cons messages accum-messages))
+          (fail (cons messages accum-messages))))
+
+    (define (enter remaining accum-messages)
+      (if (null? remaining)
+          (finish accum-messages)
+          (update (car remaining)
+                  (cdr remaining)
+                  accum-messages)))
+
+    (enter (map deconstruct-source sources) null))
+
+  (define (deconstruct-source +/-source)
+    (define mode   (string-ref +/-source 0))
+    (define source (substring  +/-source 1))
+    (unless (member mode '(#\+ #\-))
+      (halt 1 ($show-string (format "~s should start with a `+' or `-'." +/-source))))
+    (unless (non-empty-string? source)
+      (halt 1 ($show-string (format "~s should follow with a package definition source" +/-source))))
+    (cons mode source))
+
   (run-command-line
-   #:program "uninstall"
+   #:program "pkg"
    #:args args
    #:halt halt
-   #:arg-help-strings '("query" "output")
+   #:arg-help-strings '("+/-source")
    #:flags
-   (settings->flag-specs XIDEN_CONSENT)
-   (λ (flags query . outputs)
-     (define path-stream (in-xiden-objects query))
-     (if (stream-empty? path-stream)
-         (halt 0 null)
-         (void)))))
+   `((multi .
+      ,(settings->flag-specs
+        XIDEN_INSTALL_SOURCES
+        XIDEN_UNINSTALL_SOURCES))
+     (once-each .
+      ,(settings->flag-specs
+        XIDEN_SERVICE_ENDPOINTS
+        XIDEN_DOWNLOAD_MAX_REDIRECTS
+        XIDEN_TRUST_BAD_DIGEST
+        XIDEN_TRUST_BAD_SIGNATURE
+        XIDEN_TRUST_UNSIGNED
+        XIDEN_LINK
+        XIDEN_ALLOW_UNDECLARED_RACKET_VERSIONS
+        XIDEN_ALLOW_UNSUPPORTED_RACKET
+        XIDEN_SANDBOX_MEMORY_LIMIT_MB
+        XIDEN_SANDBOX_EVAL_MEMORY_LIMIT_MB
+        XIDEN_SANDBOX_EVAL_TIME_LIMIT_SECONDS)))
+   (λ (flags . +/-sources)
+     (with-rc flags
+       (displayln (XIDEN_INSTALL_SOURCES))
+       (displayln (XIDEN_UNINSTALL_SOURCES))
+       (halt 0 null)
+       #;(if (null? +/-sources)
+           (halt 0 null)
+           (transact +/-sources))))))
 
 
 (define (gc-command args halt)
@@ -251,10 +280,11 @@ EOF
    #:halt halt
    #:arg-help-strings '("package-path")
    #:flags
-   (settings->flag-specs
-    XIDEN_SANDBOX_MEMORY_LIMIT_MB
-    XIDEN_SANDBOX_EVAL_MEMORY_LIMIT_MB
-    XIDEN_SANDBOX_EVAL_TIME_LIMIT_SECONDS)
+   `((once-each .
+      ,(settings->flag-specs
+        XIDEN_SANDBOX_MEMORY_LIMIT_MB
+        XIDEN_SANDBOX_EVAL_MEMORY_LIMIT_MB
+        XIDEN_SANDBOX_EVAL_TIME_LIMIT_SECONDS)))
    (λ (flags input-program)
      (with-rc flags
        (call-with-build-sandbox-parameterization
@@ -294,12 +324,6 @@ where <what> is one of
 EOF
    ))
 
-
-
-(define (format-setting-flag-example s)
-  (format "~a/~a"
-          (setting-short-flag s)
-          (setting-long-flag s)))
 
 
 (define+provide-message-formatter format-rc-message
@@ -361,13 +385,7 @@ EOF
          (define (build output)
            (void))))
 
-    (call-with-temporary-file
-     (λ (tmp)
-       (write-to-file defn tmp #:exists 'truncate/replace)
-       (install-command `(,(setting-short-flag XIDEN_CONSENT) "#t" ,(path->string tmp) "lib")
-         (λ (exit-code messages)
-           (check-eq? exit-code 0)
-           (check-equal? messages (list)))))))
+    (void))
 
   (test-case "Configure xiden"
     (test-case "Respond to an incomplete command with help"

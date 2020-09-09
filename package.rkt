@@ -49,11 +49,14 @@
 (define+provide-message $package-malformed $package (errors))
 
 
-(define (install-package-from-source source expected-outputs)
+(define (install-package-with-source source expected-outputs)
   (do pkgeval         <- (make-package-evaluator source)
       checked-outputs <- (validate-output-request pkgeval expected-outputs)
       build-output    <- (build-package pkgeval checked-outputs)
       (return (report-installation-results pkgeval build-output))))
+
+(define (uninstall-package-with-source source expected-outputs)
+  (logged-unit SUCCESS))
 
 
 (define (make-package-evaluator source)
@@ -318,7 +321,7 @@
                                       variant))
                           versions))))
           (format "To install this package anyway, run again with ~a"
-                  (setting-long-flag XIDEN_ALLOW_UNSUPPORTED_RACKET))))])
+                  (setting-format-all-flags XIDEN_ALLOW_UNSUPPORTED_RACKET))))])
 
 
 (module+ test
