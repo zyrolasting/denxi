@@ -88,7 +88,8 @@
 (define (make-flag-spec s)
   (list (setting-flag-strings s)
         (λ (flag user-asserted-value)
-          (cons s (read (open-input-string user-asserted-value))))
+          (define v (read (open-input-string user-asserted-value)))
+          (cons s (if (symbol? v) user-asserted-value v)))
         (setting-help-strings s)))
 
 

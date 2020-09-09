@@ -2,10 +2,11 @@
 
 @require["../shared.rkt" @for-label[racket/base]]
 
-@title[#:tag "asking"]{Package Queries}
+@title[#:tag "queries"]{Package Queries}
 
 To aid package discovery, you can request package definitions from
-configured hosts a colon-separated @deftech{package query} string.
+configured hosts using a colon-separated @deftech{package query}
+string.
 
 @section{Simple Queries}
 
@@ -14,8 +15,8 @@ a package name, like @tt{example.com:calculator}. Such a query is
 understood to mean "the @tt{calculator} package provided by @tt{example.com}".
 
 Why not just say @tt{calculator}? Because providers are presumed
-unique, and using a verifiable identity to scope packages precludes
-the need for a naming authority.
+unique, and using a verifiable identity to scope packages offers
+more options in the event two packages share a name.
 
 
 @section{Specifying an Edition}

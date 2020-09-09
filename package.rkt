@@ -40,8 +40,9 @@
 (define+provide-message $no-package-info (source))
 (define+provide-message $package (info))
 (define+provide-message $package-installed $package ())
-(define+provide-message $built-package-output $package (output-name))
-(define+provide-message $reused-package-output $package (output-name))
+(define+provide-message $package-in-use $package ())
+(define+provide-message $built-package-output $package ())
+(define+provide-message $reused-package-output $package ())
 (define+provide-message $package-not-installed $package ())
 (define+provide-message $undeclared-racket-version $package ())
 (define+provide-message $unsupported-racket-version $package (versions))
@@ -49,14 +50,43 @@
 (define+provide-message $package-malformed $package (errors))
 
 
-(define (install-package-with-source source expected-outputs)
-  (do pkgeval         <- (make-package-evaluator source)
-      checked-outputs <- (validate-output-request pkgeval expected-outputs)
-      build-output    <- (build-package pkgeval checked-outputs)
-      (return (report-installation-results pkgeval build-output))))
+(define (install-package-with-source source)
+  (do pkgeval          <- (make-package-evaluator source)
+      output-name      <- (find-expected-output pkgeval source)
+      build-output     <- (install-output pkgeval output-name)
+      (return (report-installation-results pkgeval output-name build-output))))
 
-(define (uninstall-package-with-source source expected-outputs)
-  (logged-unit SUCCESS))
+
+(define (uninstall-package-with-source source)
+  (do pkgeval          <- (make-package-evaluator source)
+      output-name      <- (find-expected-output pkgeval source)
+      (return (uninstall-output pkgeval output-name))))
+
+
+(define (uninstall-output pkgeval output-name)
+  (call-with-configured-package-evaluator
+   pkgeval
+   (λ ()
+     (call-with-reused-output
+      (package-evaluator->xiden-query pkgeval output-name)
+      (λ (v)
+        (if (output-record? v)
+            (begin
+              (delete-record
+               (find-exactly-one
+                (path-record #f #f #f #f (output-record-path-id v))))
+              (logged-unit SUCCESS))
+            (logged-attachment SUCCESS
+                               ($package-not-installed (package-name pkgeval output-name)))))))))
+
+
+
+(define (call-with-configured-package-evaluator pkgeval proc)
+  ; Instrument top-level bindings as a hash table because evaluator calls cannot nest.
+  (pkgeval `(current-info-lookup
+             (let ([h ,(xiden-evaluator->hash pkgeval)])
+               (λ (k f) (hash-ref h k f)))))
+  (dynamic-wind void proc (λ () (kill-evaluator pkgeval))))
 
 
 (define (make-package-evaluator source)
@@ -64,6 +94,20 @@
       validated-eval  <- (validate-evaluator sourced-eval)
       supported-eval  <- (check-racket-support validated-eval)
       (return supported-eval)))
+
+
+(define (find-expected-output pkgeval source)
+  (define output-name
+    (if (xiden-query-string? source)
+        (xiden-query-output-name (string->xiden-query source))
+        "default"))
+  (if (member output-name
+              (cons "default" (pkgeval 'outputs)))
+      (logged-unit output-name)
+      (logged-failure
+       ($undefined-package-output
+        (package-name pkgeval)
+        output-name))))
 
 
 (define (validate-evaluator pkgeval)
@@ -80,11 +124,11 @@
   (assert 'edition string? "a string")
   (assert 'revision-number exact-nonnegative-integer? "an exact, nonnegative integer")
   (assert 'inputs (listof well-formed-input-info/c) "a list of inputs")
-  (assert 'outputs (listof name-string?) "a list of valid directory names")
   (assert 'build
           (λ (p) (and (procedure? p) (= 1 (procedure-arity p))))
           "a unary procedure")
 
+  (assert #:optional? #t 'outputs (listof string?) "a list of strings")
   (assert #:optional? #t 'revision-names (listof string?) "a list of strings")
   (assert #:optional? (XIDEN_ALLOW_UNDECLARED_RACKET_VERSIONS)
           'racket-versions
@@ -96,58 +140,31 @@
       (logged-failure ($package-malformed (package-name pkgeval) errors))))
 
 
-(define (package-name seval)
-  (seval `(#%info-lookup 'package ,(λ () "???"))))
+(define (package-name pkgeval [output-name ""])
+  (xiden-query->string (package-evaluator->xiden-query pkgeval output-name)))
 
 
-(define (report-installation-results pkgeval build-output)
+(define (report-installation-results pkgeval output-name build-output)
   (logged-attachment build-output
                      (if (eq? build-output SUCCESS)
-                         ($package-installed (package-name pkgeval))
-                         ($package-not-installed (package-name pkgeval)))))
+                         ($package-installed (package-name pkgeval output-name))
+                         ($package-not-installed (package-name pkgeval output-name)))))
 
 
-(define (validate-output-request pkgeval outs [original-outputs outs])
-  (cond [(null? outs)
-         (logged-unit original-outputs)]
-
-        [(member (car outs)
-                 (pkgeval 'outputs))
-         (validate-output-request pkgeval
-                                  (cdr outs)
-                                  original-outputs)]
-
-        [else
-         (logged-failure
-          ($undefined-package-output
-           (package-name pkgeval)
-           (car outs)))]))
-
-
-(define (build-package pkgeval expected-outputs)
-  (logged
-   (λ (messages)
-     ; Instrument top-level bindings as a hash table because evaluator calls cannot nest.
-     (pkgeval `(current-info-lookup
-                (let ([h ,(xiden-evaluator->hash pkgeval)])
-                  (λ (k f) (hash-ref h k f)))))
-     (dynamic-wind
-       void
-       (λ ()
-         (values SUCCESS
-                 (cons (for/list ([output-name (in-list expected-outputs)])
-                         (get-package-output pkgeval output-name))
-                       messages)))
-       (λ () (kill-evaluator pkgeval))))))
-
-
-(define (get-package-output pkgeval output-name)
-  (define v (use-output (package-evaluator->xiden-query pkgeval output-name)
-                        (λ () #f)))
-  (if v
-      ($reused-package-output (package-name pkgeval) output-name)
-      (build-package-output pkgeval output-name)))
-
+(define (install-output pkgeval output-name)
+  (call-with-configured-package-evaluator
+   pkgeval
+   (λ ()
+     (logged
+      (λ (messages)
+        (values SUCCESS
+                (cons (call-with-reused-output
+                       (package-evaluator->xiden-query pkgeval output-name)
+                       (λ (v)
+                         (if (output-record? v)
+                             ($reused-package-output (package-name pkgeval output-name))
+                             (build-package-output pkgeval output-name))))
+                      messages)))))))
 
 
 ; This is the heart of filesystem changes for a package installation.
@@ -170,7 +187,7 @@
                   output-name
                   directory-record)
 
-  ($built-package-output (package-name pkgeval) output-name))
+  ($built-package-output (package-name pkgeval output-name)))
 
 
 ; This is the inflection point between restricted and unrestricted
@@ -281,15 +298,11 @@
 
 
 (define-message-formatter format-package-message
-  [($built-package-output name output-name)
-   (format "Built output ~a for package ~a"
-           output-name
-           name)]
+  [($built-package-output name)
+   (format "Built ~a" name)]
 
-  [($reused-package-output name output-name)
-   (format "Reused output ~a for package ~a"
-           output-name
-           name)]
+  [($reused-package-output name)
+   (format "Reused ~a" name)]
 
   [($undeclared-racket-version info)
    (join-lines
@@ -305,7 +318,7 @@
 
   [($unsupported-racket-version name versions)
    (join-lines
-    (list (format "~a claims that it does not support this version of Racket (~a)."
+    (list (format "~a does not support this version of Racket (~a)."
                   name
                   (version))
           (format "Supported versions (ranges are inclusive):~n~a~n"
@@ -318,8 +331,8 @@
                                                   PRESUMED_MINIMUM_RACKET_VERSION)
                                               (or (cdr variant)
                                                   PRESUMED_MAXIMUM_RACKET_VERSION))
-                                      variant))
-                          versions))))
+                                      variant)))
+                        versions)))
           (format "To install this package anyway, run again with ~a"
                   (setting-format-all-flags XIDEN_ALLOW_UNSUPPORTED_RACKET))))])
 
@@ -329,23 +342,6 @@
            rackunit
            (submod "file.rkt" test)
            "setting.rkt")
-
-  (test-case "Reject requests for outputs that a package does not define"
-    (define (make-dummy-pkginfo outputs)
-      (hash+list->xiden-evaluator
-       (hash 'outputs outputs
-             'package-name "whatever")))
-
-    (define pkginfo (make-dummy-pkginfo '("lib" "doc" "test")))
-    (check-equal? (get-log (validate-output-request pkginfo '("blah")))
-                  (list ($undefined-package-output (package-name pkginfo) "blah")))
-
-    (test-case "Allow requests for outputs that a package does define"
-      (define request '("test" "lib" "doc"))
-      (call-with-values (λ () (run-log (validate-output-request pkginfo request)))
-                        (λ (v m)
-                          (check-equal? v request)
-                          (check-pred null? m)))))
 
   (test-case "Check Racket version support"
     (define (make-dummy-pkginfo versions)

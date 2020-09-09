@@ -291,13 +291,13 @@
 
 (define+provide-message-formatter format-fetch-message
   [($source-fetched name user-string)
-   (format "Fetched ~s" user-string)]
+   (format "Fetched ~a" user-string)]
 
   [($fetch-failure name)
-   (format "Failed to fetch ~s" name)]
+   (format "Failed to fetch ~a" name)]
 
   [($source-method-ruled-out name user-string reason)
-   (format "Could not fetch ~s from source ~s: ~a" name user-string reason)]
+   (format "Could not fetch ~a from source ~a: ~a" name user-string reason)]
 
   [($unverified-host url)
    (format (~a "~a does not have a valid certificate.~n"

@@ -68,7 +68,7 @@
        (λ (messages)
          (check-input-integrity info
                                 pathrec-or-#f
-                                (path->string (path-record-path pathrec-or-#f))
+                                (path-record-path pathrec-or-#f)
                                 messages)))
       (logged
        (λ (messages)
@@ -170,13 +170,13 @@
            (setting-format-all-flags XIDEN_TRUST_UNSIGNED))]
 
   [($input-integrity-verified name source)
-   (format "Integrity verified for input ~s from ~s" name source)]
+   (format "Integrity verified for input ~s from ~a" name source)]
 
   [($input-integrity-assumed name source)
-   (format "Dangerously trusting input ~s from ~s" name source)]
+   (format "Dangerously trusting input ~s from ~a" name source)]
 
   [($input-signature-unchecked name source)
-   (format "Not checking signature for input ~s from ~s"
+   (format "Not checking signature for input ~s from ~a"
            name source)]
 
   [($input-integrity-missing name source)
@@ -186,10 +186,10 @@
            name)]
 
   [($input-signature-trust-unsigned name source)
-   (format "Trusting unsigned input ~s from ~s" name source)]
+   (format "Trusting unsigned input ~s from ~a" name source)]
 
   [($input-signature-verified name source)
-   (format "Signature verified for input ~s from ~s" name source)]
+   (format "Signature verified for input ~s from ~a" name source)]
 
   [($input-signature-mismatch name source)
-   (format "Signature mismatch for input ~s from ~s" name source)])
+   (format "Signature mismatch for input ~s from ~a" name source)])

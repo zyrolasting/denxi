@@ -20,7 +20,6 @@
          "exn.rkt"
          "file.rkt"
          "format.rkt"
-         "gc.rkt"
          "input-info.rkt"
          "integrity.rkt"
          "localstate.rkt"
@@ -38,6 +37,7 @@
          "source.rkt"
          "string.rkt"
          "team.rkt"
+         "transaction.rkt"
          "url.rkt"
          "openssl.rkt"
          "worker.rkt"
@@ -84,7 +84,7 @@
   pkg      Manage packages
   show     Print helpful information
   gc       Collect garbage
-  link     Create symlink to package file
+  link     Create link to stored file
   config   Manage configuration
   sandbox  Start sandboxed REPL in package
 
@@ -93,52 +93,11 @@ EOF
 
 
 (define (pkg-command args halt)
-  (define (transact sources)
-    (define-values (commit rollback) (start-fs-transaction))
-
-    (define (finish messages)
-      (commit)
-      (halt 0 messages))
-
-    (define (fail messages)
-      (rollback)
-      (halt 1 messages))
-
-    (define (update item remaining accum-messages)
-      (define mode   (car item))
-      (define source (cdr item))
-      (define-values (result messages)
-        (run-log
-         (if (eq? mode #\+)
-             (install-package-with-source source)
-             (uninstall-package-with-source source))))
-      (if (eq? result SUCCESS)
-          (enter remaining (cons messages accum-messages))
-          (fail (cons messages accum-messages))))
-
-    (define (enter remaining accum-messages)
-      (if (null? remaining)
-          (finish accum-messages)
-          (update (car remaining)
-                  (cdr remaining)
-                  accum-messages)))
-
-    (enter (map deconstruct-source sources) null))
-
-  (define (deconstruct-source +/-source)
-    (define mode   (string-ref +/-source 0))
-    (define source (substring  +/-source 1))
-    (unless (member mode '(#\+ #\-))
-      (halt 1 ($show-string (format "~s should start with a `+' or `-'." +/-source))))
-    (unless (non-empty-string? source)
-      (halt 1 ($show-string (format "~s should follow with a package definition source" +/-source))))
-    (cons mode source))
-
   (run-command-line
    #:program "pkg"
    #:args args
    #:halt halt
-   #:arg-help-strings '("+/-source")
+   #:arg-help-strings '()
    #:flags
    (settings->flag-specs
     XIDEN_INSTALL_SOURCES
@@ -154,14 +113,20 @@ EOF
     XIDEN_SANDBOX_MEMORY_LIMIT_MB
     XIDEN_SANDBOX_EVAL_MEMORY_LIMIT_MB
     XIDEN_SANDBOX_EVAL_TIME_LIMIT_SECONDS)
-   (λ (flags . +/-sources)
+   (λ (flags)
      (with-rc flags
-       (displayln (XIDEN_INSTALL_SOURCES))
-       (displayln (XIDEN_UNINSTALL_SOURCES))
-       (halt 0 null)
-       #;(if (null? +/-sources)
-           (halt 0 null)
-           (transact +/-sources))))))
+       (define lookup
+         (hasheq XIDEN_INSTALL_SOURCES   install-package-with-source
+                 XIDEN_UNINSTALL_SOURCES uninstall-package-with-source))
+
+       (define actions (fold-transaction-actions flags lookup))
+
+       (if (null? actions)
+           (halt 1 ($show-string "Nothing to do."))
+           (let-values ([(commit rollback) (start-fs-transaction)])
+             (transact actions
+                       (λ (messages) (commit)   (halt 0 messages))
+                       (λ (messages) (rollback) (halt 1 messages)))))))))
 
 
 (define (gc-command args halt)
@@ -171,14 +136,8 @@ EOF
    #:halt halt
    #:arg-help-strings '()
    (λ (flags)
-     (define-values (bytes-recovered directories-deleted files-deleted links-deleted)
-       (xiden-collect-garbage))
-     (halt 0 ($show-string (format "Deleted ~a directories, ~a files, and ~a links (~~~a mibibytes)"
-                                   directories-deleted
-                                   files-deleted
-                                   links-deleted
-                                   (~r (/ bytes-recovered (* 1024 1024))
-                                       #:precision 2)))))))
+     (xiden-collect-garbage)
+     (halt 0 null))))
 
 
 (define (link-command args halt)
@@ -188,7 +147,11 @@ EOF
    #:halt halt
    #:arg-help-strings '("link-path" "query" "rel-path")
    (λ (flags link-path query rel-path)
-     (define path-stream (sequence->stream (sequence-map (λ (rid on path) path) (in-xiden-objects query))))
+     (define path-stream
+       (sequence->stream
+        (sequence-map (λ (on rid rn pid path) path)
+                      (in-xiden-objects query))))
+
      (if (stream-empty? path-stream)
          (halt 1 ($show-string "No package found"))
          (begin (make-link/clobber (build-path (build-workspace-path (stream-first path-stream))

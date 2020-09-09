@@ -65,12 +65,12 @@
 
 (define well-formed-xiden-query/c
   (struct/c xiden-query
+            non-empty-string?
+            non-empty-string?
             string?
             string?
             string?
-            string?
-            string?
-            (or/c "ii" "ee" "ie" "ei")
+            (or/c "" "ii" "ee" "ie" "ei")
             string?))
 
 
@@ -84,19 +84,23 @@
         [(procedure? v) (package-evaluator->xiden-query v)]))
 
 
-(define (package-evaluator->xiden-query pkgeval [assume-output "default"])
-  (xiden-query (xiden-evaluator-ref pkgeval 'provider)
-               (xiden-evaluator-ref pkgeval 'package)
-               (xiden-evaluator-ref pkgeval 'edition "default")
-               (xiden-evaluator-ref pkgeval 'revision-number)
-               (xiden-evaluator-ref pkgeval 'revision-number)
+(define (package-evaluator->xiden-query pkgeval [assume-output ""])
+  (xiden-query (xiden-evaluator-ref pkgeval 'provider "")
+               (xiden-evaluator-ref pkgeval 'package "")
+               (xiden-evaluator-ref pkgeval 'edition "")
+               (~a (xiden-evaluator-ref pkgeval 'revision-number ""))
+               (~a (xiden-evaluator-ref pkgeval 'revision-number ""))
                "ii"
                assume-output))
 
+(define (query-ref s def)
+  (if (non-empty-string? s)
+      s
+      def))
 
 (define (xiden-query-string? s)
   (with-handlers ([values (const #f)])
-    (and (string->xiden-query s) #t)))
+    (well-formed-xiden-query/c (string->xiden-query s))))
 
 
 (define (string->xiden-query s)
@@ -121,8 +125,9 @@
                                         #:named-interval [named-interval #f]
                                         #:lo [lo (string->number (xiden-query-revision-min d))]
                                         #:hi [hi (string->number (xiden-query-revision-max d))])
+  (define bounds (query-ref (xiden-query-interval-bounds d) "ii"))
   (define (->bool i)
-    (define flag (string-ref (xiden-query-interval-bounds d) i))
+    (define flag (string-ref bounds i))
     (match flag
       [#\i #f]
       [#\e #t]

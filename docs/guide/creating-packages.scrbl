@@ -46,17 +46,49 @@ A definition consists of inputs, outputs, and a build procedure in
 between.
 
 The discovery information near the top of the document should make
-sense at first glance. The following queries would match this package
-definition:
+sense at first glance.
 
-@itemlist[
-@item{@litchar{example.com:uri:draft:21}}
-@item{@litchar{example.com:uri:draft:21:21:ii}}
-@item{@litchar{example.com:uri:draft:alpha}}
-@item{@litchar{example.com:uri:draft:alpha:::lib}}
+
+@section{Versioning}
+
+@project-name uses a versioning scheme for @tech{package definitions}.
+A version consists of several pieces of information.
+
+@racketblock[
+(define edition "draft")
+(define revision-number 21)
+(define revision-names '("alpha"))
 ]
 
+A package version consists of an @tech{edition} and a @tech{revision}.
+
+An @deftech{edition} is @bold{the name of a design}. It acts as a
+semantic alternative to a major version number. When you wish to
+adapt your software to a different audience without disrupting others,
+change the edition.
+
+A @deftech{revision} is an @bold{implementation of a design}. It
+can be a @tech{revision number} or a @tech{revision name}.
+
+A @deftech{revision number} is a non-negative integer. Every revision is
+forever assigned the next available number in an edition.
+
+A @deftech{revision name} is an alias for a @tech{revision number}. It
+can be any string that contains at least one non-digit.
+
+A package must have a @tech{revision number}. When changed, a package must
+increment its @tech{revision number} if the change uses the same
+@tech{edition}. If the package starts a new edition, the @tech{revision number}
+must reset to @racket[0].
+
+The default name of an edition is @racket{default}. By the above
+rules, every package starts on the zeroth revision of the
+@racket{default} edition.
+
+
 @section{Package Inputs}
+
+A package @deftech{input} is a deferred request for exact bytes.
 
 @racketblock[
   (input "code.tar.gz"
@@ -64,12 +96,14 @@ definition:
              "https://mirror.example.com/uri/alpha.tgz")
              (integrity 'sha384 (base64 "KxAqYG79sTcKi8yuH/YkdKE+O9oiBsXIlwWs3pBwv/mXT9/jGuK0yqcwmjM/nNLe")))]
 
-A package @deftech{input} is a request for exact bytes. In plain
-language, this expression tells @project-name to make a file called
-@racket{code.tar.gz} available in our directory when
-building. @project-name will try to fetch the archive from the given
-@racketfont{sources}, and will raise an error if it cannot match the
-integrity information.
+In plain language, this expression tells @project-name that a build
+will need @racket{code.tar.gz} available. @project-name will lazily
+fetch the archive from the given @racketfont{sources}.
+
+An input might only be available during a build (making it a build-time
+dependency), or may persist after the build complete for run-time use.
+The only difference from @|project-name|'s perspective is whether
+the input is subject to garbage collection after a build completes.
 
 
 @subsection{Authenticating Inputs}
@@ -83,44 +117,67 @@ This example uses a base64-encoding of a DES signature, with a
 public-key fingerprint.
 
 @racketblock[(input (sources "https://example.com/path/to/artifact")
-                    (integrity sha384 (base64 "KxAqYG79sTcKi8yuH/YkdKE+O9oiBsXIlwWs3pBwv/mXT9/jGuK0yqcwmjM/nNLe"))
-                    (signature des (base64 "") (fingerprint "")))]
+                    (integrity 'sha384 (base64 "KxAqYG79sTcKi8yuH/YkdKE+O9oiBsXIlwWs3pBwv/mXT9/jGuK0yqcwmjM/nNLe"))
+                    (signature 'des (base64 "") (fingerprint "")))]
 
 @binary uses a signature and a public key you (presumably) trust to
 confirm that the @italic{digest} was signed with someone's private
-key.
+key. Vetting public keys is out of scope for this guide. Just know
+that if you do not trust the public key, then a signature offers no
+added protection.
 
-@subsection{About Trusting Public Keys}
+@subsection{Merging Definitions}
 
-The presence of a signature has @italic{nothing} to do with how much
-you should trust the input.
+You can combine package definitions together to create new
+definitions. If you have one package definition that is hard to read
+because of the embedded integrity information, you can instead write
+an abbreviated version.
 
-In general, your trust in an input depends on if the public key you
-use to verify the signature actually came from a party you trust.
-Vetting public keys is out of scope for this guide.
+@racketmod[
+xiden
 
-If you are unsure about the validity of a signature, then declaring
-that signature will offer no added protection.
+(define package "uri")
+(define provider "example.com")
+(define edition "draft")
+(define revision-number 21)
+(define revision-names '("alpha"))
+(define racket-versions '(("6.0" . #f)))
 
-@subsection{Using Signatures in a Self-Contained Definition}
+(define inputs
+  (list (input "lib.tar.gz")
+        (input "doc.tar.gz")
+        (input "all.tar.gz")))
 
-Remember that @binary understands the signature as expressions of
-bytes. While it would be painful to read, you can embed the raw byte
-content of each piece of data.
+(define outputs
+  '("lib" "doc" "all"))
 
-@racketblock[(input (sources "https://example.com/path/to/artifact")
-                    (integrity sha384 (base64 "KxAqYG79sTcKi8yuH/YkdKE+O9oiBsXIlwWs3pBwv/mXT9/jGuK0yqcwmjM/nNLe"))
-                    (signature des (base64 "") #"... a lot of bytes ..."))]
+(define (build target)
+  (unpack (input-ref (string-append target ".tar.gz"))))
+]
 
-Why do this? Because it makes the package definition self-contained.
-That means you do not need to configure @binary to look up more
-information to understand a package definition.
+After doing so, you can then merge the definitions.
 
-If you cannot stand how the package definition looks with a full
-public key pasted in the file, then read @secref{merging}.
+@verbatim|{
+$ xiden merge light.rkt heavy.rkt > combined.rkt
+$ xiden install combined.rkt
+}|
+
+The merge algorithm is configurable. You can use it to override
+inputs, remove outputs, or migrate definitions. Merging from different
+sources means you can leverage community mods for established packages.
+
+@verbatim|{
+$ xiden merge example.com:calculator https://gist.githubusercontent.com/... > modded.rkt
+$ xiden install modded.rkt
+}|
 
 
 @section{Package Outputs}
+
+@racketblock[
+(define outputs
+  '("lib" "doc" "all"))
+]
 
 Package outputs are a little easier to grasp. They are just names like
 @racket{doc}, @racket{lib}, or @racket{gui}. They list accepted
@@ -130,21 +187,19 @@ Package outputs do not declare integrity information. Since a
 package's output can serve as another package's input, the bits would
 be verified once they are used as input.
 
+Every package definition has an implicit @racket{default} output, even
+if @racket[outputs] is not defined. If a user does not request a
+particular output from a package, then @project-name will use the
+@racket{default} output.
 
-@subsection{What About Nondeterministic Builds?}
+
+@subsection{On Nondeterministic Builds}
 
 If a package's output contains changing data like an embedded
 timestamp, then the digest of that output will change. That prevents
 you from using the same integrity information to verify a package's
 output. It does not make sense to respond by leaving out integrity
 information, because that level of trust is a security vulnerability.
-
-In practice, this is only a problem if an input's source returns
-different information across builds. If that happens, then that is an
-issue to take up with whoever owns that source. Package inputs are
-also not expected to be things like bytecode files, they are expected
-to be source code or other inputs to a Racket program acting
-@italic{as} a build system.
 
 
 

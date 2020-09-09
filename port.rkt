@@ -71,7 +71,9 @@
         (handle-evt
          (read-bytes-avail!-evt buffer from)
          (λ (variant)
-           (cond [(eof-object? variant) (void)]
+           (cond [(eof-object? variant)
+                  (on-status ($transfer-progress transfer-name max-size max-size (current-seconds)))
+                  (void)]
                  [(and (number? variant) (> variant 0))
                   (define bytes-read* (+ bytes-read variant))
                   (write-bytes buffer to 0 variant)

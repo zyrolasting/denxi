@@ -153,7 +153,7 @@
     "source"))
 
 
-(define-xiden-setting XIDEN_UNINSTALL_SOURCES (listof string?) 'multi '("-u") #f
+(define-xiden-setting XIDEN_UNINSTALL_SOURCES (listof string?) 'multi '("-u") null
   '("Add an uninstallation to transaction"
     "source"))
 
@@ -281,11 +281,11 @@
     "exact-nonnegative-integer"))
 
 
-(define-xiden-setting XIDEN_ALLOW_UNDECLARED_RACKET_VERSIONS boolean? 'once-each '("-u") #f
+(define-xiden-setting XIDEN_ALLOW_UNDECLARED_RACKET_VERSIONS boolean? 'once-each '("--allow-undeclared-racket") #f
   (switch-help "Install packages even if they do not declare supported Racket versions"))
 
 
-(define-xiden-setting XIDEN_ALLOW_UNSUPPORTED_RACKET boolean? 'once-each null #f
+(define-xiden-setting XIDEN_ALLOW_UNSUPPORTED_RACKET boolean? 'once-each '("--assume-support") #f
   (switch-help "Install packages even if they declare that they do not support the running version of Racket."))
 
 

@@ -19,6 +19,8 @@
 ; Provided ids include relation structs. See use of define-relation.
 (provide (struct-out record)
          (contract-out
+          [xiden-collect-garbage
+           (-> void?)]
           [declare-output
            (-> non-empty-string?
                non-empty-string?
@@ -28,12 +30,15 @@
                string?
                path-record?
                output-record?)]
-          [use-output
+          [call-with-reused-output
            (-> xiden-query-variant?
-               (-> any)
+               (-> (or/c #f exn? output-record?) any)
                any)]
+          [in-xiden-outputs
+           (-> xiden-query-variant?
+               (sequence/c output-record?))]
           [in-path-links
-           (-> path-record? (sequence/c link-record?))]
+           (-> path-record? (sequence/c path-record?))]
           [find-exactly-one
            (->* (record?) (procedure?) (or/c #f record?))]
           [start-fs-transaction
@@ -43,7 +48,12 @@
           [build-addressable-path
            (-> bytes? complete-path?)]
           [in-xiden-objects
-           (-> xiden-query? (sequence/c revision-number? path-string? path-string?))]
+           (-> xiden-query-variant?
+               (sequence/c path-string?
+                           exact-positive-integer?
+                           revision-number?
+                           exact-positive-integer?
+                           path-string?))]
           [make-addressable-file
            (-> non-empty-string? input-port? (or/c +inf.0 exact-positive-integer?) path-record?)]
           [make-addressable-directory
@@ -51,7 +61,7 @@
           [delete-record
            (-> record? void?)]
           [make-addressable-link
-           (-> path-record? path-string? link-record?)]))
+           (-> path-record? path-string? path-record?)]))
 
 
 (require (for-syntax racket/base
@@ -134,9 +144,11 @@
 ;------------------------------------------------------------------------------
 ; Entity definitions
 
-(define-relation paths (path digest)
+(define-relation paths (path digest target-id)
   "path TEXT UNIQUE NOT NULL"
-  "digest BLOB")
+  "digest BLOB"
+  "target_id INTEGER"
+  "FOREIGN KEY (target_id) REFERENCES paths(id) ON DELETE RESTRICT ON UPDATE CASCADE")
 
 (define-relation providers (provider-name)
   "name TEXT NOT NULL")
@@ -161,26 +173,13 @@
   "revision_id INTEGER NOT NULL"
   "FOREIGN KEY (revision_id) REFERENCES revisions(id)")
 
-(define-relation links (target-path-id link-path-id)
-  "target_path_id INTEGER NOT NULL"
-  "link_path_id INTEGER NOT NULL"
-  "FOREIGN KEY (target_path_id) REFERENCES paths(id) ON DELETE RESTRICT ON UPDATE RESTRICT"
-  "FOREIGN KEY (link_path_id)   REFERENCES paths(id) ON DELETE RESTRICT ON UPDATE RESTRICT")
-
-(define-relation outputs (revision-id path-id output-name state)
+(define-relation outputs (revision-id path-id name)
   "revision_id INTEGER NOT NULL"
   "path_id INTEGER NOT NULL"
-  "output_name TEXT NOT NULL"
-  "state INTEGER NOT NULL"
+  "name TEXT NOT NULL"
   "FOREIGN KEY (revision_id) REFERENCES revisions(id) ON DELETE CASCADE ON UPDATE CASCADE"
   "FOREIGN KEY (path_id)     REFERENCES paths(id) ON DELETE CASCADE ON UPDATE CASCADE")
 
-
-;------------------------------------------------------------------------------
-; Output states aid garbage collection and file reuse.
-
-(define OUTPUT_STATE_INSTALLED   0)
-(define OUTPUT_STATE_UNINSTALLED 1)
 
 
 ;----------------------------------------------------------------------------------
@@ -214,6 +213,31 @@
         (current-db-connection (connect))
         (query-exec+ "pragma foreign_keys = on;"))
       (apply f formals))))
+
+
+(define (xiden-collect-garbage)
+  (define (in-unreferenced-paths)
+    (define referenced-paths
+      (~a "select target_id from "
+          (relation-name paths)
+          " where target_id is not NULL"))
+    (in-query+
+     (~a "select P.id,P.path from " (relation-name paths) " as P "
+         " where target_id is NULL and "
+         " id not in (" referenced-paths ");")))
+
+  (define (remove-dead-links)
+    (define links (~a "select id,path from " (relation-name paths) " where target_id is not NULL"))
+    (for ([(id path) (in-query+ links)])
+      (unless (link-exists? path)
+        (delete-record (path-record id #f #f #f #f)))))
+
+  (create paths)
+  (parameterize ([current-directory (workspace-directory)])
+    (remove-dead-links)
+    (for ([(id path) (in-unreferenced-paths)])
+      (delete-directory/files path #:must-exist? #f)
+      (delete-record (path-record id #f #f #f #f)))))
 
 
 (define (create has-relation)
@@ -433,20 +457,19 @@
                       (λ (e)
                         (copy-directory/files path dest #:preserve-links? #t)
                         (delete-directory/files path))])
-       (rename-file-or-directory path dest #t)
-       (declare-path (find-relative-path (workspace-directory) path)
-                     digest)))))
-
+       (rename-file-or-directory path dest #t))
+     (declare-path (find-relative-path (workspace-directory) dest)
+                   digest))))
 
 (define-db-procedure (make-addressable-link target-path-record link-path)
   (make-file-or-directory-link
    (find-relative-path (path-only (simplify-path (path->complete-path link-path)))
                        (build-workspace-path (path-record-path target-path-record)))
    link-path)
-  (gen-save (link-record #f
-                         (record-id target-path-record)
-                         (record-id (declare-path link-path
-                                                  (path-record-digest target-path-record))))))
+  (gen-save (path-record #f
+                         link-path
+                         sql-null
+                         (record-id target-path-record))))
 
 
 (define (make-directory-content-digest output-name path)
@@ -462,7 +485,7 @@
   (write-message m
    (message-formatter
     [($transfer-progress name bytes-read max-size timestamp)
-     (format "~a%" (~r (* 100 (/ bytes-read max-size)) #:precision 0))]
+     (format "~a: ~a%" name (~r (* 100 (/ bytes-read max-size)) #:precision 0))]
     [($transfer-small-budget name)
      (format "Cannot transfer ~s. The configured budget is too small."
              name)]
@@ -476,23 +499,18 @@
 
 
 (define-db-procedure (declare-path unnormalized-path digest)
-  ; (*) Error code 2067 in SQLite means that the UNIQUE constraint was
-  ; violated. Non-unique path declarations are ignored because it's
-  ; not unusual to revisit the same paths. I'm not sure what the
-  ; performance difference is between allowing SQLite to raise an error
-  ; vs. running an existential query in advance.
-  (define path (normalize-path-for-db unnormalized-path))
-  (with-handlers ([exn:fail:sql?
-                   (λ (e)
-                     (if (equal? (cdr (assoc 'errcode (exn:fail:sql-info e))) 2067)
-                         (or (find-exactly-one (path-record #f path digest))
-                             (error 'declare-path "Attempted to redeclare path ~a on conflicting digest" path))
-                         (raise e)))])
-    (gen-save (path-record #f path digest))))
+  (gen-save (path-record #f (normalize-path-for-db unnormalized-path) digest sql-null)))
 
 
-(define-db-procedure (in-path-links path-record-inst)
-  (search-by-record (link-record #f (record-id path-record-inst) #f)))
+(define-db-procedure (declare-link unnormalized-path path-id)
+  (gen-save (path-record #f
+                         (normalize-path-for-db unnormalized-path)
+                         sql-null
+                         path-id)))
+
+
+(define-db-procedure (in-path-links path-id)
+  (search-by-record (path-record #f #f #f path-id)))
 
 
 (define (normalize-path-for-db path)
@@ -518,13 +536,16 @@
   (gen-save (output-record #f
                            revision-id
                            (record-id output-path-record)
-                           output-name
-                           OUTPUT_STATE_INSTALLED)))
-
+                           output-name)))
 
 
 (define (find-revision-number v edition-id)
-  (cond [(revision-number? v) v]
+  (cond [(equal? v "")
+         (query-maybe-value+
+          (~a "select number from "
+              (relation-name revisions)
+              " order by number desc limit 1;"))]
+        [(revision-number? v) v]
         [(revision-number-string? v) (string->number v)]
         [else (query-maybe-value+
                (~a "select R.number from "
@@ -580,7 +601,7 @@
                                          query)))
 
      (define sql
-       (~a "select R.id, R.number, O.output_name, P.path from "
+       (~a "select O.name, R.id, R.number, P.id, P.path from "
            (relation-name paths) " as P"
            " inner join " (relation-name outputs) " as O"
            " on O.path_id = P.id"
@@ -596,20 +617,39 @@
 
      (apply in-query+ sql params))))
 
-(define-db-procedure (use-output query fail)
-  (call/cc
-   (λ (k)
-    (define seq (in-xiden-objects query))
 
-    (define-values (rev-id rev-no output-name path)
-      (with-handlers ([values (λ (e) (k (fail)))])
-        (sequence-ref seq 0)))
+(define-db-procedure (in-xiden-outputs query-variant)
+  (sequence-map (λ (rid rn on path) (find-exactly-one (output-record #f rid #f #f)))
+                (in-xiden-objects query-variant)))
 
-    (define rec (find-exactly-one (output-record #f rev-id #f output-name #f)))
-    (if rec
-        (gen-save (struct-copy output-record rec
-                               [state OUTPUT_STATE_INSTALLED]))
-        (fail)))))
+
+(define-db-procedure (output-record->query output-record-inst)
+  (match-define (vector provider-name package-name edition-name revision-number)
+    (query-row+ (~a "select P.name, K.name, E.name, R.number"
+                    " from "       (relation-name providers) " as P"
+                    " inner join " (relation-name packages)  " as K on P.id = K.provider_id"
+                    " inner join " (relation-name editions)  " as E on K.id = E.package_id"
+                    " inner join " (relation-name revisions) " as R on E.id = R.edition_id"
+                    " where R.id = ?")
+                (output-record-revision-id output-record-inst)))
+  (xiden-query provider-name
+               package-name
+               edition-name
+               (~a revision-number)
+               (~a revision-number)
+               "ii"
+               (output-record-name output-record-inst)))
+
+
+(define-db-procedure (call-with-reused-output query continue)
+  (continue
+   (call/cc
+    (λ (k)
+      (define-values (output-name rev-id rev-no path-id path)
+        (with-handlers ([values k])
+          (sequence-ref (in-xiden-objects query) 0)))
+      (find-exactly-one (output-record #f rev-id #f output-name))))))
+
 
 (module+ test
   (require rackunit)
@@ -629,8 +669,8 @@
 
   (test-db "Declare a path"
     (declare-path "a/b/c" #"digest")
-    (check-equal? (find-exactly-one (path-record #f "a/b/c" #f))
-                  (path-record 1 "a/b/c" #"digest"))
+    (check-equal? (find-exactly-one (path-record #f "a/b/c" #f #f))
+                  (path-record 1 "a/b/c" #"digest" sql-null))
     (test-exn "Forbid duplicate paths"
               exn:fail?
               (λ ()
@@ -656,7 +696,7 @@
                       "lib"
                       pathrec))
 
-    (check-equal? outrec (output-record 1 1 1 "lib" OUTPUT_STATE_INSTALLED))
+    (check-equal? outrec (output-record 1 1 1 "lib"))
 
     (for ([name (in-list revision-names)])
       (test-equal? (format "Resolve revision name ~a" name)
@@ -688,11 +728,10 @@
        (in-values-sequence
         (in-xiden-objects "a.example.com:widget:default:rev-3:7:ei:lib"))))
 
-    (check-equal? (map cdr actual-results)
+    (check-equal? (map (match-lambda [(list o _ rev-n _ path) (list rev-n o path)]) actual-results)
                   (build-list 4
                               (λ (i [n (- 7 i)])
                                 (list n (~a "out" n) (~a "path" n))))))
-
 
 
   (test-case "Infer clauses for a SELECT query to find missing information"

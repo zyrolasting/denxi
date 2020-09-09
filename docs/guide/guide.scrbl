@@ -17,10 +17,8 @@ running Racket installation.
 @include-section{concepts.scrbl}
 @include-section{creating-packages.scrbl}
 @include-section{adding.scrbl}
-@include-section{removing.scrbl}
 @include-section{queries.scrbl}
 @include-section{workspace.scrbl}
-@include-section{versioning.scrbl}
 @include-section{config.scrbl}
 @include-section{plugin.scrbl}
 @include-section{reproduction.scrbl}
