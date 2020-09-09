@@ -25,7 +25,7 @@
        any)]
   [fold-transaction-actions
    (-> (listof (cons/c procedure? any/c))
-       (hash/c procedure? (-> logged?))
+       (hash/c procedure? (-> any/c logged?))
        (listof (-> logged?)))]))
 
 

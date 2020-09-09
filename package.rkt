@@ -51,49 +51,45 @@
 
 
 (define (install-package-with-source source)
-  (do pkgeval          <- (make-package-evaluator source)
-      output-name      <- (find-expected-output pkgeval source)
-      build-output     <- (install-output pkgeval output-name)
-      (return (report-installation-results pkgeval output-name build-output))))
+  (do pkgeval       <- (make-package-evaluator source)
+      output-name   <- (find-expected-output pkgeval source)
+      build-output  <- (install-output pkgeval output-name)
+      results       <- (report-installation-results (package-name pkgeval output-name) build-output)
+      (return (logged-unit (kill-evaluator pkgeval)))))
 
 
 (define (uninstall-package-with-source source)
-  (do pkgeval          <- (make-package-evaluator source)
-      output-name      <- (find-expected-output pkgeval source)
+  (do pkgeval     <- (make-package-evaluator source)
+      output-name <- (find-expected-output pkgeval source)
       (return (uninstall-output pkgeval output-name))))
 
 
 (define (uninstall-output pkgeval output-name)
-  (call-with-configured-package-evaluator
-   pkgeval
-   (λ ()
-     (call-with-reused-output
-      (package-evaluator->xiden-query pkgeval output-name)
-      (λ (v)
-        (if (output-record? v)
-            (begin
-              (delete-record
-               (find-exactly-one
-                (path-record #f #f #f #f (output-record-path-id v))))
-              (logged-unit SUCCESS))
-            (logged-attachment SUCCESS
-                               ($package-not-installed (package-name pkgeval output-name)))))))))
+  (call-with-reused-output
+   (package-evaluator->xiden-query pkgeval output-name)
+   (λ (v)
+     (if (output-record? v)
+         (begin
+           (delete-record
+            (find-exactly-one
+             (path-record #f #f #f #f (output-record-path-id v))))
+           (logged-unit SUCCESS))
+         (logged-attachment SUCCESS
+                            ($package-not-installed (package-name pkgeval output-name)))))))
 
 
-
-(define (call-with-configured-package-evaluator pkgeval proc)
-  ; Instrument top-level bindings as a hash table because evaluator calls cannot nest.
+(define (configure-evaluator pkgeval)
   (pkgeval `(current-info-lookup
              (let ([h ,(xiden-evaluator->hash pkgeval)])
                (λ (k f) (hash-ref h k f)))))
-  (dynamic-wind void proc (λ () (kill-evaluator pkgeval))))
+  pkgeval)
 
 
 (define (make-package-evaluator source)
   (do sourced-eval    <- (fetch-package-definition source)
       validated-eval  <- (validate-evaluator sourced-eval)
       supported-eval  <- (check-racket-support validated-eval)
-      (return supported-eval)))
+      (return (configure-evaluator supported-eval))))
 
 
 (define (find-expected-output pkgeval source)
@@ -101,13 +97,10 @@
     (if (xiden-query-string? source)
         (xiden-query-output-name (string->xiden-query source))
         "default"))
-  (if (member output-name
-              (cons "default" (pkgeval 'outputs)))
+
+  (if (member output-name (cons "default" (xiden-evaluator-ref pkgeval 'outputs null)))
       (logged-unit output-name)
-      (logged-failure
-       ($undefined-package-output
-        (package-name pkgeval)
-        output-name))))
+      (logged-failure ($undefined-package-output (package-name pkgeval) output-name))))
 
 
 (define (validate-evaluator pkgeval)
@@ -144,27 +137,24 @@
   (xiden-query->string (package-evaluator->xiden-query pkgeval output-name)))
 
 
-(define (report-installation-results pkgeval output-name build-output)
+(define (report-installation-results name build-output)
   (logged-attachment build-output
                      (if (eq? build-output SUCCESS)
-                         ($package-installed (package-name pkgeval output-name))
-                         ($package-not-installed (package-name pkgeval output-name)))))
+                         ($package-installed name)
+                         ($package-not-installed name))))
 
 
 (define (install-output pkgeval output-name)
-  (call-with-configured-package-evaluator
-   pkgeval
-   (λ ()
-     (logged
-      (λ (messages)
-        (values SUCCESS
-                (cons (call-with-reused-output
-                       (package-evaluator->xiden-query pkgeval output-name)
-                       (λ (v)
-                         (if (output-record? v)
-                             ($reused-package-output (package-name pkgeval output-name))
-                             (build-package-output pkgeval output-name))))
-                      messages)))))))
+  (logged
+   (λ (messages)
+     (values SUCCESS
+             (cons (call-with-reused-output
+                    (package-evaluator->xiden-query pkgeval output-name)
+                    (λ (v)
+                      (if (output-record? v)
+                          ($reused-package-output (package-name pkgeval output-name))
+                          (build-package-output pkgeval output-name))))
+                   messages)))))
 
 
 ; This is the heart of filesystem changes for a package installation.
