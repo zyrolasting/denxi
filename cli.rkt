@@ -267,11 +267,25 @@ EOF
    (λ (flags what)
      (match what
        ["workspace"
-        (halt 0 ($show-string (path->string ((workspace-directory)))))]
+        (halt 0 ($show-string (path->string (workspace-directory))))]
+
        ["installed"
-        (define in-installed '(TODO database query))
-        (halt 0 (for/list ([path in-installed])
-                  ($show-string path)))]
+        (halt 0
+              (sequence->list
+               (sequence-map
+                (match-lambda*
+                  [(list _ provider _ package _ edition _ revision _ output _ path)
+                   ($show-string (format "~a - ~a"
+                                         (xiden-query->string
+                                          (xiden-query provider
+                                                       package
+                                                       edition
+                                                       (~a revision)
+                                                       (~a revision)
+                                                       "ii"
+                                                       output))
+                                         path))])
+                (in-all-installed))))]
        [_
         (halt 1 ($unrecognized-command what))]))
    #<<EOF

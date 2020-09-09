@@ -21,6 +21,8 @@
          (contract-out
           [xiden-collect-garbage
            (-> void?)]
+          [in-all-installed
+           (-> sequence?)]
           [declare-output
            (-> non-empty-string?
                non-empty-string?
@@ -30,6 +32,10 @@
                string?
                path-record?
                output-record?)]
+          [find-xiden-query
+           (-> exact-positive-integer?
+               string?
+               (or/c xiden-query? #f))]
           [call-with-reused-output
            (-> xiden-query-variant?
                (-> (or/c #f exn? output-record?) any)
@@ -394,7 +400,6 @@
 ; leaves a discrepency between paths in the DB and existing paths on the filesystem.
 ; To roll back the filesystem, delete every file not declared in the database.
 
-
 (define-db-procedure (rollback-fs-transaction)
   (with-handlers ([exn:fail:sql? void]) (query-exec+ "rollback transaction;"))
   (for ([path (in-directory (build-object-path))])
@@ -406,6 +411,7 @@
   (with-handlers ([values void]) (query-exec+ "begin exclusive transaction;"))
   (values (λ () (query-exec+ "commit transaction;"))
           (λ () (rollback-fs-transaction))))
+
 
 ;----------------------------------------------------------------------------------
 ; These procedures control file output, such that each written file comes
@@ -559,6 +565,17 @@
                edition-id v)]))
 
 
+(define-db-procedure (in-all-installed)
+  (in-query+
+   (~a "select U.id, U.name, K.id, K.name, E.id, E.name, R.id, R.number, O.id, O.name, P.id, P.path from "
+       (relation-name paths) " as P"
+       " inner join " (relation-name outputs) " as O on O.path_id = P.id"
+       " inner join " (relation-name revisions) " as R on R.id = O.revision_id "
+       " inner join " (relation-name editions) " as E on E.id = R.edition_id"
+       " inner join " (relation-name packages) " as K on K.id = E.package_id"
+       " inner join " (relation-name providers) " as U on U.id = K.provider_id")))
+
+
 
 (define-db-procedure (in-xiden-objects query-variant)
   (define query (coerce-xiden-query query-variant))
@@ -623,7 +640,7 @@
                 (in-xiden-objects query-variant)))
 
 
-(define-db-procedure (output-record->query output-record-inst)
+(define-db-procedure (find-xiden-query output-name revision-id)
   (match-define (vector provider-name package-name edition-name revision-number)
     (query-row+ (~a "select P.name, K.name, E.name, R.number"
                     " from "       (relation-name providers) " as P"
@@ -631,14 +648,14 @@
                     " inner join " (relation-name editions)  " as E on K.id = E.package_id"
                     " inner join " (relation-name revisions) " as R on E.id = R.edition_id"
                     " where R.id = ?")
-                (output-record-revision-id output-record-inst)))
+                revision-id))
   (xiden-query provider-name
                package-name
                edition-name
                (~a revision-number)
                (~a revision-number)
                "ii"
-               (output-record-name output-record-inst)))
+               output-name))
 
 
 (define-db-procedure (call-with-reused-output query continue)
