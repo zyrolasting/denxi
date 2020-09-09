@@ -252,9 +252,9 @@
 ; Where to place launchers
 (define-xiden-setting XIDEN_LAUNCHER_RELATIVE_PATH
   (and/c path-string? (not/c complete-path?))
-  "bin"
   'once-each
   '("-L")
+  "bin"
   '("Workspace-relative path for launchers"
     "relative-path-string"))
 
