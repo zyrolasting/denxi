@@ -86,7 +86,7 @@
   gc       Collect garbage
   link     Create link to stored file
   config   Manage configuration
-  sandbox  Start sandboxed REPL in package
+  sandbox  Start sandboxed REPL
 
 EOF
    ))
