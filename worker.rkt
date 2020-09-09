@@ -9,23 +9,15 @@
          racket/sequence
          compiler/cm
          "actor.rkt"
-         "archiving.rkt"
-         "contract.rkt"
          "file.rkt"
          "format.rkt"
-         "integrity.rkt"
          "message.rkt"
          "printer.rkt"
          "query.rkt"
-         "racket-version.rkt"
          "rc.rkt"
          "sentry.rkt"
          "setting.rkt"
-         "signature.rkt"
          "string.rkt"
-         "team.rkt"
-         "url.rkt"
-         "openssl.rkt"
          "workspace.rkt")
 
 (define+provide-message $compilation-error (module-path message))
