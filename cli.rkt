@@ -62,11 +62,10 @@
    #:args args
    #:halt halt
    #:flags
-   `((once-each .
-      ,(settings->flag-specs
-        XIDEN_FASL_OUTPUT
-        XIDEN_READER_FRIENDLY_OUTPUT
-        XIDEN_VERBOSE)))
+   (settings->flag-specs
+    XIDEN_FASL_OUTPUT
+    XIDEN_READER_FRIENDLY_OUTPUT
+    XIDEN_VERBOSE)
    (λ (flags action . args)
      (with-rc flags
        (define proc
@@ -141,23 +140,20 @@ EOF
    #:halt halt
    #:arg-help-strings '("+/-source")
    #:flags
-   `((multi .
-      ,(settings->flag-specs
-        XIDEN_INSTALL_SOURCES
-        XIDEN_UNINSTALL_SOURCES))
-     (once-each .
-      ,(settings->flag-specs
-        XIDEN_SERVICE_ENDPOINTS
-        XIDEN_DOWNLOAD_MAX_REDIRECTS
-        XIDEN_TRUST_BAD_DIGEST
-        XIDEN_TRUST_BAD_SIGNATURE
-        XIDEN_TRUST_UNSIGNED
-        XIDEN_LINK
-        XIDEN_ALLOW_UNDECLARED_RACKET_VERSIONS
-        XIDEN_ALLOW_UNSUPPORTED_RACKET
-        XIDEN_SANDBOX_MEMORY_LIMIT_MB
-        XIDEN_SANDBOX_EVAL_MEMORY_LIMIT_MB
-        XIDEN_SANDBOX_EVAL_TIME_LIMIT_SECONDS)))
+   (settings->flag-specs
+    XIDEN_INSTALL_SOURCES
+    XIDEN_UNINSTALL_SOURCES
+    XIDEN_SERVICE_ENDPOINTS
+    XIDEN_DOWNLOAD_MAX_REDIRECTS
+    XIDEN_TRUST_BAD_DIGEST
+    XIDEN_TRUST_BAD_SIGNATURE
+    XIDEN_TRUST_UNSIGNED
+    XIDEN_LINK
+    XIDEN_ALLOW_UNDECLARED_RACKET_VERSIONS
+    XIDEN_ALLOW_UNSUPPORTED_RACKET
+    XIDEN_SANDBOX_MEMORY_LIMIT_MB
+    XIDEN_SANDBOX_EVAL_MEMORY_LIMIT_MB
+    XIDEN_SANDBOX_EVAL_TIME_LIMIT_SECONDS)
    (λ (flags . +/-sources)
      (with-rc flags
        (displayln (XIDEN_INSTALL_SOURCES))
@@ -280,11 +276,10 @@ EOF
    #:halt halt
    #:arg-help-strings '("package-path")
    #:flags
-   `((once-each .
-      ,(settings->flag-specs
-        XIDEN_SANDBOX_MEMORY_LIMIT_MB
-        XIDEN_SANDBOX_EVAL_MEMORY_LIMIT_MB
-        XIDEN_SANDBOX_EVAL_TIME_LIMIT_SECONDS)))
+   (settings->flag-specs
+    XIDEN_SANDBOX_MEMORY_LIMIT_MB
+    XIDEN_SANDBOX_EVAL_MEMORY_LIMIT_MB
+    XIDEN_SANDBOX_EVAL_TIME_LIMIT_SECONDS)
    (λ (flags input-program)
      (with-rc flags
        (call-with-build-sandbox-parameterization

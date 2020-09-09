@@ -149,21 +149,21 @@
 
 
 (define-xiden-setting XIDEN_INSTALL_SOURCES (listof string?) 'multi '("-i") null
-  '("Add an installation to the transaction. May be specified multiple times."
+  '("Add installation to transaction"
     "source"))
 
 
 (define-xiden-setting XIDEN_UNINSTALL_SOURCES (listof string?) 'multi '("-u") #f
-  '("Add an uninstallation to the transaction. May be specified multiple times."
+  '("Add an uninstallation to transaction"
     "source"))
 
 
 (define-xiden-setting XIDEN_MATCH_RACKET_MODULES boolean? 'once-each '("-r") #f
-  (switch-help "Match against .rkt, .ss, .scrbl, and .rktd."))
+  (switch-help "Match .rkt, .ss, .scrbl, and .rktd"))
 
 
 (define-xiden-setting XIDEN_MATCH_COMPILED_RACKET boolean? 'once-each '("-b") #f
-  (switch-help "Match against .zo and .dep."))
+  (switch-help "Match .zo and .dep."))
 
 
 (define-xiden-setting XIDEN_MODS_MODULE (or/c #f path-string?) 'once-each '("-M") #f
@@ -176,7 +176,7 @@
                         'read-bytecode 'read 'exists)
                   (or/c byte-regexp? bytes? string? path?)))
   'multi '("-P") null
-  '("A value for sandbox-path-permissions"
+  '("Add entry to sandbox-path-permissions"
     "racket-value"))
 
 
@@ -190,37 +190,41 @@
 ; Scenario: Artifact signature cannot be verified with publisher's public key.
 ; This is more suspicious.
 (define-xiden-setting XIDEN_TRUST_BAD_SIGNATURE boolean? 'once-each '("--trust-bad-signature") #f
-  (switch-help "Trust signatures that don't match provider's public key"))
+  (switch-help "Trust signatures that don't match public key"))
 
 
 (define-xiden-setting XIDEN_TRUST_UNVERIFIED_HOST boolean? 'once-each '("--trust-any-host") #f
-  (switch-help "Trust servers that do not have a valid certificate."))
+  (switch-help "Download from any server without authenticating"))
 
 
-; Halt when downloaded artifact does not pass integrity check
-(define-xiden-setting XIDEN_TRUST_BAD_DIGEST boolean? 'once-each '("-D") #f
-  (switch-help (format "Trust artifacts that don't pass an integrity check. Implies ~a."
+(define-xiden-setting XIDEN_TRUST_BAD_DIGEST boolean? 'once-each '("--trust-any-digest") #f
+  (switch-help (format "(DANGEROUS) Trust any input. Implies ~a."
                        (setting-short-flag XIDEN_TRUST_UNSIGNED))))
 
 
 (define-xiden-setting XIDEN_FASL_OUTPUT boolean? 'once-each '("-F") #f
   (switch-help "Use FASL program output"))
 
+
 (define-xiden-setting XIDEN_FETCH_TOTAL_SIZE_MB (or/c +inf.0 real?) 'once-each null 100
-  '("The maximum size, in mibibytes, to read from any source. Set to +inf.0 to remove limit."
+  '("Maximum size, in mibibytes, to read from a source. +inf.0 = no limit"
     "mibibytes-or-+inf.0"))
 
+
 (define-xiden-setting XIDEN_FETCH_BUFFER_SIZE_MB (real-in 0.1 20) 'once-each null 10
-  '("The maximum size, in mibibytes, to read from a source at a time"
+  '("Buffer size, in mibibytes, used when reading bytes"
     "mibibytes"))
+
 
 (define-xiden-setting XIDEN_FETCH_PKGDEF_SIZE_MB (real-in 0.1 20) 'once-each null 0.1
   '("The maximum expected size, in mibibytes, of a package definition when scoping out work"
     "mibibytes"))
 
+
 (define-xiden-setting XIDEN_FETCH_TIMEOUT_MS (real-in 100 (* 1000 10)) 'once-each null 3000
   '("The maximum time, in milliseconds, to wait for a distinct read of bytes from a source"
     "milliseconds"))
+
 
 (define-xiden-setting XIDEN_READER_FRIENDLY_OUTPUT boolean? 'once-each '("-R") #f
   (switch-help "Use (read)able program output"))

@@ -120,9 +120,21 @@
        (parameterize ([(setting-derived-parameter s) v])
          (wip))))))
 
+(define (fold-flag-kinds h settings)
+  (if (null? settings)
+      h
+      (let ([s (car settings)])
+        (fold-flag-kinds
+         (hash-set h
+                   (setting-flag-kind s)
+                   (cons (make-flag-spec s)
+                         (hash-ref h (setting-flag-kind s) null)))
+         (cdr settings)))))
+
 
 (define (settings->flag-specs . settings)
-  (map make-flag-spec settings))
+  (for/list ([(kind grouped) (in-hash (fold-flag-kinds (hasheq) settings))])
+    (cons kind (reverse grouped))))
 
 
 (define-syntax (define-setting stx)
