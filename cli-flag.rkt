@@ -18,6 +18,7 @@
 (require "contract.rkt")
 
 (provide (struct-out cli-flag)
+         (struct-out cli-flag-state)
          (contract-out
           [make-cli-flag-table
            (->* () #:rest (listof cli-flag?) list?)]
@@ -38,6 +39,10 @@
 
 (struct cli-flag
   (setting kind additional-flag-strings arity convert help-strings)
+  #:transparent)
+
+(struct cli-flag-state
+  (flag-string flag-definition bind)
   #:transparent)
 
 
@@ -85,19 +90,20 @@
            ; The idea is that you can compose procedures like these to construct
            ; a parameterization. Composition means that one handler can build on
            ; top of the current value set by another.
-           (cons (car formals)
-                 (λ (expects-applied-setting)
-                   (λ ()
-                     ((cli-flag-setting c)
-                      (apply (cli-flag-convert c) formals)
-                      expects-applied-setting)))))
+           (cli-flag-state (car formals)
+                           c
+                           (λ (expects-applied-setting)
+                             (λ ()
+                               ((cli-flag-setting c)
+                                (apply (cli-flag-convert c) formals)
+                                expects-applied-setting)))))
          (add1 (cli-flag-arity c)))
         (cons (setting-description (cli-flag-setting c))
               (cli-flag-help-strings c))))
 
 
 (define (call-with-bound-cli-flags flags proc)
-  (((apply compose (map cdr flags)) proc)))
+  (((apply compose (map cli-flag-state-bind flags)) proc)))
 
 
 ;-------------------------------------------------------------------------------
@@ -201,8 +207,9 @@
     (check-equal? (procedure-arity handler) (add1 (cli-flag-arity TEST_SETTING/flag)))
     (check-equal? help-strings '("Test" "value"))
 
-    (match-define (cons flag-string args-bound) (handler "-t" "+inf.0"))
+    (match-define (cli-flag-state flag-string cli-flag-inst args-bound) (handler "-t" "+inf.0"))
     (check-equal? flag-string "-t")
+    (check-eq? cli-flag-inst TEST_SETTING/flag)
     (define callback-bound (args-bound (λ () (check-eq? (TEST_SETTING) +inf.0))))
 
     (callback-bound))
@@ -279,7 +286,7 @@
                                    "positional" "arguments")
                           (make-cli-flag-table multi-flag once-each-flag once-any-flag)
                           (λ (flags formal1 formal2)
-                            (check-equal? (map car flags)
+                            (check-equal? (map cli-flag-state-flag-string flags)
                                           '("-m"
                                             "--multi"
                                             "--TEST_MULTI"
