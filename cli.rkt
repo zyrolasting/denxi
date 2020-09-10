@@ -63,15 +63,16 @@
    #:args args
    #:halt halt
    #:flags
-   (make-cli-flag-table -F -R -v)
+   (make-cli-flag-table --fasl-output
+                        --reader-friendly-output
+                        --verbose)
    (λ (flags action . args)
      (with-rc flags
        (define proc
          (match action
-           ["pkg" pkg-command]
+           ["do" do-command]
            ["show" show-command]
            ["gc" gc-command]
-           ["link" link-command]
            ["config" config-command]
            ["sandbox" sandbox-command]
            [_ (const (halt 1 ($unrecognized-command action)))]))
@@ -79,31 +80,37 @@
 
    #<<EOF
 <action> is one of
-  pkg      Manage packages
-  show     Print helpful information
+  do       Run a transaction
   gc       Collect garbage
-  link     Create link to stored file
-  config   Manage configuration
+  show     Print reports
+  config   Manage settings
   sandbox  Start sandboxed REPL
 
 EOF
    ))
 
 
-(define (pkg-command args halt)
+(define (do-command args halt)
   (run-command-line
-   #:program "pkg"
+   #:program "do"
    #:args args
    #:halt halt
    #:arg-help-strings '()
    #:flags
-   (make-cli-flag-table -i -E -o -Y -T -U -A -G -M -e -S)
+   (make-cli-flag-table ++install-source
+                        ++host
+                        --max-redirects
+                        --trust-any-digest
+                        --trust-bad-signature
+                        --trust-unsigned
+                        --allow-undeclared-racket
+                        --assume-support
+                        --sandbox-memory-limit
+                        --sandbox-eval-memory-limit
+                        --sandbox-eval-time-limit)
    (λ (flags)
      (with-rc flags
-       (define lookup
-         (hasheq XIDEN_INSTALL_SOURCES   install-package-with-source
-                 XIDEN_BIND              set-output-identifier))
-
+       (define lookup (hasheq XIDEN_INSTALL_SOURCES install-package-with-source))
        (define actions (fold-transaction-actions flags lookup))
 
        (if (null? actions)
