@@ -20,6 +20,7 @@
          racket/list
          racket/format
          racket/vector
+         "cli-flag.rkt"
          "message.rkt"
          "monad.rkt"
          "printer.rkt"
