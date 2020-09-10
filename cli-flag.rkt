@@ -28,7 +28,7 @@
           [format-cli-flags
            (-> cli-flag? string?)]
           [call-with-bound-cli-flags
-           (-> (listof procedure?)
+           (-> (listof (cons/c string? procedure?))
                (-> any)
                any)]))
 
