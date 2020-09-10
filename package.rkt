@@ -9,6 +9,7 @@
          racket/sequence
          net/head
          version/utils
+         "cli-flag.rkt"
          "contract.rkt"
          "encode.rkt"
          "exn.rkt"
@@ -299,7 +300,7 @@
     (list (format "~a does not declare a supported Racket version."
                   info)
           (format "To install this package anyway, run again with ~a"
-                  (setting-short-flag XIDEN_ALLOW_UNDECLARED_RACKET_VERSIONS))))]
+                  (shortest-cli-flag --allow-undeclared-racket))))]
 
   [($package-malformed name errors)
    (format "~a has an invalid definition. Here are the errors for each field:~n~a"
@@ -324,7 +325,7 @@
                                       variant)))
                         versions)))
           (format "To install this package anyway, run again with ~a"
-                  (setting-format-all-flags XIDEN_ALLOW_UNSUPPORTED_RACKET))))])
+                  (format-cli-flags --assume-support))))])
 
 
 (module+ test

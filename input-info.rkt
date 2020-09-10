@@ -1,6 +1,7 @@
 #lang racket/base
 
-(require "contract.rkt"
+(require "cli-flag.rkt"
+         "contract.rkt"
          "format.rkt"
          "integrity.rkt"
          "localstate.rkt"
@@ -151,21 +152,21 @@
    (format (~a "~a failed its integrity check.~n"
                "While unsafe, you can force installation using ~a.")
            name
-           (setting-format-all-flags XIDEN_TRUST_BAD_DIGEST))]
+           (format-cli-flags --trust-any-digest))]
 
   [($input-signature-mismatch name source)
    (format (~a "~s's signature on ~s does not match any trusted public key.~n"
                "While unsafe, you can trust bad signatures using ~a.")
            name
            source
-           (setting-format-all-flags XIDEN_TRUST_BAD_SIGNATURE))]
+           (format-cli-flags --trust-bad-signature))]
 
   [($input-signature-missing name source)
    (format (~a "~a does not have a signature. If you are prototyping your own package, this is expected.~n"
                "If you got the package from the Internet, then exercise caution!~n"
                "To trust unsigned packages, use ~a.")
            name
-           (setting-format-all-flags XIDEN_TRUST_UNSIGNED))]
+           (format-cli-flags --trust-unsigned))]
 
   [($input-integrity-verified name source)
    (format "Integrity verified for input ~s from ~a" name source)]

@@ -48,6 +48,7 @@
 (require racket/function
          racket/sequence
          net/head
+         "cli-flag.rkt"
          "exn.rkt"
          "file.rkt"
          "format.rkt"
@@ -304,4 +305,4 @@
                "Connections to this server are not secure.~n"
                "To trust servers without valid certificates, use ~a.")
            url
-           (setting-format-all-flags XIDEN_TRUST_UNVERIFIED_HOST))])
+           (format-cli-flags --trust-any-host))])
