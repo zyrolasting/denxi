@@ -32,7 +32,8 @@
                (-> any)
                any)]))
 
-(require "setting.rkt"
+(require "rc.rkt"
+         "setting.rkt"
          "string.rkt")
 
 (struct cli-flag
@@ -84,18 +85,86 @@
            ; The idea is that you can compose procedures like these to construct
            ; a parameterization. Composition means that one handler can build on
            ; top of the current value set by another.
-           (λ (expects-applied-setting)
-             (λ ()
-               ((cli-flag-setting c)
-                (apply (cli-flag-convert c) formals)
-                expects-applied-setting))))
+           (cons (car formals)
+                 (λ (expects-applied-setting)
+                   (λ ()
+                     ((cli-flag-setting c)
+                      (apply (cli-flag-convert c) formals)
+                      expects-applied-setting)))))
          (add1 (cli-flag-arity c)))
         (cons (setting-description (cli-flag-setting c))
               (cli-flag-help-strings c))))
 
 
 (define (call-with-bound-cli-flags flags proc)
-  (((apply compose flags) proc)))
+  (((apply compose (map cdr flags)) proc)))
+
+
+;-------------------------------------------------------------------------------
+; CLI flag definitions
+
+(define (keep flag a) a)
+(define (arg->value flag a) (string->value a))
+(define (keep-for s) (λ (flag a) (cons a (s))))
+
+(define (cli-flag/unary setting convert help-str)
+  (cli-flag setting 'once-each null 1 convert (list help-str)))
+
+(define (cli-flag/boolean setting)
+  (cli-flag setting 'once-each null 1 arg->value "#t-or-#f"))
+
+(define (cli-flag/list setting help-string)
+  (cli-flag setting 'multi null 1 (keep-for setting) (list help-string)))
+
+
+; I use short flags as identifiers below to make Racket stop me if I
+; duplicate them across definitions.
+
+;-------------------------------------------------------------------------------
+; Unary flags
+
+(require (for-syntax racket/base syntax/stx))
+(define-syntax (flag-out stx)
+  (syntax-case stx ()
+    [(_ [id alts ...] expr)
+     (with-syntax ([(strs ...)
+                    (stx-map (λ (x) (datum->syntax x (symbol->string (syntax-e x))))
+                             #'(id alts ...))])
+       #'(begin (provide id (rename-out [id alts] ...))
+                (define id
+                  (struct-copy cli-flag expr
+                               [additional-flag-strings
+                                (list strs ...)]))))]))
+
+
+; Unary flags
+(flag-out [-X --plugin] (cli-flag/unary XIDEN_MODS_MODULE keep "path"))
+(flag-out [-M] (cli-flag/unary XIDEN_SANDBOX_MEMORY_LIMIT_MB arg->value "mibibytes"))
+(flag-out [-e] (cli-flag/unary XIDEN_SANDBOX_EVAL_MEMORY_LIMIT_MB arg->value "mibibytes"))
+(flag-out [-S] (cli-flag/unary XIDEN_SANDBOX_EVAL_TIME_LIMIT_SECONDS arg->value "seconds"))
+(flag-out [-m] (cli-flag/unary XIDEN_FETCH_TOTAL_SIZE_MB arg->value "mibibytes-or-+inf.0"))
+(flag-out [-n] (cli-flag/unary XIDEN_FETCH_BUFFER_SIZE_MB arg->value "mibibytes"))
+(flag-out [-p] (cli-flag/unary XIDEN_FETCH_PKGDEF_SIZE_MB arg->value "mibibytes"))
+(flag-out [-d] (cli-flag/unary XIDEN_FETCH_TIMEOUT_MS arg->value "milliseconds"))
+(flag-out [-q] (cli-flag/unary XIDEN_PRIVATE_KEY_PATH arg->value "path"))
+(flag-out [-o] (cli-flag/unary XIDEN_DOWNLOAD_MAX_REDIRECTS arg->value "exact-nonnegative-integer"))
+(flag-out [-E] (cli-flag/list XIDEN_SERVICE_ENDPOINTS "url-string"))
+
+; Unary boolean flags
+(flag-out [-r] (cli-flag/boolean XIDEN_MATCH_RACKET_MODULES))
+(flag-out [-b --match-compiled-racket] (cli-flag/boolean XIDEN_MATCH_COMPILED_RACKET))
+(flag-out [-U --trust-unsigned] (cli-flag/boolean XIDEN_TRUST_UNSIGNED))
+(flag-out [-T --trust-bad-signature] (cli-flag/boolean XIDEN_TRUST_BAD_SIGNATURE))
+(flag-out [-H --trust-any-host] (cli-flag/boolean XIDEN_TRUST_UNVERIFIED_HOST))
+(flag-out [-Y --trust-any-digest] (cli-flag/boolean XIDEN_TRUST_BAD_DIGEST))
+(flag-out [-F --fasl-output] (cli-flag/boolean XIDEN_FASL_OUTPUT))
+(flag-out [-R --reader-friendly-output] (cli-flag/boolean XIDEN_READER_FRIENDLY_OUTPUT))
+(flag-out [-v --verbose] (cli-flag/boolean XIDEN_VERBOSE))
+(flag-out [-A --allow-undeclared-racket] (cli-flag/boolean XIDEN_ALLOW_UNDECLARED_RACKET_VERSIONS))
+(flag-out [-G --assume-support] (cli-flag/boolean XIDEN_ALLOW_UNSUPPORTED_RACKET))
+
+; Transaction flags
+(flag-out [-f] (cli-flag XIDEN_INSTALL_SOURCES 'multi null 2 (λ (flag a b) (cons a b)) '("link-name" "source")))
 
 
 (module+ test
@@ -132,7 +201,8 @@
     (check-equal? (procedure-arity handler) (add1 (cli-flag-arity TEST_SETTING/flag)))
     (check-equal? help-strings '("Test" "value"))
 
-    (define args-bound (handler "-t" "+inf.0"))
+    (match-define (cons flag-string args-bound) (handler "-t" "+inf.0"))
+    (check-equal? flag-string "-t")
     (define callback-bound (args-bound (λ () (check-eq? (TEST_SETTING) +inf.0))))
 
     (callback-bound))
@@ -209,6 +279,13 @@
                                    "positional" "arguments")
                           (make-cli-flag-table multi-flag once-each-flag once-any-flag)
                           (λ (flags formal1 formal2)
+                            (check-equal? (map car flags)
+                                          '("-m"
+                                            "--multi"
+                                            "--TEST_MULTI"
+                                            "-a"
+                                            "--quad"))
+
                             (values (get-current-values)
                                     (call-with-bound-cli-flags flags get-current-values)
                                     (list formal1 formal2)))
