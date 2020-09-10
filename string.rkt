@@ -60,8 +60,25 @@
                       (make-rx-predicate #:whole? #t windows-reserved-name-pattern-string))))
    'name-string?))
 
+(define (get-shortest-string strings)
+  (for/fold ([shortest (car strings)])
+            ([next (in-list (cdr strings))])
+    (if (< (string-length next) (string-length shortest))
+        next
+        shortest)))
+
+
+(define (string->value s)
+  (read (open-input-string s)))
+
+
 (module+ test
   (require rackunit)
+
+  (check-eq? (string->value "+inf.0") +inf.0)
+
+  (check-equal? (get-shortest-string '("alvin" "bob" "v" "superduper"))
+                "v")
 
   (check-false (name-string? "/"))
   (check-false (name-string? "\\"))
