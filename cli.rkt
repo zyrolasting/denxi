@@ -15,6 +15,7 @@
          racket/vector
          (for-syntax racket/base)
          "archiving.rkt"
+         "cli-flag.rkt"
          "cmdline.rkt"
          "contract.rkt"
          "exn.rkt"
@@ -62,10 +63,7 @@
    #:args args
    #:halt halt
    #:flags
-   (settings->flag-specs
-    XIDEN_FASL_OUTPUT
-    XIDEN_READER_FRIENDLY_OUTPUT
-    XIDEN_VERBOSE)
+   (make-cli-flag-table -F -R -v)
    (λ (flags action . args)
      (with-rc flags
        (define proc
@@ -99,20 +97,7 @@ EOF
    #:halt halt
    #:arg-help-strings '()
    #:flags
-   (settings->flag-specs
-    XIDEN_INSTALL_SOURCES
-    XIDEN_BIND
-    XIDEN_SERVICE_ENDPOINTS
-    XIDEN_DOWNLOAD_MAX_REDIRECTS
-    XIDEN_TRUST_BAD_DIGEST
-    XIDEN_TRUST_BAD_SIGNATURE
-    XIDEN_TRUST_UNSIGNED
-    XIDEN_LINK
-    XIDEN_ALLOW_UNDECLARED_RACKET_VERSIONS
-    XIDEN_ALLOW_UNSUPPORTED_RACKET
-    XIDEN_SANDBOX_MEMORY_LIMIT_MB
-    XIDEN_SANDBOX_EVAL_MEMORY_LIMIT_MB
-    XIDEN_SANDBOX_EVAL_TIME_LIMIT_SECONDS)
+   (make-cli-flag-table -i -E -o -Y -T -U -A -G -M -e -S)
    (λ (flags)
      (with-rc flags
        (define lookup
@@ -239,10 +224,7 @@ EOF
    #:halt halt
    #:arg-help-strings '("package-path")
    #:flags
-   (settings->flag-specs
-    XIDEN_SANDBOX_MEMORY_LIMIT_MB
-    XIDEN_SANDBOX_EVAL_MEMORY_LIMIT_MB
-    XIDEN_SANDBOX_EVAL_TIME_LIMIT_SECONDS)
+   (make-cli-flag-table -e -S -M)
    (λ (flags input-program)
      (with-rc flags
        (with-handlers ([values (λ (e) (halt 1 ($show-string (exn->string e))))])
