@@ -98,7 +98,7 @@
                                 (apply (cli-flag-convert c) formals)
                                 expects-applied-setting)))))
          (add1 (cli-flag-arity c)))
-        (cons (setting-description (cli-flag-setting c))
+        (cons (format "~n    ~a" (setting-description (cli-flag-setting c)))
               (cli-flag-help-strings c))))
 
 
