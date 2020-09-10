@@ -101,7 +101,7 @@ EOF
    #:flags
    (settings->flag-specs
     XIDEN_INSTALL_SOURCES
-    XIDEN_UNINSTALL_SOURCES
+    XIDEN_BIND
     XIDEN_SERVICE_ENDPOINTS
     XIDEN_DOWNLOAD_MAX_REDIRECTS
     XIDEN_TRUST_BAD_DIGEST
@@ -117,7 +117,7 @@ EOF
      (with-rc flags
        (define lookup
          (hasheq XIDEN_INSTALL_SOURCES   install-package-with-source
-                 XIDEN_UNINSTALL_SOURCES uninstall-package-with-source))
+                 XIDEN_BIND              set-output-identifier))
 
        (define actions (fold-transaction-actions flags lookup))
 

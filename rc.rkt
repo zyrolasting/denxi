@@ -153,9 +153,9 @@
     "source"))
 
 
-(define-xiden-setting XIDEN_UNINSTALL_SOURCES (listof string?) 'multi '("-u") null
-  '("Add an uninstallation to transaction"
-    "source"))
+(define-xiden-setting XIDEN_BIND (listof path-string?) 'multi '("-b") null
+  '("Create symlink to following installation output"
+    "path"))
 
 
 (define-xiden-setting XIDEN_MATCH_RACKET_MODULES boolean? 'once-each '("-r") #f
