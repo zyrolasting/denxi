@@ -39,15 +39,14 @@
 (define+provide-message $setting-value-unreadable $setting (source-name))
 (define+provide-message $setting-value-rejected $setting (value expected))
 
-
 (define current-xiden-rcfile-cache (make-parameter void))
 
 
 ; The only difference between a vanilla setting an a Xiden setting is how a
 ; fallback value is computed.
-(define-syntax-rule (define-xiden-setting id cnt kind flags default-value help-strs)
+(define-syntax-rule (define-xiden-setting id cnt default-value description)
   (begin (provide (contract-out [id setting?]))
-         (define-setting id cnt kind flags (xiden-setting-find-value default-value) help-strs)))
+         (define-setting id cnt (xiden-setting-find-value default-value) description)))
 
 
 ; Return a procedure to fetch a value for a setting if it is not already set.
@@ -120,187 +119,87 @@
 ;; Begin runtime configuration space
 ;; =================================
 
-(define-xiden-setting XIDEN_SANDBOX_MEMORY_LIMIT_MB (>=/c 0) 'once-each '("-M") 200
-  '("Total memory quota for a sandbox"
-    "mibibytes"))
+(define-xiden-setting XIDEN_SANDBOX_MEMORY_LIMIT_MB (>=/c 0) 200 "Total memory quota for a sandbox")
 
+(define-xiden-setting XIDEN_SANDBOX_EVAL_MEMORY_LIMIT_MB (>=/c 0) 200
+  "Memory quota for each sandboxed expression")
 
-(define-xiden-setting XIDEN_SANDBOX_EVAL_MEMORY_LIMIT_MB (>=/c 0) 'once-each '("-e") 200
-  '("Memory quota for each sandboxed expression"
-    "mibibytes"))
+(define-xiden-setting XIDEN_SANDBOX_EVAL_TIME_LIMIT_SECONDS (>=/c 0) (* 5 60)
+  "Time limit for each sandboxed expression")
 
+(define-xiden-setting XIDEN_INSTALL_SOURCES (listof (cons/c string? string?)) null
+  "Add installation to transaction")
 
-(define-xiden-setting XIDEN_SANDBOX_EVAL_TIME_LIMIT_SECONDS (>=/c 0) 'once-each '("-S") (* 5 60)
-  '("Time limit for each sandboxed expression"
-    "seconds"))
-
-
-; Controls network and file I/O permissions for sandboxed installers.
-(define-xiden-setting XIDEN_SANDBOX_NETWORK_PERMISSIONS
-   (list/c (or/c #f string?)
-           (or/c #f string?)
-           (or/c #f string?)
-           (or/c #f string?))
-  'multi
-  '("-N")
-  '(#f #f #f #f)
-  '("Regex patterns permissions"
-    "string-list"))
-
-
-(define-xiden-setting XIDEN_INSTALL_SOURCES (listof string?) 'multi '("-i") null
-  '("Add installation to transaction"
-    "source"))
-
-
-(define-xiden-setting XIDEN_BIND (listof path-string?) 'multi '("-b") null
-  '("Create symlink to following installation output"
-    "path"))
-
-
-(define-xiden-setting XIDEN_MATCH_RACKET_MODULES boolean? 'once-each '("-r") #f
+(define-xiden-setting XIDEN_MATCH_RACKET_MODULES boolean? #f
   (switch-help "Match .rkt, .ss, .scrbl, and .rktd"))
 
-
-(define-xiden-setting XIDEN_MATCH_COMPILED_RACKET boolean? 'once-each '("-b") #f
+(define-xiden-setting XIDEN_MATCH_COMPILED_RACKET boolean? #f
   (switch-help "Match .zo and .dep."))
 
+(define-xiden-setting XIDEN_MODS_MODULE (or/c #f path-string?) #f
+  "A path to a module that extends Xiden.")
 
-(define-xiden-setting XIDEN_MODS_MODULE (or/c #f path-string?) 'once-each '("-M") #f
-  '("A path to a module that extends Xiden."
-    "path-or-#f"))
+(define-xiden-setting XIDEN_TRUST_UNSIGNED boolean? #f
+  "Trust unsigned packages")
 
+(define-xiden-setting XIDEN_TRUST_BAD_SIGNATURE boolean? #f
+  "Trust signatures that don't match public key")
 
-(define-xiden-setting XIDEN_SANDBOX_PATH_PERMISSIONS
-  (listof (list/c (or/c 'execute 'write 'delete
-                        'read-bytecode 'read 'exists)
-                  (or/c byte-regexp? bytes? string? path?)))
-  'multi '("-P") null
-  '("Add entry to sandbox-path-permissions"
-    "racket-value"))
+(define-xiden-setting XIDEN_TRUST_UNVERIFIED_HOST boolean? #f
+  "Download from any server without authenticating")
 
+(define-xiden-setting XIDEN_TRUST_BAD_DIGEST boolean? #f
+  "(DANGEROUS) Trust any input.")
 
-; Scenario: Artifact does not have a signature. This is normal
-; when prototyping or working with a trusted peer, so
-; we'll prompt by default.
-(define-xiden-setting XIDEN_TRUST_UNSIGNED boolean? 'once-each '("-U") #f
-  (switch-help "Trust unsigned packages"))
+(define-xiden-setting XIDEN_FASL_OUTPUT boolean? #f
+  "Use FASL program output")
 
+(define-xiden-setting XIDEN_FETCH_TOTAL_SIZE_MB (or/c +inf.0 real?) 100
+  "Maximum size, in mibibytes, to read from a source. +inf.0 = no limit")
 
-; Scenario: Artifact signature cannot be verified with publisher's public key.
-; This is more suspicious.
-(define-xiden-setting XIDEN_TRUST_BAD_SIGNATURE boolean? 'once-each '("--trust-bad-signature") #f
-  (switch-help "Trust signatures that don't match public key"))
+(define-xiden-setting XIDEN_FETCH_BUFFER_SIZE_MB (real-in 0.1 20) 10
+  "Buffer size, in mibibytes, used when reading bytes")
 
+(define-xiden-setting XIDEN_FETCH_PKGDEF_SIZE_MB (real-in 0.1 20) 0.1
+  "The maximum expected size, in mibibytes, of a package definition when scoping out work")
 
-(define-xiden-setting XIDEN_TRUST_UNVERIFIED_HOST boolean? 'once-each '("--trust-any-host") #f
-  (switch-help "Download from any server without authenticating"))
+(define-xiden-setting XIDEN_FETCH_TIMEOUT_MS (real-in 100 (* 1000 10)) 3000
+  "The maximum time, in milliseconds, to wait for a distinct read of bytes from a source")
 
+(define-xiden-setting XIDEN_READER_FRIENDLY_OUTPUT boolean? #f
+  "Use (read)able program output")
 
-(define-xiden-setting XIDEN_TRUST_BAD_DIGEST boolean? 'once-each '("--trust-any-digest") #f
-  (switch-help (format "(DANGEROUS) Trust any input. Implies ~a."
-                       (setting-short-flag XIDEN_TRUST_UNSIGNED))))
+(define-xiden-setting XIDEN_VERBOSE boolean? #f
+  "Show more information in program output")
 
+(define-xiden-setting XIDEN_PRIVATE_KEY_PATH (or/c #f path-string?) #f
+  "The location of a private key")
 
-(define-xiden-setting XIDEN_FASL_OUTPUT boolean? 'once-each '("-F") #f
-  (switch-help "Use FASL program output"))
+(define-xiden-setting XIDEN_SERVICE_ENDPOINTS (listof url-string?) '("https://zcpkg.com")
+  "Services to contact when searching for package definitions")
 
+(define-xiden-setting XIDEN_LINK boolean? #f
+  "When installing a package on the filesystem, create a symlink to the source directory.")
 
-(define-xiden-setting XIDEN_FETCH_TOTAL_SIZE_MB (or/c +inf.0 real?) 'once-each null 100
-  '("Maximum size, in mibibytes, to read from a source. +inf.0 = no limit"
-    "mibibytes-or-+inf.0"))
+(define-xiden-setting XIDEN_DOWNLOAD_MAX_REDIRECTS exact-nonnegative-integer? 2
+  "Maximum redirects to follow when downloading an artifact")
 
+(define-xiden-setting XIDEN_ALLOW_UNDECLARED_RACKET_VERSIONS boolean? #f
+  "Install packages even if they do not declare supported Racket versions")
 
-(define-xiden-setting XIDEN_FETCH_BUFFER_SIZE_MB (real-in 0.1 20) 'once-each null 10
-  '("Buffer size, in mibibytes, used when reading bytes"
-    "mibibytes"))
-
-
-(define-xiden-setting XIDEN_FETCH_PKGDEF_SIZE_MB (real-in 0.1 20) 'once-each null 0.1
-  '("The maximum expected size, in mibibytes, of a package definition when scoping out work"
-    "mibibytes"))
-
-
-(define-xiden-setting XIDEN_FETCH_TIMEOUT_MS (real-in 100 (* 1000 10)) 'once-each null 3000
-  '("The maximum time, in milliseconds, to wait for a distinct read of bytes from a source"
-    "milliseconds"))
-
-
-(define-xiden-setting XIDEN_READER_FRIENDLY_OUTPUT boolean? 'once-each '("-R") #f
-  (switch-help "Use (read)able program output"))
-
-
-(define-xiden-setting XIDEN_VERBOSE boolean? 'once-each '("-v") #f
-  (switch-help "Show more information in program output"))
-
-
-(define-xiden-setting XIDEN_PRIVATE_KEY_PATH (or/c #f path-string?) 'once-each '("-q") #f
-  '("The location of a private key"
-    "path"))
-
-
-; Where to install packages.
-(define-xiden-setting XIDEN_INSTALL_RELATIVE_PATH
-  (and/c path-string? (not/c complete-path?))
-  'once-each
-  '("-I")
-  "usr/lib/racket"
-  '("Workspace-relative path for installed packages"
-    "relative-path-string"))
-
-
-; Where to place launchers
-(define-xiden-setting XIDEN_LAUNCHER_RELATIVE_PATH
-  (and/c path-string? (not/c complete-path?))
-  'once-each
-  '("-L")
-  "bin"
-  '("Workspace-relative path for launchers"
-    "relative-path-string"))
-
-
-(define-xiden-setting XIDEN_SERVICE_ENDPOINTS
-  (listof url-string?)
-  'once-each
-  '("-E")
-  '("https://zcpkg.com")
-  '("Services to contact when searching for package definitions"
-    "list"))
-
-
-(define-xiden-setting XIDEN_LINK boolean? 'once-each '("-l") #f
-  (switch-help "When installing a package on the filesystem, create a symlink to the source directory."))
-
-
-(define-xiden-setting XIDEN_CONSENT boolean? 'once-each '("-y") #f
-  (switch-help "Consent to overall task, but not to risky specifics."))
-
-
-(define-xiden-setting XIDEN_DOWNLOAD_MAX_REDIRECTS exact-nonnegative-integer? 'once-each '("-r") 2
-  '("Maximum redirects to follow when downloading an artifact"
-    "exact-nonnegative-integer"))
-
-
-(define-xiden-setting XIDEN_ALLOW_UNDECLARED_RACKET_VERSIONS boolean? 'once-each '("--allow-undeclared-racket") #f
-  (switch-help "Install packages even if they do not declare supported Racket versions"))
-
-
-(define-xiden-setting XIDEN_ALLOW_UNSUPPORTED_RACKET boolean? 'once-each '("--assume-support") #f
-  (switch-help "Install packages even if they declare that they do not support the running version of Racket."))
+(define-xiden-setting XIDEN_ALLOW_UNSUPPORTED_RACKET boolean? #f
+  "Install packages even if they declare that they do not support the running version of Racket.")
 
 
 (define-setting-group XIDEN_SETTINGS
   [XIDEN_ALLOW_UNDECLARED_RACKET_VERSIONS
    XIDEN_ALLOW_UNSUPPORTED_RACKET
-   XIDEN_CONSENT
    XIDEN_DOWNLOAD_MAX_REDIRECTS
    XIDEN_FASL_OUTPUT
    XIDEN_FETCH_BUFFER_SIZE_MB
    XIDEN_FETCH_PKGDEF_SIZE_MB
    XIDEN_FETCH_TIMEOUT_MS
    XIDEN_FETCH_TOTAL_SIZE_MB
-   XIDEN_INSTALL_RELATIVE_PATH
-   XIDEN_LAUNCHER_RELATIVE_PATH
    XIDEN_LINK
    XIDEN_MATCH_COMPILED_RACKET
    XIDEN_MATCH_RACKET_MODULES
@@ -310,8 +209,6 @@
    XIDEN_SANDBOX_EVAL_MEMORY_LIMIT_MB
    XIDEN_SANDBOX_EVAL_TIME_LIMIT_SECONDS
    XIDEN_SANDBOX_MEMORY_LIMIT_MB
-   XIDEN_SANDBOX_NETWORK_PERMISSIONS
-   XIDEN_SANDBOX_PATH_PERMISSIONS
    XIDEN_SERVICE_ENDPOINTS
    XIDEN_TRUST_BAD_DIGEST
    XIDEN_TRUST_BAD_SIGNATURE
