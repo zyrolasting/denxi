@@ -4,8 +4,8 @@
 
 @title[#:tag "new-pkg"]{Defining Packages}
 
-@project-name builds software using @tech{package definitions}.
-Here is a hypothetical package for working with URIs.
+@project-name builds software using @tech{package definitions}. Here
+is a hypothetical definition for a URI package.
 
 @racketmod[
 xiden
@@ -13,7 +13,7 @@ xiden
 (define package "uri")
 (define provider "example.com")
 (define description "An implementation of the IETF's RFC 3986")
-(define tags '("networking" "www" "uri"))
+(define tags '("networking" "www" "uri" "rfc3986"))
 (define home-page "https://example.com/packages/uri")
 (define edition "draft")
 (define revision-number 21)
@@ -43,16 +43,18 @@ xiden
 
 
 A definition consists of inputs, outputs, and a build procedure in
-between.
-
-The discovery information near the top of the document should make
-sense at first glance.
+between. Most of the discovery information near the top of the
+document should make sense at first glance. We'll spend more time on
+the less typical definitions.
 
 
 @section{Versioning}
 
-@project-name uses a versioning scheme for @tech{package definitions}.
-A version consists of several pieces of information.
+@project-name versions @tech{package definitions} as if they were
+published documents, not software. This means reasoning about change
+in terms of @tech{editions} and @tech{revisions}, not major or minor
+version numbers.
+
 
 @racketblock[
 (define edition "draft")
@@ -60,18 +62,20 @@ A version consists of several pieces of information.
 (define revision-names '("alpha"))
 ]
 
-A package version consists of an @tech{edition} and a @tech{revision}.
+An @deftech{edition} is @bold{a name for a design or target
+audience}. It acts as a semantic alternative to a major version
+number. When you wish to adapt your software to a different audience
+without disrupting existing users, change the edition.
 
-An @deftech{edition} is @bold{the name of a design}. It acts as a
-semantic alternative to a major version number. When you wish to
-adapt your software to a different audience without disrupting others,
-change the edition.
+A @deftech{revision} is an @bold{implementation of a design for a
+given target audience}. It can be a @tech{revision number} or a
+@tech{revision name}. There is no guarentee that every revision is
+backwards-compatible, but since the audience is presumed to be the
+same, how welcome a breaking change would be depends on the
+relationship between the maintainers and the target audience.
 
-A @deftech{revision} is an @bold{implementation of a design}. It
-can be a @tech{revision number} or a @tech{revision name}.
-
-A @deftech{revision number} is a non-negative integer. Every revision is
-forever assigned the next available number in an edition.
+A @deftech{revision number} is a non-negative integer. Every revision
+is forever assigned the next available number in an edition.
 
 A @deftech{revision name} is an alias for a @tech{revision number}. It
 can be any string that contains at least one non-digit.
@@ -100,10 +104,10 @@ In plain language, this expression tells @project-name that a build
 will need @racket{code.tar.gz} available. @project-name will lazily
 fetch the archive from the given @racketfont{sources}.
 
-An input might only be available during a build (making it a build-time
-dependency), or may persist after the build complete for run-time use.
-The only difference from @|project-name|'s perspective is whether
-the input is subject to garbage collection after a build completes.
+An input might only be available during a build, or may persist after
+the build complete for run-time use.  The only difference from
+@|project-name|'s is whether the input is subject to garbage
+collection after a build completes.
 
 
 @subsection{Authenticating Inputs}
@@ -125,6 +129,7 @@ confirm that the @italic{digest} was signed with someone's private
 key. Vetting public keys is out of scope for this guide. Just know
 that if you do not trust the public key, then a signature offers no
 added protection.
+
 
 @subsection{Merging Definitions}
 
@@ -155,20 +160,14 @@ xiden
   (unpack (input-ref (string-append target ".tar.gz"))))
 ]
 
-After doing so, you can then merge the definitions.
+After doing so, you can then merge the definitions.  Leverage this to
+override inputs, remove outputs, or migrate definitions. Merging from
+different sources means you can leverage community mods for
+established packages.
+
 
 @verbatim|{
-$ xiden merge light.rkt heavy.rkt > combined.rkt
-$ xiden install combined.rkt
-}|
-
-The merge algorithm is configurable. You can use it to override
-inputs, remove outputs, or migrate definitions. Merging from different
-sources means you can leverage community mods for established packages.
-
-@verbatim|{
-$ xiden merge example.com:calculator https://gist.githubusercontent.com/... > modded.rkt
-$ xiden install modded.rkt
+$ xiden merge light.rkt example.com:calculator https://gist.githubusercontent.com/... > modded.rkt
 }|
 
 

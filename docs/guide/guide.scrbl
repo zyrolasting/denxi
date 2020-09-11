@@ -9,8 +9,8 @@
 This is a guide for @|project-name|, a functional dependency manager for Racket.
 
 @binary concerns itself with the safe, deterministic reproduction of
-exact assets needed for your project without any side-effect on the
-running Racket installation.
+files needed for your project without any side-effect on the running
+Racket installation.
 
 @table-of-contents[]
 

@@ -10,13 +10,8 @@ You can extend @binary using a Racket module as a @deftech{plugin}.
 @section{Security Warning}
 
 @tech{Plugins} run directly in @|binary|'s runtime, with the same
-level of privilege. This means that a plugin may freely reconfigure
-@|binary|, if not outright harm your system.
-
-Plugins should be carefully vetted by a programmer and/or
-administrator before use, because @binary will not vet it for you.
-Using a plugin from the Internet made by an untrusted party is a
-@bold{bad idea}.
+level of privilege as the OS-level user. This means that a plugin may
+freely reconfigure @|binary|, if not outright harm your system.
 
 
 @section{How to Define a Plugin}
