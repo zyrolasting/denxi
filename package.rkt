@@ -195,7 +195,6 @@
                                             (build-workspace-path "var/xiden"))
                    (make-pkgeval-network-guard)
                    (make-pkgeval-link-guard (workspace-directory)))]
-
                  [sandbox-make-environment-variables
                   (bind-envvar-subset '(#"PATH"))]
                  [sandbox-namespace-specs
@@ -233,6 +232,7 @@
                         "Unauthorized attempt to listen for connections"))
     ; TODO: Certificate checks, etc.
     ))
+
 
 (define (make-pkgeval-link-guard workspace)
   (define (path-ok? p)
