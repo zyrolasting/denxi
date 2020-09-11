@@ -4,6 +4,7 @@
          find-workspace-directory
          make-workspace-path-builder
          workspace-directory
+         path-in-workspace?
          CONVENTIONAL_WORKSPACE_NAME
          show-workspace-envvar-error?)
 
@@ -66,6 +67,17 @@
     (define dir (build-workspace-path base))
     (make-directory* dir)
     (apply build-path dir paths)))
+
+
+(define (path-in-workspace? path)
+  (define simplified (simple-form-path path))
+  (define rel-path
+    (find-relative-path
+     #:more-than-same? #f
+     (path->directory-path (workspace-directory))
+     simplified))
+
+  (equal? simplified (build-workspace-path rel-path)))
 
 
 (module+ test
