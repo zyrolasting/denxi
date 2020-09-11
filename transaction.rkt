@@ -1,17 +1,19 @@
 #lang racket/base
 
+; This module interprets command line flags in a given order
+; in the context of a transactional control flow.
+;
 ; Consider the following command line, where -i and -u can be
 ; specified multiple times. Each value is accumulated into
 ; a list for the corresponding flag.
 ;
 ;  $ xiden pkg -i a -u b -i c -u d
 ;
-; -i produces (c a) when accumulated
-; -u produces (d b) when accumulated
+; -i produces (c a) when accumulated using (cons), and -u produces (d b)
 ;
 ; The user expects actions to run in the visible order: (a b c d).
 ; This module transforms the accumulated lists into procedures that
-; run in the expected order.
+; run in the expected order, and fail to a rollback procedure.
 
 
 (require "contract.rkt")
@@ -24,12 +26,13 @@
        (-> list? any)
        any)]
   [fold-transaction-actions
-   (-> (listof (cons/c procedure? any/c))
+   (-> (listof (cons/c string? procedure?))
        (hash/c procedure? (-> any/c logged?))
        (listof (-> logged?)))]))
 
 
-(require "exn.rkt"
+(require "cli-flag.rkt"
+         "exn.rkt"
          "message.rkt"
          "package.rkt")
 
@@ -60,11 +63,10 @@
 (define (fold-transaction-actions flags lookup)
   (fold-transaction-actions-aux flags lookup null (hasheq)))
 
-
 (define (fold-transaction-actions-aux flags lookup actions counts)
   (if (null? flags)
       (reverse actions)
-      (let ([setting (caar flags)])
+      (let ([setting (cli-flag-setting (cli-flag-state-flag-definition (car flags)))])
         (if (hash-has-key? lookup setting)
             (add-action flags
                         lookup
@@ -93,87 +95,86 @@
 
 (module+ test
   (require rackunit
+           racket/format
            racket/list
-           racket/match)
+           racket/match
+           "setting.rkt")
 
-  (define (mocker f) (λ (i) (cons f (list-ref (f) i))))
 
-  (test-case "Bind multi flags in thunks"
-    (define (letters) '(a b c))
-    (define (numbers) '(1 2 3))
-    (define (herring) '(red))
-    (define mock-letter  (mocker letters))
-    (define mock-number  (mocker numbers))
-    (define mock-herring (mocker herring))
+  (define-setting TEST_LETTER_STRINGS  list? null "")
+  (define-setting TEST_NUMBER_STRINGS  list? null "")
+  (define-setting TEST_RED_HERRING     list? null "Should not be used")
 
-    (define actions
-      (fold-transaction-actions (list (mock-letter  0)
-                                      (mock-number  0)
-                                      (mock-herring 0)
-                                      (mock-herring 0)
-                                      (mock-number  1)
-                                      (mock-herring 0)
-                                      (mock-letter  1)
-                                      (mock-herring 0)
-                                      (mock-letter  2)
-                                      (mock-number  2))
-                                (hasheq letters symbol->string
-                                        numbers -)))
+  (define str-flag (cli-flag TEST_LETTER_STRINGS 'multi '("-l") 1 void '("any")))
+  (define num-flag (cli-flag TEST_NUMBER_STRINGS 'multi '("-n") 1 void '("any")))
+  (define red-flag (cli-flag TEST_RED_HERRING    'multi '("-h") 1 void '("any")))
 
-    (check-equal? (map (λ (f) (f)) actions)
-                  '("a" -1 -2 "b" "c" -3)))
+  ; Use to produce mock cli flag handler values.
+  (define (mocker value-list flag)
+    (λ (i) (cli-flag-state (shortest-cli-flag flag)
+                           flag
+                           (list-ref value-list i))))
+  (define (act v)
+    (logged-attachment (if (eq? v 'b) SUCCESS #f)
+                       ($show-string (~a v))))
 
-  (test-case "Carry out successful transaction"
-    (define (alice) '("hi"  "how are you" "great" "bye"))
-    (define (bob)   '("hey" "im doing okay" "got a new kid" "ikr" "see ya"))
-    (define (mocker f) (λ (i) (cons f (list-ref (f) i))))
-    (define (read-convo v)
-      (logged-attachment (if (equal? v "see ya")
-                             SUCCESS
-                             #f)
-                         ($show-string v)))
+  (call-with-applied-settings
+   (hash TEST_LETTER_STRINGS '(a b c)
+         TEST_NUMBER_STRINGS '(1 2 3)
+         TEST_RED_HERRING    '("red"))
+   (λ ()
+     (define mock-letter  (mocker (TEST_LETTER_STRINGS) str-flag))
+     (define mock-number  (mocker (TEST_NUMBER_STRINGS) num-flag))
+     (define mock-herring (mocker (TEST_RED_HERRING)    red-flag))
 
-    (define mock-alice (mocker alice))
-    (define mock-bob   (mocker bob))
+     (define flags
+       (list (mock-letter  0)
+             (mock-number  0)
+             (mock-herring 0)
+             (mock-herring 0)
+             (mock-number  1)
+             (mock-herring 0)
+             (mock-letter  1)
+             (mock-herring 0)
+             (mock-letter  2)
+             (mock-number  2)))
 
-    (define flags
-      (list (mock-alice 0)
-            (mock-bob 0)
-            (mock-alice 1)
-            (mock-bob 1)
-            (mock-bob 2)
-            (mock-alice 2)
-            (mock-bob 3)
-            (mock-alice 3)
-            (mock-bob 4)))
+     (define actions
+       (fold-transaction-actions flags
+                                 (hasheq TEST_LETTER_STRINGS symbol->string
+                                         TEST_NUMBER_STRINGS -)))
+     (define expected-preprocessed-values
+       '("a" -1 -2 "b" "c" -3))
 
-    (define actions
-      (fold-transaction-actions flags
-                                (hasheq alice read-convo
-                                        bob read-convo)))
+     (test-equal? "Bind multi flags in thunks"
+                  (map (λ (f) (f)) actions)
+                  expected-preprocessed-values)
 
-    (define (rollback m)
-      (cons 'rolled-back (flatten m)))
+     (test-case "Carry out successful transaction"
+       (define (rollback m)
+         (cons 'rolled-back (flatten m)))
 
-    (check-equal? (transact actions flatten rollback)
-                  (map (λ (pair) ($show-string (cdr pair)))
-                       (reverse flags)))
+       (check-equal? (transact (map (λ (f) (λ () (logged-attachment (f) ($show-string (~a (f)))))) actions)
+                               flatten
+                               rollback)
+                     (map (compose $show-string ~a)
+                          (reverse expected-preprocessed-values)))
 
-    (define (warn) (logged-attachment #f ($show-string "about to fail")))
-    (test-equal? "Handle transaction failure"
-                 (transact (list warn
-                                 (λ () (logged-failure ($show-string "uh oh")))
-                                 warn)
-                           flatten
-                           rollback)
-                 (list 'rolled-back
-                       ($show-string "uh oh")
-                       ($show-string "about to fail")))
+       (define (warn) (logged-attachment #f ($show-string "about to fail")))
+       (test-equal? "Handle transaction failure"
+                    (transact (list warn
+                                    (λ () (logged-failure ($show-string "uh oh")))
+                                    warn)
+                              flatten
+                              rollback)
+                    (list 'rolled-back
+                          ($show-string "uh oh")
+                          ($show-string "about to fail")))
 
-    (test-equal? "Handle transaction failure via raised value"
-                 (transact (list warn (λ () (raise 'oops)) warn)
-                           flatten
-                           rollback)
-                 (list 'rolled-back
-                       ($show-string "oops\n")
-                       ($show-string "about to fail")))))
+       (test-equal? "Handle transaction failure via raised value"
+                    (transact (list warn (λ () (raise 'oops)) warn)
+                              flatten
+                              rollback)
+                    (list 'rolled-back
+                          ($show-string "oops\n")
+                          ($show-string "about to fail")))))))
