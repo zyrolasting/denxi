@@ -51,32 +51,24 @@
 (define+provide-message $package-malformed $package (errors))
 
 
-(define (install-package-with-source source)
+(define (install-package-with-source link-path source)
   (do pkgeval       <- (make-package-evaluator source)
       output-name   <- (find-expected-output pkgeval source)
-      build-output  <- (install-output pkgeval output-name)
+      build-output  <- (install-output! pkgeval output-name link-path)
       results       <- (report-installation-results (package-name pkgeval output-name) build-output)
       (return (logged-unit (kill-evaluator pkgeval)))))
 
 
-(define (uninstall-package-with-source source)
-  (do pkgeval     <- (make-package-evaluator source)
-      output-name <- (find-expected-output pkgeval source)
-      (return (uninstall-output pkgeval output-name))))
-
-
-(define (uninstall-output pkgeval output-name)
-  (call-with-reused-output
-   (package-evaluator->xiden-query pkgeval output-name)
-   (λ (v)
-     (if (output-record? v)
-         (begin
-           (delete-record
-            (find-exactly-one
-             (path-record #f #f #f #f (output-record-path-id v))))
-           (logged-unit SUCCESS))
-         (logged-attachment SUCCESS
-                            ($package-not-installed (package-name pkgeval output-name)))))))
+(define (set-output-identifier path)
+  (if (name-string? path)
+      (logged-unit (current-installation-bind-path (path->complete-path path)))
+      (logged-failure
+       ($show-string
+        (format "Cannot bind: ~a is not a valid file name for ~a"
+                path
+                (if (string-contains? path "/")
+                    "UNIX-like systems"
+                    "Windows"))))))
 
 
 (define (configure-evaluator pkgeval)
@@ -145,40 +137,49 @@
                          ($package-not-installed name))))
 
 
-(define (install-output pkgeval output-name)
+(define (install-output! pkgeval output-name link-name)
+  (call-with-reused-output
+   (package-evaluator->xiden-query pkgeval output-name)
+   (λ (output-record-or-#f)
+     (if (output-record? output-record-or-#f)
+         (reuse-package-output! pkgeval output-name output-record-or-#f link-name)
+         (build-package-output! pkgeval output-name link-name)))))
+
+
+(define (reuse-package-output! pkgeval output-name output-record-inst link-path)
   (logged
    (λ (messages)
+     (define directory-record (find-path-record (output-record-path-id output-record-inst)))
+     (make-addressable-link directory-record link-path)
      (values SUCCESS
-             (cons (call-with-reused-output
-                    (package-evaluator->xiden-query pkgeval output-name)
-                    (λ (v)
-                      (if (output-record? v)
-                          ($reused-package-output (package-name pkgeval output-name))
-                          (build-package-output pkgeval output-name))))
+             (cons ($reused-package-output (package-name pkgeval output-name))
                    messages)))))
 
 
-; This is the heart of filesystem changes for a package installation.
-; It concludes by declaring all related info in the database. If
-; that succeeds and the program survives to the end of the database
-; transaction, the whole operation is successful.
-(define (build-package-output pkgeval output-name)
-  (define directory-record
-    (make-addressable-directory
-     output-name
-     (λ (build-dir)
-       (pkgeval `(cd ,build-dir))
-       (pkgeval `(build ,output-name)))))
+(define (build-package-output! pkgeval output-name link-path)
+  (logged
+   (λ (messages)
+     (define directory-record
+       (make-addressable-directory
+        output-name
+        (λ (build-dir)
+          (pkgeval `(cd ,build-dir))
+          (pkgeval `(build ,output-name)))))
 
-  (declare-output (xiden-evaluator-ref pkgeval 'provider)
-                  (xiden-evaluator-ref pkgeval 'package)
-                  (xiden-evaluator-ref pkgeval 'edition "default")
-                  (xiden-evaluator-ref pkgeval 'revision-number)
-                  (xiden-evaluator-ref pkgeval 'revision-names null)
-                  output-name
-                  directory-record)
+     (declare-output (xiden-evaluator-ref pkgeval 'provider)
+                     (xiden-evaluator-ref pkgeval 'package)
+                     (xiden-evaluator-ref pkgeval 'edition "default")
+                     (xiden-evaluator-ref pkgeval 'revision-number)
+                     (xiden-evaluator-ref pkgeval 'revision-names null)
+                     output-name
+                     directory-record)
 
-  ($built-package-output (package-name pkgeval output-name)))
+     (make-addressable-link directory-record link-path)
+
+     (values SUCCESS
+             (cons ($built-package-output (package-name pkgeval output-name))
+                   messages)))))
+
 
 
 ; This is the inflection point between restricted and unrestricted
