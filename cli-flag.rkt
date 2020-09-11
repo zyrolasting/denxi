@@ -29,7 +29,7 @@
           [format-cli-flags
            (-> cli-flag? string?)]
           [call-with-bound-cli-flags
-           (-> (listof (cons/c string? procedure?))
+           (-> (listof cli-flag-state?)
                (-> any)
                any)]))
 
