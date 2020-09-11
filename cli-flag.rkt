@@ -9,7 +9,7 @@
 ; (parse-command-line "prog" (current-command-line-arguments)
 ;                     (make-cli-flag-table a b c ...)
 ;                     (λ (flags . args)
-;                        (call-with-bound-cli-flags (λ () (do-something args)))))
+;                        (call-with-bound-cli-flags flags (λ () (do-something args)))))
 ;
 ; Additionally, each CLI flag specified here always include a canonical flag
 ; named after its corresponding setting.
