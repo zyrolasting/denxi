@@ -319,12 +319,36 @@
 ; 4. Delete all object files with no corresponding record
 
 (define (xiden-collect-garbage)
-  (parameterize ([current-directory (workspace-directory)])
+  (parameterize ([current-directory (workspace-directory)]
+                 [current-security-guard (make-gc-security-guard)])
     (let loop ()
       (forget-missing-links!)
       (if (forget-unlinked-paths!)
           (loop)
           (delete-unreferenced-objects!)))))
+
+(define (make-gc-security-guard)
+  (make-security-guard (current-security-guard)
+                       (λ (sym path-or-#f ops)
+                         (define allowed?
+                           (or (eq? sym 'sqlite3-connect)
+                               (not path-or-#f)
+                               (if (member 'delete ops)
+                                   (path-prefix? (simple-form-path path-or-#f) (build-object-path))
+                                   (not (or (member 'write ops)
+                                            (member 'execute ops))))))
+
+                         (unless allowed?
+                           (raise-user-error 'gc-security
+                                             "Blocked ~a on ~a: ~e"
+                                             sym
+                                             path-or-#f
+                                             ops)))
+                       (λ (sym host port cs)
+                         (error 'gc-security
+                                "Blocked ~a on ~a:~a (~e)" sym host port cs))
+                       #f))
+
 
 
 (define (in-unreferenced-paths)
