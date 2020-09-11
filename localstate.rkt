@@ -377,7 +377,7 @@
 
 
 ; Not atomic, but can be used again unless the database itself is corrupted.
-(define (delete-unreferenced-objects! dir)
+(define (delete-unreferenced-objects! [dir (build-object-path)])
   (for/sum ([path (in-list (directory-list dir #:build? #t))])
     (if (find-path-record (find-relative-path (workspace-directory) path))
         0
