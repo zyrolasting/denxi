@@ -20,7 +20,7 @@
 (provide (struct-out record)
          (contract-out
           [xiden-collect-garbage
-           (-> void?)]
+           (-> exact-nonnegative-integer?)]
           [in-all-installed
            (-> sequence?)]
           [declare-output
