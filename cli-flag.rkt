@@ -33,7 +33,8 @@
                (-> any)
                any)]))
 
-(require "rc.rkt"
+(require racket/cmdline
+         "rc.rkt"
          "setting.rkt"
          "string.rkt")
 
@@ -172,12 +173,32 @@
 ; Transaction flags
 (flag-out [+s ++install-source]
           (cli-flag XIDEN_INSTALL_SOURCES
-                    'multi null 2 (λ (flag a b) (cons a b)) '("link-name" "source")))
+                    'multi null 2 (λ (flag a b) (cons (cons a b) (XIDEN_INSTALL_SOURCES)))
+                    '("link-name" "source")))
+
+
+; For use in REPL and tests. Provides a quick way to preview the effect of command
+; line flags, and generated help strings shown.
+(define (try-flags . args)
+  (call/cc (λ (halt)
+             (parse-command-line "test" (list->vector args)
+                                 (make-cli-flag-table -X -M -e -S -m -n -p -d -q -o
+                                                      +h -r -b -U -T -H -Y -F -R -v
+                                                      -A -G +s)
+                                 (λ (flags)
+                                   (call-with-bound-cli-flags
+                                    flags
+                                    (λ () (for/fold ([dump (hash)])
+                                                    ([st (in-list flags)])
+                                            (define setting (cli-flag-setting (cli-flag-state-flag-definition st)))
+                                            (hash-set dump (setting-id setting) (setting))))))
+                                 null
+                                 (λ (h) (displayln h) (halt (void)))))))
+
 
 
 (module+ test
   (require racket/contract
-           racket/cmdline
            racket/function
            racket/match
            rackunit)
