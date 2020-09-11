@@ -110,12 +110,16 @@ EOF
                         --sandbox-eval-time-limit)
    (λ (flags)
      (with-rc flags
-       (define lookup (hasheq XIDEN_INSTALL_SOURCES install-package-with-source))
-       (define actions (fold-transaction-actions flags lookup))
+       (define actions
+         (fold-transaction-actions
+          flags
+          (hasheq XIDEN_INSTALL_SOURCES
+                  (match-lambda [(cons link-path source)
+                                 (install-package-with-source link-path source)]))))
 
        (if (null? actions)
            (halt 1 ($show-string "Nothing to do."))
-           (let-values ([(commit rollback) (start-fs-transaction)])
+           (let-values ([(commit rollback) (start-transaction!)])
              (transact actions
                        (λ (messages) (commit)   (halt 0 messages))
                        (λ (messages) (rollback) (halt 1 messages)))))))))
