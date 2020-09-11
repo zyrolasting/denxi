@@ -304,9 +304,9 @@
 
 
 (define (delete-record record-inst [relation (gen-relation record-inst)])
-  (apply query-exec+
-         (~a "delete from " (relation-name relation) " where id=?;")
-         (record-id record-inst)))
+  (query-exec+
+   (~a "delete from " (relation-name relation) " where id=?;")
+   (record-id record-inst)))
 
 
 
