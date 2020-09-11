@@ -59,18 +59,6 @@
       (return (logged-unit (kill-evaluator pkgeval)))))
 
 
-(define (set-output-identifier path)
-  (if (name-string? path)
-      (logged-unit (current-installation-bind-path (path->complete-path path)))
-      (logged-failure
-       ($show-string
-        (format "Cannot bind: ~a is not a valid file name for ~a"
-                path
-                (if (string-contains? path "/")
-                    "UNIX-like systems"
-                    "Windows"))))))
-
-
 (define (configure-evaluator pkgeval)
   (pkgeval `(current-info-lookup
              (let ([h ,(xiden-evaluator->hash pkgeval)])
