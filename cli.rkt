@@ -132,8 +132,9 @@ EOF
    #:halt halt
    #:arg-help-strings '()
    (λ (flags)
-     (xiden-collect-garbage)
-     (halt 0 null))))
+     (halt 0 ($show-string (format "Recovered ~a mibibytes"
+                                   (~r (/ (xiden-collect-garbage) (* 1024 1024))
+                                       #:precision 2)))))))
 
 
 (define (link-command args halt)
