@@ -95,7 +95,7 @@
 (define (find-existing-path-record info)
   (and (input-info-integrity info)
        (integrity-info-digest (input-info-integrity info))
-       (find-exactly-one (path-record #f #f (integrity-info-digest (input-info-integrity info)) #f))))
+       (find-path-record (integrity-info-digest (input-info-integrity info)))))
 
 
 (define (check-input-integrity input file-record source messages)
