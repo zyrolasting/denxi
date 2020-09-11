@@ -26,7 +26,7 @@
        (-> list? any)
        any)]
   [fold-transaction-actions
-   (-> (listof (cons/c string? procedure?))
+   (-> (listof cli-flag-state?)
        (hash/c procedure? (-> any/c logged?))
        (listof (-> logged?)))]))
 
@@ -38,30 +38,30 @@
 
 
 (define (transact actions commit rollback)
-  (define (update action remaining-actions accum-messages)
-    (define-values (result messages)
-      (with-handlers
-        ([values (λ (e) (raise (cons ($show-string (exn->string e))
-                                     accum-messages)))])
-        (run-log (action))))
+  (call/cc
+   (λ (k)
+     (define (done messages) (k (commit messages)))
+     (define (fail messages) (k (rollback messages)))
 
-    (if (eq? result FAILURE)
-        (rollback (cons messages accum-messages))
-        (enter remaining-actions (cons messages accum-messages))))
+     (commit
+      (for/fold ([accum-messages null])
+                ([action (in-list actions)])
+        (define-values (result messages)
+          (with-handlers
+            ([(λ _ #t)
+              (λ (e)
+                (fail (cons ($show-string (exn->string e))
+                            accum-messages)))])
+            (run-log (action) accum-messages)))
 
-  (define (enter remaining-actions accum-messages)
-    (if (null? remaining-actions)
-        (commit accum-messages)
-        (update (car remaining-actions)
-                (cdr remaining-actions)
-                accum-messages)))
-
-  (with-handlers ([values rollback])
-    (enter actions null)))
+        (if (eq? result FAILURE)
+            (fail messages)
+            messages))))))
 
 
 (define (fold-transaction-actions flags lookup)
   (fold-transaction-actions-aux flags lookup null (hasheq)))
+
 
 (define (fold-transaction-actions-aux flags lookup actions counts)
   (if (null? flags)
@@ -143,6 +143,7 @@
        (fold-transaction-actions flags
                                  (hasheq TEST_LETTER_STRINGS symbol->string
                                          TEST_NUMBER_STRINGS -)))
+
      (define expected-preprocessed-values
        '("a" -1 -2 "b" "c" -3))
 

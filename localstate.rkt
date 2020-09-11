@@ -32,6 +32,8 @@
                string?
                path-record?
                output-record?)]
+          [find-path-record
+           (-> any/c (or/c path-record? #f))]
           [find-xiden-query
            (-> exact-positive-integer?
                string?
@@ -47,7 +49,7 @@
            (-> path-record? (sequence/c path-record?))]
           [find-exactly-one
            (->* (record?) (procedure?) (or/c #f record?))]
-          [start-fs-transaction
+          [start-transaction!
            (-> (values (-> void?) (-> void?)))]
           [build-object-path
            (->* () #:rest (listof path-string?) complete-path?)]
@@ -81,7 +83,7 @@
          racket/sequence
          racket/stream
          racket/vector
-         "db.rkt"
+         db
          "encode.rkt"
          "exn.rkt"
          "file.rkt"
@@ -95,6 +97,20 @@
          "query.rkt"
          "string.rkt"
          "workspace.rkt")
+
+
+;----------------------------------------------------------------------------------
+; Relevant Paths
+
+(define current-get-localstate-path ; Is a parameter for testing reasons.
+  (make-parameter (λ () (build-workspace-path "var/xiden/db"))))
+
+(define build-object-path
+  (make-workspace-path-builder "var/xiden/objects"))
+
+(define (build-addressable-path digest)
+  (build-object-path (encoded-file-name digest)))
+
 
 ;------------------------------------------------------------------------------
 ; Use Generics/Macros to map relations and records to Racket struct
@@ -148,7 +164,24 @@
 
 
 ;------------------------------------------------------------------------------
-; Entity definitions
+; Relation Definitions
+
+(define-relation editions (name package-id)
+  "name TEXT NOT NULL"
+  "package_id INTEGER NOT NULL"
+  "FOREIGN KEY (package_id) REFERENCES packages(id)")
+
+(define-relation outputs (revision-id path-id name)
+  "revision_id INTEGER NOT NULL"
+  "path_id INTEGER NOT NULL"
+  "name TEXT NOT NULL"
+  "FOREIGN KEY (revision_id) REFERENCES revisions(id) ON DELETE CASCADE ON UPDATE CASCADE"
+  "FOREIGN KEY (path_id)     REFERENCES paths(id) ON DELETE CASCADE ON UPDATE CASCADE")
+
+(define-relation packages (name provider-id)
+  "name TEXT NOT NULL"
+  "provider_id INTEGER NOT NULL"
+  "FOREIGN KEY (provider_id) REFERENCES providers(id)")
 
 (define-relation paths (path digest target-id)
   "path TEXT UNIQUE NOT NULL"
@@ -158,16 +191,6 @@
 
 (define-relation providers (provider-name)
   "name TEXT NOT NULL")
-
-(define-relation packages (name provider-id)
-  "name TEXT NOT NULL"
-  "provider_id INTEGER NOT NULL"
-  "FOREIGN KEY (provider_id) REFERENCES providers(id)")
-
-(define-relation editions (name package-id)
-  "name TEXT NOT NULL"
-  "package_id INTEGER NOT NULL"
-  "FOREIGN KEY (package_id) REFERENCES packages(id)")
 
 (define-relation revisions (number edition-id)
   "number INTEGER NOT NULL"
@@ -179,72 +202,62 @@
   "revision_id INTEGER NOT NULL"
   "FOREIGN KEY (revision_id) REFERENCES revisions(id)")
 
-(define-relation outputs (revision-id path-id name)
-  "revision_id INTEGER NOT NULL"
-  "path_id INTEGER NOT NULL"
-  "name TEXT NOT NULL"
-  "FOREIGN KEY (revision_id) REFERENCES revisions(id) ON DELETE CASCADE ON UPDATE CASCADE"
-  "FOREIGN KEY (path_id)     REFERENCES paths(id) ON DELETE CASCADE ON UPDATE CASCADE")
-
+(define ALL_RELATIONS
+  (list editions
+        outputs
+        packages
+        paths
+        providers
+        revisions
+        revision-names))
 
 
 ;----------------------------------------------------------------------------------
-; DB procedures are normal procedures that lazily prepare a connection
-; and/or create missing tables.
+; Define DB bindings such that any attempt to execute a query lazily creates
+; all needed resources.
 
-(define-syntax-rule (define-db-procedure (id sig ...) body ...)
-  (define id (make-db-procedure (λ (sig ...)  body ...))))
+(define current-db-connection (make-parameter #f))
+
+(define (with-lazy-initialization f)
+  (make-keyword-procedure
+   (λ (k a . formals)
+     (connect-if-needed!)
+     (with-handlers ([exn:fail:sql?
+                      (λ (e) ; Create used tables when they are missing
+                        (if (regexp-match? #rx"no such table"
+                                           (cdr (assoc 'message (exn:fail:sql-info e))))
+                            (begin (map create ALL_RELATIONS)
+                                   (keyword-apply f k a (current-db-connection)
+                                                  formals))
+                            (raise e)))])
+       (keyword-apply f k a (current-db-connection)
+                      formals)))))
+
+(define (connect-if-needed!)
+  (unless (current-db-connection)
+    (define db-path ((current-get-localstate-path)))
+    (make-directory* (path-only db-path))
+    (define conn
+      (sqlite3-connect #:database db-path
+                       #:mode 'create
+                       #:use-place #f))
+    (current-db-connection conn)
+    (query-exec+ "pragma foreign_keys = on;")))
 
 
-(define (connect)
-  (define db-path ((current-get-localstate-path)))
-  (make-directory* (path-only db-path))
-  (sqlite3-connect #:database db-path
-                   #:mode 'create
-                   #:use-place #f))
+(define query-exec+        (with-lazy-initialization query-exec))
+(define query-rows+        (with-lazy-initialization query-rows))
+(define query-list+        (with-lazy-initialization query-list))
+(define query-row+         (with-lazy-initialization query-row))
+(define query-maybe-row+   (with-lazy-initialization query-maybe-row))
+(define query-value+       (with-lazy-initialization query-value))
+(define query-maybe-value+ (with-lazy-initialization query-maybe-value))
+(define in-query+          (with-lazy-initialization in-query))
+(define prepare+           (with-lazy-initialization prepare))
 
 
-
-(define (make-db-procedure f)
-  (λ formals
-    (with-handlers ([exn:fail:sql?
-                     (λ (e) ; Create table when it's missing
-                       (if (regexp-match? #rx"no such table"
-                                          (cdr (assoc 'message (exn:fail:sql-info e))))
-                           (let ([r (findf (disjoin relation? record?) formals)])
-                             (create (or r (raise e)))
-                             (apply f formals))
-                           (raise e)))])
-      (unless (current-db-connection)
-        (current-db-connection (connect))
-        (query-exec+ "pragma foreign_keys = on;"))
-      (apply f formals))))
-
-
-(define (xiden-collect-garbage)
-  (define (in-unreferenced-paths)
-    (define referenced-paths
-      (~a "select target_id from "
-          (relation-name paths)
-          " where target_id is not NULL"))
-    (in-query+
-     (~a "select P.id,P.path from " (relation-name paths) " as P "
-         " where target_id is NULL and "
-         " id not in (" referenced-paths ");")))
-
-  (define (remove-dead-links)
-    (define links (~a "select id,path from " (relation-name paths) " where target_id is not NULL"))
-    (for ([(id path) (in-query+ links)])
-      (unless (link-exists? path)
-        (delete-record (path-record id #f #f #f #f)))))
-
-  (create paths)
-  (parameterize ([current-directory (workspace-directory)])
-    (remove-dead-links)
-    (for ([(id path) (in-unreferenced-paths)])
-      (delete-directory/files path #:must-exist? #f)
-      (delete-record (path-record id #f #f #f #f)))))
-
+;----------------------------------------------------------------------------------
+; Generic CRUD procedures
 
 (define (create has-relation)
   (define relation-inst (gen-relation has-relation))
@@ -256,24 +269,20 @@
                         ",\n"))))
 
 
-(define-db-procedure (in-relation/unsafe relation-inst what)
-  (in-query+ (~a "select " what " from " (relation-name relation-inst) ";")))
-
-
-(define-db-procedure (load-by-id relation-inst record-ctor id)
+(define (load-by-id relation-inst record-ctor id)
   (apply record-ctor (vector->list
                       (query-row+ (~a "select * from " (relation-name relation-inst)
                                       " where id=?;")
                                   id))))
 
 
-(define-db-procedure (load-by-record record-inst)
+(define (load-by-record record-inst)
   (load-by-id (gen-relation record-inst)
               (gen-constructor record-inst)
               (record-id record-inst)))
 
 
-(define-db-procedure (save record-inst)
+(define (save record-inst)
   (define vals (vector-drop (struct->vector record-inst) 1))
   (define existing-or-#f (find-exactly-one record-inst))
   (define id (or (vector-ref vals 0)
@@ -294,14 +303,75 @@
       id))
 
 
-(define-db-procedure (delete-record record-inst)
+(define (delete-record record-inst [relation (gen-relation record-inst)])
   (apply query-exec+
-         (~a "delete from " (relation-name (gen-relation record-inst)) " where id=?;")
+         (~a "delete from " (relation-name relation) " where id=?;")
          (record-id record-inst)))
 
 
 
+;----------------------------------------------------------------------------------
+; Garbage Collector
+;
+; 1. Delete all invalid records of links.
+; 2. Delete any record of objects with no incoming links.
+; 3. If database changed in step 2, go to step 1.
+; 4. Delete all object files with no corresponding record
+
+(define (xiden-collect-garbage)
+  (parameterize ([current-directory (workspace-directory)])
+    (let loop ()
+      (forget-missing-links!)
+      (if (forget-unlinked-paths!)
+          (loop)
+          (delete-unreferenced-objects!)))))
+
+
+(define (in-unreferenced-paths)
+  (define referenced-paths
+    (~a "select target_id from "
+        (relation-name paths)
+        " where target_id is not NULL"))
+  (in-query+
+   (~a "select P.id,P.path from " (relation-name paths) " as P "
+       " where target_id is NULL and "
+       " id not in (" referenced-paths ");")))
+
+
+(define (forget-missing-links!)
+  (define links (~a "select id,path from " (relation-name paths) " where target_id is not NULL;"))
+  (for ([(id path) (in-query+ links)])
+    (unless (link-exists? path)
+      (delete-record (record id) paths))))
+
+
+; The fold on a boolean is a shorter way to check for an empty sequence
+(define (forget-unlinked-paths!)
+  (for/fold ([deleted-something? #f])
+            ([(id path) (in-unreferenced-paths)])
+    (delete-record (record id) paths) #t))
+
+
+; Not atomic, but can be used again unless the database itself is corrupted.
+(define (delete-unreferenced-objects! dir)
+  (for/sum ([path (in-list (directory-list dir #:build? #t))])
+    (if (find-path-record (find-relative-path (workspace-directory) path))
+        0
+        (cond [(directory-exists? path)
+               (delete-unreferenced-objects! path)]
+              [(file-exists? path)
+               (define size (file-size path))
+               (delete-file path)
+               size]
+              [(link-exists? path)
+               (delete-file path)
+               0]))))
+
+
+
 ;------------------------------------------------------------------
+; Record-Based Queries
+;
 ; search-by-record constructs a SELECT query based on "holes" in a
 ; given record. In that sense, (search-by-record (customer #f "John"
 ; "Doe" #f #f)) returns a sequence of John Does in the database.
@@ -310,7 +380,7 @@
 ; if different comparisons are necessary.
 
 
-(define-db-procedure (search-by-record record-inst [ctor (gen-constructor record-inst)])
+(define (search-by-record record-inst [ctor (gen-constructor record-inst)])
   (define available-values (vector->list (vector-drop (struct->vector record-inst) 1)))
   (define query-args (infer-select-query record-inst available-values))
   (if (null? query-args)
@@ -320,7 +390,7 @@
 
 
 ; Take the name literally! This returns #f if a query returns more than one record.
-(define-db-procedure (find-exactly-one record-inst [ctor (gen-constructor record-inst)])
+(define (find-exactly-one record-inst [ctor (gen-constructor record-inst)])
   (define seq (search-by-record record-inst ctor))
   (and (with-handlers ([values (const #t)]) (sequence-ref seq 1) #f)
        (with-handlers ([values (const #f)]) (sequence-ref seq 0))))
@@ -382,51 +452,55 @@
 
 
 ;----------------------------------------------------------------------------------
-; Paths
+; Transaction mechanism: Use DBMS transaction, such that a rollback
+; leaves a discrepency between the DB and the filesystem.  To rollback
+; the filesystem, delete whatever is not declared in the DB.
 
-(define current-get-localstate-path ; Is a parameter for testing reasons.
-  (make-parameter (λ () (build-workspace-path "var/xiden/db"))))
+
+(define (rollback-transaction!)
+  (with-handlers ([exn:fail:sql?
+                   (λ (e)
+                     (unless (regexp-match? #rx"no transaction is active" (exn-message e))
+                       (raise e)))])
+    (query-exec+ "rollback transaction;"))
+  (delete-unreferenced-objects!))
 
 
-(define build-object-path
-  (make-workspace-path-builder "var/xiden/objects"))
+(define (start-transaction!)
+  (with-handlers
+    ([exn:fail:sql?
+      (λ (e)
+        (define error-info (exn:fail:sql-info e))
+        (unless (regexp-match? #rx"transaction within a transaction"
+                               (cdr (assoc 'message error-info)))
+            (raise e)))])
+    (query-exec+ "begin exclusive transaction;"))
+  (values end-transaction!
+          rollback-transaction!))
 
-(define (build-addressable-path digest)
-  (build-object-path (encoded-file-name digest)))
+
+(define (end-transaction!)
+  (query-exec+ "commit transaction;"))
 
 
 ;----------------------------------------------------------------------------------
-; Transaction mechanism: Use DBMS transaction feature, such that a rollback
-; leaves a discrepency between paths in the DB and existing paths on the filesystem.
-; To roll back the filesystem, delete every file not declared in the database.
-
-(define-db-procedure (rollback-fs-transaction)
-  (with-handlers ([exn:fail:sql? void]) (query-exec+ "rollback transaction;"))
-  (for ([path (in-directory (build-object-path))])
-    (unless (find-exactly-one (path-record #f (normalize-path-for-db path) #f))
-      (delete-directory/files #:must-exist? #f path))))
-
-
-(define-db-procedure (start-fs-transaction)
-  (with-handlers ([values void]) (query-exec+ "begin exclusive transaction;"))
-  (values (λ () (query-exec+ "commit transaction;"))
-          (λ () (rollback-fs-transaction))))
-
-
-;----------------------------------------------------------------------------------
-; These procedures control file output, such that each written file comes
-; with a declaration in the database that the path exists and is valid.
+; Hybrid Database and File I/O
+;
+; These procedures control file and database I/O, such that each
+; written file comes with a declaration in the database that the path
+; exists and is valid.
 ;
 ; For a given path P:
 ;
 ;  - If DB declares P
 ;    * P exists: DB integrity is fine.
-;    * P does not exist: DB integrity is not fine. Not recoverable.
+;    * P does not exist: DB is corrupt. Not recoverable.
 ;  - If DB does not declare P
-;    * P exists: Filesystem integrity is fine.
-;    * P does not exist: Should delete P.
+;    * P exists and digest matches: Filesystem integrity is fine.
+;    * P does not exist, or digest does not match: FS is corrupt. Delete P to recover.
 
-(define-db-procedure (make-addressable-file name in est-size)
+
+(define (make-addressable-file name in est-size)
   (define tmp (build-addressable-path #"tmp"))
   (dynamic-wind
     void
@@ -450,43 +524,6 @@
     (λ () (close-input-port in))))
 
 
-(define-db-procedure (make-addressable-directory output-name proc)
-  (call-with-temporary-directory
-   #:cd? #t #:base (build-object-path)
-   (λ (path)
-     (proc path)
-     (define digest (make-directory-content-digest output-name path))
-     (define dest
-       (build-path (path-only path)
-                   (encoded-file-name digest)))
-     (with-handlers ([exn:fail:filesystem?
-                      (λ (e)
-                        (copy-directory/files path dest #:preserve-links? #t)
-                        (delete-directory/files path))])
-       (rename-file-or-directory path dest #t))
-     (declare-path (find-relative-path (workspace-directory) dest)
-                   digest))))
-
-(define-db-procedure (make-addressable-link target-path-record link-path)
-  (make-file-or-directory-link
-   (find-relative-path (path-only (simplify-path (path->complete-path link-path)))
-                       (build-workspace-path (path-record-path target-path-record)))
-   link-path)
-  (gen-save (path-record #f
-                         link-path
-                         sql-null
-                         (record-id target-path-record))))
-
-
-(define (make-directory-content-digest output-name path)
-  (for/fold ([dig (make-digest (open-input-bytes (string->bytes/utf-8 output-name)) 'sha384)])
-            ([subpath (in-directory path)]
-             #:when (file-exists? subpath))
-    (call-with-input-file subpath
-      (λ (in) (make-digest (input-port-append #t (open-input-bytes dig) in)
-                           'sha384)))))
-
-
 (define (print-transfer-status m)
   (write-message m
    (message-formatter
@@ -504,20 +541,94 @@
              name bytes-read)])))
 
 
-(define-db-procedure (declare-path unnormalized-path digest)
-  (gen-save (path-record #f (normalize-path-for-db unnormalized-path) digest sql-null)))
+(define (make-addressable-directory output-name proc)
+  (call-with-temporary-directory
+   #:cd? #t #:base (build-object-path)
+   (λ (path)
+     (proc path)
+     (define digest (make-directory-content-digest output-name path))
+     (define dest
+       (build-path (path-only path)
+                   (encoded-file-name digest)))
+     (with-handlers ([exn:fail:filesystem?
+                      (λ (e)
+                        (copy-directory/files path dest #:preserve-links? #t)
+                        (delete-directory/files path))])
+       (rename-file-or-directory path dest #t))
+     (declare-path (find-relative-path (workspace-directory) dest)
+                   digest))))
 
 
-(define-db-procedure (declare-link unnormalized-path path-id)
-  (gen-save (path-record #f
-                         (normalize-path-for-db unnormalized-path)
-                         sql-null
-                         path-id)))
+(define (make-directory-content-digest output-name path)
+  (for/fold ([dig (make-digest (open-input-bytes (string->bytes/utf-8 output-name)) 'sha384)])
+            ([subpath (in-directory path)]
+             #:when (file-exists? subpath))
+    (call-with-input-file subpath
+      (λ (in) (make-digest (input-port-append #t (open-input-bytes dig) in)
+                           'sha384)))))
 
 
-(define-db-procedure (in-path-links path-id)
+(define (make-addressable-link target-path-record link-path)
+  ; If the link to create is inside the workspace, make it use a relative
+  ; path. This allows the user to move the workspace directory without
+  ; breaking the links inside.
+  (define to
+    (if (path-in-workspace? link-path)
+        (find-relative-path (path-only (simple-form-path link-path))
+                            (build-workspace-path (path-record-path target-path-record)))
+        ; This breaks if the path record has a complete path.
+        ; It assumes that the link target is always in the workspace.
+        (simple-form-path (build-workspace-path (path-record-path target-path-record)))))
+
+  (make-directory* (path-only (simple-form-path link-path)))
+  (make-file-or-directory-link to link-path)
+  (gen-save (make-link-path-record link-path (record-id target-path-record))))
+
+
+(define (make-file-path-record path digest)
+  (path-record sql-null
+               (normalize-path-for-db path)
+               digest
+               sql-null))
+
+
+(define (make-link-path-record path path-id [wrt (current-directory)])
+  (path-record sql-null
+               (normalize-path-for-db (normalize-path path))
+               sql-null
+               path-id))
+
+
+(define (find-path-record variant)
+  (define search-rec
+    (cond [(exact-positive-integer? variant)
+           (path-record variant
+                        #f
+                        #f
+                        #f)]
+          [(path-string? variant)
+           (path-record #f
+                        (normalize-path-for-db variant)
+                        #f
+                        #f)]
+          [(bytes? variant)
+           (path-record #f
+                        #f
+                        variant
+                        #f)]
+          [else #f]))
+  (and search-rec
+       (find-exactly-one search-rec)))
+
+
+(define (declare-path unnormalized-path digest)
+  (gen-save (make-file-path-record unnormalized-path digest)))
+
+(define (declare-link unnormalized-path path-id [wrt (current-directory)])
+  (gen-save (make-link-path-record unnormalized-path path-id wrt)))
+
+(define (in-path-links path-id)
   (search-by-record (path-record #f #f #f path-id)))
-
 
 (define (normalize-path-for-db path)
   (if (string? path)
@@ -525,13 +636,13 @@
       (path->string path)))
 
 
-(define-db-procedure (declare-output provider-name
-                                     package-name
-                                     edition-name
-                                     revision-number
-                                     revision-names
-                                     output-name
-                                     output-path-record)
+;----------------------------------------------------------------------------------
+; Package output includes discovery information (version, author,
+; name) and a path record. Define procedures to help users search for
+; and review their installed objects.
+
+(define (declare-output provider-name package-name edition-name
+                        revision-number revision-names output-name output-path-record)
   (define provider-id  (save (provider-record #f provider-name)))
   (define package-id   (save (package-record  #f package-name provider-id)))
   (define edition-id   (save (edition-record  #f edition-name package-id)))
@@ -565,7 +676,7 @@
                edition-id v)]))
 
 
-(define-db-procedure (in-all-installed)
+(define (in-all-installed)
   (in-query+
    (~a "select U.id, U.name, K.id, K.name, E.id, E.name, R.id, R.number, O.id, O.name, P.id, P.path from "
        (relation-name paths) " as P"
@@ -577,7 +688,7 @@
 
 
 
-(define-db-procedure (in-xiden-objects query-variant)
+(define (in-xiden-objects query-variant)
   (define query (coerce-xiden-query query-variant))
   (match-define
     (xiden-query
@@ -635,12 +746,12 @@
      (apply in-query+ sql params))))
 
 
-(define-db-procedure (in-xiden-outputs query-variant)
+(define (in-xiden-outputs query-variant)
   (sequence-map (λ (rid rn on path) (find-exactly-one (output-record #f rid #f #f)))
                 (in-xiden-objects query-variant)))
 
 
-(define-db-procedure (find-xiden-query output-name revision-id)
+(define (find-xiden-query output-name revision-id)
   (match-define (vector provider-name package-name edition-name revision-number)
     (query-row+ (~a "select P.name, K.name, E.name, R.number"
                     " from "       (relation-name providers) " as P"
@@ -658,7 +769,7 @@
                output-name))
 
 
-(define-db-procedure (call-with-reused-output query continue)
+(define (call-with-reused-output query continue)
   (continue
    (call/cc
     (λ (k)
