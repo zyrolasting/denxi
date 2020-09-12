@@ -294,15 +294,19 @@
                  (if existing-or-#f
                      (record-id existing-or-#f)
                      sql-null)))
-  (define insert? (sql-null? id))
 
-  (apply query-exec+
-         (~a (if insert? "insert" "replace")
-             " into " (relation-name (gen-relation record-inst))
-             " values ("
-             (string-join (build-list (vector-length vals) (const "?")) ",")
-             ");")
-         (cons id (cdr (vector->list vals))))
+  (define insert? (or (not id) (sql-null? id)))
+
+  (define sql
+    (~a (if insert? "insert" "replace")
+        " into " (relation-name (gen-relation record-inst))
+        " values ("
+        (string-join (build-list (vector-length vals) (const "?")) ",")
+        ");"))
+
+  (displayln sql)
+
+  (apply query-exec+ sql (cons id (cdr (vector->list vals))))
   (if insert?
       (query-value+ "SELECT last_insert_rowid();")
       id))
@@ -683,13 +687,28 @@
 
 (define (declare-output provider-name package-name edition-name
                         revision-number revision-names output-name output-path-record)
-  (define provider-id  (save (provider-record #f provider-name)))
-  (define package-id   (save (package-record  #f package-name provider-id)))
-  (define edition-id   (save (edition-record  #f edition-name package-id)))
-  (define revision-id  (save (revision-record #f revision-number edition-id)))
-  (define revision-name-ids
+
+  (define (insert-if-new r)
+    (define existing (find-exactly-one r))
+    (if existing
+        (record-id existing)
+        (save r)))
+
+  (define provider-id  (insert-if-new (provider-record #f provider-name)))
+  (define package-id   (insert-if-new (package-record  #f package-name provider-id)))
+  (define edition-id   (insert-if-new (edition-record  #f edition-name package-id)))
+
+  (define revision-rec (revision-record #f revision-number edition-id))
+  (define existing-revision (find-exactly-one revision-rec))
+  (define revision-id
+    (if existing-revision
+        (record-id existing-revision)
+        (save revision-rec)))
+
+  (unless existing-revision
     (for/list ([name (in-list revision-names)])
       (save (revision-name-record #f name revision-id))))
+
   (gen-save (output-record #f
                            revision-id
                            (record-id output-path-record)
