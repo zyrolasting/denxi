@@ -589,8 +589,15 @@
   ; If the link to create is inside the workspace, make it use a relative
   ; path. This allows the user to move the workspace directory without
   ; breaking the links inside.
+  (define intraworkspace? (path-in-workspace? link-path))
+
+  (when (or (link-exists? link-path)
+            (directory-exists? link-path)
+            (file-exists? link-path))
+    (raise-user-error (format "Cannot make link at ~a. A file, directory, or link already exists at that path."
+                              link-path)))
   (define to
-    (if (path-in-workspace? link-path)
+    (if intraworkspace?
         (find-relative-path (path-only (simple-form-path link-path))
                             (build-workspace-path (path-record-path target-path-record)))
         ; This breaks if the path record has a complete path.
@@ -599,7 +606,15 @@
 
   (make-directory* (path-only (simple-form-path link-path)))
   (make-file-or-directory-link to link-path)
-  (gen-save (make-link-path-record link-path (record-id target-path-record))))
+
+  ; A redundant record is not cause to halt the program. If anything,
+  ; it's good that it exists after recreating a missing link.
+  (with-handlers ([exn:fail:sql? (λ (e)
+                                   (unless (equal? 2061 (assoc 'code (exn:fail:sql-info e)))
+                                     (raise e)))])
+    (gen-save (make-link-path-record #:inside-workspace? intraworkspace?
+                                     link-path
+                                     (record-id target-path-record)))))
 
 
 (define (make-file-path-record path digest)
@@ -609,9 +624,14 @@
                sql-null))
 
 
-(define (make-link-path-record path path-id [wrt (current-directory)])
+(define (make-link-path-record path path-id #:inside-workspace? inside?)
   (path-record sql-null
-               (normalize-path-for-db (normalize-path path))
+               (normalize-path-for-db
+                (let ([simple (simple-form-path path)])
+                  (if inside?
+                      (find-relative-path (workspace-directory)
+                                          simple)
+                      simple)))
                sql-null
                path-id))
 
