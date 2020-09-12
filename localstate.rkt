@@ -65,7 +65,9 @@
           [make-addressable-file
            (-> non-empty-string? input-port? (or/c +inf.0 exact-positive-integer?) path-record?)]
           [make-addressable-directory
-           (-> string? (-> complete-path? any) path-record?)]
+           (-> (non-empty-listof input-port?)
+               (-> complete-path? any)
+               path-record?)]
           [delete-record
            (-> record? void?)]
           [make-addressable-link
@@ -565,31 +567,14 @@
              name bytes-read)])))
 
 
-(define (make-addressable-directory output-name proc)
-  (call-with-temporary-directory
-   #:cd? #t #:base (build-object-path)
-   (λ (path)
-     (proc path)
-     (define digest (make-directory-content-digest output-name path))
-     (define dest
-       (build-path (path-only path)
-                   (encoded-file-name digest)))
-     (with-handlers ([exn:fail:filesystem?
-                      (λ (e)
-                        (copy-directory/files path dest #:preserve-links? #t)
-                        (delete-directory/files path))])
-       (rename-file-or-directory path dest #t))
-     (declare-path (find-relative-path (workspace-directory) dest)
-                   digest))))
-
-
-(define (make-directory-content-digest output-name path)
-  (for/fold ([dig (make-digest (open-input-bytes (string->bytes/utf-8 output-name)) 'sha384)])
-            ([subpath (in-directory path)]
-             #:when (file-exists? subpath))
-    (call-with-input-file subpath
-      (λ (in) (make-digest (input-port-append #t (open-input-bytes dig) in)
-                           'sha384)))))
+(define (make-addressable-directory digest-ports proc)
+  (define digest (make-digest (apply input-port-append #t digest-ports) 'sha384))
+  (define path (build-addressable-path digest))
+  (make-directory* path)
+  (parameterize ([current-directory path])
+    (proc path)
+    (declare-path (find-relative-path (workspace-directory) path)
+                  digest)))
 
 
 (define (make-addressable-link target-path-record link-path)

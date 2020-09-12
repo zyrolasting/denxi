@@ -144,12 +144,20 @@
                    messages)))))
 
 
+(define (open-input-info-as-bytes info)
+  (open-input-bytes
+    (with-handlers ([values (λ (e) (string->bytes/utf-8 (input-info-name info)))])
+      (integrity-info-digest (input-info-integrity info)))))
+
+
 (define (build-package-output! pkgeval output-name link-path)
   (logged
    (λ (messages)
      (define directory-record
        (make-addressable-directory
-        output-name
+        (cons (open-input-string output-name)
+              (map open-input-info-as-bytes
+                   (xiden-evaluator-ref pkgeval 'inputs null)))
         (λ (build-dir)
           (pkgeval `(cd ,build-dir))
           (pkgeval `(build ,output-name)))))
