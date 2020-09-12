@@ -323,11 +323,14 @@
 (define (xiden-collect-garbage)
   (parameterize ([current-directory (workspace-directory)]
                  [current-security-guard (make-gc-security-guard)])
-    (let loop ()
+    (let loop ([bytes-recovered 0])
       (forget-missing-links!)
-      (if (forget-unlinked-paths!)
-          (loop)
-          (delete-unreferenced-objects!)))))
+      (forget-unlinked-paths!)
+      (define bytes-recovered* (+ bytes-recovered (delete-unreferenced-objects!)))
+
+      (if (> bytes-recovered* bytes-recovered)
+          (loop bytes-recovered*)
+          bytes-recovered*))))
 
 (define (make-gc-security-guard)
   (make-security-guard (current-security-guard)
@@ -371,11 +374,9 @@
       (delete-record (record id) paths))))
 
 
-; The fold on a boolean is a shorter way to check for an empty sequence
 (define (forget-unlinked-paths!)
-  (for/fold ([deleted-something? #f])
-            ([(id path) (in-unreferenced-paths)])
-    (delete-record (record id) paths) #t))
+  (for ([(id path) (in-unreferenced-paths)])
+    (delete-record (record id) paths)))
 
 
 ; Not atomic, but can be used again unless the database itself is corrupted.
@@ -384,14 +385,19 @@
     (if (find-path-record (find-relative-path (workspace-directory) path))
         0
         (cond [(directory-exists? path)
-               (delete-unreferenced-objects! path)]
+               (define recovered (delete-unreferenced-objects! path))
+               (delete-directory/files path)
+               recovered]
               [(file-exists? path)
                (define size (file-size path))
                (delete-file path)
                size]
               [(link-exists? path)
                (delete-file path)
-               0]))))
+               ; This is not a correct size, but this tells the garbage collector
+               ; that something was deleted. I'm assuming that users run the garbage
+               ; collector to save enough bytes that the error would become negligible.
+               1]))))
 
 
 
@@ -489,7 +495,8 @@
                      (unless (regexp-match? #rx"no transaction is active" (exn-message e))
                        (raise e)))])
     (query-exec+ "rollback transaction;"))
-  (delete-unreferenced-objects!))
+  (delete-unreferenced-objects!)
+  (void))
 
 
 (define (start-transaction!)
@@ -506,7 +513,8 @@
 
 
 (define (end-transaction!)
-  (query-exec+ "commit transaction;"))
+  (query-exec+ "commit transaction;")
+  (void))
 
 
 ;----------------------------------------------------------------------------------
