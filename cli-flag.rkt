@@ -173,8 +173,10 @@
 ; Transaction flags
 (flag-out [+s ++install-source]
           (cli-flag XIDEN_INSTALL_SOURCES
-                    'multi null 2 (λ (flag a b) (cons (cons a b) (XIDEN_INSTALL_SOURCES)))
-                    '("link-name" "source")))
+                    'multi null 3 (λ (flag link-name output-name source)
+                                    (cons (list link-name output-name source)
+                                          (XIDEN_INSTALL_SOURCES)))
+                    '("link-name" "output-name" "source")))
 
 
 ; For use in REPL and tests. Provides a quick way to preview the effect of command

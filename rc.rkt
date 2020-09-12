@@ -127,7 +127,7 @@
 (define-xiden-setting XIDEN_SANDBOX_EVAL_TIME_LIMIT_SECONDS (>=/c 0) (* 5 60)
   "Time limit for each sandboxed expression")
 
-(define-xiden-setting XIDEN_INSTALL_SOURCES (listof (cons/c string? string?)) null
+(define-xiden-setting XIDEN_INSTALL_SOURCES (listof (list/c string? string? string?)) null
   "Add installation to transaction")
 
 (define-xiden-setting XIDEN_MATCH_RACKET_MODULES boolean? #f

@@ -40,10 +40,12 @@
                (or/c xiden-query? #f))]
           [call-with-reused-output
            (-> xiden-query-variant?
+               string?
                (-> (or/c #f exn? output-record?) any)
                any)]
           [in-xiden-outputs
            (-> xiden-query-variant?
+               string?
                (sequence/c output-record?))]
           [in-path-links
            (-> path-record? (sequence/c path-record?))]
@@ -57,6 +59,7 @@
            (-> bytes? complete-path?)]
           [in-xiden-objects
            (-> xiden-query-variant?
+               string?
                (sequence/c path-string?
                            exact-positive-integer?
                            revision-number?
@@ -725,7 +728,7 @@
 
 
 
-(define (in-xiden-objects query-variant)
+(define (in-xiden-objects query-variant output-name)
   (define query (coerce-xiden-query query-variant))
   (match-define
     (xiden-query
@@ -734,8 +737,7 @@
      edition-name
      revision-min
      revision-max
-     interval-bounds
-     output-name)
+     interval-bounds)
     query)
 
   (call/cc
@@ -783,9 +785,9 @@
      (apply in-query+ sql params))))
 
 
-(define (in-xiden-outputs query-variant)
+(define (in-xiden-outputs query-variant output-name)
   (sequence-map (λ (rid rn on path) (find-exactly-one (output-record #f rid #f #f)))
-                (in-xiden-objects query-variant)))
+                (in-xiden-objects query-variant output-name)))
 
 
 (define (find-xiden-query output-name revision-id)
@@ -806,13 +808,13 @@
                output-name))
 
 
-(define (call-with-reused-output query continue)
+(define (call-with-reused-output query output-name continue)
   (continue
    (call/cc
     (λ (k)
       (define-values (output-name rev-id rev-no path-id path)
         (with-handlers ([values k])
-          (sequence-ref (in-xiden-objects query) 0)))
+          (sequence-ref (in-xiden-objects query output-name) 0)))
       (find-exactly-one (output-record #f rev-id #f output-name))))))
 
 
@@ -891,7 +893,7 @@
     (define actual-results
       (sequence->list
        (in-values-sequence
-        (in-xiden-objects "a.example.com:widget:default:rev-3:7:ei:lib"))))
+        (in-xiden-objects "a.example.com:widget:default:rev-3:7:ei" "lib"))))
 
     (check-equal? (map (match-lambda [(list o _ rev-n _ path) (list rev-n o path)]) actual-results)
                   (build-list 4

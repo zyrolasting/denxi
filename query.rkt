@@ -14,7 +14,7 @@
           [xiden-query-variant? predicate/c]
           [coerce-xiden-query (-> xiden-query-variant? xiden-query?)]
           [xiden-query->string (-> xiden-query? string?)]
-          [package-evaluator->xiden-query (->* ((-> any/c any)) (string?) xiden-query?)]
+          [package-evaluator->xiden-query (-> (-> any/c any) xiden-query?)]
           [get-xiden-query-revision-range
            (->* (xiden-query?)
                 (#:lo revision-number?
@@ -59,8 +59,7 @@
    edition-name
    revision-min
    revision-max
-   interval-bounds
-   output-name)
+   interval-bounds)
   #:transparent)
 
 (define well-formed-xiden-query/c
@@ -70,8 +69,7 @@
             string?
             string?
             string?
-            (or/c "" "ii" "ee" "ie" "ei")
-            string?))
+            (or/c "" "ii" "ee" "ie" "ei")))
 
 
 (define (xiden-query-variant? v)
@@ -84,14 +82,13 @@
         [(procedure? v) (package-evaluator->xiden-query v)]))
 
 
-(define (package-evaluator->xiden-query pkgeval [assume-output ""])
+(define (package-evaluator->xiden-query pkgeval)
   (xiden-query (xiden-evaluator-ref pkgeval 'provider "")
                (xiden-evaluator-ref pkgeval 'package "")
                (xiden-evaluator-ref pkgeval 'edition "")
                (~a (xiden-evaluator-ref pkgeval 'revision-number ""))
                (~a (xiden-evaluator-ref pkgeval 'revision-number ""))
-               "ii"
-               assume-output))
+               "ii"))
 
 (define (query-ref s def)
   (if (non-empty-string? s)
@@ -185,9 +182,8 @@
     (verify "a:b:c:d"         "a:b:c:d")
     (verify "a:b:c:d:e"       "a:b:c:d:e")
     (verify "a:b:c:d:e:f"     "a:b:c:d:e:f")
-    (verify "a:b:c:d:e:f:g"   "a:b:c:d:e:f:g")
-    (verify "a:b:c:d:e:f:g:h" "a:b:c:d:e:f:g")
-    (verify "a:b:c::e:f:g:h"  "a:b:c::e:f:g"))
+    (verify "a:b:c:d:e:f:g"   "a:b:c:d:e:f")
+    (verify "a:b:c::e:f:g:h"  "a:b:c::e:f"))
 
   (define (test-true* p seq)
     (for ([args (in-values-sequence seq)])

@@ -42,20 +42,20 @@
 (define+provide-message $package (info))
 (define+provide-message $package-installed $package ())
 (define+provide-message $package-in-use $package ())
-(define+provide-message $built-package-output $package ())
-(define+provide-message $reused-package-output $package ())
+(define+provide-message $built-package-output $package (output-name))
+(define+provide-message $reused-package-output $package (output-name))
 (define+provide-message $package-not-installed $package ())
 (define+provide-message $undeclared-racket-version $package ())
 (define+provide-message $unsupported-racket-version $package (versions))
-(define+provide-message $undefined-package-output $package (name))
+(define+provide-message $undefined-package-output $package (output-name))
 (define+provide-message $package-malformed $package (errors))
 
 
-(define (install-package-with-source link-path source)
+(define (install-package-with-source link-path output-name source)
   (do pkgeval       <- (make-package-evaluator source)
-      output-name   <- (find-expected-output pkgeval source)
+      _             <- (validate-requested-output pkgeval output-name)
       build-output  <- (install-output! pkgeval output-name link-path)
-      results       <- (report-installation-results (package-name pkgeval output-name) build-output)
+      results       <- (report-installation-results (package-name pkgeval) build-output)
       (return (logged-unit (kill-evaluator pkgeval)))))
 
 
@@ -73,12 +73,7 @@
       (return (configure-evaluator supported-eval))))
 
 
-(define (find-expected-output pkgeval source)
-  (define output-name
-    (if (xiden-query-string? source)
-        (xiden-query-output-name (string->xiden-query source))
-        "default"))
-
+(define (validate-requested-output pkgeval output-name)
   (if (member output-name (cons "default" (xiden-evaluator-ref pkgeval 'outputs null)))
       (logged-unit output-name)
       (logged-failure ($undefined-package-output (package-name pkgeval) output-name))))
@@ -114,8 +109,8 @@
       (logged-failure ($package-malformed (package-name pkgeval) errors))))
 
 
-(define (package-name pkgeval [output-name ""])
-  (xiden-query->string (package-evaluator->xiden-query pkgeval output-name)))
+(define (package-name pkgeval)
+  (xiden-query->string (package-evaluator->xiden-query pkgeval)))
 
 
 (define (report-installation-results name build-output)
@@ -127,7 +122,8 @@
 
 (define (install-output! pkgeval output-name link-path)
   (call-with-reused-output
-   (package-evaluator->xiden-query pkgeval output-name)
+   (package-evaluator->xiden-query pkgeval)
+   output-name
    (λ (output-record-or-#f)
      (if (output-record? output-record-or-#f)
          (reuse-package-output! pkgeval output-name output-record-or-#f link-path)
@@ -140,7 +136,7 @@
      (define directory-record (find-path-record (output-record-path-id output-record-inst)))
      (make-addressable-link directory-record link-path)
      (values SUCCESS
-             (cons ($reused-package-output (package-name pkgeval output-name))
+             (cons ($reused-package-output (package-name pkgeval) output-name)
                    messages)))))
 
 
@@ -173,7 +169,7 @@
      (make-addressable-link directory-record link-path)
 
      (values SUCCESS
-             (cons ($built-package-output (package-name pkgeval output-name))
+             (cons ($built-package-output (package-name pkgeval) output-name)
                    messages)))))
 
 
@@ -286,11 +282,11 @@
 
 
 (define-message-formatter format-package-message
-  [($built-package-output name)
-   (format "Built ~a" name)]
+  [($built-package-output name output-name)
+   (format "~a: built ~a" name output-name)]
 
-  [($reused-package-output name)
-   (format "Reused ~a" name)]
+  [($reused-package-output name output-name)
+   (format "~a: reused ~a" name output-name)]
 
   [($undeclared-racket-version info)
    (join-lines
