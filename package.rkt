@@ -125,13 +125,13 @@
                          ($package-not-installed name))))
 
 
-(define (install-output! pkgeval output-name link-name)
+(define (install-output! pkgeval output-name link-path)
   (call-with-reused-output
    (package-evaluator->xiden-query pkgeval output-name)
    (λ (output-record-or-#f)
      (if (output-record? output-record-or-#f)
-         (reuse-package-output! pkgeval output-name output-record-or-#f link-name)
-         (build-package-output! pkgeval output-name link-name)))))
+         (reuse-package-output! pkgeval output-name output-record-or-#f link-path)
+         (build-package-output! pkgeval output-name link-path)))))
 
 
 (define (reuse-package-output! pkgeval output-name output-record-inst link-path)
