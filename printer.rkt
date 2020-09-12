@@ -22,6 +22,7 @@
 
 (require racket/date
          racket/fasl
+         racket/format
          racket/match
          racket/pretty
          racket/serialize
@@ -80,7 +81,8 @@
 
 (define+provide-message-formatter default-message-formatter
   [($show-string v) v]
-  [($show-datum v) (pretty-format #:mode 'write v)])
+  [($show-datum v) (pretty-format #:mode 'write v)]
+  [v (~s v)])
 
 
 (module+ test
