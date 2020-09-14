@@ -6,7 +6,6 @@
 
 You can extend @binary using a Racket module as a @deftech{plugin}.
 
-
 @section{Security Warning}
 
 @tech{Plugins} run directly in @|binary|'s runtime, with the same

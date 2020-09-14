@@ -21,4 +21,3 @@ Racket installation.
 @include-section{workspace.scrbl}
 @include-section{config.scrbl}
 @include-section{plugin.scrbl}
-@include-section{reproduction.scrbl}

@@ -11,17 +11,17 @@ You run a transaction using the @litchar{do} command. An installation
 is one possible thing to do during a transaction.
 
 @verbatim|{
-$ xiden do -i widget def.rkt
+$ xiden do ++install-source my-lib lib def.rkt
 }|
 
-This transaction bind a symbolic link called @litchar{widget} to the
-installed output of the @tech{package definition} file
-@litchar{def.rkt}.
+This transaction bind a symbolic link called @litchar{my-lib} to the
+@litchar{lib} output directory built the @tech{package definition}
+file @litchar{def.rkt}.
 
 When you no longer need the built output, remove the link.
 
 @verbatim|{
-$ rm widget
+$ rm my-lib
 }|
 
 All files without links are eligible for garbage collection.
@@ -30,13 +30,14 @@ All files without links are eligible for garbage collection.
 $ xiden gc
 }|
 
-
 The premise of installation and uninstallation is the same, but
-@project-name reasons about them in terms of explicit transactions
-and what files currently have references.
+@project-name reasons about them in terms of explicit transactions and
+what files currently have references. You do not need to manually
+track what files to delete in the back office, so to speak. Just
+remove the links you don't need in your code.
 
 
-@subsection{Where Was the Confirmation Prompt?}
+@section{Where Was the Confirmation Prompt?}
 
 @project-name is not interactive. Its runtime configuration is held
 constant after launch so that each command feels like calling a pure
@@ -48,16 +49,16 @@ please leverage the features of your shell and/or configure @project-name
 using sources other than a command line.
 
 
-@subsection{Installing Multiple Packages}
+@section{Installing Multiple Packages}
 
 You can specify more than one definition to install in order.  Note
-that one command equals one transaction! In this context, three
-installations occur in one transaction. If anything goes wrong in the
-installation for @tt{example.com:widget:draft}, then the entire
-transaction fails to the state before the command ran.
+that one @litchar{do} command equals one transaction! In this context,
+three installations occur in one transaction. If anything goes wrong
+in the third installation, then the entire transaction fails to the
+state before the command ran.
 
 @verbatim|{
-$ xiden pkg -i example.com:widget:draft -i def.rkt
+$ xiden pkg ++install-source ... ++install-source ... ++install-source ...
 }|
 
 Don't worry about installing conflicting versions. @binary installs

@@ -10,13 +10,16 @@ string.
 
 @section{Simple Queries}
 
-In the simplest case, a query string contains only a provider name and
-a package name, like @tt{example.com:calculator}. Such a query is
-understood to mean "the @tt{calculator} package provided by @tt{example.com}".
+In the simplest case, a @tech{package query} contains only a provider
+name and a package name, like @tt{example.com:calculator}. Such a
+query is understood to mean "the @tt{calculator} package provided by
+@tt{example.com}".
 
 Why not just say @tt{calculator}? Because providers are presumed
 unique, and using a verifiable identity to scope packages helps
-establish a name for your software across hosts.
+establish a name for your software across hosts. It also establishes a
+basis for comparison when two developers use the same package name
+but deliver different work.
 
 
 @section{Specifying an Edition}
@@ -79,16 +82,19 @@ Using integer interval notation:
 @item{@tt{ee} means @litchar|{{103 .. 287}}|}
 ]
 
-Marking exclusive bounds are useful with revision names.  This query
-requests a scientific calculator's closed beta implementation, up to
-but not including the production-ready revision. If the author did not
-define a revision name marking the end of a beta, then you would have
-to know the revision number in advance of writing the query. With the
-interval flags, you do not have to know any revision numbers.
+Marking exclusive bounds are useful with revision names.  The below
+query requests a scientific calculator's closed beta implementation,
+up to but not including the production-ready revision.
 
 @verbatim|{
 example.com:calculator:scientific:closed-beta:production:ie
 }|
+
+
+If the author did not define a revision name marking the end of a
+beta, then you would have to know the revision number in advance of
+writing the query. With the interval flags, you do not have to know
+any revision numbers.
 
 When resolving @tech{revision names}, @binary will raise an error for
 queries like these because they each resolve to a backwards interval:
@@ -118,11 +124,11 @@ following rules:
 
 @itemlist[
 
-@item{If no edition is set, @project-name will assume it is @racket{default}.}
+@item{If no edition is set, @project-name will assume the edition is @racket{default}.}
 
 @item{If no revision is set, @project-name will use the largest available revision number.}
 
-@item{If a minimum revision is set, but not a maximimum, @project-name
+@item{If a minimum revision is set, but not a maximum, @project-name
 will assume the maximum revision is equal to the minimum revision
 (creating a request for an exact revision).}
 
@@ -130,9 +136,8 @@ will assume the maximum revision is equal to the minimum revision
 
 ]
 
-By these rules, @tt{example.com:calculator:teacher:1} matches only revision 1
-of a calculator's teacher edition.
-
-When searching for multiple packages, omitting information will cause
-@project-name to match against more packages. In that case, omitting
-revision information will result in matching against all revisions.
+By these rules, @tt{example.com:calculator:teacher:1} matches only
+revision @racket[1] of a calculator's teacher edition. When searching
+for multiple packages, omitting information will cause @project-name
+to match against more packages. In that case, omitting revision
+information will result in matching against all revisions.
