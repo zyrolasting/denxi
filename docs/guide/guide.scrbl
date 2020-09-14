@@ -3,7 +3,7 @@
 @require[@for-label[racket/base]
          "../shared.rkt"]
 
-@title[#:style '(toc)]{A Functional Package Management System}
+@title[#:style '(toc)]{Functional Dependency Management}
 @author[(author+email "Sage L. Gerard" "sage@sagegerard.com" #:obfuscate? #t)]
 
 This is a guide for @|project-name|, a functional dependency manager for Racket.
