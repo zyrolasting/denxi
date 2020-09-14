@@ -215,6 +215,29 @@
    XIDEN_TRUST_UNVERIFIED_HOST
    XIDEN_VERBOSE])
 
+
+
+(define+provide-message-formatter format-rc-message
+  [($setting-not-found name)
+   (format "There is no setting called ~s.~n" name)]
+
+  [($setting-accepted name value)
+   (format "Setting ~a to ~s"
+           name
+           value)]
+
+  [($setting-value-unreadable name source-name)
+   (format "Could not read setting value for ~a from ~s"
+           name
+           source-name)]
+
+  [($setting-value-rejected name value expected)
+   (format "Invalid value for ~a: ~a~n  expected: ~a~n"
+           name
+           value
+           expected)])
+
+
 (module+ test
   (require rackunit
            (submod "file.rkt" test))
