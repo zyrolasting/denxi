@@ -34,7 +34,6 @@
 
 (define+provide-message $setting (name))
 (define+provide-message $setting-accepted $setting (value))
-(define+provide-message $no-setting-sources ())
 (define+provide-message $setting-not-found $setting ())
 (define+provide-message $setting-value-unreadable $setting (source-name))
 (define+provide-message $setting-value-rejected $setting (value expected))
