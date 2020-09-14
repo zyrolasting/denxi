@@ -1,4 +1,7 @@
-A functional package manager for Racket.
+[![](https://img.shields.io/badge/%E2%99%A5-Support%20Ethical%20Software-red)](https://sagegerard.com/subscribe.html)
+
+
+A functional dependency manager for Racket.
 
 
 ## Benefits
@@ -17,23 +20,23 @@ A functional package manager for Racket.
 ## Tradeoffs
 
 * Higher storage requirements
-* A different workflow
+* Different learning curve
 
 
 ## But we already have `raco pkg`
 
-Yes, and it's fine. `xiden` complements `raco pkg`, so it is not meant
-to be fully redundant. But both projects are package managers, so some
-functional overlap exists.
+Yes, and it's fine. So what's different? `raco pkg` has side-effects
+on the Racket installation that runs it. `xiden` does not. This means
+`xiden` does not create collections in an existing Racket
+installation. You cannot directly target Racket modules using `raco
+setup` or collection paths, but you can incorporate dependencies as if
+they were parts of your project that you simply did not check into
+source control.
 
-So what's different? In brief: `raco pkg` has side-effects on the
-Racket installation that runs it. `xiden` does not. This means `xiden`
-does not create collections in an existing Racket installation. You
-cannot directly target Racket modules in these _zero-collection packages_
-using `raco setup` or collection paths. The benefit is that `xiden` behaves
-more like [Guix][], in that packages are built deterministically and
-in a fault-tolerant manner. When you want to use individual packages
-or the files within them, you can request links to those files.
+`xiden` behaves more like [Guix][], in that packages are built
+deterministically and atomically. When you want to use a dependency,
+you can request links to them. Delete the links to make the installed
+files eligible for garbage collection.
 
 [Guix]: https://guix.gnu.org/
 
