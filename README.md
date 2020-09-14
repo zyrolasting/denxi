@@ -1,6 +1,5 @@
 [![](https://img.shields.io/badge/%E2%99%A5-Support%20Ethical%20Software-red)](https://sagegerard.com/subscribe.html)
 
-
 A functional dependency manager for Racket.
 
 
@@ -27,16 +26,15 @@ A functional dependency manager for Racket.
 
 Yes, and it's fine. So what's different? `raco pkg` has side-effects
 on the Racket installation that runs it. `xiden` does not. This means
-`xiden` does not create collections in an existing Racket
+`xiden` does not create collections in the running Racket
 installation. You cannot directly target Racket modules using `raco
 setup` or collection paths, but you can incorporate dependencies as if
-they were parts of your project that you simply did not check into
-source control.
+they were parts of your project.
 
-`xiden` behaves more like [Guix][], in that packages are built
+`xiden` behaves like [Guix][], in that packages are built
 deterministically and atomically. When you want to use a dependency,
-you can request links to them. Delete the links to make the installed
-files eligible for garbage collection.
+you can request links to it. Delete every link to make that dependency
+eligible for garbage collection.
 
 [Guix]: https://guix.gnu.org/
 
