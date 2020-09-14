@@ -1,3 +1,5 @@
+export SHELL=/bin/bash
+
 .PHONY: all test clean doc
 
 all: racket-deps exe doc
