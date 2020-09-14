@@ -304,8 +304,6 @@
         (string-join (build-list (vector-length vals) (const "?")) ",")
         ");"))
 
-  (displayln sql)
-
   (apply query-exec+ sql (cons id (cdr (vector->list vals))))
   (if insert?
       (query-value+ "SELECT last_insert_rowid();")
