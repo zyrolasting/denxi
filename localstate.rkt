@@ -316,6 +316,9 @@
    (record-id record-inst)))
 
 
+(define (error-code-equal? code e)
+  (equal? code (cdr (assoc 'errcode (exn:fail:sql-info e)))))
+
 
 ;----------------------------------------------------------------------------------
 ; Garbage Collector
