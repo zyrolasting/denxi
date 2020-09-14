@@ -442,13 +442,13 @@
              [wip-params null])
             ([val (in-list available-values)]
              [col (in-list cols)])
-    (if val
-        (values wip-requested-columns
-                (cons (format "~a=?" col) wip-conditions)
-                (cons val wip-params))
+    (if (hole? val)
         (values (cons col wip-requested-columns)
                 wip-conditions
-                wip-params))))
+                wip-params)
+        (values wip-requested-columns
+                (cons (format "~a=?" col) wip-conditions)
+                (cons val wip-params)))))
 
 
 (define (infer-select-query record-inst available-values)
@@ -593,36 +593,65 @@
                   digest)))
 
 
-(define (make-addressable-link target-path-record link-path)
+(define (make-addressable-link target-path-record user-link-path)
   ; If the link to create is inside the workspace, make it use a relative
   ; path. This allows the user to move the workspace directory without
   ; breaking the links inside.
-  (define intraworkspace? (path-in-workspace? link-path))
+  (define link-in-workspace? (path-in-workspace? user-link-path))
 
-  (when (or (link-exists? link-path)
-            (directory-exists? link-path)
-            (file-exists? link-path))
-    (raise-user-error (format "Cannot make link at ~a. A file, directory, or link already exists at that path."
-                              link-path)))
-  (define to
-    (if intraworkspace?
-        (find-relative-path (path-only (simple-form-path link-path))
-                            (build-workspace-path (path-record-path target-path-record)))
-        ; This breaks if the path record has a complete path.
-        ; It assumes that the link target is always in the workspace.
-        (simple-form-path (build-workspace-path (path-record-path target-path-record)))))
+  (when (or (link-exists? user-link-path)
+            (directory-exists? user-link-path)
+            (file-exists? user-link-path))
+    (raise-user-error (format "Cannot make link at ~a. Something already exists at that path."
+                              user-link-path)))
+
+  (define to-path
+    (make-link-content-path #:link-in-workspace? link-in-workspace?
+                            target-path-record
+                            user-link-path))
+
+  (define link-path
+    (make-link-path #:link-in-workspace? link-in-workspace?
+                    user-link-path))
+
+  (define link-record
+    (declare-link link-path target-path-record))
 
   (make-directory* (path-only (simple-form-path link-path)))
-  (make-file-or-directory-link to link-path)
+  (make-file-or-directory-link to-path link-path)
+
+  link-record)
+
+
+(define (declare-link link-path target-path-record)
+  (define normalized (normalize-path-for-db link-path))
 
   ; A redundant record is not cause to halt the program. If anything,
   ; it's good that it exists after recreating a missing link.
-  (with-handlers ([exn:fail:sql? (λ (e)
-                                   (unless (equal? 2061 (assoc 'code (exn:fail:sql-info e)))
-                                     (raise e)))])
-    (gen-save (make-link-path-record #:inside-workspace? intraworkspace?
-                                     link-path
+  (with-handlers ([exn:fail:sql?
+                   (λ (e)
+                     (unless (error-code-equal? 2067 e)
+                       (raise e))
+                     (find-exactly-one (make-file-path-record normalized #f)))])
+    (gen-save (make-link-path-record normalized
                                      (record-id target-path-record)))))
+
+
+(define (make-link-path #:link-in-workspace? link-in-workspace? link-path)
+  (let ([simple (simple-form-path link-path)])
+    (if link-in-workspace?
+        (find-relative-path (workspace-directory) simple)
+        simple)))
+
+
+(define (make-link-content-path  #:link-in-workspace? link-in-workspace? target-path-record link-path)
+  (if link-in-workspace?
+      (find-relative-path (path-only (simple-form-path link-path))
+                          (build-workspace-path (path-record-path target-path-record)))
+      ; This breaks if the path record has a complete path.
+      ; It assumes that the link target is always in the workspace.
+      (simple-form-path (build-workspace-path (path-record-path target-path-record)))))
+
 
 
 (define (make-file-path-record path digest)
@@ -632,14 +661,9 @@
                sql-null))
 
 
-(define (make-link-path-record path path-id #:inside-workspace? inside?)
+(define (make-link-path-record path path-id)
   (path-record sql-null
-               (normalize-path-for-db
-                (let ([simple (simple-form-path path)])
-                  (if inside?
-                      (find-relative-path (workspace-directory)
-                                          simple)
-                      simple)))
+               path
                sql-null
                path-id))
 
@@ -668,9 +692,6 @@
 
 (define (declare-path unnormalized-path digest)
   (gen-save (make-file-path-record unnormalized-path digest)))
-
-(define (declare-link unnormalized-path path-id [wrt (current-directory)])
-  (gen-save (make-link-path-record unnormalized-path path-id wrt)))
 
 (define (in-path-links path-id)
   (search-by-record (path-record #f #f #f path-id)))
@@ -832,7 +853,7 @@
   (continue
    (call/cc
     (λ (k)
-      (define-values (output-name rev-id rev-no path-id path)
+      (define-values (_ rev-id rev-no path-id path)
         (with-handlers ([values k])
           (sequence-ref (in-xiden-objects query output-name) 0)))
       (find-exactly-one (output-record #f rev-id #f output-name))))))
