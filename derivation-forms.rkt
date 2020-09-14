@@ -12,6 +12,7 @@
          eval
          hash
          hash-ref
+         install
          lambda λ
          let let-values
          quote quasiquote unquote unquote-splicing
@@ -45,8 +46,13 @@
                  (or/c #f signature-info?))
                 input-info?)]
 
+          [use-input
+           (-> input-info?
+               path-string?)]
+
           [input-ref
-           (-> (or/c path-string? input-info?)
+           (-> (listof input-info?)
+               path-string?
                path-string?)]
 
           [from-package
@@ -78,12 +84,14 @@
 
 
 
+
 (require (for-syntax racket/base
                      syntax/location
                      syntax/parse)
          (only-in file/sha1 hex-string->bytes)
          file/untgz
          racket/function
+         racket/list
          racket/sequence
          racket/string
          "archiving.rkt"
@@ -118,29 +126,18 @@
                               default-message-formatter))
 
 
-(define (input-ref input)
-  (if (path-string? input)
-      (input-ref/search input)
-      (input-ref/use input)))
-
-
-(define (input-ref/search str)
-  (define lookup (current-info-lookup))
-  (define inputs (lookup 'inputs (const null)))
+(define (input-ref inputs str)
   (define input (findf (λ (info) (equal? str (input-info-name info))) inputs))
   (if input
-      (input-ref/use input)
+      (use-input input)
       (raise-user-error 'input-ref
                         "~s does not match a declared input"
                         str)))
 
 
-(define (input-ref/use input)
+(define (use-input input)
   (write-message ($input-resolve-start (input-info-name input)) format-message)
-  (define-values (path messages) (run-log (resolve-input input)))
-  (sequence-for-each
-   (λ (m) (write-message m format-message))
-   (in-list (reverse messages)))
+  (define path (run+print-log (resolve-input input)))
   (if (eq? path FAILURE)
       (raise-user-error 'input-ref
                         "Could not resolve input ~a~nSources:~n~a~n"
@@ -148,6 +145,21 @@
                         (join-lines (map ~a (input-info-sources input))))
       path))
 
+
+(define (install link-path output-name pkgdef)
+  (define result (run+print-log (install-package link-path output-name pkgdef)))
+  (if (eq? result FAILURE)
+      (raise-user-error 'install
+                        "Could not install package output ~a"
+                        output-name)
+      (void)))
+
+(define (run+print-log logged-inst)
+  (define-values (result messages) (run-log logged-inst))
+  (sequence-for-each
+   (λ (m) (write-message m format-message))
+   (in-list (reverse (flatten messages))))
+  result)
 
 (define-syntax (from-file stx)
   (syntax-parse stx

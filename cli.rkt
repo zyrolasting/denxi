@@ -115,7 +115,7 @@ EOF
           flags
           (hasheq XIDEN_INSTALL_SOURCES
                   (match-lambda [(list link-path output-name source)
-                                 (install-package-with-source link-path output-name source)]))))
+                                 (install-package link-path output-name source)]))))
 
        (if (null? actions)
            (halt 1 ($show-string "Nothing to do."))

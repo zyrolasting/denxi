@@ -51,8 +51,8 @@
 (define+provide-message $package-malformed $package (errors))
 
 
-(define (install-package-with-source link-path output-name source)
-  (do pkgeval       <- (make-package-evaluator source)
+(define (install-package link-path output-name pkg-definition-variant)
+  (do pkgeval       <- (make-package-evaluator pkg-definition-variant)
       _             <- (validate-requested-output pkgeval output-name)
       build-output  <- (install-output! pkgeval output-name link-path)
       results       <- (report-installation-results (package-name pkgeval) build-output)
@@ -67,7 +67,9 @@
 
 
 (define (make-package-evaluator source)
-  (do sourced-eval    <- (fetch-package-definition source)
+  (do sourced-eval    <- (if (string? source)
+                             (fetch-package-definition source)
+                             (build-package-evaluator source))
       validated-eval  <- (validate-evaluator sourced-eval)
       supported-eval  <- (check-racket-support validated-eval)
       (return (configure-evaluator supported-eval))))
@@ -124,10 +126,13 @@
   (call-with-reused-output
    (package-evaluator->xiden-query pkgeval)
    output-name
-   (λ (output-record-or-#f)
-     (if (output-record? output-record-or-#f)
-         (reuse-package-output! pkgeval output-name output-record-or-#f link-path)
-         (build-package-output! pkgeval output-name link-path)))))
+   (λ (variant)
+     (cond [(output-record? variant)
+            (reuse-package-output! pkgeval output-name variant link-path)]
+           [(exn? variant)
+            (raise variant)]
+           [else
+            (build-package-output! pkgeval output-name link-path)]))))
 
 
 (define (reuse-package-output! pkgeval output-name output-record-inst link-path)
@@ -258,6 +263,10 @@
 
      (values (or (fetch-state-result fetch-st) FAILURE)
              (cons messages m)))))
+
+
+(define (build-package-evaluator source)
+  (logged-unit (load-xiden-module source)))
 
 
 (define (check-racket-support pkgeval)
