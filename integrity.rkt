@@ -43,6 +43,8 @@
            (-> xiden-hash-source/c
                xiden-hash-algorithm/c
                bytes?)]
+          [make-fingerprint
+           (-> path-string? bytes?)]
           [check-integrity
            (-> well-formed-integrity-info/c
                xiden-hash-source/c
@@ -61,6 +63,10 @@
   (equal? (bytes-length (integrity-info-digest info))
           (bytes-length (make-digest #"whatever"
                                      (integrity-info-algorithm info)))))
+
+
+(define (make-fingerprint path)
+  (subbytes (make-digest path 'sha384) 0 20))
 
 
 (define well-formed-integrity-info/c
