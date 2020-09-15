@@ -4,6 +4,8 @@
 ; interface for them all.
 
 (require racket/contract
+         racket/string
+         file/sha1
          net/base64
          base32)
 
@@ -39,7 +41,7 @@
       (string->bytes/utf-8 v)))
 
 (define xiden-encodings
-  '(base64 base32))
+  '(base64 base32 hex colon-separated-hex))
 
 (define xiden-encoding/c
   (apply or/c xiden-encodings))
@@ -56,35 +58,37 @@
 
 
 (define (encode encoding variant)
-  (define bstr
-    (if (bytes? variant)
-        variant
-        (string->bytes/utf-8 variant)))
-
+  (define bstr (coerce-bytes variant))
   (define output
     (case encoding
+      [(hex)
+       (bytes->hex-string bstr)]
+      [(colon-separated-hex)
+       (define hexed (bytes->hex-string bstr))
+       (string-join
+        (for/list ([i (in-range 0 (sub1 (string-length hexed)) 2)])
+          (string (string-ref hexed i) (string-ref hexed (add1 i))))
+        ":")]
       [(base32) (base32-encode-bytes bstr)]
       [(base64) (base64-encode bstr #"")]))
 
   (if (bytes? variant)
-      (if (string? output)
-          (string->bytes/utf-8 output)
-          output)
-      (if (bytes? output)
-          (bytes->string/utf-8 output)
-          output)))
+      (coerce-bytes output)
+      (coerce-string output)))
 
 (define (decode encoding encoded)
   (case encoding
+    [(hex)
+     (hex-string->bytes (coerce-string encoded))]
+    [(colon-separated-hex)
+     (unless (regexp-match? #px"^([0-9A-Fa-f]{2}:)*[0-9A-Fa-f]{2}$" encoded)
+       (raise-user-error 'decode "~v is not a valid colon-separated hex string." encoded))
+     (decode 'hex (string-replace (coerce-string encoded) ":" ""))]
     [(base32)
-     (base32-decode-bytes
-      (if (string? encoded)
-          encoded
-          (bytes->string/utf-8 encoded)))]
+     (base32-decode-bytes (coerce-string encoded))]
     [(base64)
-     (base64-decode (if (string? encoded)
-                        (string->bytes/utf-8 encoded)
-                        encoded))]))
+     (base64-decode (coerce-bytes encoded))]))
+
 
 (module+ test
   (require rackunit)
