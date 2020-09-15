@@ -69,9 +69,6 @@
                bytes?
                signature-info?)]
 
-          [fingerprint
-           (-> (or/c non-empty-string? bytes?) bytes?)]
-
           [base32
            (-> (or/c non-empty-string? bytes?) bytes?)]
 
@@ -179,7 +176,7 @@
 
 (define integrity integrity-info)
 (define signature signature-info)
-(define fingerprint values)
+
 (define base32 (curry decode 'base32))
 (define base64 (curry decode 'base64))
 (define (hex variant)
