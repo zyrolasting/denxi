@@ -180,7 +180,10 @@
 (define base32 (curry decode 'base32))
 (define base64 (curry decode 'base64))
 (define (hex variant)
-  (hex-string->bytes (if (string? variant) variant (bytes->string/utf-8 variant))))
+  (decode (if (string-contains? variant ":")
+              'colon-separated-hex
+              'hex)
+          variant))
 
 (define-syntax (#%module-begin* stx)
   (syntax-case stx ()
