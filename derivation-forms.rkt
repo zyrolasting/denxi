@@ -30,7 +30,6 @@
          collection-path
          system-library-subpath
          getenv
-         XIDEN_SANDBOX_MEMORY_LIMIT_MB
          (all-from-out "archiving.rkt"
                        file/untgz)
          (rename-out [#%module-begin* #%module-begin]
