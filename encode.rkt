@@ -8,6 +8,10 @@
          base32)
 
 (provide (contract-out
+          [coerce-string
+           (-> (or/c string? bytes?) string?)]
+          [coerce-bytes
+           (-> (or/c string? bytes?) bytes?)]
           [xiden-encodings
            (non-empty-listof symbol?)]
           [xiden-encoding/c
@@ -23,6 +27,16 @@
            (-> xiden-encoding/c
                (or/c bytes? string?)
                (or/c bytes? string?))]))
+
+(define (coerce-string v)
+  (if (string? v)
+      v
+      (bytes->string/utf-8 v)))
+
+(define (coerce-bytes v)
+  (if (bytes? v)
+      v
+      (string->bytes/utf-8 v)))
 
 (define xiden-encodings
   '(base64 base32))
