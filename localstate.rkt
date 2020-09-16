@@ -617,8 +617,8 @@
   (define link-record
     (declare-link link-path target-path-record))
 
-  (make-directory* (path-only (simple-form-path link-path)))
-  (make-file-or-directory-link to-path link-path)
+  (make-directory* (path-only (simple-form-path user-link-path)))
+  (make-file-or-directory-link to-path user-link-path)
 
   link-record)
 
