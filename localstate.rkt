@@ -853,10 +853,16 @@
   (continue
    (call/cc
     (λ (k)
-      (define-values (_ rev-id rev-no path-id path)
-        (with-handlers ([values k])
-          (sequence-ref (in-xiden-objects query output-name) 0)))
-      (find-exactly-one (output-record #f rev-id #f output-name))))))
+      (with-handlers ([(λ _ #t)
+                       (λ (e)
+                         ; Consider early termination of a sequence as benign. Just
+                         ; report that as no record found.
+                         (k (if (regexp-match? #rx"ended before index" (exn-message e))
+                                #f
+                                e)))])
+        (define-values (_ rev-id rev-no path-id path)
+          (sequence-ref (in-xiden-objects query output-name) 0))
+        (find-exactly-one (output-record #f rev-id #f output-name)))))))
 
 
 (module+ test
