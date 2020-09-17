@@ -2,11 +2,13 @@
 
 @require["../shared.rkt" @for-label[racket/base]]
 
-@title[#:tag "config"]{Configuring @|binary|}
+@title[#:tag "config"]{Configuration}
 
 You can configure @|binary| using environment variables, the command
-line interface, and/or a runtime configuration file. Every setting
-has only one name, and a contract for accepted Racket values.
+line interface, and/or a runtime configuration file. Every setting has
+only one name, and a contract for accepted Racket values.
+
+@section{Value Sources}
 
 For example, let's look at the @racketfont{XIDEN_VERBOSE} setting,
 which is a boolean. This list covers the possible sources of a value,
@@ -27,29 +29,29 @@ The value must be @racket[(read)]able (e.g. @tt{--XIDEN_VERBOSE "#t"}).}
 ]
 
 
-@section{AAAAAA! This makes command lines painful to type!}
+@section{Why Such Verbose Commands?}
 
-Yes. @binary defines short flags, but values still need to be
-specified (e.g. @litchar{-v "#t"}). This prevents combining short
-flags into strings like @litchar{-vUih}.
+I'd bet that you will not like writing flags for @binary commands
+because @binary requires you to write values for @italic{every} flag
+(e.g. @litchar{-v "#t"}). This prevents combining short flags into
+strings like @litchar{-vUih}.
 
-So why do it this way? What are the benefits of this approach?
+Why do it this way? What are the benefits of this approach?
 
 @itemlist[
 
 @item{
+Passing values to flags keeps the entire command explicit and self-describing.
 Let's say @racket[XIDEN_VERBOSE] is @racket[#t] due to an environment
-variable or rcfile. You would not be able to change that back to false
-in a command line without expressing @racket[#f]. Always passing a value
-to a flag keeps the entire command explicit, making it more predictable.
+variable or rcfile. Assuming that you do not change the environment variable,
+you would not be able to change that back to @racket[#f]
+in a command line without expressing @racket[#f].
 }
 
 @item{
-There's no translation from reinvented value types like @racket{yes}
-to @racket[#t]. Short flags for switches are generally ambiguous
-because some of them shut things off while others turn things
-on. Here, what you type is what gets used at runtime, so long as it
-meets a contract.
+What you type is what gets used at runtime, so long as it meets a
+contract. This makes commands easier to predict for Racket
+programmers, because they can visualize exact values at play.
 }
 
 @item{
@@ -74,6 +76,7 @@ $ xiden -v "#t" ...
 }
 
 ]
+
 
 
 @section{Setting the Workspace}

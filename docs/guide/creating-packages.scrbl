@@ -50,11 +50,14 @@ between. Most of the discovery information near the top of the
 document should make sense at first glance.
 
 
-@section{Versioning}
+@section{Package Versions}
 
 @project-name versions @tech{package definitions} using
 @tech{editions} and @tech{revisions}, not major or minor version
-numbers.
+numbers. This means users can discover and select packages much like
+they would select a book or paper. When defining a package, you may
+specify an @tech{edition}, a @tech{revision number}, and any
+@tech{revision names} to act as aliases for that number.
 
 @racketblock[
 (define edition "draft")
@@ -62,33 +65,7 @@ numbers.
 (define revision-names '("alpha"))
 ]
 
-An @deftech{edition} is @bold{a name for a design or target
-audience}. It acts as a semantic major version. When you wish to adapt
-your software to a different audience without disrupting existing
-users, change the edition.
-
-A @deftech{revision} is an @bold{implementation of a design for a
-given target audience}. It can be a @tech{revision number} or a
-@tech{revision name}. There is no guarentee that every revision is
-backwards-compatible, but since the audience is presumed to be the
-same, how welcome a breaking change would be depends on the
-relationship between the maintainers and the target audience.
-Any automated upgrades should be designed around this.
-
-A @deftech{revision number} is a non-negative integer. Every revision
-is forever assigned the next available number in an edition.
-
-A @deftech{revision name} is an alias for a @tech{revision number}. It
-can be any string that contains at least one non-digit.
-
-A package must have a @tech{revision number}. When changed, a package must
-increment its @tech{revision number} if the change uses the same
-@tech{edition}. If the package starts a new edition, the @tech{revision number}
-must reset to @racket[0].
-
-The default name of an edition is @racket{default}. By the above
-rules, every package starts on the zeroth revision of the
-@racket{default} edition.
+See @secref{versioning} for information about this versioning scheme.
 
 
 @section{Package Inputs}
@@ -111,14 +88,17 @@ A package @deftech{input} is a deferred request for exact bytes.
 
 (define inputs (list minimal-source-code source-code))]
 
-In plain language, this expression tells @project-name that a build
-will need @racket{code.tar.gz} available. @project-name will lazily
-fetch the archive from the given @racketfont{sources}.
+When building a package, @project-name will lazily try to produce the
+named files in the build directory by checking the given sources.  If
+it cannot produce bits that match the given digest, then the build
+will fail.
 
 An input might only be available during a build, or may persist after
 a build for run-time use.  The only difference from @|project-name|'s
 perspective is whether the input is subject to garbage collection
-after a build completes.
+after a build completes. @secref{managing} shows that any file
+without a reference is eligible for collection by @litchar{xiden gc}.
+The same applies for any input used in a build.
 
 
 @section{Package Outputs}
@@ -126,15 +106,14 @@ after a build completes.
 @racketblock[
 (define outputs '("lib" "doc"))]
 
-@deftech{Package outputs} are just strings that humans understand as
-names for possible deliverables from the package. Every package
-definition has an implicit @racket{default} output, even if
-@racket[outputs] is not defined. If a user does not request a
-particular output from a package, then @project-name will use the
-@racket{default} output.
+@deftech{Package outputs} are just human names for possible
+deliverables from the package. Every package definition has an
+implicit @racket{default} output, even if @racket[outputs] is not
+defined. If a user does not request a particular output from a
+package, then @project-name will use the @racket{default} output.
 
 Package outputs do not declare integrity information. Since a
-package's output can serve as another package's input, the bits would
+package's output can serve as another package's input, any bits would
 be verified once they are used as input.
 
 
@@ -224,15 +203,19 @@ expects an asymmetric cipher algorithm, a expression of the
 signature's bytes, and an expression of the public key used to verify
 the signature.
 
-This example uses a base64-encoding of a DES signature, with a
+This example uses a base64-encoding of a signature, with a
 public-key fingerprint.
 
 @racketblock[(input (sources "https://example.com/path/to/artifact")
                     (integrity 'sha384 (base64 "KxAqYG79sTcKi8yuH/YkdKE+O9oiBsXIlwWs3pBwv/mXT9/jGuK0yqcwmjM/nNLe"))
-                    (signature 'des (base64 "...") (fingerprint "...")))]
+                    (signature (base64 "...") (fingerprint "...")))]
 
 @binary uses a signature and a public key you (presumably) trust to
 confirm that the @italic{digest} was signed with someone's private
 key. Vetting public keys is out of scope for this guide. Just know
 that if you do not trust the public key, then a signature offers no
 added protection.
+
+Note that not every cipher algorithm supports every digest. It is your
+responsibility to use a digest supported by the cipher algorithm
+backing your keys.
