@@ -119,6 +119,7 @@
 (define format-message
   (combine-message-formatters format-input-message
                               format-fetch-message
+                              format-package-message
                               default-message-formatter))
 
 
