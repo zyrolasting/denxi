@@ -132,9 +132,13 @@ EOF
    #:halt halt
    #:arg-help-strings '()
    (λ (flags)
-     (halt 0 ($show-string (format "Recovered ~a mibibytes"
-                                   (~r (/ (xiden-collect-garbage) (* 1024 1024))
-                                       #:precision 2)))))))
+     (define bytes-recovered (xiden-collect-garbage))
+     (halt 0 ($show-string (format "Recovered ~a"
+                                   (if (> bytes-recovered (/ (* 1024 2024) 10))
+                                       (~a (~r (/ bytes-recovered (* 1024 1024)) #:precision 2)
+                                           " mebibytes")
+                                       (~a bytes-recovered
+                                           " bytes"))))))))
 
 
 (define (link-command args halt)
