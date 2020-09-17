@@ -74,16 +74,18 @@ and voluntarily. Since SemVer depends on ideal human compliance like
 every other scheme, I don't trust it unconditionally.
 
 In my mind, a version is a form of identification. Jeff Atwood used
-the term “dog tag,” since we often ask about version once a program
-fails in the field. This makes sense, but it also helps to use
-versions to help people find what they want. Non-technical users don't
-know that 3.49.111 is what they want, most of them @italic{do}
-understand the cover of a book. Certainly well enough to discriminate
-between two editions or revisions of the same title. I don't see why
-software should be any different. If I later extended this idea to a
-versioning scheme that not only identified software, but captured the
-nature of all related changes, then I would only tell you long after
-consulting a patent attorney.
+the term “dog tag,” since we often ask a user what version they are
+using when our program fails out in the field. This makes sense, but
+versions can also help users find what they want. Not even technical
+users will know off-hand if version 3.49.111 is a good fit for them,
+but most of them @italic{do} understand the latest revision of a
+teacher's edition. Anyone knowledgeable enough to use software is
+likely able to discriminate between two editions or revisions of the
+same book. I don't see why software should be any harder to
+evaluate. If I later extended this idea to a versioning scheme that
+not only identified software, but captured the nature of all related
+changes, then I would only tell you long after consulting a patent
+attorney.
 
 We can do without the bureaucracy and social pressure of rules like
 those defined in SemVer. The scheme defined on this page offers no
