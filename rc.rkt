@@ -154,13 +154,13 @@
   "Use FASL program output")
 
 (define-xiden-setting XIDEN_FETCH_TOTAL_SIZE_MB (or/c +inf.0 real?) 100
-  "Maximum size, in mibibytes, to read from a source. +inf.0 = no limit")
+  "Maximum size, in mebibytes, to read from a source. +inf.0 = no limit")
 
 (define-xiden-setting XIDEN_FETCH_BUFFER_SIZE_MB (real-in 0.1 20) 10
-  "Buffer size, in mibibytes, used when reading bytes")
+  "Buffer size, in mebibytes, used when reading bytes")
 
 (define-xiden-setting XIDEN_FETCH_PKGDEF_SIZE_MB (real-in 0.1 20) 0.1
-  "The maximum expected size, in mibibytes, of a package definition when scoping out work")
+  "The maximum expected size, in mebibytes, of a package definition when scoping out work")
 
 (define-xiden-setting XIDEN_FETCH_TIMEOUT_MS (real-in 100 (* 1000 10)) 3000
   "The maximum time, in milliseconds, to wait for a distinct read of bytes from a source")

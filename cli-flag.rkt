@@ -146,12 +146,12 @@
 
 ; Unary flags
 (flag-out [-X --plugin] (cli-flag/unary XIDEN_MODS_MODULE keep "path"))
-(flag-out [-M --sandbox-memory-limit] (cli-flag/unary XIDEN_SANDBOX_MEMORY_LIMIT_MB arg->value "mibibytes"))
-(flag-out [-e --sandbox-eval-memory-limit] (cli-flag/unary XIDEN_SANDBOX_EVAL_MEMORY_LIMIT_MB arg->value "mibibytes"))
+(flag-out [-M --sandbox-memory-limit] (cli-flag/unary XIDEN_SANDBOX_MEMORY_LIMIT_MB arg->value "mebibytes"))
+(flag-out [-e --sandbox-eval-memory-limit] (cli-flag/unary XIDEN_SANDBOX_EVAL_MEMORY_LIMIT_MB arg->value "mebibytes"))
 (flag-out [-S --sandbox-eval-time-limit] (cli-flag/unary XIDEN_SANDBOX_EVAL_TIME_LIMIT_SECONDS arg->value "seconds"))
-(flag-out [-m] (cli-flag/unary XIDEN_FETCH_TOTAL_SIZE_MB arg->value "mibibytes-or-+inf.0"))
-(flag-out [-n] (cli-flag/unary XIDEN_FETCH_BUFFER_SIZE_MB arg->value "mibibytes"))
-(flag-out [-p] (cli-flag/unary XIDEN_FETCH_PKGDEF_SIZE_MB arg->value "mibibytes"))
+(flag-out [-m] (cli-flag/unary XIDEN_FETCH_TOTAL_SIZE_MB arg->value "mebibytes-or-+inf.0"))
+(flag-out [-n] (cli-flag/unary XIDEN_FETCH_BUFFER_SIZE_MB arg->value "mebibytes"))
+(flag-out [-p] (cli-flag/unary XIDEN_FETCH_PKGDEF_SIZE_MB arg->value "mebibytes"))
 (flag-out [-d] (cli-flag/unary XIDEN_FETCH_TIMEOUT_MS arg->value "milliseconds"))
 (flag-out [-q] (cli-flag/unary XIDEN_PRIVATE_KEY_PATH arg->value "path"))
 (flag-out [-o --max-redirects] (cli-flag/unary XIDEN_DOWNLOAD_MAX_REDIRECTS arg->value "exact-nonnegative-integer"))

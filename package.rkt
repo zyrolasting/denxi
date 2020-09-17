@@ -255,7 +255,7 @@
                  (λ ()
                    (load-xiden-module
                     (make-limited-input-port from-source
-                                             (min (mibibytes->bytes (XIDEN_FETCH_PKGDEF_SIZE_MB))
+                                             (min (mebibytes->bytes (XIDEN_FETCH_PKGDEF_SIZE_MB))
                                                   est-size)
                                              #t)))))))
 

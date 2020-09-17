@@ -554,8 +554,8 @@
             (transfer in to-file
                       #:on-status print-transfer-status
                       #:transfer-name name
-                      #:max-size (mibibytes->bytes (XIDEN_FETCH_TOTAL_SIZE_MB))
-                      #:buffer-size (mibibytes->bytes (XIDEN_FETCH_BUFFER_SIZE_MB))
+                      #:max-size (mebibytes->bytes (XIDEN_FETCH_TOTAL_SIZE_MB))
+                      #:buffer-size (mebibytes->bytes (XIDEN_FETCH_BUFFER_SIZE_MB))
                       #:timeout-ms (XIDEN_FETCH_TIMEOUT_MS)
                       #:est-size est-size))))
         (define digest (make-digest tmp 'sha384))
