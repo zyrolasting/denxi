@@ -36,7 +36,7 @@
 (require "message.rkt")
 
 (define+provide-message $source (fetch-name user-string))
-(define+provide-message $source-method-ruled-out $source (reason))
+(define+provide-message $source-method-ruled-out $source (method-name reason))
 (define+provide-message $source-fetched $source ())
 (define+provide-message $fetch-failure (fetch-name))
 (define+provide-message $unverified-host (url))
@@ -85,9 +85,9 @@
 ; the requested bytes.
 (define (fetch-named-source name source request-transfer)
   (do initial       <- (logged-unit (fetch-unit name source request-transfer))
-      fs-result     <- ((fetch-method "Filesystem" fetch-source/filesystem) initial)
+      fs-result     <- ((fetch-method "filesystem" fetch-source/filesystem) initial)
       http-result   <- ((fetch-method "HTTP" fetch-source/http) fs-result)
-      plugin-result <- ((fetch-method "Plugin" fetch-source/plugin) http-result)
+      plugin-result <- ((fetch-method "plugin" fetch-source/plugin) http-result)
       (return plugin-result)))
 
 
@@ -100,7 +100,7 @@
   #:transparent)
 
 
-(define (fetch-exn-handler fetch-st)
+(define (fetch-exn-handler method-name fetch-st)
   (λ (e)
     (logged
      (λ (messages)
@@ -108,9 +108,9 @@
                (cons ($source-method-ruled-out
                       (fetch-state-name fetch-st)
                       (fetch-state-source fetch-st)
-                      (if (XIDEN_VERBOSE)
-                          (exn->string e)
-                          (exn-message e)))
+                      method-name
+                      (and (XIDEN_VERBOSE)
+                           (exn->string e)))
                      messages))))))
 
 
@@ -118,7 +118,7 @@
   (λ (fetch-st)
     (if (fetch-state-result fetch-st)
         (logged-unit fetch-st)
-        (with-handlers ([values (fetch-exn-handler fetch-st)])
+        (with-handlers ([values (fetch-exn-handler method-name fetch-st)])
           (update-fetch-state method-name
                               fetch-st
                               (f (fetch-state-source fetch-st)
@@ -297,8 +297,14 @@
   [($fetch-failure name)
    (format "Failed to fetch ~a" name)]
 
-  [($source-method-ruled-out name user-string reason)
-   (format "Could not fetch ~a from source ~a: ~a" name user-string reason)]
+  [($source-method-ruled-out name user-string method-name reason)
+   (format "Ruling out ~a for ~a from source ~a~a"
+           method-name
+           name
+           user-string
+           (if reason
+               (~a ": " reason)
+               ""))]
 
   [($unverified-host url)
    (format (~a "~a does not have a valid certificate.~n"
