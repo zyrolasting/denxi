@@ -77,7 +77,9 @@
                  [(and (number? variant) (> variant 0))
                   (define bytes-read* (+ bytes-read variant))
                   (write-bytes buffer to 0 variant)
-                  (on-status ($transfer-progress transfer-name bytes-read* max-size (current-seconds)))
+                  ; 100% is always reported at the end. Don't double report it here.
+                  (unless (equal? bytes-read* max-size)
+                    (on-status ($transfer-progress transfer-name bytes-read* max-size (current-seconds))))
                   (if (> bytes-read* max-size)
                       (on-status ($transfer-over-budget transfer-name max-size))
                       (copy-port/incremental from to
