@@ -7,6 +7,7 @@
 
 (provide #%app #%datum #%top #%top-interaction
          define define-values
+         build-workspace-path
          current-info-lookup
          error
          eval
@@ -106,7 +107,8 @@
          "setting.rkt"
          "signature.rkt"
          "source.rkt"
-         "url.rkt")
+         "url.rkt"
+         "workspace.rkt")
 
 (define current-info-lookup (make-parameter (λ (k f) (f))))
 
