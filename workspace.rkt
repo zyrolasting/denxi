@@ -6,6 +6,7 @@
          workspace-directory
          path-in-workspace?
          CONVENTIONAL_WORKSPACE_NAME
+         workspace-directory/c
          show-workspace-envvar-error?)
 
 (require racket/contract
