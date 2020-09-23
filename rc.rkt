@@ -110,10 +110,6 @@
    (get-xiden-settings-path)))
 
 
-; For boolean options, since they all use the same help string.
-(define (switch-help str)
-  (cons str '("#t-or-#f")))
-
 
 ;; Begin runtime configuration space
 ;; =================================
@@ -130,10 +126,10 @@
   "Add installation to transaction")
 
 (define-xiden-setting XIDEN_MATCH_RACKET_MODULES boolean? #f
-  (switch-help "Match .rkt, .ss, .scrbl, and .rktd"))
+  "Match .rkt, .ss, .scrbl, and .rktd")
 
 (define-xiden-setting XIDEN_MATCH_COMPILED_RACKET boolean? #f
-  (switch-help "Match .zo and .dep."))
+  "Match .zo and .dep.")
 
 (define-xiden-setting XIDEN_MODS_MODULE (or/c #f path-string?) #f
   "A path to a module that extends Xiden.")
