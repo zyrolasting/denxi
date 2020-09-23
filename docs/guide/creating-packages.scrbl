@@ -195,27 +195,41 @@ strictly between 7.2 and 7.4.
 
 @section{Authenticating Inputs}
 
-@italic{This feature is incomplete, but you can review how it works at
-a high-level here.}
+@project-name supports authenticating inputs using OpenSSL and a
+trusted public keychain. This section requires a working understanding
+of how one verifies a signature using a public key.
 
-You can declare a signature with an input. A signature expression
-expects an asymmetric cipher algorithm, a expression of the
-signature's bytes, and an expression of the public key used to verify
-the signature.
+You may declare a signature with an input. A signature expression
+includes a source of the public key used to verify the signature, and
+a source for the signature itself. Since this is done per-input, it
+allows trusted teammates to each sign the artifact they are
+responsible for maintaining. If you are an independent developer, then
+you may simply express your same public key for each input.
 
-This example uses a base64-encoding of a signature, with a
-public-key fingerprint.
+This example fetches both a public key and a signature from the
+same host that provides an artifact.
 
-@racketblock[(input (sources "https://example.com/path/to/artifact")
+@racketblock[(input (sources "https://example.com/path/to/artifact.tar.gz")
                     (integrity 'sha384 (base64 "KxAqYG79sTcKi8yuH/YkdKE+O9oiBsXIlwWs3pBwv/mXT9/jGuK0yqcwmjM/nNLe"))
-                    (signature (base64 "...") (fingerprint "...")))]
+                    (signature "https://example.com/public.pem"
+                               "https://example.com/path/to/artifact.sign"))]
 
-@binary uses a signature and a public key you (presumably) trust to
-confirm that the @italic{digest} was signed with someone's private
-key. Vetting public keys is out of scope for this guide. Just know
-that if you do not trust the public key, then a signature offers no
-added protection.
+@binary uses a signature and a public key you trust to confirm that
+the @italic{digest} specified in the @racket[integrity] information
+was signed with a corresponding private key. @bold{This does not imply
+that you should trust the public key.} Vetting public keys is out of
+scope for this guide. Just know that if you do not trust the public
+key, then a signature verified by that key won't offer you any value.
 
-Note that not every cipher algorithm supports every digest. It is your
+
+@subsection{Caveats}
+
+Not every cipher algorithm supports every digest. It is your
 responsibility to use a digest supported by the cipher algorithm
 backing your keys.
+
+@project-name assumes that signatures are derived from the @italic{raw
+bytes} of the digest. This means that if you create a signature from
+an ANS.1-encoded digest using a command like @litchar{openssl dsgt
+-sign ...}, then @project-name will see a signature mismatch.
+Instead, use
