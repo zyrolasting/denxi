@@ -3,13 +3,16 @@
 @require[@for-label[racket/base]
          "../shared.rkt"]
 
-@title[#:style '(toc)]{@binary Reference}
+@title[#:style '(toc)]{@project-name Reference}
 @author[(author+email "Sage L. Gerard" "sage@sagegerard.com" #:obfuscate? #t)]
 
-This will be the API reference for @|binary|.
+This is the API reference for @|project-name|. For a high-level
+overview, read the @hyperlink["../guide/index.html"]{guide}.
 
-The implementation is under flux. Since anything I write will be
-outdated soon, this document is currently a placeholder. You should
-read the @hyperlink["../guide/index.html"]{guide} in the meantime.
+@bold{Warning}: The implementation is unstable.
 
 @table-of-contents[]
+@include-section{model.scrbl}
+@include-section{xiden.scrbl}
+@include-section{workspace.scrbl}
+@include-section{settings.scrbl}
