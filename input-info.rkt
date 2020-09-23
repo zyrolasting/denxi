@@ -124,14 +124,14 @@
   (define $message-ctor
     (if (XIDEN_TRUST_BAD_DIGEST)
         $input-signature-unchecked
-        (if (XIDEN_TRUST_UNSIGNED)
-            $input-signature-trust-unsigned
-            (if (input-info-signature input)
-                (if (check-signature (integrity-info-digest (input-info-integrity input))
-                                     (signature-info-body (input-info-signature input))
-                                     (signature-info-pubkey (input-info-signature input)))
-                    $input-signature-verified
-                    $input-signature-mismatch)
+        (if (input-info-signature input)
+            (if (check-signature (integrity-info-digest (input-info-integrity input))
+                                 (signature-info-pubkey (input-info-signature input))
+                                 (signature-info-body (input-info-signature input)))
+                $input-signature-verified
+                $input-signature-mismatch)
+            (if (XIDEN_TRUST_UNSIGNED)
+                $input-signature-trust-unsigned
                 $input-signature-missing))))
 
   (values (if (member $message-ctor

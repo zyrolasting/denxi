@@ -54,7 +54,7 @@
 (define (make-xiden-sandbox input-program)
   (parameterize ([sandbox-input #f]
                  [sandbox-output (current-output-port)]
-                 [sandbox-error-output #f])
+                 [sandbox-error-output (current-error-port)])
     (make-module-evaluator #:language 'xiden/derivation-forms input-program)))
 
 

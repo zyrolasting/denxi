@@ -189,7 +189,8 @@
                   (make-security-guard
                    (current-security-guard)
                    (make-pkgeval-file-guard (make-bin-path-permissions '("openssl"))
-                                            (build-workspace-path "var/xiden"))
+                                            (list (build-workspace-path "var/xiden")
+                                                  (build-workspace-path "tmp")))
                    (make-pkgeval-network-guard)
                    (make-pkgeval-link-guard (workspace-directory)))]
                  [sandbox-make-environment-variables
@@ -201,7 +202,7 @@
 
 
 
-(define (make-pkgeval-file-guard allowed-executables write-dir)
+(define (make-pkgeval-file-guard allowed-executables write-dirs)
   (λ (sym path-or-#f ops)
     (when path-or-#f
       (cond [(member 'execute ops)
@@ -211,7 +212,8 @@
                                  path-or-#f))]
 
             [(member 'write ops)
-             (unless (path-prefix? (normalize-path path-or-#f) write-dir)
+             (unless (ormap (λ (write-dir) (path-prefix? (normalize-path path-or-#f) write-dir))
+                            write-dirs)
                (raise-user-error 'security
                                  "Unauthorized attempt to write in ~a"
                                  path-or-#f))]

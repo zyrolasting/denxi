@@ -7,21 +7,9 @@ This project follows [these versioning rules](https://sagegerard.com/edition-rev
 
 ## [Unreleased]
 
+- Rewrite project to support transactions
 - Add `tags`, `home-page`, `racket-versions`, and `description` fields to package definition
-- Add edition information to help the server validate new package definitions
-- Add `setup` command
-- Add `ZCPKG_LINK` setting
-- Add `config repl` command
-- Remove `prompt.rkt`
-- Remove `ZCPKG_COLORIZE_OUTPUT` and `ZCPKG_PATH_LENGTH_BUDGET`
-- Remove packages that are already installed from scope of work reports
-- Change `ZCPKG_DOWNLOAD_IGNORE_CACHE` to `ZCPKG_IGNORE_DOWNLOAD_CACHE`
-- Route all program output through `output.rkt`
-- Route created place's completion value to the creating place's exit code
-- Switch to `setup/infotab` and `#lang info` as canonical configuration language.
-- Proofread and edit documentation
-- Detect reserved file names
-- Download provider's public key along with package to verify signatures
+- Switch to `xiden/derivation-forms` and `#lang xiden` as canonical configuration language.
 
 
 ## [draft:alpha] - 2020-08-02

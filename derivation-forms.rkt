@@ -65,9 +65,8 @@
                integrity-info?)]
 
           [signature
-           (-> xiden-cipher-algorithm/c
+           (-> (or/c bytes? path-string?)
                (or/c bytes? path-string?)
-               bytes?
                signature-info?)]
 
           [base32

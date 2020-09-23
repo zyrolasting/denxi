@@ -1,6 +1,7 @@
 #lang racket/base
 
-(provide run-openssl-command)
+(provide run-openssl-command
+         openssl)
 
 (require racket/file
          racket/function
@@ -18,7 +19,7 @@
 
 (define openssl (find-executable-path "openssl"))
 
-(define (run-openssl-command stdin-source . args)
+(define (run-openssl-command #:timeout [delay-seconds 3] stdin-source . args)
   (define-values (sp from-stdout to-stdin from-stderr)
     (apply subprocess #f #f #f (and (subprocess-group-enabled) 'new) openssl args))
 
@@ -28,7 +29,6 @@
 
   (dynamic-wind void
                 (λ ()
-                  (define delay-seconds 3)
                   (define maybe-sp (sync/timeout delay-seconds sp))
 
                   (define exit-code

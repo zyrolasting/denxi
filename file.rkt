@@ -4,19 +4,23 @@
          (all-from-out racket/file))
 
 (require racket/file
+         racket/format
          racket/function
          racket/generator
          racket/list
          racket/path
+         racket/port
          racket/set
          racket/sequence
+         "encode.rkt"
          "message.rkt"
          "path.rkt"
+         "query.rkt"
          "sandbox.rkt"
          "setting.rkt"
          "string.rkt"
-         "workspace.rkt"
-         "query.rkt")
+         "url.rkt"
+         "workspace.rkt")
 
 
 (define (delete-file* path)
@@ -93,6 +97,49 @@
   (dynamic-wind void
                 (λ () (proc tmp))
                 (λ () (delete-file tmp))))
+
+
+(define (get-cached-file name dirname make!)
+  (define tmp (build-workspace-path "tmp" dirname))
+  (if (file-exists? tmp)
+      (printf "Cache hit: ~a~n" name)
+      (begin (printf "Cache miss: ~a~n" name)
+             (make-directory* (path-only tmp))
+             (make! tmp)))
+  tmp)
+
+
+(define (copy-limited-port-to-file! path in limit)
+  (call-with-output-file path #:exists 'truncate/replace
+    (λ (out)
+      (copy-port (if (eq? limit +inf.0)
+                     in
+                     (make-limited-input-port in limit))
+                 out)
+      (close-input-port in))))
+
+
+(define (get-cached-file* variant [limit +inf.0])
+  (cond [(file-exists? variant)
+         variant]
+
+        [(bytes? variant)
+         (get-cached-file "bytes"
+          (encode 'base32 (subbytes variant 0 (min 64 (bytes-length variant))))
+          (λ (path)
+            (copy-limited-port-to-file! path (open-input-bytes variant) limit)))]
+
+        [(url-string? variant)
+         (get-cached-file
+          variant
+          (encode 'base32 variant)
+          (λ (path)
+            (copy-limited-port-to-file! path (get-pure-port (string->url variant)) limit)))]
+
+        [else
+         (raise-user-error (format (~a "Cannot understand signature ~v~n"
+                                       "  Expected a path to a file, bytes, or URL (as a string).")
+                                   variant))]))
 
 
 (define-syntax-rule (with-temporary-directory body ...)
