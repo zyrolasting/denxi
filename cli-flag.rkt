@@ -20,6 +20,8 @@
 (provide (struct-out cli-flag)
          (struct-out cli-flag-state)
          (contract-out
+          [all-flags
+           (listof cli-flag?)]
           [make-cli-flag-table
            (->* () #:rest (listof cli-flag?) list?)]
           [cli-flag-strings
@@ -179,14 +181,17 @@
                     '("link-name" "output-name" "source")))
 
 
+(define all-flags
+  (list -X -M -e -S -m -n -p -d -q -o
+        +h -r -b -U -T -H -Y -F -R -v
+        -A -G +s))
+
 ; For use in REPL and tests. Provides a quick way to preview the effect of command
 ; line flags, and generated help strings shown.
 (define (try-flags . args)
   (call/cc (λ (halt)
              (parse-command-line "test" (list->vector args)
-                                 (make-cli-flag-table -X -M -e -S -m -n -p -d -q -o
-                                                      +h -r -b -U -T -H -Y -F -R -v
-                                                      -A -G +s)
+                                 (apply make-cli-flag-table all-flags)
                                  (λ (flags)
                                    (call-with-bound-cli-flags
                                     flags
