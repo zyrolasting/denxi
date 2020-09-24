@@ -17,7 +17,7 @@ directory is always internally consistent due to transactional file I/O.
 @project-name issues symbolic links as references to built files and
 directories. This is how a dependent gains access to a dependency.
 @|project-name| implements a garbage collector that deletes any file or
-directory with no symbolic links issued by @|project-name|.
+directory with no known symbolic links.
 
 
 @section{User Experience Notice}
