@@ -16,3 +16,4 @@ overview, read the @hyperlink["../guide/index.html"]{guide}.
 @include-section{xiden.scrbl}
 @include-section{workspace.scrbl}
 @include-section{settings.scrbl}
+@include-section{private.scrbl}
