@@ -32,12 +32,14 @@
             (or/c bytes? string?)))
 
 
+(define ESTIMATED_SIGNATURE_AND_PUBKEY_MAX_SIZE (* 100 1024))
+
 (define (check-signature digest public-key-variant signature-variant)
   (regexp-match?
    #rx#"Success"
    (run-openssl-command (open-input-bytes digest)
                         "pkeyutl"
                         "-verify"
-                        "-sigfile" (get-cached-file* signature-variant)
+                        "-sigfile" (get-cached-file* signature-variant ESTIMATED_SIGNATURE_AND_PUBKEY_MAX_SIZE)
                         "-pubin"
-                        "-inkey" (get-cached-file* public-key-variant))))
+                        "-inkey" (get-cached-file* public-key-variant ESTIMATED_SIGNATURE_AND_PUBKEY_MAX_SIZE))))

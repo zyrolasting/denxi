@@ -263,7 +263,10 @@
 
      (define-values (fetch-st messages) (run-log logged/fetch-st m))
 
-     (values (or (fetch-state-result fetch-st) FAILURE)
+     (values (if (fetch-state? fetch-st)
+                 (or (fetch-state-result fetch-st)
+		     FAILURE)
+                 FAILURE)
              (cons messages m)))))
 
 

@@ -149,13 +149,14 @@
    (format "Resolving input ~s" name)]
 
   [($input-integrity-violation name source)
-   (format (~a "~a failed its integrity check.~n"
+   (format (~a "Integrity violation for ~s from source ~s.~n"
                "While unsafe, you can force installation using ~a.")
            name
+           source
            (format-cli-flags --trust-any-digest))]
 
   [($input-signature-mismatch name source)
-   (format (~a "~s's signature on ~s does not match any trusted public key.~n"
+   (format (~a "Signature mismatch for ~s from source ~s.~n"
                "While unsafe, you can trust bad signatures using ~a.")
            name
            source
@@ -169,13 +170,13 @@
            (format-cli-flags --trust-unsigned))]
 
   [($input-integrity-verified name source)
-   (format "Integrity verified for input ~s from ~a" name source)]
+   (format "Integrity verified for input ~s from source ~s" name source)]
 
   [($input-integrity-assumed name source)
-   (format "Dangerously trusting input ~s from ~a" name source)]
+   (format "Dangerously trusting input ~s from source ~s" name source)]
 
   [($input-signature-unchecked name source)
-   (format "Not checking signature for input ~s from ~a"
+   (format "Not checking signature for input ~s from source ~s"
            name source)]
 
   [($input-integrity-missing name source)
@@ -185,10 +186,10 @@
            name)]
 
   [($input-signature-trust-unsigned name source)
-   (format "Trusting unsigned input ~s from ~a" name source)]
+   (format "Trusting unsigned input ~s from source ~s" name source)]
 
   [($input-signature-verified name source)
-   (format "Signature verified for input ~s from ~a" name source)]
+   (format "Signature verified for input ~s from source ~s" name source)]
 
   [($input-signature-mismatch name source)
-   (format "Signature mismatch for input ~s from ~a" name source)])
+   (format "Signature mismatch for input ~s from source ~s" name source)])

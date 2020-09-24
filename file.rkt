@@ -101,11 +101,9 @@
 
 (define (get-cached-file name dirname make!)
   (define tmp (build-workspace-path "tmp" dirname))
-  (if (file-exists? tmp)
-      (printf "Cache hit: ~a~n" name)
-      (begin (printf "Cache miss: ~a~n" name)
-             (make-directory* (path-only tmp))
-             (make! tmp)))
+  (unless (file-exists? tmp)
+    (make-directory* (path-only tmp))
+    (make! tmp))
   tmp)
 
 

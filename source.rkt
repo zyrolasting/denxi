@@ -35,7 +35,7 @@
 
 (require "message.rkt")
 
-(define+provide-message $source (fetch-name user-string))
+(define+provide-message $source (name fetch-name))
 (define+provide-message $source-method-ruled-out $source (method-name reason))
 (define+provide-message $source-fetched $source ())
 (define+provide-message $fetch-failure (fetch-name))
@@ -77,7 +77,8 @@
        (λ (m)
          (define logged-state (fetch-named-source name (car sources) request-transfer))
          (define-values (state messages) (run-log logged-state m))
-         (if (fetch-state-result state)
+         (if (and (fetch-state? state)
+                  (fetch-state-result state))
              (values state messages)
              (run-log (fetch name (cdr sources) request-transfer) messages))))))
 
@@ -106,8 +107,8 @@
      (λ (messages)
        (values fetch-st
                (cons ($source-method-ruled-out
-                      (fetch-state-name fetch-st)
                       (fetch-state-source fetch-st)
+                      (fetch-state-name fetch-st)
                       method-name
                       (and (XIDEN_VERBOSE)
                            (exn->string e)))
@@ -135,13 +136,12 @@
 
 (define (log-fetch-update method-name fetch-st path-or-#f)
   (if path-or-#f
-      ($source-fetched (fetch-state-name fetch-st)
-                       (fetch-state-source fetch-st))
-      ($source-method-ruled-out (fetch-state-name fetch-st)
-                                (fetch-state-source fetch-st)
-                                (format "~a did not produce a value"
-                                        method-name))))
-
+      ($source-fetched (fetch-state-source fetch-st)
+                       (fetch-state-name fetch-st))
+      ($source-method-ruled-out (fetch-state-source fetch-st)
+                                (fetch-state-name fetch-st)
+                                method-name
+                                #f)))
 
 (define (fetch-unit name source request-transfer)
   (fetch-state source
@@ -220,7 +220,7 @@
                                                  tmp
                                                  request-transfer))
                       (check-equal? messages
-                                    (list ($source-fetched "anon" source))))))
+                                    (list ($source-fetched source "anon"))))))
 
        (test-case "Show all errors if transfer crashes"
          (define (raise-always . _) (error "uh oh"))
@@ -240,7 +240,7 @@
          (try-mod-fetch
           (λ (result messages)
             (check-equal? (findf $source-fetched? messages)
-                          ($source-fetched "mod" mod-source))))))))
+                          ($source-fetched mod-source "mod"))))))))
 
   ; Notice we just left the parameterize that set the mod path
   (test-case "Fetch fails when mod is not available"
@@ -287,21 +287,22 @@
                                             "fake"
                                             request-transfer))
                  (check-equal? (filter $source-fetched? messages)
-                               (list ($source-fetched "anon" source)))))))
+                               (list ($source-fetched source "anon")))))))
 
 
 (define+provide-message-formatter format-fetch-message
-  [($source-fetched name user-string)
-   (format "Fetched ~a" user-string)]
+  [($source-fetched source-name fetch-name)
+   (format "Fetched ~a" (or fetch-name source-name))]
 
   [($fetch-failure name)
    (format "Failed to fetch ~a" name)]
 
-  [($source-method-ruled-out name user-string method-name reason)
-   (format "Ruling out ~a for ~a from source ~a~a"
+  [($source-method-ruled-out source-name fetch-name method-name reason)
+   (format "Ruling out ~a ~a~a"
            method-name
-           name
-           user-string
+           (if (equal? source-name fetch-name)
+               (format "for source ~v" source-name)
+               (format "for ~a from source ~v" fetch-name source-name))
            (if reason
                (~a ": " reason)
                ""))]
