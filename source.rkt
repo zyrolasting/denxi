@@ -77,7 +77,8 @@
        (λ (m)
          (define logged-state (fetch-named-source name (car sources) request-transfer))
          (define-values (state messages) (run-log logged-state m))
-         (if (fetch-state-result state)
+         (if (and (fetch-state? state)
+                  (fetch-state-result state))
              (values state messages)
              (run-log (fetch name (cdr sources) request-transfer) messages))))))
 
@@ -139,9 +140,7 @@
                        (fetch-state-source fetch-st))
       ($source-method-ruled-out (fetch-state-name fetch-st)
                                 (fetch-state-source fetch-st)
-                                (format "~a did not produce a value"
-                                        method-name))))
-
+				method-name #f)))
 
 (define (fetch-unit name source request-transfer)
   (fetch-state source
@@ -298,10 +297,11 @@
    (format "Failed to fetch ~a" name)]
 
   [($source-method-ruled-out name user-string method-name reason)
-   (format "Ruling out ~a for ~a from source ~a~a"
+   (format "Ruling out ~a ~a~a"
            method-name
-           name
-           user-string
+	   (if (equal? name user-string)
+	       (format "for source ~v" name)
+               (format "for ~a from source ~v" user-string name))
            (if reason
                (~a ": " reason)
                ""))]
