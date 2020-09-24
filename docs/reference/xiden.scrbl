@@ -18,8 +18,9 @@ document.
 
 @defmodule[xiden/derivation-forms]
 
-@racket[xiden/derivation-forms] is a module language. It is a superset
+@racketmodname[xiden/derivation-forms] is a module language superset
 of @racketmodname[setup/infotab].
+
 
 @section{Reader Extension}
 
