@@ -232,8 +232,7 @@
                                     ($fetch-failure "crashes"))
                       (check-not-false (findf (λ (m)
                                                 (and ($source-method-ruled-out? m)
-                                                     (regexp-match? #rx"uh oh"
-                                                                    ($source-method-ruled-out-reason m))))
+                                                     (not ($source-method-ruled-out-reason m))))
                                               messages)))))
 
        (test-case "Fetch from mod"
