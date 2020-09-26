@@ -67,7 +67,7 @@
 (define (call-with-applied-settings variant proc)
   (define h
     (if (list? variant)
-        (apply make-immutable-hash variant)
+        (make-immutable-hash variant)
         variant))
 
   ((for/fold ([wip proc])
