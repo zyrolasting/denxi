@@ -135,7 +135,7 @@
             (copy-limited-port-to-file! path (get-pure-port (string->url variant)) limit)))]
 
         [else
-         (raise-user-error (format (~a "Cannot understand signature ~v~n"
+         (raise-user-error (format (~a "Cannot understand byte source ~v~n"
                                        "  Expected a path to a file, bytes, or URL (as a string).")
                                    variant))]))
 
