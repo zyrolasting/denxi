@@ -212,7 +212,6 @@ EOF
    ))
 
 
-
 (define (sandbox-command args halt)
   (run-command-line
    #:program "sandbox"
@@ -274,7 +273,6 @@ where <what> is one of
 
 EOF
    ))
-
 
 
 (define+provide-message-formatter format-rc-message
