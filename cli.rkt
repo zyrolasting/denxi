@@ -274,23 +274,23 @@ EOF
                (sequence-map
                 (match-lambda*
                   [(list _ provider _ package _ edition _ revision _ output _ path)
-                   ($show-string (format "~a - ~a"
+                   ($show-string (format "~a ~a ~a"
                                          (xiden-query->string
                                           (xiden-query provider
                                                        package
                                                        edition
                                                        (~a revision)
                                                        (~a revision)
-                                                       "ii"
-                                                       output))
-                                         path))])
+                                                       "ii"))
+                                         output
+                                         (file-name-from-path path)))])
                 (in-all-installed))))]
        [_
         (halt 1 ($unrecognized-command what))]))
    #<<EOF
 where <what> is one of
-  workspace  The current target workspace directory
-  installed  A list of installed packages
+  workspace  The used workspace directory
+  installed  A list of installed outputs
 
 EOF
    ))
