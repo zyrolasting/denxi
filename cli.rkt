@@ -141,26 +141,6 @@ EOF
                                            " bytes"))))))))
 
 
-(define (link-command args halt)
-  (run-command-line
-   #:program "link"
-   #:args args
-   #:halt halt
-   #:arg-help-strings '("link-path" "query" "rel-path")
-   (λ (flags link-path query rel-path)
-     (define path-stream
-       (sequence->stream
-        (sequence-map (λ (on rid rn pid path) path)
-                      (in-xiden-objects query))))
-
-     (if (stream-empty? path-stream)
-         (halt 1 ($show-string "No package found"))
-         (begin (make-link/clobber (build-path (build-workspace-path (stream-first path-stream))
-                                               rel-path)
-                                   link-path)
-                (halt 0 null))))))
-
-
 (define (config-command args halt)
   (define (get-setting name)
     (or (setting-ref name)
