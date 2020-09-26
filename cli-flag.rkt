@@ -210,6 +210,15 @@
            racket/match
            rackunit)
 
+
+  (check-eq? (keep "-a" 1) 1)
+  (check-eq? (arg->value "--whatever" "+inf.0") +inf.0)
+  (check-equal? ((keep-for (λ () '(2 3))) "--whatever" 1)
+                '(1 2 3))
+
+
+  (check-true (andmap cli-flag? all-flags))
+
   (define-setting TEST_SETTING real? 10 "Test")
 
   (define TEST_SETTING/flag (cli-flag TEST_SETTING
