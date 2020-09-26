@@ -38,9 +38,3 @@
          (path-cycles? (build-path simple 'up)
                        id
                        (set-add encountered id))]))
-
-(define (build-strictly-deeper-path base-path . els)
-  (let ([path-to-verify (simplify-path (apply build-path base-path els))])
-    (if (path-prefix? path-to-verify base-path)
-        path-to-verify
-        #f)))
