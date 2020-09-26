@@ -62,7 +62,7 @@ Returns a procedure. That procedure returns @racket[(and (string? s)
 string @racket[s].
 }
 
-@defthing[name-string? predicate/c]{
+@defthing[file-name-string? predicate/c]{
 Returns @racket[#t] if the value is a string, and that string is useable as a
 cross-platform file name.
 }

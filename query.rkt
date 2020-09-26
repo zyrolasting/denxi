@@ -46,7 +46,7 @@
 
 (define revision-string?
   (or/c revision-number-string?
-        name-string?))
+        file-name-string?))
 
 (define (coerce-revision-number n)
   (if (revision-number-string? n)

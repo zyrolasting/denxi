@@ -49,7 +49,7 @@
 
 (define well-formed-input-info/c
   (struct/c input-info
-            name-string?
+            file-name-string?
             (non-empty-listof path-string?)
             (or/c #f well-formed-integrity-info/c)
             (or/c #f well-formed-signature-info/c)))

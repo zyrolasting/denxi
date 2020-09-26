@@ -50,7 +50,7 @@
     (and (string? v)
          (regexp-match rx v))))
 
-(define name-string?
+(define file-name-string?
   (procedure-rename
    (conjoin string?
             (negate
@@ -58,7 +58,7 @@
                       (make-rx-predicate #:whole? #f unix-reserved-character-pattern-string)
                       (make-rx-predicate #:whole? #f windows-reserved-character-pattern-string)
                       (make-rx-predicate #:whole? #t windows-reserved-name-pattern-string))))
-   'name-string?))
+   'file-name-string?))
 
 (define (get-shortest-string strings)
   (for/fold ([shortest (car strings)])
@@ -80,11 +80,11 @@
   (check-equal? (get-shortest-string '("alvin" "bob" "v" "superduper"))
                 "v")
 
-  (check-false (name-string? "/"))
-  (check-false (name-string? "\\"))
-  (check-false (name-string? ":"))
-  (check-false (name-string? "alvin:bet"))
-  (check-pred name-string? "alvin")
+  (check-false (file-name-string? "/"))
+  (check-false (file-name-string? "\\"))
+  (check-false (file-name-string? ":"))
+  (check-false (file-name-string? "alvin:bet"))
+  (check-pred file-name-string? "alvin")
 
   (define windows-reserved-character?
     (make-rx-predicate windows-reserved-character-pattern-string))
