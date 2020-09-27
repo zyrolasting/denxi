@@ -3,6 +3,7 @@
 .\#*
 .DS_Store
 compiled
+coverage
 html
 *.log
 xiden
