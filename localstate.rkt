@@ -66,7 +66,8 @@
                            exact-positive-integer?
                            path-string?))]
           [make-addressable-file
-           (-> non-empty-string? input-port? (or/c +inf.0 exact-positive-integer?) path-record?)]
+           (-> non-empty-string? input-port? (or/c +inf.0 exact-positive-integer?)
+               #:on-status (-> $message? any) path-record?)]
           [make-addressable-directory
            (-> (non-empty-listof input-port?)
                (-> complete-path? any)
@@ -98,7 +99,6 @@
          "message.rkt"
          "path.rkt"
          "port.rkt"
-         "printer.rkt"
          "query.rkt"
          "string.rkt"
          "workspace.rkt")
@@ -542,7 +542,7 @@
 ;    * P does not exist, or digest does not match: FS is corrupt. Delete P to recover.
 
 
-(define (make-addressable-file name in est-size)
+(define (make-addressable-file #:on-status on-status name in est-size)
   (define tmp (build-addressable-path #"tmp"))
   (dynamic-wind
     void
@@ -552,7 +552,7 @@
         (call-with-output-file tmp #:exists 'truncate/replace
           (λ (to-file)
             (transfer in to-file
-                      #:on-status print-transfer-status
+                      #:on-status on-status
                       #:transfer-name name
                       #:max-size (mebibytes->bytes (XIDEN_FETCH_TOTAL_SIZE_MB))
                       #:buffer-size (mebibytes->bytes (XIDEN_FETCH_BUFFER_SIZE_MB))
@@ -565,22 +565,6 @@
         (declare-path (find-relative-path (workspace-directory) path) digest))
     (λ () (close-input-port in))))
 
-
-(define (print-transfer-status m)
-  (write-message m
-   (message-formatter
-    [($transfer-progress name bytes-read max-size timestamp)
-     (format "~a: ~a%" name (~r (* 100 (/ bytes-read max-size)) #:precision 0))]
-    [($transfer-small-budget name)
-     (format "Cannot transfer ~s. The configured budget is too small."
-             name)]
-    [($transfer-over-budget name size)
-     (format "Halting transfer ~s. The transfer produced more than the estimated ~a bytes."
-             name
-             size)]
-    [($transfer-timeout name bytes-read)
-     (format "Halting transfer ~s after ~a bytes. Read timed out."
-             name bytes-read)])))
 
 
 (define (make-addressable-directory digest-ports proc)

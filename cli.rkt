@@ -23,6 +23,7 @@
          "format.rkt"
          "input-info.rkt"
          "integrity.rkt"
+         "l10n.rkt"
          "localstate.rkt"
          "message.rkt"
          "monad.rkt"
@@ -46,15 +47,8 @@
 
 (module+ main
   (exit (entry-point (current-command-line-arguments)
-                     (combine-message-formatters format-xiden-message
-                                                 format-input-message
-                                                 format-fetch-message
-                                                 format-package-message
-                                                 format-rc-message
-                                                 default-message-formatter)
+                     (get-message-formatter)
                      top-level-cli)))
-
-(define-message $unrecognized-command (command))
 
 (define (top-level-cli args halt)
   (run-command-line
@@ -273,46 +267,6 @@ where <what> is one of
 
 EOF
    ))
-
-
-(define+provide-message-formatter format-rc-message
-  [($setting-not-found name)
-   (format "There is no setting called ~s.~n" name)]
-
-  [($setting-accepted name value)
-   (format "Setting ~a to ~s"
-           name
-           value)]
-
-  [($setting-value-unreadable name source-name)
-   (format "Could not read setting value for ~a from ~s"
-           name
-           source-name)]
-
-  [($setting-value-rejected name value expected)
-   (format "Invalid value for ~a: ~a~n  expected: ~a~n"
-           name
-           value
-           expected)])
-
-
-(define+provide-message-formatter format-xiden-message
-  [($output v)
-   (format-xiden-message v)]
-
-  [($fail v)
-   (cond [(exn? v) (exn->string v)]
-         [(string? v) v]
-         [else (~s v)])]
-
-  [($unrecognized-command m)
-   (format "Unrecognized command: ~s. Run with -h for usage information.~n"
-           m)]
-
-  [($invalid-workspace-envvar)
-   (format "Ignoring envvar value for XIDEN_WORKSPACE: ~a~n  falling back to ~a"
-           (getenv "XIDEN_WORKSPACE")
-           (workspace-directory))])
 
 
 

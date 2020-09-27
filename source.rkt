@@ -287,28 +287,3 @@
                                             request-transfer))
                  (check-equal? (filter $source-fetched? messages)
                                (list ($source-fetched source "anon")))))))
-
-
-(define+provide-message-formatter format-fetch-message
-  [($source-fetched source-name fetch-name)
-   (format "Fetched ~a" (or fetch-name source-name))]
-
-  [($fetch-failure name)
-   (format "Failed to fetch ~a" name)]
-
-  [($source-method-ruled-out source-name fetch-name method-name reason)
-   (format "Ruling out ~a ~a~a"
-           method-name
-           (if (equal? source-name fetch-name)
-               (format "for source ~v" source-name)
-               (format "for ~a from source ~v" fetch-name source-name))
-           (if reason
-               (~a ": " reason)
-               ""))]
-
-  [($unverified-host url)
-   (format (~a "~a does not have a valid certificate.~n"
-               "Connections to this server are not secure.~n"
-               "To trust servers without valid certificates, use ~a.")
-           url
-           (format-cli-flags --trust-any-host))])

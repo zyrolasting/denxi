@@ -4,6 +4,7 @@
          "contract.rkt"
          "format.rkt"
          "integrity.rkt"
+         "l10n.rkt"
          "localstate.rkt"
          "message.rkt"
          "monad.rkt"
@@ -88,6 +89,8 @@
          (input-info-sources info)
          (λ (in est-size)
            (make-addressable-file
+            #:on-status (let ([formatter (get-message-formatter)])
+                          (λ (m) (write-message m formatter)))
             (input-info-name info)
             in est-size))))
 
@@ -142,54 +145,3 @@
               FAILURE)
           (cons ($message-ctor (input-info-name input) source)
                 messages)))
-
-
-(define+provide-message-formatter format-input-message
-  [($input-resolve-start name)
-   (format "Resolving input ~s" name)]
-
-  [($input-integrity-violation name source)
-   (format (~a "Integrity violation for ~s from source ~s.~n"
-               "While unsafe, you can force installation using ~a.")
-           name
-           source
-           (format-cli-flags --trust-any-digest))]
-
-  [($input-signature-mismatch name source)
-   (format (~a "Signature mismatch for ~s from source ~s.~n"
-               "While unsafe, you can trust bad signatures using ~a.")
-           name
-           source
-           (format-cli-flags --trust-bad-signature))]
-
-  [($input-signature-missing name source)
-   (format (~a "~a does not have a signature. If you are prototyping your own package, this is expected.~n"
-               "If you got the package from the Internet, then exercise caution!~n"
-               "To trust unsigned packages, use ~a.")
-           name
-           (format-cli-flags --trust-unsigned))]
-
-  [($input-integrity-verified name source)
-   (format "Integrity verified for input ~s from source ~s" name source)]
-
-  [($input-integrity-assumed name source)
-   (format "Dangerously trusting input ~s from source ~s" name source)]
-
-  [($input-signature-unchecked name source)
-   (format "Not checking signature for input ~s from source ~s"
-           name source)]
-
-  [($input-integrity-missing name source)
-   (format (~a "~a does not declare integrity information.~n"
-               "If you are prototyping your own package, this is expected.~n"
-               "Otherwise, please declare integrity information for safety.")
-           name)]
-
-  [($input-signature-trust-unsigned name source)
-   (format "Trusting unsigned input ~s from source ~s" name source)]
-
-  [($input-signature-verified name source)
-   (format "Signature verified for input ~s from source ~s" name source)]
-
-  [($input-signature-mismatch name source)
-   (format "Signature mismatch for input ~s from source ~s" name source)])

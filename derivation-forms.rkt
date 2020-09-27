@@ -96,6 +96,7 @@
          "format.rkt"
          "input-info.rkt"
          "integrity.rkt"
+         "l10n.rkt"
          "localstate.rkt"
          "message.rkt"
          "monad.rkt"
@@ -117,12 +118,6 @@
 (define (input name sources [integrity #f] [signature #f])
   (input-info name sources integrity signature))
 
-(define format-message
-  (combine-message-formatters format-input-message
-                              format-fetch-message
-                              format-package-message
-                              default-message-formatter))
-
 
 (define (input-ref inputs str)
   (define input (findf (λ (info) (equal? str (input-info-name info))) inputs))
@@ -134,7 +129,6 @@
 
 
 (define (use-input input)
-  (write-message ($input-resolve-start (input-info-name input)) format-message)
   (define path (run+print-log (resolve-input input)))
   (if (eq? path FAILURE)
       (raise-user-error 'input-ref
@@ -154,6 +148,7 @@
 
 (define (run+print-log logged-inst)
   (define-values (result messages) (run-log logged-inst))
+  (define format-message (get-message-formatter))
   (sequence-for-each
    (λ (m) (write-message m format-message))
    (in-list (reverse (flatten messages))))

@@ -9,7 +9,6 @@
          racket/sequence
          net/head
          version/utils
-         "cli-flag.rkt"
          "contract.rkt"
          "encode.rkt"
          "exn.rkt"
@@ -23,7 +22,6 @@
          "monad.rkt"
          "path.rkt"
          "port.rkt"
-         "printer.rkt"
          "query.rkt"
          "racket-version.rkt"
          "rc.rkt"
@@ -293,46 +291,6 @@
                (XIDEN_ALLOW_UNDECLARED_RACKET_VERSIONS))
            (logged-unit pkgeval)
            (logged-failure ($undeclared-racket-version (package-name pkgeval))))])))
-
-
-(define-message-formatter format-package-message
-  [($built-package-output name output-name)
-   (format "~a: built ~a" name output-name)]
-
-  [($reused-package-output name output-name)
-   (format "~a: reused ~a" name output-name)]
-
-  [($undeclared-racket-version info)
-   (join-lines
-    (list (format "~a does not declare a supported Racket version."
-                  info)
-          (format "To install this package anyway, run again with ~a"
-                  (shortest-cli-flag --allow-undeclared-racket))))]
-
-  [($package-malformed name errors)
-   (format "~a has an invalid definition. Here are the errors for each field:~n~a"
-           name
-           (join-lines (indent-lines errors)))]
-
-  [($unsupported-racket-version name versions)
-   (join-lines
-    (list (format "~a does not support this version of Racket (~a)."
-                  name
-                  (version))
-          (format "Supported versions (ranges are inclusive):~n~a~n"
-                  (join-lines
-                   (map (λ (variant)
-                          (format "  ~a"
-                                  (if (pair? variant)
-                                      (format "~a - ~a"
-                                              (or (car variant)
-                                                  PRESUMED_MINIMUM_RACKET_VERSION)
-                                              (or (cdr variant)
-                                                  PRESUMED_MAXIMUM_RACKET_VERSION))
-                                      variant)))
-                        versions)))
-          (format "To install this package anyway, run again with ~a"
-                  (format-cli-flags --assume-support))))])
 
 
 (module+ test

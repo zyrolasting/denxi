@@ -30,6 +30,8 @@
          "workspace.rkt")
 
 
+(define+provide-message $unrecognized-command (command))
+
 (define (entry-point args format-message run-args)
   (run-io (make-entry-point args format-message run-args)))
 
