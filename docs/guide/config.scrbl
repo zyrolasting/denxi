@@ -4,39 +4,24 @@
 
 @title[#:tag "config"]{Configuration}
 
+@define[change-val @secref["Changing_a_Setting_Value"
+         #:doc '(lib "xiden/docs/reference/xiden-reference.scrbl")]]
+
 You can configure @|binary| using environment variables, the command
 line interface, and/or a runtime configuration file. Every setting has
 only one name, and a contract for accepted Racket values.
 
-@section{Value Sources}
-
-For example, let's look at the @racket[XIDEN_VERBOSE] setting, which is a
-boolean. This list covers the possible sources of a value for that setting,
-where each source overrides the one before it.
-
-@itemlist[#:style 'ordered
-
-@item{A default value.}
-
-@item{A value bound to @tt{XIDEN_VERBOSE} in a @tech{workspace}'s @tt{etc/xiden.rkt}.}
-
-@item{A value set in the environment variable named @tt{XIDEN_VERBOSE}.
-The value must be @racket[(read)]able (e.g. @tt{XIDEN_VERBOSE="#t"}).}
-
-@item{A value set in the command-line flag named @litchar{--XIDEN_VERBOSE}.
-The value must be @racket[(read)]able (e.g. @litchar{--XIDEN_VERBOSE "#t"}).}
-
-]
+The @change-val section covers how to change the value of a setting.
 
 
 @section{Why Allow Verbose Commands?}
 
-A consequence of the above rules is that you cannot combine short flags into
-strings like @litchar{-vUi}. @italic{Every} flag requires an argument, so the
-flags may appear as @litchar{-v '#t' -U '#f' -i '#t'}.
+A consequence of the rules in @change-val is that you cannot combine short
+flags into strings like @litchar{-vUi}. @italic{Every} flag requires an
+argument, so the flags may appear as @litchar{-v '#t' -U '#f' -i '#t'}.
 
-Verbosity is less convenient, so why do it this way? What are the benefits of
-this approach?
+Verbose commands are more painful to type, so why do it this way?
+Because there are a few benefits to this approach:
 
 @itemlist[
 
@@ -76,7 +61,6 @@ $ xiden -v "#t" ...
 }
 
 ]
-
 
 
 @section{Setting the Workspace}
