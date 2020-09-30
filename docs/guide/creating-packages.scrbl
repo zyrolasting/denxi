@@ -232,4 +232,3 @@ backing your keys.
 bytes} of the digest. This means that if you create a signature from
 an ANS.1-encoded digest using a command like @litchar{openssl dsgt
 -sign ...}, then @project-name will see a signature mismatch.
-Instead, use
