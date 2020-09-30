@@ -1,25 +1,18 @@
 export SHELL=/bin/bash
 
-.PHONY: all test clean doc
+.PHONY: all test clean build
 
-all: racket-deps exe doc
+all: build exe
 
 test:
-	raco test -j 8 *.rkt
+	raco test -j 8 -c xiden
 
-racket-deps:
-	raco pkg install -i --skip-installed rackunit-lib db-lib base32
+build:
+	raco pkg install -i --skip-installed
+	raco setup --fail-fast -j 8 xiden
 
-compile:
-	raco make -j 8 *.rkt l10n/*.rkt
-
-exe: compile test
+exe: build test
 	raco exe -o xiden -l --exf -U cli.rkt
-
-doc:
-	raco make docs/guide/*.scrbl docs/reference/*.scrbl
-	raco scribble --htmls --dest html +m docs/guide/guide.scrbl
-	raco scribble --htmls --dest html +m docs/reference/reference.scrbl
 
 clean:
 	git clean -fdX
