@@ -125,6 +125,12 @@
 (define-xiden-setting XIDEN_INSTALL_SOURCES (listof (list/c string? string? string?)) null
   "Add installation to transaction")
 
+(define-xiden-setting XIDEN_INSTALL_ABBREVIATED_SOURCES (listof string?) null
+  "Add installation to transaction, assuming \"default\" output and package name link")
+
+(define-xiden-setting XIDEN_INSTALL_DEFAULT_SOURCES (listof (list/c string? string?)) null
+  "Add installation to transaction, assuming \"default\" output")
+
 (define-xiden-setting XIDEN_MATCH_RACKET_MODULES boolean? #f
   "Match .rkt, .ss, .scrbl, and .rktd")
 
@@ -195,6 +201,9 @@
    XIDEN_FETCH_PKGDEF_SIZE_MB
    XIDEN_FETCH_TIMEOUT_MS
    XIDEN_FETCH_TOTAL_SIZE_MB
+   XIDEN_INSTALL_SOURCES
+   XIDEN_INSTALL_ABBREVIATED_SOURCES
+   XIDEN_INSTALL_DEFAULT_SOURCES
    XIDEN_LINK
    XIDEN_MATCH_COMPILED_RACKET
    XIDEN_MATCH_RACKET_MODULES

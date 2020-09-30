@@ -49,10 +49,24 @@
 (define+provide-message $package-malformed $package (errors))
 
 
+(define DEFAULT_OUTPUT "default")
+
+
 (define (install-package link-path output-name pkg-definition-variant)
   (do pkgeval       <- (make-package-evaluator pkg-definition-variant)
       _             <- (validate-requested-output pkgeval output-name)
       build-output  <- (install-output! pkgeval output-name link-path)
+      results       <- (report-installation-results (package-name pkgeval) build-output)
+      (return (logged-unit (kill-evaluator pkgeval)))))
+
+
+(define (install-package/default link-path pkg-definition-variant)
+  (install-package link-path DEFAULT_OUTPUT pkg-definition-variant))
+
+
+(define (install-package/abbreviated pkg-definition-variant)
+  (do pkgeval       <- (make-package-evaluator pkg-definition-variant)
+      build-output  <- (install-output! pkgeval DEFAULT_OUTPUT (pkgeval 'package))
       results       <- (report-installation-results (package-name pkgeval) build-output)
       (return (logged-unit (kill-evaluator pkgeval)))))
 
@@ -74,7 +88,7 @@
 
 
 (define (validate-requested-output pkgeval output-name)
-  (if (member output-name (cons "default" (xiden-evaluator-ref pkgeval 'outputs null)))
+  (if (member output-name (cons DEFAULT_OUTPUT (xiden-evaluator-ref pkgeval 'outputs null)))
       (logged-unit output-name)
       (logged-failure ($undefined-package-output (package-name pkgeval) output-name))))
 

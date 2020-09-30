@@ -180,11 +180,25 @@
                                           (XIDEN_INSTALL_SOURCES)))
                     '("link-name" "output-name" "source")))
 
+(flag-out [+d ++install-default]
+          (cli-flag XIDEN_INSTALL_DEFAULT_SOURCES
+                    'multi null 2 (λ (flag link-name source)
+                                    (cons (list link-name source)
+                                          (XIDEN_INSTALL_DEFAULT_SOURCES)))
+                    '("link-name" "source")))
+
+(flag-out [+a ++install-abbreviated]
+          (cli-flag XIDEN_INSTALL_ABBREVIATED_SOURCES
+                    'multi null 1 (λ (flag source)
+                                    (cons source
+                                          (XIDEN_INSTALL_ABBREVIATED_SOURCES)))
+                    '("source")))
+
 
 (define all-flags
   (list -X -M -e -S -m -n -p -d -q -o
         +h -r -b -U -T -H -Y -F -R -v
-        -A -G +s))
+        -A -G +s +d +a))
 
 ; For use in REPL and tests. Provides a quick way to preview the effect of command
 ; line flags, and generated help strings shown.

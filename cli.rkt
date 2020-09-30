@@ -93,6 +93,8 @@ EOF
    #:arg-help-strings '()
    #:flags
    (make-cli-flag-table ++install-source
+                        ++install-abbreviated
+                        ++install-default
                         ++host
                         --max-redirects
                         --trust-any-digest
@@ -108,7 +110,12 @@ EOF
        (define actions
          (fold-transaction-actions
           flags
-          (hasheq XIDEN_INSTALL_SOURCES
+          (hasheq XIDEN_INSTALL_ABBREVIATED_SOURCES
+                  install-package/abbreviated
+                  XIDEN_INSTALL_DEFAULT_SOURCES
+                  (match-lambda [(list link-path source)
+                                 (install-package/default link-path source)])
+                  XIDEN_INSTALL_SOURCES
                   (match-lambda [(list link-path output-name source)
                                  (install-package link-path output-name source)]))))
 
