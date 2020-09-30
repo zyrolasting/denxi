@@ -13,6 +13,7 @@
          racket/sequence
          racket/stream
          racket/vector
+         (only-in net/url-connect current-https-protocol)
          (for-syntax racket/base)
          "archiving.rkt"
          "cli-flag.rkt"
@@ -114,9 +115,10 @@ EOF
        (if (null? actions)
            (halt 1 ($show-string "Nothing to do."))
            (let-values ([(commit rollback) (start-transaction!)])
-             (transact actions
-                       (λ (messages) (commit)   (halt 0 messages))
-                       (λ (messages) (rollback) (halt 1 messages)))))))))
+             (parameterize ([current-https-protocol (if (XIDEN_TRUST_UNVERIFIED_HOST) 'auto 'secure)])
+               (transact actions
+                         (λ (messages) (commit)   (halt 0 messages))
+                         (λ (messages) (rollback) (halt 1 messages))))))))))
 
 
 (define (gc-command args halt)
