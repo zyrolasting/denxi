@@ -9,17 +9,12 @@
 This is a guide for @|project-name|, a functional dependency manager
 for Racket.
 
-@binary safely and deterministically reproduces your project's
-dependencies without any side-effect on the running Racket
-installation. This makes it a powerful and versatile way to share work
-and continuously integrate code.
+@project-name safely and deterministically reproduces your project's
+dependencies without any side-effect on the running Racket installation. This
+makes it a powerful and versatile way to share work and continuously integrate
+code.
 
-@bold{@project-name is not yet production ready.} Dependency
-management is a hard problem that takes time to do well. To track
-@|project-name|'s progress, please visit the source code at GitHub
-below.
-
-@hyperlink["https://github.com/zyrolasting/xiden"]{https://github.com/zyrolasting/xiden}
+To track @|project-name|'s progress, see @secref{project}.
 
 @table-of-contents[]
 
@@ -32,3 +27,4 @@ below.
 @include-section{workspace.scrbl}
 @include-section{config.scrbl}
 @include-section{plugin.scrbl}
+@include-section{project.scrbl}
