@@ -50,14 +50,8 @@ Run @litchar{cd xiden} to enter the source directory. We will now build
 the executable and offline documentation.
 
 If you have GNU Make installed, then just run @litchar{make}. Otherwise,
-open @tt{Makefile} and run the commands defined by the @tt{all} target.
+open @tt{Makefile} and run the commands defined by the @tt{build} target.
 
-If successful, you will see an executable file called @binary appear in your
-working directory.  You will also see a @tt{html} directory appear. That holds
-offline documentation.  @tt{html/guide/index.html} is the home page for the
-guide you are reading now.  @tt{html/reference/index.html} is the home page for
-the reference material.
-
-Move @binary (the executable) anywhere you'd like, but make sure that the
-directory holding @binary appears in your @tt{PATH} so that you can run it
-easily in your shell.
+If successful, then @|binary| should now work as a command in your shell. If
+not, check your @tt{PATH} to make sure that it includes the directory where
+@tt{raco setup} creates launchers on your disk.
