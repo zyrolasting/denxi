@@ -160,8 +160,6 @@
 (flag-out [+h ++host] (cli-flag/list XIDEN_SERVICE_ENDPOINTS "url-string"))
 
 ; Unary boolean flags
-(flag-out [-r] (cli-flag/boolean XIDEN_MATCH_RACKET_MODULES))
-(flag-out [-b --match-compiled-racket] (cli-flag/boolean XIDEN_MATCH_COMPILED_RACKET))
 (flag-out [-U --trust-unsigned] (cli-flag/boolean XIDEN_TRUST_UNSIGNED))
 (flag-out [-T --trust-bad-signature] (cli-flag/boolean XIDEN_TRUST_BAD_SIGNATURE))
 (flag-out [-H --trust-any-host] (cli-flag/boolean XIDEN_TRUST_UNVERIFIED_HOST))
@@ -197,7 +195,7 @@
 
 (define all-flags
   (list -X -M -e -S -m -n -p -d -q -o
-        +h -r -b -U -T -H -Y -F -R -v
+        +h -U -T -H -Y -F -R -v
         -A -G +s +d +a))
 
 ; For use in REPL and tests. Provides a quick way to preview the effect of command

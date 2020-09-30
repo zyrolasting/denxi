@@ -131,12 +131,6 @@
 (define-xiden-setting XIDEN_INSTALL_DEFAULT_SOURCES (listof (list/c string? string?)) null
   "Add installation to transaction, assuming \"default\" output")
 
-(define-xiden-setting XIDEN_MATCH_RACKET_MODULES boolean? #f
-  "Match .rkt, .ss, .scrbl, and .rktd")
-
-(define-xiden-setting XIDEN_MATCH_COMPILED_RACKET boolean? #f
-  "Match .zo and .dep.")
-
 (define-xiden-setting XIDEN_MODS_MODULE (or/c #f path-string?) #f
   "A path to a module that extends Xiden.")
 
@@ -179,9 +173,6 @@
 (define-xiden-setting XIDEN_SERVICE_ENDPOINTS (listof url-string?) '("https://zcpkg.com")
   "Services to contact when searching for package definitions")
 
-(define-xiden-setting XIDEN_LINK boolean? #f
-  "When installing a package on the filesystem, create a symlink to the source directory.")
-
 (define-xiden-setting XIDEN_DOWNLOAD_MAX_REDIRECTS exact-nonnegative-integer? 2
   "Maximum redirects to follow when downloading an artifact")
 
@@ -204,9 +195,6 @@
    XIDEN_INSTALL_SOURCES
    XIDEN_INSTALL_ABBREVIATED_SOURCES
    XIDEN_INSTALL_DEFAULT_SOURCES
-   XIDEN_LINK
-   XIDEN_MATCH_COMPILED_RACKET
-   XIDEN_MATCH_RACKET_MODULES
    XIDEN_MODS_MODULE
    XIDEN_PRIVATE_KEY_PATH
    XIDEN_READER_FRIENDLY_OUTPUT
