@@ -195,9 +195,9 @@ strictly between 7.2 and 7.4.
 
 @section{Authenticating Inputs}
 
-@project-name supports authenticating inputs using OpenSSL and a
-trusted public keychain. This section requires a working understanding
-of how one verifies a signature using a public key.
+@project-name supports authenticating inputs using OpenSSL and trusted public
+keys. This section requires a working understanding of how one verifies a
+signature using a public key.
 
 You may declare a signature with an input. A signature expression
 includes a source of the public key used to verify the signature, and
