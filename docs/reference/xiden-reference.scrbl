@@ -7,7 +7,7 @@
 @author[(author+email "Sage L. Gerard" "sage@sagegerard.com" #:obfuscate? #t)]
 
 This is the API reference for @|project-name|. For a high-level
-overview, read the @hyperlink["../guide/index.html"]{guide}.
+overview, read the @hyperlink["../xiden-guide/index.html"]{guide}.
 
 @bold{Warning}: The implementation is unstable.
 
