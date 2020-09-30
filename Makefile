@@ -9,7 +9,7 @@ test:
 
 build:
 	raco pkg install -i --skip-installed
-	raco setup --fail-fast -j 8 xiden
+	raco setup --doc-index --fail-fast -j 8 xiden
 
 exe: build test
 	raco exe -o xiden -l --exf -U cli.rkt
