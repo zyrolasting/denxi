@@ -1,6 +1,6 @@
 #lang scribble/manual
 
-@require["../shared.rkt" @for-label[racket/base]]
+@require["../shared.rkt" @for-label[racket/base xiden/rc]]
 
 @title[#:tag "config"]{Configuration}
 
@@ -10,13 +10,13 @@ only one name, and a contract for accepted Racket values.
 
 @section{Value Sources}
 
-For example, let's look at the @racketfont{XIDEN_VERBOSE} setting,
-which is a boolean. This list covers the possible sources of a value,
+For example, let's look at the @racket[XIDEN_VERBOSE] setting, which is a
+boolean. This list covers the possible sources of a value for that setting,
 where each source overrides the one before it.
 
 @itemlist[#:style 'ordered
 
-@item{A default value hard-coded in @|binary|.}
+@item{A default value.}
 
 @item{A value bound to @tt{XIDEN_VERBOSE} in a @tech{workspace}'s @tt{etc/xiden.rkt}.}
 
@@ -24,19 +24,19 @@ where each source overrides the one before it.
 The value must be @racket[(read)]able (e.g. @tt{XIDEN_VERBOSE="#t"}).}
 
 @item{A value set in the command-line flag named @litchar{--XIDEN_VERBOSE}.
-The value must be @racket[(read)]able (e.g. @tt{--XIDEN_VERBOSE "#t"}).}
+The value must be @racket[(read)]able (e.g. @litchar{--XIDEN_VERBOSE "#t"}).}
 
 ]
 
 
-@section{Why Such Verbose Commands?}
+@section{Why Allow Verbose Commands?}
 
-I'd bet that you will not like writing flags for @binary commands
-because @binary requires you to write values for @italic{every} flag
-(e.g. @litchar{-v "#t"}). This prevents combining short flags into
-strings like @litchar{-vUih}.
+A consequence of the above rules is that you cannot combine short flags into
+strings like @litchar{-vUi}. @italic{Every} flag requires an argument, so the
+flags may appear as @litchar{-v '#t' -U '#f' -i '#t'}.
 
-Why do it this way? What are the benefits of this approach?
+Verbosity is less convenient, so why do it this way? What are the benefits of
+this approach?
 
 @itemlist[
 
