@@ -55,3 +55,6 @@ open @tt{Makefile} and run the commands defined by the @tt{build} target.
 If successful, then @|binary| should now work as a command in your shell. If
 not, check your @tt{PATH} to make sure that it includes the directory where
 @tt{raco setup} creates launchers on your disk.
+
+Alternatively, you can access the same command line interface using the
+@litchar{raco zcpkg} (“zero collection package”) command.

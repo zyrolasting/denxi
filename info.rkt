@@ -9,3 +9,9 @@
 (define scribblings
   '(("docs/reference/xiden-reference.scrbl" (multi-page))
     ("docs/guide/xiden-guide.scrbl" (multi-page))))
+
+(define raco-commands
+  '(("zcpkg"
+     (submod xiden/cli main)
+     "manage dependencies without side-effects on the installation"
+     70)))
