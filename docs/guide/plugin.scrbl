@@ -61,7 +61,7 @@ You will want a plugin to process sources if you want @binary to obey
 your conventions when referring to external resources. For example,
 here's a command that will not work with @binary out of the box.
 
-@verbatim|{$ xiden +s vendor default us-east-1/storefront@0.2.0}|
+@verbatim|{$ xiden do +s vendor default us-east-1/storefront@0.2.0}|
 
 Assume that in context, this command downloads a package definition
 from a regional registry owned by your company. Let's say the package
