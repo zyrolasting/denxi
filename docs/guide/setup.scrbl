@@ -41,13 +41,13 @@ of the latest source code from the following link:
 
 @centered[@hyperlink["https://github.com/zyrolasting/xiden/archive/master.zip"]{https://github.com/zyrolasting/xiden/archive/master.zip}]
 
-You can then extract the archive using whatever tool you prefer. Just make
-sure that the source files are inside of a directory named @|binary|.
+You can then extract the archive using whatever tool you prefer.
 
 @section{Step 2: Build The Project}
 
-Run @litchar{cd xiden} to enter the source directory. We will now build
-the executable and offline documentation.
+Enter the source directory created from Step 1. We will now build the
+executable and offline documentation. If you see @tt{Makefile} in your current
+directory, then you are in the right place.
 
 If you have GNU Make installed, then just run @litchar{make}. Otherwise,
 open @tt{Makefile} and run the commands defined by the @tt{build} target.
