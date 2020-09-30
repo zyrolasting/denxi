@@ -30,30 +30,32 @@ All files without links are eligible for garbage collection.
 $ xiden gc
 }|
 
-And that's it.
+That's it.
 
 @section{Well, wait a minute. I have to specify three things to install one thing?}
 
-In this example, yes. To understand why, let's assume that
-@project-name had a more semantic @litchar{install} command.
+Not always. There are other command line flags that require less
+information. Run @litchar{xiden do -h} to see what's available.
+
+The earlier example showed you the most verbose action because it creates
+contrast against a more semantic @litchar{install} command.
 
 @verbatim|{
 $ xiden install def.rkt
 }|
 
-While easier on the eyes, doing it this way would introduce a lot of
-hidden behavior. It would force @binary to make up answers to
-questions like “Where do I create a launcher?” or “How much do I need
-to build?” If a package author or tool makes those decisions for you,
-then you will find that convenient until you need to do things
-differently. Words like @litchar{install} hide too much, precisely
+While easier on the eyes, doing it this way would introduce a lot of hidden
+behavior. It would force @binary to make up answers to questions like “Where do
+I create a launcher?” or “What do I need to build?” If a package author or tool
+makes those decisions for you, then that is convenient until you need to do
+things differently. Words like @litchar{install} hide too much, precisely
 because you will eventually want more control over the process.
 
-The @litchar{do} command is verbose because that is the cost of
-flexibility. You never have to worry about file conflicts if you
-control the exact namespace of dependency references, and you never
-have to worry about bloat if you control what exact deliverable each
-package places on your disk.
+Flags used with the @litchar{do} command can be verbose because that is the
+cost of flexibility. You never have to worry about file conflicts if you
+control the exact namespace of dependency references, and you never have to
+worry about bloat if you control what exact deliverable each package places on
+your disk.
 
 
 @section{Any Confirmation Prompts?}
