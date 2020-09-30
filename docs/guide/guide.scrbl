@@ -24,6 +24,7 @@ below.
 @table-of-contents[]
 
 @include-section{concepts.scrbl}
+@include-section{setup.scrbl}
 @include-section{creating-packages.scrbl}
 @include-section{managing-dependencies.scrbl}
 @include-section{versioning.scrbl}

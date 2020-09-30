@@ -38,26 +38,6 @@ eligible for garbage collection.
 
 [Guix]: https://guix.gnu.org/
 
-## Setup
-
-First, make sure the following programs are available in your search paths.
-
-* SQLite 3.24.0+. Verify with `sqlite3 -version`.
-* Racket 7.0+. Verify with `racket -v`.
-* OpenSSL 0.9.8+. Verify with `openssl version`.
-
-Next, build the project using `make`.
-
-```console
-git clone ...
-cd xiden
-make
-```
-
-If everything worked, you should have HTML documentation in an `html`
-subdirectory and a new executable called `xiden` in the working
-directory.
-
 
 ## Release Status
 
