@@ -269,12 +269,21 @@ EOF
                                          output
                                          (file-name-from-path path)))])
                 (in-all-installed))))]
+
+       ["links"
+        (halt 0
+              (sequence->list
+               (sequence-map (λ (link-path target-path)
+                               ($show-string (format "~a -> ~a" link-path target-path)))
+                             (in-issued-links))))]
+
        [_
         (halt 1 ($unrecognized-command what))]))
    #<<EOF
 where <what> is one of
   workspace  The used workspace directory
   installed  A list of installed outputs
+  links      A list of issued links
 
 EOF
    ))

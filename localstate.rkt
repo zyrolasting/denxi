@@ -57,6 +57,8 @@
            (->* () #:rest (listof path-string?) complete-path?)]
           [build-addressable-path
            (-> bytes? complete-path?)]
+          [in-issued-links
+           (-> (sequence/c path-string? path-string?))]
           [in-xiden-objects
            (-> xiden-query-variant?
                string?
@@ -679,6 +681,12 @@
 
 (define (in-path-links path-id)
   (search-by-record (path-record #f #f #f path-id)))
+
+(define (in-issued-links)
+  (in-query+ (~a "select L.path, P.path from " (relation-name paths) " as P "
+                 "inner join " (relation-name paths) " as L "
+                 "on L.target_id = P.id;")))
+
 
 (define (normalize-path-for-db path)
   (if (string? path)
