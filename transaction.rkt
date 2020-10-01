@@ -7,7 +7,7 @@
 ; specified multiple times. Each value is accumulated into
 ; a list for the corresponding flag.
 ;
-;  $ xiden pkg -i a -u b -i c -u d
+;  $ ... -i a -u b -i c -u d
 ;
 ; -i produces (c a) when accumulated using (cons), and -u produces (d b)
 ;
