@@ -118,19 +118,19 @@
 
 
 (define (get-cached-file* variant [limit +inf.0])
-  (cond [(file-exists? variant)
-         variant]
-
-        [(bytes? variant)
+  (cond [(bytes? variant)
          (get-cached-file "bytes"
-          (encode 'base32 (subbytes variant 0 (min 64 (bytes-length variant))))
+          (coerce-string (encode 'base32 (subbytes variant 0 (min 64 (bytes-length variant)))))
           (λ (path)
             (copy-limited-port-to-file! path (open-input-bytes variant) limit)))]
+
+        [(file-exists? variant)
+         variant]
 
         [(url-string? variant)
          (get-cached-file
           variant
-          (encode 'base32 variant)
+          (coerce-string (encode 'base32 variant))
           (λ (path)
             (copy-limited-port-to-file! path (get-pure-port (string->url variant)) limit)))]
 
