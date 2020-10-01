@@ -55,7 +55,7 @@
                path-string?
                path-string?)]
 
-          [from-package
+          [from-catalogs
            (-> string?
                (listof url-string?))]
 
@@ -85,6 +85,7 @@
                      syntax/location
                      syntax/parse)
          (only-in file/sha1 hex-string->bytes)
+         (only-in net/uri-codec uri-encode)
          file/untgz
          racket/function
          racket/list
@@ -166,10 +167,10 @@
        #'(normalize-path user-path wrt))]))
 
 
-(define (from-package query-string)
-  (map url->string
-       (map/service-endpoints query-string
-                              (XIDEN_SERVICE_ENDPOINTS))))
+(define (from-catalogs query-string)
+  (let ([encoded (uri-encode query-string)])
+    (map (λ (url-string) (format url-string encoded))
+         (XIDEN_SERVICE_ENDPOINTS))))
 
 (define integrity integrity-info)
 (define signature signature-info)
