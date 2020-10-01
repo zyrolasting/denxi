@@ -819,7 +819,7 @@
 
 
 (define (in-xiden-outputs query-variant output-name)
-  (sequence-map (λ (rid rn on path) (find-exactly-one (output-record #f rid #f #f)))
+  (sequence-map (λ (output-name revid revno pathid path) (find-exactly-one (output-record #f revid #f #f)))
                 (in-xiden-objects query-variant output-name)))
 
 
