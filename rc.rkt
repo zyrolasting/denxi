@@ -183,7 +183,7 @@
 (define-xiden-setting XIDEN_PRIVATE_KEY_PATH (or/c #f path-string?) #f
   "The location of a private key")
 
-(define-xiden-setting XIDEN_SERVICE_ENDPOINTS (listof url-string?) '("https://zcpkg.com")
+(define-xiden-setting XIDEN_CATALOGS (listof url-string?) '("https://zcpkg.com/$QUERY")
   "Services to contact when searching for package definitions")
 
 (define-xiden-setting XIDEN_DOWNLOAD_MAX_REDIRECTS exact-nonnegative-integer? 2

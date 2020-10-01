@@ -178,7 +178,7 @@
 (flag-out [-d] (cli-flag/unary XIDEN_FETCH_TIMEOUT_MS arg->value "milliseconds"))
 (flag-out [-q] (cli-flag/unary XIDEN_PRIVATE_KEY_PATH arg->value "path"))
 (flag-out [-o --max-redirects] (cli-flag/unary XIDEN_DOWNLOAD_MAX_REDIRECTS arg->value "exact-nonnegative-integer"))
-(flag-out [+h ++host] (cli-flag/list XIDEN_SERVICE_ENDPOINTS "url-string"))
+(flag-out [+h ++host] (cli-flag/list XIDEN_CATALOGS "url-string"))
 
 ; Unary boolean flags
 (flag-out [-U --trust-unsigned] (cli-flag/boolean XIDEN_TRUST_UNSIGNED))

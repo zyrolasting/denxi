@@ -169,8 +169,8 @@
 
 (define (from-catalogs query-string)
   (let ([encoded (uri-encode query-string)])
-    (map (λ (url-string) (format url-string encoded))
-         (XIDEN_SERVICE_ENDPOINTS))))
+    (map (λ (url-string) (string-replace url-string "$QUERY" encoded))
+         (XIDEN_CATALOGS))))
 
 (define integrity integrity-info)
 (define signature signature-info)

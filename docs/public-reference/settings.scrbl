@@ -197,8 +197,10 @@ When set, use the private key at the given path for signing inputs.
 Currently not used.
 }
 
-@defsetting*[XIDEN_SERVICE_ENDPOINTS]{
-Currently not used.
+@defsetting*[XIDEN_CATALOGS]{
+A list of strings representing URL templates.
+
+This setting affects the output of @racket[from-catalogs].
 }
 
 @defsetting*[XIDEN_DOWNLOAD_MAX_REDIRECTS]{
