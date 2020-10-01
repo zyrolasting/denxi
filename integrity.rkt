@@ -54,7 +54,6 @@
          racket/format
          "encode.rkt"
          "file.rkt"
-         "rc.rkt"
          "openssl.rkt")
 
 (struct integrity-info (algorithm digest) #:prefab)

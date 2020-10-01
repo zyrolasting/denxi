@@ -26,6 +26,7 @@
          racket/pretty
          (only-in racket/tcp listen-port-number?)
          "exn.rkt"
+         "integrity.rkt"
          "message.rkt"
          "sandbox.rkt"
          "setting.rkt"
@@ -145,6 +146,12 @@
 
 (define-xiden-setting XIDEN_TRUST_BAD_DIGEST boolean? #f
   "(DANGEROUS) Trust any input.")
+
+(define-xiden-setting XIDEN_TRUST_ANY_PUBLIC_KEY boolean? #f
+  "(DANGEROUS) Trust any public key")
+
+(define-xiden-setting XIDEN_TRUSTED_PUBLIC_KEYS (listof well-formed-integrity-info/c) null
+  "Trust a given public key, by 160-bit SHA-384 fingerprint")
 
 (define-xiden-setting XIDEN_FASL_OUTPUT boolean? #f
   "Use FASL program output")

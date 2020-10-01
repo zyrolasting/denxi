@@ -16,6 +16,7 @@
    "../racket-version.rkt"
    "../rc.rkt"
    "../sentry.rkt"
+   "../signature.rkt"
    "../source.rkt"
    "../worker.rkt"
    "../workspace.rkt")

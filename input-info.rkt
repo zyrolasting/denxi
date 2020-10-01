@@ -32,13 +32,6 @@
 (define+provide-message $input-integrity-assumed   $input-integrity-status ())
 (define+provide-message $input-integrity-missing   $input-integrity-status ())
 
-(define+provide-message $input-signature-status         $input (source))
-(define+provide-message $input-signature-missing        $input-signature-status ())
-(define+provide-message $input-signature-unchecked      $input-signature-status ())
-(define+provide-message $input-signature-trust-unsigned $input-signature-status ())
-(define+provide-message $input-signature-verified       $input-signature-status ())
-(define+provide-message $input-signature-mismatch       $input-signature-status ())
-
 
 (struct input-info
   (name       ; The name to bind to bytes
@@ -124,24 +117,42 @@
 
 
 (define (check-input-signature input file-record source messages)
-  (define $message-ctor
-    (if (XIDEN_TRUST_BAD_DIGEST)
-        $input-signature-unchecked
-        (if (input-info-signature input)
-            (if (check-signature (integrity-info-digest (input-info-integrity input))
-                                 (signature-info-pubkey (input-info-signature input))
-                                 (signature-info-body (input-info-signature input)))
-                $input-signature-verified
-                $input-signature-mismatch)
-            (if (XIDEN_TRUST_UNSIGNED)
-                $input-signature-trust-unsigned
-                $input-signature-missing))))
-
+  (define $message-ctor (get-signature-status input))
   (values (if (member $message-ctor
-                      (list $input-signature-verified
-                            $input-signature-unchecked
-                            $input-signature-trust-unsigned))
+                      (list $signature-verified
+                            $signature-unchecked
+                            $signature-trust-unsigned))
               file-record
               FAILURE)
           (cons ($message-ctor (input-info-name input) source)
                 messages)))
+
+; This procedure uses most of the bindings from xiden/signature
+; in terms of the runtime configuration. Look at the tests for
+; xiden/signature to better understand what is happening.
+;
+; Due to use of CPS, each siginfo is eq? to (input-info-signature input),
+; and you should read this procedure from bottom to top.
+(define (get-signature-status input)
+  (define (verify-signature-info public-key-path siginfo)
+    (consider-signature-info public-key-path
+                             (input-info-integrity input)
+                             siginfo))
+
+  (define (verify-public-key siginfo)
+    (define trust-public-key?
+      (if (XIDEN_TRUST_ANY_PUBLIC_KEY)
+          (λ (p) #t)
+          (bind-trusted-public-keys (XIDEN_TRUSTED_PUBLIC_KEYS))))
+    (consider-public-key-trust #:trust-public-key? trust-public-key?
+                               siginfo
+                               verify-signature-info))
+
+  (define (verify-unsigned siginfo)
+    (consider-unsigned #:trust-unsigned (XIDEN_TRUST_UNSIGNED)
+                       siginfo
+                       verify-public-key))
+
+  (consider-trust #:trust-bad-digest (XIDEN_TRUST_BAD_DIGEST)
+                  (input-info-signature input)
+                  verify-unsigned))

@@ -12,7 +12,6 @@
          "contract.rkt"
          "exn.rkt"
          "query.rkt"
-         "rc.rkt"
          "string.rkt"
          "url.rkt")
 

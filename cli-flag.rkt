@@ -37,6 +37,7 @@
 
 (require racket/cmdline
          "rc.rkt"
+         "sandbox.rkt"
          "setting.rkt"
          "string.rkt")
 
@@ -110,11 +111,28 @@
 
 
 ;-------------------------------------------------------------------------------
-; CLI flag definitions
+; CLI argument parsers
 
 (define (keep flag a) a)
 (define (arg->value flag a) (string->value a))
 (define (keep-for s) (λ (flag a) (cons a (s))))
+
+(define make-parsing-evaluator
+  (let ([e #f])
+    (λ ()
+      (unless e
+        (set! e
+              (call-with-trusted-sandbox-configuration
+               (λ () (make-evaluator 'xiden/derivation-forms)))))
+        e)))
+
+
+(define (arg->value/evaluated flag a)
+  ((make-parsing-evaluator) (arg->value flag a)))
+
+
+;-------------------------------------------------------------------------------
+; CLI flag definitions
 
 (define (cli-flag/unary setting convert help-str)
   (cli-flag setting 'once-each null 1 convert (list help-str)))
@@ -170,7 +188,14 @@
 (flag-out [-A --allow-undeclared-racket] (cli-flag/boolean XIDEN_ALLOW_UNDECLARED_RACKET_VERSIONS))
 (flag-out [-G --assume-support] (cli-flag/boolean XIDEN_ALLOW_UNSUPPORTED_RACKET))
 
-; Transaction flags
+; Multi flags
+(flag-out [+p ++trust-public-key]
+          (cli-flag XIDEN_TRUSTED_PUBLIC_KEYS
+                    'multi null 1 (λ (flag integrity-expr)
+                                    (cons (arg->value/evaluated flag integrity-expr)
+                                          (XIDEN_TRUSTED_PUBLIC_KEYS)))
+                    '("integrity-expr")))
+
 (flag-out [+s ++install-source]
           (cli-flag XIDEN_INSTALL_SOURCES
                     'multi null 3 (λ (flag link-name output-name source)
@@ -196,7 +221,7 @@
 (define all-flags
   (list -X -M -e -S -m -n -p -d -q -o
         +h -U -T -H -Y -F -R -v
-        -A -G +s +d +a))
+        -A -G +s +d +a +p))
 
 ; For use in REPL and tests. Provides a quick way to preview the effect of command
 ; line flags, and generated help strings shown.

@@ -177,7 +177,7 @@
 (define base32 (curry decode 'base32))
 (define base64 (curry decode 'base64))
 (define (hex variant)
-  (decode (if (string-contains? variant ":")
+  (decode (if (string-contains? (coerce-string variant) ":")
               'colon-separated-hex
               'hex)
           variant))

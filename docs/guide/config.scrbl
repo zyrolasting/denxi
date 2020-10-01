@@ -121,3 +121,27 @@ I'll use the @tt{XIDEN_VERBOSE} setting for the below examples:
 @item{@litchar{xiden config set XIDEN_VERBOSE "#t"}: Changes a setting in a @tech{workspace}'s @tt{etc/xiden.rkt} file.}
 @item{@litchar{xiden config get XIDEN_VERBOSE}: Gets the value of a setting}
 ]
+
+@section{Trusting Public Keys}
+
+You can use @|project-name|'s integrity checking system to specify public keys
+that you trust when @racket[XIDEN_TRUST_ANY_PUBLIC_KEY] is @racket[#f].  You
+specify the integrity information the same way that you would for an input in a
+@tech{package definition}.
+
+This example value for @racket[XIDEN_TRUSTED_PUBLIC_KEYS] includes the
+integrity information for my own public key located at
+@visible-hyperlink{https://sagegerard.com/public.pem}.
+
+
+@racketblock[
+(define XIDEN_TRUSTED_PUBLIC_KEYS
+  (list (integrity 'sha384
+                   (hex "d925eca70c5adfa1d7722cf6c1fb667ed3e7967715a4eaecf52e342663f88231de39f96293e719a27ade3d87666ae54"))))
+]
+
+Notice that this is not a fingerprint, it is @italic{integrity information for
+an entire (trusted) public key file}. This avoids collision attacks due to short
+fingerprint lengths, but not collisions attacks based on the algorithm.  If a
+digest algorithm is subject to a collision attack, you can upgrade the
+algorithm and expected digest.

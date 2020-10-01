@@ -120,14 +120,14 @@
            source
            (format-cli-flags --trust-any-digest))]
 
-  [($input-signature-mismatch name source)
+  [($signature-mismatch name source)
    (format (~a "Signature mismatch for ~s from source ~s.~n"
                "While unsafe, you can trust bad signatures using ~a.")
            name
            source
            (format-cli-flags --trust-bad-signature))]
 
-  [($input-signature-missing name source)
+  [($signature-missing name source)
    (format (~a "~a does not have a signature. If you are prototyping your own package, this is expected.~n"
                "If you got the package from the Internet, then exercise caution!~n"
                "To trust unsigned packages, use ~a.")
@@ -140,8 +140,12 @@
   [($input-integrity-assumed name source)
    (format "Dangerously trusting input ~s from source ~s" name source)]
 
-  [($input-signature-unchecked name source)
+  [($signature-unchecked name source)
    (format "Not checking signature for input ~s from source ~s"
+           name source)]
+
+  [($signature-distrust-public-key name source)
+   (format "Refusing input ~s from source ~s because public key is not trusted."
            name source)]
 
   [($input-integrity-missing name source)
@@ -150,11 +154,11 @@
                "Otherwise, please declare integrity information for safety.")
            name)]
 
-  [($input-signature-trust-unsigned name source)
+  [($signature-trust-unsigned name source)
    (format "Trusting unsigned input ~s from source ~s" name source)]
 
-  [($input-signature-verified name source)
+  [($signature-verified name source)
    (format "Signature verified for input ~s from source ~s" name source)]
 
-  [($input-signature-mismatch name source)
+  [($signature-mismatch name source)
    (format "Signature mismatch for input ~s from source ~s" name source)])
