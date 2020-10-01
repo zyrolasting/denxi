@@ -47,7 +47,7 @@
 (define+provide-message $unsupported-racket-version $package (versions))
 (define+provide-message $undefined-package-output $package (output-name))
 (define+provide-message $package-malformed $package (errors))
-
+(define+provide-message $output-not-found (query output-name))
 
 (define DEFAULT_OUTPUT "default")
 

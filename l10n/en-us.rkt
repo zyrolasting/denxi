@@ -11,6 +11,10 @@
          [(string? v) v]
          [else (~s v)])]
 
+  [($output-not-found query output-name)
+   (format "Cannot find output ~s output for ~s"
+           output-name query)]
+
   [($module-compiled module-path)
    (format "Compiled: ~a" module-path)]
 
