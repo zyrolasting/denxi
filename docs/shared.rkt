@@ -10,6 +10,9 @@
 (define binary (tt "xiden"))
 (define project-name "Xiden")
 
+(define (visible-hyperlink s)
+  (hyperlink s s))
+
 (define (reformat-syntax stx v)
   (replace-context stx
     (read-syntax #f (open-input-string (with-output-to-string (λ () (pretty-write v)))))))
