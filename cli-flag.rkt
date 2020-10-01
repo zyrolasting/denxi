@@ -187,6 +187,7 @@
 (flag-out [-v --verbose] (cli-flag/boolean XIDEN_VERBOSE))
 (flag-out [-A --allow-undeclared-racket] (cli-flag/boolean XIDEN_ALLOW_UNDECLARED_RACKET_VERSIONS))
 (flag-out [-G --assume-support] (cli-flag/boolean XIDEN_ALLOW_UNSUPPORTED_RACKET))
+(flag-out [--trust-any-pubkey] (cli-flag/boolean XIDEN_TRUST_ANY_PUBLIC_KEY))
 
 ; Multi flags
 (flag-out [+p ++trust-public-key]

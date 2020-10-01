@@ -95,9 +95,11 @@ EOF
    (make-cli-flag-table ++install-source
                         ++install-abbreviated
                         ++install-default
+                        ++trust-public-key
                         ++host
                         --max-redirects
                         --trust-any-digest
+                        --trust-any-pubkey
                         --trust-bad-signature
                         --trust-unsigned
                         --allow-undeclared-racket
