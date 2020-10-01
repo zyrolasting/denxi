@@ -1,7 +1,8 @@
 #lang racket/base
 
 (provide run-openssl-command
-         openssl)
+         openssl
+         (struct-out exn:fail:xiden:openssl))
 
 (require racket/file
          racket/function
@@ -15,7 +16,7 @@
          "string.rkt"
          "url.rkt")
 
-(define-exn exn:fail:xiden:openssl exn:fail:xiden (exit-code))
+(define-exn exn:fail:xiden:openssl exn:fail:xiden (exit-code output))
 
 (define openssl (find-executable-path "openssl"))
 
@@ -42,13 +43,14 @@
                         (format "Command timed out after ~a seconds. xiden terminated the subprocess."
                                 delay-seconds)))
 
+                  (define output (port->bytes from-stdout))
+
                   (unless (eq? exit-code 0)
-                    (raise ((exc exn:fail:xiden:openssl exit-code)
+                    (raise ((exc exn:fail:xiden:openssl exit-code output)
                             "OpenSSL failed with exit code ~a: ~a"
                             exit-code
                             error-string)))
 
-                  (define output (port->bytes from-stdout))
                   output)
                 (λ ()
                   (close-input-port from-stderr)
