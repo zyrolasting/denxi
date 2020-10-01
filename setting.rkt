@@ -7,7 +7,6 @@
 (require "contract.rkt")
 (provide (struct-out setting)
          define-setting
-         define-setting-group
          (contract-out
           [call-with-applied-settings
            (-> (if/c hash?
@@ -83,9 +82,6 @@
      #'(define name (make-setting 'name get-default cnt description))]))
 
 
-(define-syntax-rule (define-setting-group id (s ...))
-  (define id (make-immutable-hash (list (cons (setting-id s) s) ...))))
-
 
 (module+ test
   (require racket/function
@@ -143,13 +139,6 @@
 
   (define-setting GROUP_A boolean? #f "Fuh")
   (define-setting GROUP_B boolean? #f "Buh")
-  (define-setting-group GROUP [GROUP_A GROUP_B])
-
-  (test-true "Define settings in groups"
-             (and (hash? GROUP)
-                  (immutable? GROUP)
-                  (eq? (hash-ref GROUP 'GROUP_A) GROUP_A)
-                  (eq? (hash-ref GROUP 'GROUP_B) GROUP_B)))
 
   ; This case is important because a command line handler can specify no flags.
   (test-equal? "Allow useless parameterizations"

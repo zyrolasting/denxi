@@ -41,12 +41,18 @@
 
 (define current-xiden-rcfile-cache (make-parameter void))
 
+; This gets build out as a side-effect of instantiation. If you build
+; it declaratively, then it's easy to forget to add a new setting
+; unless you expand into a complete hash table.
+(define XIDEN_SETTINGS (hasheq))
+
 
 ; The only difference between a vanilla setting an a Xiden setting is how a
 ; fallback value is computed.
 (define-syntax-rule (define-xiden-setting id cnt default-value description)
   (begin (provide (contract-out [id setting?]))
-         (define-setting id cnt (xiden-setting-find-value default-value) description)))
+         (define-setting id cnt (xiden-setting-find-value default-value) description)
+         (set! XIDEN_SETTINGS (hash-set XIDEN_SETTINGS 'id id))))
 
 
 ; Return a procedure to fetch a value for a setting if it is not already set.
@@ -189,33 +195,6 @@
 (define-xiden-setting XIDEN_ALLOW_UNSUPPORTED_RACKET boolean? #f
   "Install packages even if they declare that they do not support the running version of Racket.")
 
-
-(define-setting-group XIDEN_SETTINGS
-  [XIDEN_ALLOW_UNDECLARED_RACKET_VERSIONS
-   XIDEN_ALLOW_UNSUPPORTED_RACKET
-   XIDEN_DOWNLOAD_MAX_REDIRECTS
-   XIDEN_FASL_OUTPUT
-   XIDEN_FETCH_BUFFER_SIZE_MB
-   XIDEN_FETCH_PKGDEF_SIZE_MB
-   XIDEN_FETCH_TIMEOUT_MS
-   XIDEN_FETCH_TOTAL_SIZE_MB
-   XIDEN_INSTALL_SOURCES
-   XIDEN_INSTALL_ABBREVIATED_SOURCES
-   XIDEN_INSTALL_DEFAULT_SOURCES
-   XIDEN_MODS_MODULE
-   XIDEN_PRIVATE_KEY_PATH
-   XIDEN_READER_FRIENDLY_OUTPUT
-   XIDEN_SANDBOX_EVAL_MEMORY_LIMIT_MB
-   XIDEN_SANDBOX_EVAL_TIME_LIMIT_SECONDS
-   XIDEN_SANDBOX_MEMORY_LIMIT_MB
-   XIDEN_SERVICE_ENDPOINTS
-   XIDEN_TRUST_ANY_PUBLIC_KEY
-   XIDEN_TRUST_BAD_DIGEST
-   XIDEN_TRUST_BAD_SIGNATURE
-   XIDEN_TRUST_UNSIGNED
-   XIDEN_TRUST_UNVERIFIED_HOST
-   XIDEN_TRUSTED_PUBLIC_KEYS
-   XIDEN_VERBOSE])
 
 (module+ test
   (require rackunit
