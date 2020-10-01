@@ -5,7 +5,7 @@
 @title[#:tag "config"]{Configuration}
 
 @define[change-val @secref["Changing_a_Setting_Value"
-         #:doc '(lib "xiden/docs/reference/xiden-reference.scrbl")]]
+         #:doc '(lib "xiden/docs/public-reference/xiden-public-reference.scrbl")]]
 
 You can configure @|binary| using environment variables, the command
 line interface, and/or a runtime configuration file. Every setting has
