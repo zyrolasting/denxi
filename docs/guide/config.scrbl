@@ -13,6 +13,38 @@ only one name, and a contract for accepted Racket values.
 
 The @change-val section covers how to change the value of a setting.
 
+@section{Runtime Configuration File}
+
+Each per @tech{workspace} can have its own runtime configuration file (rcfile).
+When @project-name selects a @tech{workspace} directory, it will load
+@litchar{etc/xiden.rkt} and use it as a source of setting values. Here's an
+example of what that file might look like:
+
+@racketmod[
+xiden
+
+(define XIDEN_SANDBOX_EVAL_MEMORY_LIMIT_MB 200)
+(define XIDEN_VERBOSE #f)
+(define XIDEN_TRUST_UNVERIFIED_HOST #f)
+(define XIDEN_TRUST_UNSIGNED #t)
+(define XIDEN_FETCH_PKGDEF_SIZE_MB 0.1)
+(define XIDEN_TRUST_BAD_DIGEST #f)
+(define XIDEN_ALLOW_UNSUPPORTED_RACKET #f)
+(define XIDEN_SANDBOX_EVAL_TIME_LIMIT_SECONDS 300)
+(define XIDEN_FASL_OUTPUT #f)
+(define XIDEN_FETCH_TIMEOUT_MS 3000)
+]
+
+
+Notice that the rcfile also uses the @racketmodname[xiden] language, which
+allows you to use it as a @tech{package definition}. This is only really useful
+for self-hosted @project-name installations, or installations that are unique
+to the configured @tech{workspace}.
+
+This does not imply that any @tech{package definition} can act as an rcfile. An
+rcfile @italic{must} be located in at @litchar{etc/xiden.rkt} with regards to a
+@tech{workspace} directory.
+
 
 @section{Why Allow Verbose Commands?}
 
