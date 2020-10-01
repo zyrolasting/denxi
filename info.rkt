@@ -7,8 +7,8 @@
 (define deps '("base" "rackunit-lib" "db-lib" "base32"))
 
 (define scribblings
-  '(("docs/reference/xiden-reference.scrbl" (multi-page))
-    ("docs/guide/xiden-guide.scrbl" (multi-page))))
+  '(("docs/reference/xiden-reference.scrbl" (multi-page) (tool-library))
+    ("docs/guide/xiden-guide.scrbl" (multi-page) (tool))))
 
 (define raco-commands
   '(("zcpkg"
