@@ -3,13 +3,15 @@
 @require[@for-label[racket/base]
          "../shared.rkt"]
 
-@title[#:style '(toc)]{@project-name Public API Reference}
+@title[#:style '(toc)]{@|project-name|: Public API Reference}
 @author[(author+email "Sage L. Gerard" "sage@sagegerard.com" #:obfuscate? #t)]
 
-This is the public API reference for @|project-name|. For a high-level
-overview, read the @hyperlink["../xiden-guide/index.html"]{guide}.
+This is the public API reference for @|project-name|.
 
-@bold{Warning}: The implementation is unstable.
+For information on private APIs, see  @other-doc['(lib "xiden/docs/private-reference/xiden-private-reference.scrbl")].
+For a high-level overview of @project-name, see  @other-doc['(lib "xiden/docs/guide/xiden-guide.scrbl")].
+
+@bold{Warning}: The public API is currently unstable.
 
 @table-of-contents[]
 @include-section{model.scrbl}

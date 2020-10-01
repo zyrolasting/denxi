@@ -16,6 +16,8 @@ code.
 
 To track @|project-name|'s progress, see @secref{project}.
 
+If you need the reference material, see  @other-doc['(lib "xiden/docs/public-reference/xiden-public-reference.scrbl")].
+
 @table-of-contents[]
 
 @include-section{concepts.scrbl}
