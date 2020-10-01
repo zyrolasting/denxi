@@ -6,9 +6,6 @@
 (require racket/format
          racket/string)
 
-(define (~a* . args)
-  (apply ~a (map (λ (s) (~a s "\n")) args)))
-
 (define (indent-lines lines)
   (map (λ (s) (~a "  " s)) lines))
 
