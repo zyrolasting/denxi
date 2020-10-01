@@ -150,6 +150,8 @@
 ;-------------------------------------------------------------------------------
 ; Unary flags
 
+(define all-flags null)
+
 (require (for-syntax racket/base syntax/stx))
 (define-syntax (flag-out stx)
   (syntax-case stx ()
@@ -161,7 +163,8 @@
                 (define id
                   (struct-copy cli-flag expr
                                [additional-flag-strings
-                                (list strs ...)]))))]))
+                                (list strs ...)]))
+                (set! all-flags (cons id all-flags))))]))
 
 
 ; Unary flags
@@ -218,11 +221,6 @@
                                           (XIDEN_INSTALL_ABBREVIATED_SOURCES)))
                     '("source")))
 
-
-(define all-flags
-  (list -X -M -e -S -m -n -p -d -q -o
-        +h -U -T -H -Y -F -R -v
-        -A -G +s +d +a +p))
 
 ; For use in REPL and tests. Provides a quick way to preview the effect of command
 ; line flags, and generated help strings shown.

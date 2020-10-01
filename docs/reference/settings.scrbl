@@ -1,7 +1,14 @@
 #lang scribble/manual
 
 @(require (for-label racket/base racket/contract xiden/rc)
+          (for-syntax "../shared.rkt"
+                      racket
+                      syntax/stx
+                      xiden/rc
+                      xiden/setting
+                      xiden/cli-flag)
           xiden/rc
+          xiden/setting
           xiden/cli-flag
           "../shared.rkt")
 
@@ -33,35 +40,177 @@ the method before it.
 @section{Setting Reference}
 
 These are the defined settings for @|project-name|, along with their default
-values and command-line flags. Note that these entries are generated, and
-only show the user-facing English string to describe the setting in the
-context of a command. That context is not available here, so some entries
-will be confusing until fixed.
+values and command-line flags.
 
-@(require (for-syntax "../shared.rkt" racket xiden/rc xiden/setting xiden/cli-flag))
-
-@(define-for-syntax (get-contract-datum s)
+@(define-for-syntax (infer-contract-expr stx s)
    (define proc (setting-valid? s))
    (define formatted (~v proc))
-   (if (string-prefix? formatted "#<")
-       (object-name proc)
-       (read (open-input-string formatted))))
+   (reformat-syntax stx
+     (if (string-prefix? formatted "#<")
+         (object-name proc)
+         (read (open-input-string formatted)))))
 
-
-@(define-for-syntax (setting->doc s)
-  (define cf (findf (λ (f) (eq? (cli-flag-setting f) s)) all-flags))
-  `(defthing #:kind "setting"
-             ,(setting-id s)
-             ,(get-contract-datum s)
-             #:value ,(s)
-             (para ,(setting-description s))
-             . ,(if cf
-                    `("\nCLI Flags: " (litchar ,(format-cli-flags cf)))
-                    null)))
-
+@(define-syntax (defsetting stx)
+  (syntax-case stx ()
+    [(_ s cnt pre-content ...)
+      #`(let ([cf (findf (λ (c) (eq? (cli-flag-setting c) s)) all-flags)])
+          (defthing
+            #:kind "setting"
+            s cnt
+            #:value #,(datum->syntax stx (eval #'(s)) stx)
+            (para "CLI Flags: "
+                  (if cf
+                      (litchar (format-cli-flags cf))
+                      "N/A"))
+            pre-content ...))]))
 
 @(define-syntax (defsetting* stx)
-  (define sorted (sort #:key (lambda (p) (~a (car p))) (hash->list XIDEN_SETTINGS) string<?))
-  (reformat-syntax stx `(begin . ,(map setting->doc (map cdr sorted)))))
+  (syntax-case stx ()
+    [(_ s pre-content ...)
+      #`(defsetting s #,(infer-contract-expr stx (eval #'s)) pre-content ...)]))
 
-@defsetting*[]
+@defsetting*[XIDEN_SANDBOX_MEMORY_LIMIT_MB]{
+Defines the memory quota for sandboxed transactions, in mebibytes.
+
+If this is too low, then it is possible for installations to fail
+due to a forced custodian shutdown.
+}
+
+
+@defsetting*[XIDEN_SANDBOX_EVAL_MEMORY_LIMIT_MB]{
+Like @racket[XIDEN_SANDBOX_MEMORY_LIMIT_MB], but sets a memory quota for every
+expression under evaluation.
+}
+
+@defsetting*[XIDEN_SANDBOX_EVAL_TIME_LIMIT_SECONDS]{
+Like @racket[XIDEN_SANDBOX_EVAL_MEMORY_LIMIT_MB], but sets a time quota for every
+expression under evaluation, in seconds.
+}
+
+@defsetting*[XIDEN_INSTALL_SOURCES]{
+Defines installations in a transaction.
+
+Each list in @racket[XIDEN_INSTALL_SOURCES] consists of three strings:
+
+@itemlist[#:style 'ordered
+@item{The name of a symbolic link to create in @racket[(current-directory)].}
+@item{The name of a desired output from a @tech{package definition}.}
+@item{A URL, file path, or plugin-specific string used to find the @tech{package definition}.}
+]
+
+}
+
+@defsetting*[XIDEN_INSTALL_ABBREVIATED_SOURCES]{
+Like @racket[XIDEN_INSTALL_SOURCES], except each item in the list only needs to
+be a URL, file path, or plugin-specific string used to find the @tech{package
+definition}. The symbolic link name is assumed to be the string bound to
+@racketfont{package} in the definition, and the output is assumed to be
+@racket{default}.
+}
+
+@defsetting*[XIDEN_INSTALL_DEFAULT_SOURCES]{
+Like @racket[XIDEN_INSTALL_SOURCES], except each list only needs two strings:
+
+
+@itemlist[#:style 'ordered
+@item{The name of a symbolic link to create in @racket[(current-directory)].}
+@item{A URL, file path, or plugin-specific string used to find the @tech{package definition}.}
+]
+
+The output is assumed to be @racket{default}.
+}
+
+@defsetting*[XIDEN_MODS_MODULE]{
+When not @racket[#f], the given module path will be used in @racket[dynamic-require]
+to load extensions.
+}
+
+@defsetting*[XIDEN_TRUST_UNSIGNED]{
+@bold{Dangerous}. When true, trust any input that lacks a signature.
+}
+
+@defsetting*[XIDEN_TRUST_BAD_SIGNATURE]{
+@bold{Dangerous}. When true, trust any input that has a signature that does not match the input's integrity information.
+}
+
+@defsetting*[XIDEN_TRUST_UNVERIFIED_HOST]{
+@bold{Dangerous}. When true, trust any server that was not authenticated using available certificates.
+}
+
+@defsetting*[XIDEN_TRUST_BAD_DIGEST]{
+@bold{Dangerous}. When true, trust any input.
+}
+
+@defsetting*[XIDEN_TRUST_ANY_PUBLIC_KEY]{
+@bold{Dangerous}. When true, trust any public key used to verify a signature.
+}
+
+@defsetting[XIDEN_TRUSTED_PUBLIC_KEYS (listof well-formed-integrity-info/c)]{
+A list of integrity information used to verify public keys. If a public key
+fetched for an input passes the integrity check given an item in
+@racket[XIDEN_TRUSTED_PUBLIC_KEYS], then the public key is considered
+trustworthy.
+}
+
+@require[@for-label[racket/fasl racket/serialize]]
+@defsetting*[XIDEN_FASL_OUTPUT]{
+When true, each value @racket[v] printed on STDOUT is first transformed using
+@racket[(s-exp->fasl (serialize v))].
+}
+
+@defsetting*[XIDEN_READER_FRIENDLY_OUTPUT]{
+When true, each program output value @racket[v] is printed on STDOUT using
+@racket[pretty-write] without being translated to a human-readable message.
+
+Use this to produce @racket[(read)]able logs. If it aids read performance,
+combine with @racket[XIDEN_FASL_OUTPUT].
+}
+
+@defsetting*[XIDEN_FETCH_TOTAL_SIZE_MB]{
+The maximum total size of a single download allowed when fetching an input from
+a source, in mebibytes.
+}
+
+@defsetting*[XIDEN_FETCH_BUFFER_SIZE_MB]{
+The maximum number of bytes to read at a time from a source, in mebibytes.
+}
+
+@defsetting*[XIDEN_FETCH_PKGDEF_SIZE_MB]{
+Like @racket[XIDEN_FETCH_TOTAL_SIZE_MB], except the quota only applies
+to @tech{package definitions} named in a user-defined transaction.
+This quote does not apply to @tech{package definitions} listed
+as inputs in another @tech{package definition}.
+}
+
+@defsetting*[XIDEN_FETCH_TIMEOUT_MS]{
+The maximum number of seconds to wait for the next available byte from a
+source.
+}
+
+@defsetting*[XIDEN_VERBOSE]{
+When true, emit more detailed program output.
+}
+
+@defsetting*[XIDEN_PRIVATE_KEY_PATH]{
+When set, use the private key at the given path for signing inputs.
+
+Currently not used.
+}
+
+@defsetting*[XIDEN_SERVICE_ENDPOINTS]{
+Currently not used.
+}
+
+@defsetting*[XIDEN_DOWNLOAD_MAX_REDIRECTS]{
+The maximum number of HTTP redirects to follow when resolving a GET request.
+}
+
+@defsetting*[XIDEN_ALLOW_UNDECLARED_RACKET_VERSIONS]{
+When true, continue installing when a @tech{package definition}
+does not declare supported versions of Racket.
+}
+
+@defsetting*[XIDEN_ALLOW_UNSUPPORTED_RACKET]{
+When true, continue installing when a @tech{package definition}
+declares that it does not support the running Racket version.
+}
