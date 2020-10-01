@@ -199,12 +199,12 @@ strictly between 7.2 and 7.4.
 keys. This section requires a working understanding of how one verifies a
 signature using a public key.
 
-You may declare a signature with an input. A signature expression
-includes a source of the public key used to verify the signature, and
-a source for the signature itself. Since this is done per-input, it
-allows trusted teammates to each sign the artifact they are
-responsible for maintaining. If you are an independent developer, then
-you may simply express your same public key for each input.
+You may declare a signature with an input. A signature expression includes a
+source of the public key used to verify the signature, and a source for the
+signature itself. Since this is done per-input, it allows trusted teammates to
+each sign the artifact they are responsible for maintaining. If you are an
+independent developer, then you may simply express your same public key for
+each input.
 
 This example fetches both a public key and a signature from the
 same host that provides an artifact.
@@ -214,12 +214,16 @@ same host that provides an artifact.
                     (signature "https://example.com/public.pem"
                                "https://example.com/path/to/artifact.sign"))]
 
-@binary uses a signature and a public key you trust to confirm that
-the @italic{digest} specified in the @racket[integrity] information
-was signed with a corresponding private key. @bold{This does not imply
-that you should trust the public key.} Vetting public keys is out of
-scope for this guide. Just know that if you do not trust the public
-key, then a signature verified by that key won't offer you any value.
+@binary uses a signature and a public key to confirm that the @italic{digest}
+specified in the @racket[integrity] information was signed with a corresponding
+private key.
+
+While @project-name can fetch public keys from the Internet for you, it will
+refuse to process any input where you do not affirm your trust in the
+corresponding public key.  Vetting public keys is out of scope for this
+guide. Just know that if you do not trust the public key, then a signature
+verified by that key won't offer you any value.  See @secref{trusting-pubkeys}
+to learn how to affirm trust for individual public keys.
 
 
 @subsection{Caveats}

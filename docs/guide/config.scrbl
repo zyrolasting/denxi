@@ -122,7 +122,7 @@ I'll use the @tt{XIDEN_VERBOSE} setting for the below examples:
 @item{@litchar{xiden config get XIDEN_VERBOSE}: Gets the value of a setting}
 ]
 
-@section{Trusting Public Keys}
+@section[#:tag "trusting-pubkeys"]{Trusting Public Keys}
 
 You can use @|project-name|'s integrity checking system to specify public keys
 that you trust when @racket[XIDEN_TRUST_ANY_PUBLIC_KEY] is @racket[#f].  You
