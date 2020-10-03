@@ -138,7 +138,7 @@
   (cli-flag setting 'once-each null 1 convert (list help-str)))
 
 (define (cli-flag/boolean setting)
-  (cli-flag/unary setting arg->value "#t-or-#f"))
+  (cli-flag/unary setting arg->value "bool"))
 
 (define (cli-flag/list setting help-string)
   (cli-flag setting 'multi null 1 (keep-for setting) (list help-string)))
