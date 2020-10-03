@@ -87,7 +87,7 @@
                                    null)))))
 
 (define (cli-flag->flag-spec c)
-  (list (cli-flag-strings c)
+  (list (sort (cli-flag-strings c) #:key string-length <)
         (procedure-reduce-arity
          (λ formals
            ; This leverages CPS and the prop:procedure property on the setting struct
