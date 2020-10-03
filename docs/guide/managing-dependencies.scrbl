@@ -164,7 +164,9 @@ target module.
 
 @section[#:tag "gc"]{Collecting Garbage}
 
-We briefly visited the @litchar{gc} command in @secref{do}.
+We briefly visited the @litchar{gc} command in @secref{do}. We observed that if
+you delete a link issued by @litchar{xiden do} on your disk, then
+@litchar{xiden gc} may collect the target.
 
 A file or directory is eligible for garbage collection if it has no incoming
 links issued by @|project-name|.
@@ -176,13 +178,6 @@ The garbage collector follows a three step process:
 @item{Delete all files or directories in the @tech{target workspace}'s @litchar{var/xiden/objects} directory with no incoming links.}
 @item{If nothing was actually deleted in Step 1 or Step 2, print the number of bytes recovered. Otherwise, go to Step 1.}
 ]
-
-This means that if you delete a link issued by @litchar{xiden do} on your disk,
-then @litchar{xiden gc} will notice that the link it previously issued is
-missing in Step 1. This will cause a file or directory to become eligible for
-deletion in Step 2 if no other links pointing to it. By repeating this process
-whenever something is deleted, only the outputs actually used on your system
-will remain.
 
 Note that only the immediate contents (as in @racket[directory-list]) of a
 @tech{workspace}'s @litchar{var/xiden/objects} directory are monitored, because
