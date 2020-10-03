@@ -228,11 +228,19 @@ to learn how to affirm trust for individual public keys.
 
 @subsection{Caveats}
 
-Not every cipher algorithm supports every digest. It is your
+@itemlist[
+@item{Not every cipher algorithm supports every digest. It is your
 responsibility to use a digest supported by the cipher algorithm
-backing your keys.
+backing your keys.}
 
-@project-name assumes that signatures are derived from the @italic{raw
+@item{@project-name assumes that signatures are derived from the @italic{raw
 bytes} of the digest. This means that if you create a signature from
 an ANS.1-encoded digest using a command like @litchar{openssl dsgt
--sign ...}, then @project-name will see a signature mismatch.
+-sign ...}, then @project-name will see a signature mismatch.}
+
+@item{If you want to use a @tech{package definition} as an input, and no
+signature for the definition is published, then you have to make a judgement
+call. Using an unsigned @tech{package definition} means trusting @italic{every}
+unsigned input behind that definition.}
+
+]
