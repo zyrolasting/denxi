@@ -15,7 +15,7 @@ The @change-val section covers how to change the value of a setting.
 
 @section{Runtime Configuration File}
 
-Each per @tech{workspace} can have its own runtime configuration file (rcfile).
+Each @tech{workspace} can have its own runtime configuration file, or rcfile.
 When @project-name selects a @tech{workspace} directory, it will load
 @litchar{etc/xiden.rkt} and use it as a source of setting values. Here's an
 example of what that file might look like:
@@ -128,7 +128,7 @@ integrity information for my own public key located at
 ]
 
 Notice that this is not a fingerprint, it is @italic{integrity information for
-an entire (trusted) public key file}. This avoids collision attacks due to short
-fingerprint lengths, but not collisions attacks based on the algorithm.  If a
-digest algorithm is subject to a collision attack, you can upgrade the
-algorithm and expected digest.
+an entire (trusted) public key file}. This avoids collision attacks due to
+short fingerprint lengths, but not collision attacks based on the digest
+algorithm.  If a digest algorithm is subject to a collision attack, you can
+upgrade the algorithm and expected digest.
