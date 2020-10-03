@@ -69,7 +69,6 @@
            ["show" show-command]
            ["gc" gc-command]
            ["config" config-command]
-           ["sandbox" sandbox-command]
            [_ (const (halt 1 ($unrecognized-command action)))]))
        (proc args halt)))
 
@@ -79,7 +78,6 @@
   gc       Collect garbage
   show     Print reports
   config   Manage settings
-  sandbox  Start sandboxed REPL
 
 EOF
    ))
@@ -216,30 +214,6 @@ EOF
 
 EOF
    ))
-
-
-(define (sandbox-command args halt)
-  (run-command-line
-   #:program "sandbox"
-   #:args args
-   #:halt halt
-   #:arg-help-strings '("package-path")
-   #:flags
-   (make-cli-flag-table -e -S -M)
-   (λ (flags input-program)
-     (with-rc flags
-       (with-handlers ([values (λ (e) (halt 1 ($show-string (exn->string e))))])
-         (call-with-build-sandbox-parameterization
-          (λ ()
-            (parameterize ([current-eval (make-module-evaluator (build-path input-program))])
-              (let loop ()
-                (with-handlers ([(negate exn:break?)
-                                 (λ (e)
-                                   (displayln (exn->string e))
-                                   (loop))]
-                                [exn:break? void])
-                  (read-eval-print-loop)))))))
-       (halt 0 null)))))
 
 
 (define (show-command args halt)
