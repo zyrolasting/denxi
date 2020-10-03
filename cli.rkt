@@ -68,7 +68,6 @@
            ["do" do-command]
            ["show" show-command]
            ["gc" gc-command]
-           ["link" link-command]
            ["config" config-command]
            ["sandbox" sandbox-command]
            [_ (const (halt 1 ($unrecognized-command action)))]))
@@ -78,7 +77,6 @@
 <action> is one of
   do       Run a transaction
   gc       Collect garbage
-  link     Make a link
   show     Print reports
   config   Manage settings
   sandbox  Start sandboxed REPL
@@ -147,26 +145,6 @@ EOF
                                        (~a bytes-recovered
                                            " bytes"))))))))
 
-
-(define (link-command args halt)
-  (run-command-line
-   #:program "link"
-   #:args args
-   #:halt halt
-   #:arg-help-strings '("link-path" "query"  "output-name" "rel-path")
-   (λ (flags link-path query [output-name "default"] [rel-path "."])
-     (halt 0
-           (call-with-reused-output query output-name
-             (λ (variant)
-               (cond [(output-record? variant)
-                      (define pathrec (find-path-record (output-record-path-id variant)))
-                      (define file-path (build-workspace-path (path-record-path pathrec) rel-path))
-                      (make-file-or-directory-link (normalize-path file-path) link-path)
-                      null]
-                     [(exn? variant)
-                      ($show-string (exn->string variant))]
-                     [else
-                      ($output-not-found query output-name)])))))))
 
 
 (define (config-command args halt)
