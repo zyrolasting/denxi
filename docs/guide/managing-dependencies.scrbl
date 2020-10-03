@@ -171,7 +171,7 @@ links issued by @|project-name|.
 
 The garbage collector follows a three step process:
 
-@itemlist[
+@itemlist[#:style 'ordered
 @item{Forget about any links where a link file does not actually exist on disk.}
 @item{Delete all files or directories in the @tech{target workspace}'s @litchar{var/xiden/objects} directory with no incoming links.}
 @item{If nothing was actually deleted in Step 1 or Step 2, print the number of bytes recovered. Otherwise, go to Step 1.}
