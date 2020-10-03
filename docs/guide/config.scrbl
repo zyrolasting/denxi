@@ -109,19 +109,6 @@ path points to an existing entry on the filesystem, then that entry
 must be a directory. If the path points to no existing entry, then
 @binary will create a directory at that path.
 
-
-@section{The @tt{config} command}
-
-Use the @litchar{xiden config} command to manage @|binary|'s configuration.
-
-I'll use the @tt{XIDEN_VERBOSE} setting for the below examples:
-
-@itemlist[
-@item{@litchar{xiden config dump}: Prints a readable hash of the active configuration.}
-@item{@litchar{xiden config set XIDEN_VERBOSE "#t"}: Changes a setting in a @tech{workspace}'s @tt{etc/xiden.rkt} file.}
-@item{@litchar{xiden config get XIDEN_VERBOSE}: Gets the value of a setting}
-]
-
 @section[#:tag "trusting-pubkeys"]{Trusting Public Keys}
 
 You can use @|project-name|'s integrity checking system to specify public keys

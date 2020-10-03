@@ -109,7 +109,7 @@ dependencies side-by-side. If you try to install the same package
 twice, then @binary will reuse the existing directory.
 
 
-@section{Creating Arbitrary Links}
+@subsection{Creating Arbitrary Links}
 
 Sometimes it makes sense to make links to specific files in a package's
 output. A good way to do this is to create a link as normal using a relative
@@ -155,12 +155,6 @@ the @tech{target workspace}.
 Note that @litchar{L} might not exist. @litchar{xiden gc} will remove any link
 record where the link does not exist at @litchar{L}.
 
-@section{Running a Sandboxed REPL}
-
-If you ever install files using a less secure configuration, use @litchar{xiden
-sandbox} to start a Racket REPL using @racketmodname[racket/sandbox] on a
-target module.
-
 
 @section[#:tag "gc"]{Collecting Garbage}
 
@@ -185,3 +179,16 @@ Note that only the immediate contents (as in @racket[directory-list]) of a
 subdirectory}. This means that if you ever create a symbolic link to a file
 inside of a package's output directory, then that link is dependent on the
 output directory remaining after any garbage collection pass.
+
+
+@section{Managing Runtime Configuration}
+
+Use the @litchar{xiden config} command to manage @|binary|'s configuration.
+
+I'll use the @tt{XIDEN_VERBOSE} setting for the below examples:
+
+@itemlist[
+@item{@litchar{xiden config dump}: Prints a readable hash of the active configuration.}
+@item{@litchar{xiden config set XIDEN_VERBOSE "#t"}: Changes a setting in a @tech{workspace}'s @tt{etc/xiden.rkt} file.}
+@item{@litchar{xiden config get XIDEN_VERBOSE}: Gets the value of a setting}
+]
