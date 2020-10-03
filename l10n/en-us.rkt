@@ -21,18 +21,6 @@
   [($compilation-error module-path message)
    (format "Bytecode compilation error in: ~a~n~a" module-path message)]
 
-  [($setting-not-found name)
-   (format "There is no setting called ~s.~n" name)]
-
-  [($setting-accepted name value)
-   (format "Setting ~a to ~s" name value)]
-
-  [($setting-value-unreadable name source-name)
-   (format "Could not read setting value for ~a from ~s" name source-name)]
-
-  [($setting-value-rejected name value expected)
-   (format "Invalid value for ~a: ~a~n  expected: ~a~n" name value expected)]
-
   [($unrecognized-command m)
    (format "Unrecognized command: ~s. Run with -h for usage information.~n" m)]
 

@@ -33,12 +33,6 @@
          "url.rkt"
          "workspace.rkt")
 
-(define+provide-message $setting (name))
-(define+provide-message $setting-accepted $setting (value))
-(define+provide-message $setting-not-found $setting ())
-(define+provide-message $setting-value-unreadable $setting (source-name))
-(define+provide-message $setting-value-rejected $setting (value expected))
-
 (define current-xiden-rcfile-cache (make-parameter void))
 
 ; This gets build out as a side-effect of instantiation. If you build

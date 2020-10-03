@@ -68,16 +68,14 @@
            ["do" do-command]
            ["show" show-command]
            ["gc" gc-command]
-           ["config" config-command]
            [_ (const (halt 1 ($unrecognized-command action)))]))
        (proc args halt)))
 
    #<<EOF
 <action> is one of
-  do       Run a transaction
+  do       Run transaction
   gc       Collect garbage
-  show     Print reports
-  config   Manage settings
+  show     Print report
 
 EOF
    ))
@@ -145,76 +143,6 @@ EOF
 
 
 
-(define (config-command args halt)
-  (define (get-setting name)
-    (or (setting-ref name)
-        (halt 1 ($setting-not-found name))))
-
-  (run-command-line
-   #:program "config"
-   #:args args
-   #:halt halt
-   #:arg-help-strings '("action" "args")
-
-   (λ (flags action . args)
-     (match action
-       ["get"
-        (run-command-line
-         #:args args
-         #:halt halt
-         #:program "config-get"
-         #:arg-help-strings '("key")
-         (λ (flags name)
-           (halt 0 ($show-datum ((get-setting name))))))]
-
-
-       ["dump"
-        (run-command-line
-         #:args args
-         #:halt halt
-         #:program "config-dump"
-         #:arg-help-strings '()
-         (λ (flags)
-           (halt 0 ($show-datum (dump-xiden-settings)))))]
-
-
-       ["set"
-        (run-command-line
-         #:args args
-         #:halt halt
-         #:program "config-set"
-         #:arg-help-strings '("key" "value")
-         (λ (flags name value-string)
-           (define selected-setting (get-setting name))
-           (with-handlers ([exn:fail?
-                            (λ (e)
-                              (halt 1
-                                    ($setting-value-rejected
-                                     (setting-id selected-setting)
-                                     value-string
-                                     (if (exn:fail:contract? e)
-                                         (cadr (regexp-match #px"expected:\\s+([^\n]+)"
-                                                             (exn-message e)))
-                                         (exn-message e)))))])
-             (define value (read (open-input-string value-string)))
-             (selected-setting value
-                               (λ ()
-                                 (save-xiden-settings!)
-                                 (halt 0 ($setting-accepted (setting-id selected-setting)
-                                                            value)))))))]
-
-       [_
-        (halt 1 ($unrecognized-command action))]))
-
-   #<<EOF
-<action> is one of
-  set   Change a setting
-  get   Get the value of a setting
-  dump  Print a hash table of all settings
-
-EOF
-   ))
-
 
 (define (show-command args halt)
   (run-command-line
@@ -224,8 +152,8 @@ EOF
    #:arg-help-strings '("what")
    (λ (flags what)
      (match what
-       ["workspace"
-        (halt 0 ($show-string (path->string (workspace-directory))))]
+       ["config"
+        (halt 0 ($show-datum (dump-xiden-settings)))]
 
        ["installed"
         (halt 0
@@ -245,6 +173,8 @@ EOF
                                          (file-name-from-path path)))])
                 (in-all-installed))))]
 
+
+
        ["links"
         (halt 0
               (sequence->list
@@ -252,13 +182,17 @@ EOF
                                ($show-string (format "~a -> ~a" link-path target-path)))
                              (in-issued-links))))]
 
+       ["workspace"
+        (halt 0 ($show-string (path->string (workspace-directory))))]
+
        [_
         (halt 1 ($unrecognized-command what))]))
    #<<EOF
 where <what> is one of
-  workspace  The used workspace directory
-  installed  A list of installed outputs
-  links      A list of issued links
+  config     Show a (read)able hash table of current settings
+  installed  Show a list of installed outputs
+  links      Show a list of issued links
+  workspace  Show the path to the target workspace directory
 
 EOF
    ))
@@ -274,7 +208,6 @@ EOF
            rackunit
            (submod "file.rkt" test))
 
-
   (test-workspace "Install a package"
     (define defn
       '(module pkg xiden
@@ -285,44 +218,8 @@ EOF
 
     (void))
 
-  (test-case "Configure xiden"
-    (test-case "Respond to an incomplete command with help"
-      (config-command
-       null
-       (λ (exit-code help-message)
-         (check-pred $show-string? help-message)
-         (check-eq? exit-code 1)
-         (check-true
-          (andmap (λ (patt) (regexp-match? (regexp patt) ($show-string-message help-message)))
-                  '("given 0 arguments"
-                    "set"
-                    "get"
-                    "dump"))))))
-
-    (test-case "Dump all (read)able configuration on request"
-      (config-command '("dump")
-                      (λ (exit-code msg)
-                        (check-eq? exit-code 0)
-                        (check-equal? msg ($show-datum (dump-xiden-settings))))))
-
-    (test-case "Return a (read)able config value"
-      (define config-key (random-ref (in-hash-keys XIDEN_SETTINGS)))
-      (define config-key/str (symbol->string config-key))
-      (config-command
-       `("get" ,config-key/str)
-       (λ (exit-code msg)
-         (check-eq? exit-code 0)
-         (check-equal? msg
-                       ($show-datum ((hash-ref XIDEN_SETTINGS config-key)))))))
-
-    (test-workspace "Save a (write)able config value"
-                    ; This confirms that a new workspace has different results.
-                    (check-false (XIDEN_VERBOSE))
-                    (check-false (file-exists? (get-xiden-settings-path)))
-
-                    (config-command
-                     '("set" "XIDEN_VERBOSE" "#t")
-                     (λ (exit-code msg)
-                       (check-eq? exit-code 0)
-                       (check-pred file-exists? (get-xiden-settings-path))
-                       (check-true ((load-xiden-rcfile) 'XIDEN_VERBOSE)))))))
+  (test-case "Dump all (read)able configuration on request"
+    (show-command '("config")
+                  (λ (exit-code msg)
+                    (check-eq? exit-code 0)
+                    (check-equal? msg ($show-datum (dump-xiden-settings)))))))

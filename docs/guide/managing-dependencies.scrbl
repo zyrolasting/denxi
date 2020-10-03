@@ -155,6 +155,12 @@ the @tech{target workspace}.
 Note that @litchar{L} might not exist. @litchar{xiden gc} will remove any link
 record where the link does not exist at @litchar{L}.
 
+@subsection{View Runtime Configuration}
+
+@litchar{xiden show config} shows the runtime configuration for the
+@tech{target workspace}. Use this to verify the configuration that applies
+before factoring in any command line arguments.
+
 
 @section[#:tag "gc"]{Collecting Garbage}
 
@@ -179,16 +185,3 @@ Note that only the immediate contents (as in @racket[directory-list]) of a
 subdirectory}. This means that if you ever create a symbolic link to a file
 inside of a package's output directory, then that link is dependent on the
 output directory remaining after any garbage collection pass.
-
-
-@section{Managing Runtime Configuration}
-
-Use the @litchar{xiden config} command to manage @|binary|'s configuration.
-
-I'll use the @tt{XIDEN_VERBOSE} setting for the below examples:
-
-@itemlist[
-@item{@litchar{xiden config dump}: Prints a readable hash of the active configuration.}
-@item{@litchar{xiden config set XIDEN_VERBOSE "#t"}: Changes a setting in a @tech{workspace}'s @tt{etc/xiden.rkt} file.}
-@item{@litchar{xiden config get XIDEN_VERBOSE}: Gets the value of a setting}
-]
