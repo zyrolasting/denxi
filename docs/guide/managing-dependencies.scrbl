@@ -185,7 +185,7 @@ whenever something is deleted, only the outputs actually used on your system
 will remain.
 
 Note that only the immediate contents (as in @racket[directory-list]) of a
-@tech{workspace}'s @litchar{var/xiden/objects} are monitored, because
+@tech{workspace}'s @litchar{var/xiden/objects} directory are monitored, because
 @project-name @italic{does not issue links to the contents of any
 subdirectory}. This means that if you ever create a symbolic link to a file
 inside of a package's output directory, then that link is dependent on the
