@@ -208,9 +208,9 @@ EOF
 
    #<<EOF
 <action> is one of
-  set   Set a new value for a setting
-  get   Get the current value of a setting
-  dump  Write a hash table of all settings
+  set   Change a setting
+  get   Get the value of a setting
+  dump  Print a hash table of all settings
 
 EOF
    ))
