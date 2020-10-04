@@ -4,13 +4,11 @@
 
 @title{Security}
 
-This section covers how @project-name trusts what what it processes, and what
-that means for the security of the surrounding system.
+This section covers how @project-name impacts the security of your system.
 
-@bold{@project-name does not guarentee security}.  Security is a product of
-careful, ongoing habits that go far beyond any single program. At the end of
-the day, @project-name can run programs from the Internet. It is up to you, the
-user, to manage the risks.
+First understand that @bold{@project-name does not guarentee security}.  Since
+it can run programs from the Internet, you need to manage the risks.
+
 
 @section{Caution is Configurable}
 
