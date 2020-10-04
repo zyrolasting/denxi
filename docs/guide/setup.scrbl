@@ -2,7 +2,7 @@
 
 @require["../shared.rkt"]
 
-@title{Setup}
+@title[#:tag "setup"]{Setup}
 
 This section covers how to install @binary on your system.
 

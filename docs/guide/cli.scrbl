@@ -4,6 +4,9 @@
 
 @title[#:tag "managing"]{Command Line Interface}
 
+@margin-note{If you haven't worked through @secref{new-pkg}, please do
+so. We'll use the @tt{definition.rkt} file from that section here.}
+
 @project-name offers two entry points to its command-line interface.  One is a
 launcher named @|binary|, which @tt{raco pkg} (or @|project-name|!) creates
 during setup. You can also use the command line through the @litchar{raco
@@ -27,7 +30,7 @@ fails, your system will be left as it was before the transaction started. Run a
 transaction using the @litchar{do} command.
 
 @verbatim|{
-$ xiden do ++install-source my-lib lib def.rkt
+$ xiden do ++install-source my-lib lib definition.rkt
 }|
 
 Whew, that's a long command! Don't worry, we'll shorten it in the next section.
@@ -39,7 +42,7 @@ install something from a source (@litchar{++install-source}).
 
 @litchar{++install-source} creates a symbolic link called @litchar{my-lib}.
 The link points to an output directory built using the @tech{package
-definition} file @litchar{def.rkt}. That directory will hold the package's
+definition} file @litchar{definition.rkt}. That directory will hold the package's
 @litchar{lib} output.
 
 Think of the command as @italic{binding} a link to a built directory.  When you
@@ -68,26 +71,26 @@ what exact deliverable each package places on your disk.
 Even so, not everyone wants to type all options all of the time. Different
 flags offer different levels of abbreviation for instructions.  Run
 @litchar{xiden do -h} to review your options, but note that all of these
-commands are equivalent (assuming that the name of the package in @tt{def.rkt}
+commands are equivalent (assuming that the name of the package in @tt{definition.rkt}
 is @racket{widget}):
 
 @verbatim|{
 # long flags
-$ xiden do ++install-source widget default def.rkt
-$ xiden do ++install-default widget def.rkt
-$ xiden do ++install-abbreviated def.rkt
+$ xiden do ++install-source widget default definition.rkt
+$ xiden do ++install-default widget definition.rkt
+$ xiden do ++install-abbreviated definition.rkt
 
 # short flags
-$ xiden do +s widget default def.rkt
-$ xiden do +d widget def.rkt
-$ xiden do +a def.rkt
+$ xiden do +s widget default definition.rkt
+$ xiden do +d widget definition.rkt
+$ xiden do +a definition.rkt
 }|
 
 If you want to use even shorter commands, then you can leverage your shell.
 
 @verbatim|{
 $ xi() { xiden do +a $1 }
-$ xi def.rkt
+$ xi definition.rkt
 }|
 
 

@@ -11,7 +11,7 @@ in. @project-name uses Racket to solve this problem.
 
 In the context of @|project-name|, a @deftech{package} is a program.
 Dependencies, setup instructions, scripts, and the output of @italic{other}
-packages are all @tech{inputs} to a package. The outputs of a package are
+packages are all inputs to a package. The outputs of a package are
 content-addressable files built from the inputs within a transaction. If you
 have used Guix or Nix, this will seem familiar.
 

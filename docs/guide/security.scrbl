@@ -2,7 +2,7 @@
 
 @require["../shared.rkt" @for-label[racket/base xiden/rc]]
 
-@title{Security}
+@title[#:tag "security"]{Security}
 
 This section covers how @project-name impacts the security of your system.
 
