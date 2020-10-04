@@ -123,7 +123,7 @@
       (unless e
         (set! e
               (call-with-trusted-sandbox-configuration
-               (λ () (make-evaluator 'xiden/derivation-forms)))))
+               (λ () (make-evaluator 'xiden/package-definition-module-language)))))
         e)))
 
 

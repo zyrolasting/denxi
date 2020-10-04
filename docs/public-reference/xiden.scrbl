@@ -3,7 +3,7 @@
 @require[@for-label[racket/base
                     racket/contract
                     xiden/rc
-                    @except-in[xiden/derivation-forms #%module-begin]]
+                    @except-in[xiden/package-definition-module-language #%module-begin]]
          "../shared.rkt"]
 
 @title{Package Definition Language}
@@ -22,7 +22,7 @@ document.
 @(defmodulelang* (xiden))
 
 @racketmodname[xiden], as a reader extension, defines a
-@racketmodname[xiden/derivation-forms] module. Any well-formed
+@racketmodname[xiden/package-definition-module-language] module. Any well-formed
 @litchar|{#lang info}| document is a well-formed @litchar|{#lang
 xiden}| document.
 
@@ -32,9 +32,9 @@ xiden}| documents.
 
 @section{Module Language}
 
-@defmodule[xiden/derivation-forms]
+@defmodule[xiden/package-definition-module-language]
 
-@racketmodname[xiden/derivation-forms] is a module language superset
+@racketmodname[xiden/package-definition-module-language] is a module language superset
 of @racketmodname[setup/infotab].
 
 @defproc[(cd [path path-string?]) void?]{

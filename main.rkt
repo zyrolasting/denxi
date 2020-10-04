@@ -1,4 +1,4 @@
 #lang racket/base
-(require xiden/derivation-forms)
-(provide (all-from-out xiden/derivation-forms))
-(module reader syntax/module-reader xiden/derivation-forms)
+(require xiden/package-definition-module-language)
+(provide (all-from-out xiden/package-definition-module-language))
+(module reader syntax/module-reader xiden/package-definition-module-language)
