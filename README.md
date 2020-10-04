@@ -1,4 +1,4 @@
-[![](https://img.shields.io/badge/%E2%99%A5-Support%20Ethical%20Software-red)](https://sagegerard.com/subscribe.html)
+[![](https://img.shields.io/badge/%E2%99%A5-Support%20Ethical%20Software-red)](https://sagegerard.com/show-support.html)
 
 A functional dependency manager for Racket that focuses on flexibility.
 
