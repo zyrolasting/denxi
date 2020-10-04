@@ -278,7 +278,7 @@
 
   (test-case "Convert CLI flag to deferred setting binding"
     (match-define (list flag-strings handler help-strings) (cli-flag->flag-spec TEST_SETTING/flag))
-    (check-equal? (cli-flag-strings TEST_SETTING/flag) flag-strings)
+    (check-equal? (sort #:key string-length (cli-flag-strings TEST_SETTING/flag) <) flag-strings)
     (check-equal? (procedure-arity handler) (add1 (cli-flag-arity TEST_SETTING/flag)))
     (check-equal? help-strings '("\n    Test" "value"))
 
