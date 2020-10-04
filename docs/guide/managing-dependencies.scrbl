@@ -7,10 +7,9 @@
 @project-name offers two entry points to its command-line interface.  One is a
 launcher named @|binary|, which @tt{raco pkg} (or @|project-name|!) creates
 during setup. You can also use the command line through the @litchar{raco
-zcpkg} (“zero-collection package”) command if your @tt{PATH} does not include a
-launcher directory kept separate from your installations's @tt{bin}.  While
-@tt{raco zcpkg} and @binary both launch the same program, I will only refer to
-it as @binary from now on.
+zcpkg} (“zero-collection package”) command if only @litchar{raco} is in your
+@tt{PATH}.  While @tt{raco zcpkg} and @binary both launch the same program, I
+will only refer to it as @binary from now on.
 
 @binary is a non-interactive program. Its configuration is held constant after
 launch, and every one of its settings can be defined at the command line.

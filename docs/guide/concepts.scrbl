@@ -17,7 +17,7 @@ have used Guix or Nix, this will seem familiar.
 
 This approach has several benefits. It makes a package installation atomic,
 meaning that an installation failure does not impact your Racket installation
-or the wider system. Since inputs are essentially arguments, you can subtitute
+or the wider system. Since inputs are essentially arguments, you can substitute
 different inputs to fix dependency issues without waiting on a maintainer or
 forking a repository.  These fixes include leaving out extraneous artifacts
 like docs, tests, or GUI features, applying a security patch, or providing your

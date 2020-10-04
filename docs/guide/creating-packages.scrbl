@@ -20,28 +20,22 @@ xiden
 (define revision-names '("alpha"))
 (define racket-versions '(("6.0" . "7.7.0.5")))
 
-(define source-code
-  (input "code.tar.gz"
-    (sources "https://example.com/packages/uri/artifacts/alpha.tgz"
-             "https://mirror.example.com/uri/alpha.tgz")
-             (integrity 'sha384 (base64 "KxAqYG79sTcKi8yuH/YkdKE+O9oiBsXIlwWs3pBwv/mXT9/jGuK0yqcwmjM/nNLe"))))
 
-(define minimal-source-code
-  (input "code-minimal.tar.gz"
-    (sources "https://example.com/packages/uri/artifacts/alpha.tgz"
-             "https://mirror.example.com/uri/alpha.tgz")
-             (integrity 'sha384 (base64 "KxAqYG79sTcKi8yuH/YkdKE+O9oiBsXIlwWs3pBwv/mXT9/jGuK0yqcwmjM/nNLe"))))
+(define inputs
+  (list (input "default.tgz"
+               (sources "https://example.com/packages/uri/artifacts/alpha.tgz"
+                        "https://mirror.example.com/uri/alpha.tgz")
+                        (integrity 'sha384 (base64 "KxAqYG79sTcKi8yuH/YkdKE+O9oiBsXIlwWs3pBwv/mXT9/jGuK0yqcwmjM/nNLe")))
+        (input "minimal.tgz"
+               (sources "https://example.com/packages/uri/artifacts/alpha.tgz"
+                        "https://mirror.example.com/uri/alpha.tgz")
+                        (integrity 'sha384 (base64 "KxAqYG79sTcKi8yuH/YkdKE+O9oiBsXIlwWs3pBwv/mXT9/jGuK0yqcwmjM/nNLe")))))
 
 
-(define inputs (list minimal-source-code source-code))
-
-(define outputs '("lib" "doc"))
+(define outputs '("minimal"))
 
 (define (build target)
-  (unpack
-   (input-ref
-    (string-append (if (equal? target "lib") "code-minimal" "code")
-                   ".tgz"))))
+  (unpack (input-ref inputs (string-append target ".tgz"))))
 ]
 
 
@@ -73,25 +67,14 @@ See @secref{versioning} for information about this versioning scheme.
 A package @deftech{input} is a deferred request for exact bytes.
 
 @racketblock[
-(define source-code
-  (input "code.tar.gz"
-    (sources "https://example.com/packages/uri/artifacts/alpha.tgz"
-             "https://mirror.example.com/uri/alpha.tgz")
-             (integrity 'sha384 (base64 "KxAqYG79sTcKi8yuH/YkdKE+O9oiBsXIlwWs3pBwv/mXT9/jGuK0yqcwmjM/nNLe"))))
+(input "code.tar.gz"
+       (sources "https://example.com/[...]"
+                "https://mirror.example.com/[...]")
+       (integrity 'sha384 (base64 "O9oiBsXIlwWs3pBwv[...]")))]
 
-(define minimal-source-code
-  (input "code-minimal.tar.gz"
-    (sources "https://example.com/packages/uri/artifacts/alpha.tgz"
-             "https://mirror.example.com/uri/alpha.tgz")
-             (integrity 'sha384 (base64 "KxAqYG79sTcKi8yuH/YkdKE+O9oiBsXIlwWs3pBwv/mXT9/jGuK0yqcwmjM/nNLe"))))
-
-
-(define inputs (list minimal-source-code source-code))]
-
-When building a package, @project-name will lazily try to produce the
-named files in the build directory by checking the given sources.  If
-it cannot produce bits that match the given digest, then the build
-will fail.
+When building a package, @project-name will lazily produce the named files in
+the build directory when a build tries to use those files.  If it cannot
+produce bits that match the given digest, then the build will fail.
 
 An input might only be available during a build, or may persist after
 a build for run-time use.  The only difference from @|project-name|'s
@@ -103,19 +86,20 @@ The same applies for any input used in a build.
 
 @section{Package Outputs}
 
-@racketblock[
-(define outputs '("lib" "doc"))]
+@deftech{Package outputs} are human-readable names for possible deliverables
+from the package.
 
-@deftech{Package outputs} are just human names for possible
-deliverables from the package. Every package definition has an
-implicit @racket{default} output, even if @racket[outputs] is not
-defined. If a user does not request a particular output from a
-package, then @project-name will use the @racket{default} output.
+Package outputs do not declare integrity information. Since a package's output
+can serve as another package's input, any bits would be verified once they are
+used as input.
 
-Package outputs do not declare integrity information. Since a
-package's output can serve as another package's input, any bits would
-be verified once they are used as input.
+Every package definition has an implicit @racket{default} output, even if
+@racket[outputs] is not defined. If a user does not request a particular output
+from a package, then @project-name will use the @racket{default} output.
 
+The example at the beginning of this page shows @racket[(define outputs
+'("minimal"))].  This means that @project-name can apply the build procedure to
+the strings @racket{minimal} or @racket{default}.
 
 @section{Package Processing}
 
@@ -165,6 +149,44 @@ This means that you can assume the directory is empty, and yours to
 populate.
 
 
+@section{Equivalent Outputs Cause Duplicate Data}
+
+@project-name assumes that different outputs produce different content. A
+@tech{package definition} might not handle this properly.
+
+Consider this build procedure, which unpacks either @racket{default.tgz} or
+@racket{minimal.tgz}.
+
+@racketblock[
+(define outputs '("minimal"))
+
+(define (build target)
+  (unpack (input-ref inputs (string-append target ".tgz"))))]
+
+This works without problems, but what if we changed @racket[build] such that
+@racket{default} was used as an alias of another output?
+
+@racketblock[
+(define outputs '("full" "minimal"))
+
+(define (build target)
+  (unpack (input-ref inputs
+                     (string-append (if (equal? target "default")
+                                        "full"
+                                        "minimal")
+                                    ".tgz"))))]
+
+This is fine, but it changes the domain of the @racket[build] procedure to
+accept @racket{full}, @racket{minimal}, and @racket{default}. If a user
+were to request the @racket{full} output and the @racket{default} output,
+then the same archive would be extracted twice into different directories.
+This pollutes the disk with redundant data, which is probably not what
+you want.
+
+The @racket{default} output is meant to be used as a unique output name in its
+own right, not as an alias.
+
+
 @section{Declare Supported Racket Versions}
 
 @racketblock[
@@ -195,9 +217,11 @@ strictly between 7.2 and 7.4.
 
 @section{Authenticating Inputs}
 
+@italic{This section requires a working understanding of OpenSSL and how one
+verifies a signature using a public key.}
+
 @project-name supports authenticating inputs using OpenSSL and trusted public
-keys. This section requires a working understanding of how one verifies a
-signature using a public key.
+keys.
 
 You may declare a signature with an input. A signature expression includes a
 source of the public key used to verify the signature, and a source for the
@@ -225,10 +249,10 @@ guide. Just know that if you do not trust the public key, then a signature
 verified by that key won't offer you any value.  See @secref{trusting-pubkeys}
 to learn how to affirm trust for individual public keys.
 
-
-@subsection{Caveats}
+There are some caveats:
 
 @itemlist[
+
 @item{Not every cipher algorithm supports every digest. It is your
 responsibility to use a digest supported by the cipher algorithm
 backing your keys.}
