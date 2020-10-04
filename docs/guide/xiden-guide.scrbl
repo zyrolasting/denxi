@@ -23,10 +23,10 @@ If you need the reference material, see  @other-doc['(lib "xiden/docs/public-ref
 @include-section{introduction.scrbl}
 @include-section{setup.scrbl}
 @include-section{creating-packages.scrbl}
-@include-section{cli.scrbl}
-@include-section{queries.scrbl}
 @include-section{workspace.scrbl}
 @include-section{config.scrbl}
+@include-section{cli.scrbl}
+@include-section{queries.scrbl}
 @include-section{security.scrbl}
 @include-section{plugin.scrbl}
 @include-section{project.scrbl}

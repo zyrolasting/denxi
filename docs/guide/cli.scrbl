@@ -2,10 +2,7 @@
 
 @require["../shared.rkt" @for-label[racket/base]]
 
-@title[#:tag "managing"]{Command Line Interface}
-
-@margin-note{If you haven't worked through @secref{new-pkg}, please do
-so. We'll use the @tt{definition.rkt} file from that section here.}
+@title[#:tag "cli"]{Command Line Interface}
 
 @project-name offers two entry points to its command-line interface.  One is a
 launcher named @|binary|, which @tt{raco pkg} (or @|project-name|!) creates
@@ -23,33 +20,60 @@ please leverage the features of your shell and review the @secref{config}
 section.
 
 
-@section[#:tag "do"]{Running File Transactions}
+@section[#:tag "do"]{Running Our First Transaction}
+
+If you haven't worked through @secref{new-pkg}, please do so. We'll use the
+@tt{definition.rkt} file from that section here.
 
 @project-name writes files to your disk using transactions. This means when it
-fails, your system will be left as it was before the transaction started. Run a
-transaction using the @litchar{do} command.
+fails, your system will be left as it was before the transaction started. To
+run a transaction, use the @litchar{do} command.
 
 @verbatim|{
-$ xiden do ++install-source my-lib lib definition.rkt
+$ xiden do +a definition.rkt
 }|
 
-Whew, that's a long command! Don't worry, we'll shorten it in the next section.
-This example is the least ambiguous way to install something, so you can see
-all of the relevant information.
-
-This command defines a transaction. The transaction has only one step: To
-install something from a source (@litchar{++install-source}).
-
-@litchar{++install-source} creates a symbolic link called @litchar{my-lib}.
-The link points to an output directory built using the @tech{package
-definition} file @litchar{definition.rkt}. That directory will hold the package's
-@litchar{lib} output.
-
-Think of the command as @italic{binding} a link to a built directory.  When you
-no longer need the output, remove the link.
+This command defines a transaction with one step: To install something from a
+definition. If you are using the definition from @secref{finished-definition}
+on a new @project-name installation, then this command will fail with the
+following message in the report:
 
 @verbatim|{
-$ rm my-lib
+Refusing input "default.tgz" from source "https://sagegerard.com/xiden-tutorial/default.tgz" because public key is not trusted.
+If you trust this key, then add the following to XIDEN_TRUSTED_PUBLIC_KEYS:
+(integrity 'sha384 (hex "9f601cf0ae7aaaec339e648915966d9d91712f5724d7a8547fe5257b68ddd5b1c6309cbf1222b655cda26c22139f2334"))
+}|
+
+@project-name is paranoid. It will not proceed with any operation that it cannot trace
+back to your affirmative consent. This message is telling you that it refused
+to use an input because you never said that you trusted the public key used to
+verify @racket{default.tgz}'s signature.
+
+As an exercise, copy the @racket[integrity] expression to your clipboard and
+use @secref{config} to edit your configuration. When you are ready, run
+@litchar{xiden do +a definition.rkt} again. If you see a symbolic link appear
+in the current directory called @tt{my-first-package}, then you did it!
+
+
+@section{What's with the Link?}
+
+The @litchar{+a} switch is actually short for @litchar{++install-abbreviated}.
+You give it a @tech{package definition} and it will build the @racket{default}
+@tech{package output}. It will then issue you a link to the output directory
+named after the package.
+
+This is a key difference between systems like @project-name and traditional
+package managers. It doesn't keep a central repository of names. It keeps
+a central repository of unique files and directories, and gives you links
+to the things you need with names that you choose.
+
+The link is also special in that @project-name remembers making it. Think of
+the link as being @italic{bound} to a directory just like an identifier is
+bound to a value in Racket. When you no longer need the output, remove the
+link.
+
+@verbatim|{
+$ rm my-first-package
 }|
 
 All files without links are eligible for garbage collection.
@@ -58,40 +82,32 @@ All files without links are eligible for garbage collection.
 $ xiden gc
 }|
 
-That's it!
+And with that, you now know how to uninstall things.
 
+@subsection[#:tag "abbrev"]{Tweaking Transaction Flags}
 
-@subsection{Abbreviating Commands}
-
-Some @litchar{do} command flags are verbose for flexibility reasons. You never
-have to worry about file conflicts if you control the exact namespace of
-dependency references, and you never have to worry about bloat if you control
-what exact deliverable each package places on your disk.
-
-Even so, not everyone wants to type all options all of the time. Different
-flags offer different levels of abbreviation for instructions.  Run
-@litchar{xiden do -h} to review your options, but note that all of these
-commands are equivalent (assuming that the name of the package in @tt{definition.rkt}
-is @racket{widget}):
+You may be interested to know that all of these commands are equivalent:
 
 @verbatim|{
 # long flags
-$ xiden do ++install-source widget default definition.rkt
-$ xiden do ++install-default widget definition.rkt
+$ xiden do ++install-source my-first-package default definition.rkt
+$ xiden do ++install-default my-first-package definition.rkt
 $ xiden do ++install-abbreviated definition.rkt
 
 # short flags
-$ xiden do +s widget default definition.rkt
-$ xiden do +d widget definition.rkt
+$ xiden do +s my-first-package default definition.rkt
+$ xiden do +d my-first-package definition.rkt
 $ xiden do +a definition.rkt
 }|
 
-If you want to use even shorter commands, then you can leverage your shell.
+@litchar{++install-default} is like @litchar{++install-abbreviated} except you
+get to control where you create a link, and @litchar{++install-source} let's
+you also control what package output to install.
 
-@verbatim|{
-$ xi() { xiden do +a $1 }
-$ xi definition.rkt
-}|
+This creates a spectrum where longer commands offer more flexibility. You never
+have to worry about file conflicts if you control the exact namespace of
+dependency references, and you never have to worry about bloat if you control
+what exact deliverable each package places on your disk.
 
 
 @subsection{Installing Multiple Packages}
@@ -103,7 +119,7 @@ in the third installation, then the entire transaction fails to the
 state before the command ran.
 
 @verbatim|{
-$ xiden do ++install-source ... ++install-source ... ++install-source ...
+$ xiden do ++install-source ... ++install-abbreviated ... ++install-source ...
 }|
 
 Don't worry about installing conflicting versions. @binary installs
@@ -119,7 +135,7 @@ path that follows a link you've already created using @litchar{xiden do}.
 
 @verbatim|{
 $ xiden do +d vendor definition.rkt
-$ ln -s vendor/widget/main.rkt widget.rkt
+$ ln -s vendor/my-first-package/main.rkt my-first-package.rkt
 }|
 
 The link created using your operating system is not tracked by @|project-name|,

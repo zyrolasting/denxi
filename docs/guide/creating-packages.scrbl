@@ -249,8 +249,8 @@ This input defines an archive of source code we'll need to build our project.
 It contains a throwaway Racket module and Scribble document.
 @racket{default.tgz} is the name of the file that we use locally in our
 build. The @racket[sources] list tells @project-name where it can find the
-actual bytes for that file. Since we're using a GitHub repository, we'll pull
-the file from there.
+actual bytes for that file. I'm only using one source here, but you can add
+mirrors or relative paths to check.
 
 
 @subsection{Everything is an Input}
@@ -452,8 +452,8 @@ one output.
 @section[#:tag "finished-definition"]{The Finished Definition}
 
 Here is the file we've authored. To recap, it defines a build that simply
-extracts an archive depending on the requested output. We'll use this
-definition in the next section.
+extracts an archive depending on the requested output. We'll discuss this
+definition further in @secref{cli}.
 
 @racketmod[#:file "definition.rkt"
 xiden
