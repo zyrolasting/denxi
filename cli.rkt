@@ -55,6 +55,7 @@
   (run-command-line
    #:program "xiden"
    #:arg-help-strings '("action" "args")
+   #:help-suffix-string-key 'top-level-cli-help
    #:args args
    #:halt halt
    #:flags
@@ -69,16 +70,7 @@
            ["show" show-command]
            ["gc" gc-command]
            [_ (const (halt 1 ($unrecognized-command action)))]))
-       (proc args halt)))
-
-   #<<EOF
-<action> is one of
-  do       Run transaction
-  gc       Collect garbage
-  show     Print report
-
-EOF
-   ))
+       (proc args halt)))))
 
 
 (define (do-command args halt)
@@ -148,6 +140,7 @@ EOF
   (run-command-line
    #:args args
    #:halt halt
+   #:help-suffix-string-key 'show-command-help
    #:program "show"
    #:arg-help-strings '("what")
    (λ (flags what)
@@ -186,16 +179,7 @@ EOF
         (halt 0 ($show-string (path->string (workspace-directory))))]
 
        [_
-        (halt 1 ($unrecognized-command what))]))
-   #<<EOF
-where <what> is one of
-  config     Show a (read)able hash table of current settings
-  installed  Show a list of installed outputs
-  links      Show a list of issued links
-  workspace  Show the path to the target workspace directory
-
-EOF
-   ))
+        (halt 1 ($unrecognized-command what))]))))
 
 
 

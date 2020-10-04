@@ -7,13 +7,19 @@
 
 (define-runtime-path here "l10n")
 
+(define (dynamic-require/localized key)
+  (let ([on-failure (americentric-fallback key)])
+    (with-handlers ([exn:fail:filesystem? on-failure])
+      (dynamic-require (get-module-path (system-language+country))
+                       key
+                       on-failure))))
+
 (define (get-message-formatter)
-  (with-handlers ([exn:fail:filesystem? americentric-fallback])
-    (combine-message-formatters
-     (dynamic-require (get-module-path (system-language+country))
-                      'format-message
-                      americentric-fallback)
-     default-message-formatter)))
+  (combine-message-formatters (dynamic-require/localized 'format-message)
+                              default-message-formatter))
+
+(define (get-string-lookup key)
+  (dynamic-require/localized 'get-string))
 
 (define (get-module-path locale)
   (path-replace-extension
@@ -25,9 +31,8 @@
                  "-")))
    #".rkt"))
 
-(define (americentric-fallback . _)
-  (dynamic-require (get-module-path "en-us")
-                   'format-message))
+(define (americentric-fallback sym)
+  (λ _ (dynamic-require (get-module-path "en-us") sym)))
 
 (module+ test
   (require rackunit)

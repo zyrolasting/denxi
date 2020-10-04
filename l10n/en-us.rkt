@@ -1,6 +1,25 @@
 #lang racket/base
 
+(provide get-string)
 (require "shared.rkt")
+
+(define (L . lines)
+  (string-join lines "\n"))
+
+(define (get-string key)
+  (case key
+    [(top-level-cli-help)
+     (L "<action> is one of"
+        "  do   Run transaction"
+        "  gc   Collect garbage"
+        "  show Print report")]
+
+    [(show-command-help)
+     (L "where <what> is one of"
+        "  config     Show a (read)able hash table of current settings"
+        "  installed  Show a list of installed outputs"
+        "  links      Show a list of issued links"
+        "  workspace  Show the path to the target workspace directory")]))
 
 (define+provide-message-formatter format-message
   [($output v)
@@ -10,6 +29,9 @@
    (cond [(exn? v) (exn->string v)]
          [(string? v) v]
          [else (~s v)])]
+
+  [($show-command-help body suffix-key)
+   (format "~a~a" body (if suffix-key (~a "\n" (get-string suffix-key)) ""))]
 
   [($output-not-found query output-name)
    (format "Cannot find output ~s output for ~s"

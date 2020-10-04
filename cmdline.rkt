@@ -31,6 +31,7 @@
 
 
 (define+provide-message $unrecognized-command (command))
+(define+provide-message $show-command-help (body-string suffix-string-key))
 
 (define (entry-point args format-message run-args)
   (run-io (make-entry-point args format-message run-args)))
@@ -67,10 +68,9 @@
                           #:halt halt
                           #:flags [flags null]
                           #:args [args (current-command-line-arguments)]
+                          #:help-suffix-string-key [help-suffix-string-key #f]
                           #:arg-help-strings arg-help-strings
-                          #:suffix-is-index? [suffix-is-index? #t]
-                          handle-arguments
-                          [help-suffix ""])
+                          handle-arguments)
   ; This is helpful for functional tests since it enables vanilla quasiquoting.
   (define argv
     (if (list? args)
@@ -81,19 +81,14 @@
     (or (vector-member "-h" argv)
         (vector-member "--help" argv)))
 
-
   ; parse-command-line does not show help when arguments are missing
   ; and -h is not set.  Show help anyway.
   (define (show-help-on-zero-arguments e)
     (halt 1
-          ($show-string
-           (format "~a~n~a"
-                   (exn-message e)
-                   (if (and (regexp-match? #px"given 0 arguments" (exn-message e))
-                            suffix-is-index?
-                            (not help-requested?))
-                       help-suffix
-                       "")))))
+          ($show-command-help (exn-message e)
+           (and (and (regexp-match? #px"given 0 arguments" (exn-message e))
+                     (not help-requested?))
+                help-suffix-string-key))))
 
   (with-handlers ([exn:fail:user? show-help-on-zero-arguments])
     (parse-command-line program argv
@@ -102,4 +97,4 @@
                         arg-help-strings
                         (λ (help-str)
                           (halt (if help-requested? 0 1)
-                                ($show-string (format "~a~n~a" help-str help-suffix)))))))
+                                ($show-command-help help-str help-suffix-string-key))))))

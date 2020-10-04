@@ -18,5 +18,6 @@
    "../sentry.rkt"
    "../signature.rkt"
    "../source.rkt"
+   "../string.rkt"
    "../worker.rkt"
    "../workspace.rkt")
