@@ -1,16 +1,16 @@
 #lang scribble/manual
 
-@require["../shared.rkt" @for-label[racket/base]]
+@require["../shared.rkt" @for-label[racket/base xiden/rc]]
 
-@title[#:tag "plugin"]{Writing a Plugin}
+@title[#:tag "plugin"]{Plugins}
 
 You can extend @binary using a Racket module as a @deftech{plugin}.
 
 @section{Security Warning}
 
-@tech{Plugins} run directly in @|binary|'s runtime, with the same
+A @tech{plugin} runs directly in @|project-name|'s runtime, with the same
 level of privilege as the OS-level user. This means that a plugin may
-freely reconfigure @|binary|, if not outright harm your system.
+freely reconfigure @|project-name|, if not outright harm your system.
 
 
 @section{How to Define a Plugin}
@@ -29,13 +29,13 @@ racket/base
 Next, specify a complete path to that module in @racket[XIDEN_PLUGIN_MODULE].
 You can change that setting using your chosen method from @secref{config}.
 
-The plugin is then installed. @binary will use it according to the
+The plugin is then installed. @project-name will use it according to the
 following sections.
 
 @section{There is Only One Plugin}
 
-According to @|binary|, the module in @racket[XIDEN_PLUGIN_MODULE] is
-the @italic{only} source of extensions. If you have several plugins,
+The module in @racket[XIDEN_PLUGIN_MODULE] is the @italic{only} module used to
+load extensions. If you have several modules that you want to use as plugins,
 then you need to leverage Racket's module system to combine their
 functionality.
 
@@ -59,7 +59,7 @@ an SFTP URL or an URN meant for use with a specific service. A
 
 You will want a plugin to process sources if you want @binary to obey
 your conventions when referring to external resources. For example,
-here's a command that will not work with @binary out of the box.
+here's a command that will not work out of the box.
 
 @verbatim|{$ xiden do +s vendor default us-east-1/storefront@0.2.0}|
 
@@ -86,7 +86,7 @@ is bound to @racket{foo.bar.baz}.
 @racket[supported?] is a hypothetical procedure that guards the plugin
 from doing work unless it recognizes the string as something it can
 process. If @racket[handle-source] returns @racket[#f] as a
-consequence of @racket[supported?] returning @racket[#f], then @binary
+consequence of @racket[supported?] returning @racket[#f], then @project-name
 will raise an error alerting the user that it cannot make an
 @tech{input} from @racket[user-string].
 
@@ -100,5 +100,5 @@ resource forks, which @racket[file-size] does not measure).
 
 If you cannot estimate the number of bytes, you can bind
 @racket[est-size] to @racket[+inf.0] to indicate no upper limit. By
-default, @binary will decide to continue only if the user consents
+default, @project-name will decide to continue only if the user consents
 to unlimited transfers.
