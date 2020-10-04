@@ -167,10 +167,14 @@
            name
            (~a source))]
 
-  [($signature-distrust-public-key name source)
-   (format "Refusing input ~s from source ~s because public key is not trusted."
+  [($signature-distrust-public-key name source pubkey-path)
+   (format (~a "Refusing input ~s from source ~s because public key is not trusted.~n"
+               "If you trust this key, then add the following to ~a:~n"
+               "(integrity 'sha384 (hex ~s))")
            name
-           (~a source))]
+           (~a source)
+           (setting-id XIDEN_TRUSTED_PUBLIC_KEYS)
+           (~a (encode 'hex (make-digest pubkey-path 'sha384))))]
 
   [($input-integrity-missing name source)
    (format (~a "~a does not declare integrity information.~n"

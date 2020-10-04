@@ -59,7 +59,7 @@
 (define+provide-message $signature-trust-unsigned       $signature-status ())
 (define+provide-message $signature-verified             $signature-status ())
 (define+provide-message $signature-mismatch             $signature-status ())
-(define+provide-message $signature-distrust-public-key  $signature-status ())
+(define+provide-message $signature-distrust-public-key  $signature-status (public-key-path))
 
 
 (struct signature-info (pubkey body) #:prefab)
@@ -122,7 +122,7 @@
   (define public-key-path (get-public-key-path (signature-info-pubkey siginfo)))
   (if (trust-public-key? public-key-path)
       (k public-key-path siginfo)
-      $signature-distrust-public-key))
+      (λ (n s) ($signature-distrust-public-key n s public-key-path))))
 
 (define (consider-signature-info public-key-path intinfo siginfo)
   (if (check-signature (integrity-info-digest intinfo) public-key-path (signature-info-body siginfo))
@@ -205,9 +205,10 @@
               (consider-unsigned #:trust-unsigned #f siginfo values)
               siginfo)
 
-    (test-eq? "Do not implicitly trust any public key"
-              (consider-public-key-trust #:trust-public-key? (λ (p) #f) siginfo fails)
-              $signature-distrust-public-key)
+    (test-case "Do not implicitly trust any public key"
+      (define ctor (consider-public-key-trust #:trust-public-key? (λ (p) #f) siginfo fails))
+      (check-match (ctor 1 2)
+                   ($signature-distrust-public-key 1 2 (? path? _))))
 
     (test-case "Continue when trusting a public key"
       (define trust-public-key?
