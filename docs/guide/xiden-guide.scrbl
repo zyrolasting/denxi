@@ -20,7 +20,7 @@ If you need the reference material, see  @other-doc['(lib "xiden/docs/public-ref
 
 @table-of-contents[]
 
-@include-section{concepts.scrbl}
+@include-section{introduction.scrbl}
 @include-section{setup.scrbl}
 @include-section{creating-packages.scrbl}
 @include-section{managing-dependencies.scrbl}
