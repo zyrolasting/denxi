@@ -335,14 +335,15 @@
 (define (xiden-collect-garbage)
   (parameterize ([current-directory (workspace-directory)]
                  [current-security-guard (make-gc-security-guard)])
-    (let loop ([bytes-recovered 0])
-      (forget-missing-links!)
-      (forget-unlinked-paths!)
-      (define bytes-recovered* (+ bytes-recovered (delete-unreferenced-objects!)))
-
-      (if (> bytes-recovered* bytes-recovered)
-          (loop bytes-recovered*)
-          bytes-recovered*))))
+    (if (directory-exists? (current-directory))
+        (let loop ([bytes-recovered 0])
+          (forget-missing-links!)
+          (forget-unlinked-paths!)
+          (define bytes-recovered* (+ bytes-recovered (delete-unreferenced-objects!)))
+          (if (> bytes-recovered* bytes-recovered)
+              (loop bytes-recovered*)
+              bytes-recovered*))
+        0)))
 
 (define (make-gc-security-guard)
   (make-security-guard (current-security-guard)
