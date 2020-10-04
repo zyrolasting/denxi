@@ -125,15 +125,7 @@
    #:halt halt
    #:arg-help-strings '()
    (λ (flags)
-     (define bytes-recovered (xiden-collect-garbage))
-     (halt 0 ($show-string (format "Recovered ~a"
-                                   (if (> bytes-recovered (/ (* 1024 2024) 10))
-                                       (~a (~r (/ bytes-recovered (* 1024 1024)) #:precision 2)
-                                           " mebibytes")
-                                       (~a bytes-recovered
-                                           " bytes"))))))))
-
-
+     (halt 0 ($finished-collecting-garbage (xiden-collect-garbage))))))
 
 
 (define (show-command args halt)

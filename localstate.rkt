@@ -106,6 +106,8 @@
          "workspace.rkt")
 
 
+(define+provide-message $finished-collecting-garbage (bytes-recovered))
+
 ;----------------------------------------------------------------------------------
 ; Relevant Paths
 

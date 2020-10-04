@@ -30,6 +30,14 @@
          [(string? v) v]
          [else (~s v)])]
 
+  [($finished-collecting-garbage bytes-recovered)
+   (format "Recovered ~a"
+           (if (> bytes-recovered (/ (* 1024 2024) 10))
+               (~a (~r (/ bytes-recovered (* 1024 1024)) #:precision 2)
+                   " mebibytes")
+               (~a bytes-recovered
+                   " bytes")))]
+
   [($show-command-help body suffix-key)
    (format "~a~a" body (if suffix-key (~a "\n" (get-string suffix-key)) ""))]
 
