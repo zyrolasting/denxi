@@ -20,6 +20,8 @@
 (provide (struct-out cli-flag)
          (struct-out cli-flag-state)
          (contract-out
+          [find-cli-flag
+           (-> setting? (or/c #f cli-flag?))]
           [all-flags
            (listof cli-flag?)]
           [make-cli-flag-table
@@ -165,6 +167,10 @@
                                [additional-flag-strings
                                 (list strs ...)]))
                 (set! all-flags (cons id all-flags))))]))
+
+(define (find-cli-flag s)
+  (findf (λ (c) (eq? s (cli-flag-setting c)))
+         all-flags))
 
 
 ; Unary flags
