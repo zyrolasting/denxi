@@ -139,14 +139,14 @@
    (format (~a "Integrity violation for ~s from source ~s.~n"
                "While unsafe, you can force installation using ~a.")
            name
-           source
+           (~a source)
            (format-cli-flags --trust-any-digest))]
 
   [($signature-mismatch name source)
    (format (~a "Signature mismatch for ~s from source ~s.~n"
                "While unsafe, you can trust bad signatures using ~a.")
            name
-           source
+           (~a source)
            (format-cli-flags --trust-bad-signature))]
 
   [($signature-missing name source)
@@ -157,18 +157,20 @@
            (format-cli-flags --trust-unsigned))]
 
   [($input-integrity-verified name source)
-   (format "Integrity verified for input ~s from source ~s" name source)]
+   (format "Integrity verified for input ~s from source ~s" name (~a source))]
 
   [($input-integrity-assumed name source)
-   (format "Dangerously trusting input ~s from source ~s" name source)]
+   (format "Dangerously trusting input ~s from source ~s" name (~a source))]
 
   [($signature-unchecked name source)
    (format "Not checking signature for input ~s from source ~s"
-           name source)]
+           name
+           (~a source))]
 
   [($signature-distrust-public-key name source)
    (format "Refusing input ~s from source ~s because public key is not trusted."
-           name source)]
+           name
+           (~a source))]
 
   [($input-integrity-missing name source)
    (format (~a "~a does not declare integrity information.~n"
@@ -177,10 +179,10 @@
            name)]
 
   [($signature-trust-unsigned name source)
-   (format "Trusting unsigned input ~s from source ~s" name source)]
+   (format "Trusting unsigned input ~s from source ~s" name (~a source))]
 
   [($signature-verified name source)
-   (format "Signature verified for input ~s from source ~s" name source)]
+   (format "Signature verified for input ~s from source ~s" name (~a source))]
 
   [($signature-mismatch name source)
-   (format "Signature mismatch for input ~s from source ~s" name source)])
+   (format "Signature mismatch for input ~s from source ~s" name (~a source))])
