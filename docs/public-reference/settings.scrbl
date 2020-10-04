@@ -120,7 +120,7 @@ Like @racket[XIDEN_INSTALL_SOURCES], except each list only needs two strings:
 The output is assumed to be @racket{default}.
 }
 
-@defsetting*[XIDEN_MODS_MODULE]{
+@defsetting*[XIDEN_PLUGIN_MODULE]{
 When not @racket[#f], the given module path will be used in @racket[dynamic-require]
 to load extensions.
 }

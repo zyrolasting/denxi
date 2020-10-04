@@ -132,7 +132,7 @@
 (define-xiden-setting XIDEN_INSTALL_DEFAULT_SOURCES (listof (list/c string? string?)) null
   "Add installation to transaction, assuming \"default\" output")
 
-(define-xiden-setting XIDEN_MODS_MODULE (or/c #f path-string?) #f
+(define-xiden-setting XIDEN_PLUGIN_MODULE (or/c #f path-string?) #f
   "A path to a module that extends Xiden.")
 
 (define-xiden-setting XIDEN_TRUST_UNSIGNED boolean? #f

@@ -15,7 +15,7 @@
 (require "rc.rkt")
 
 (define (load-plugin key fail-thunk on-load-failure)
-  (define maybe-path (XIDEN_MODS_MODULE))
+  (define maybe-path (XIDEN_PLUGIN_MODULE))
   (if maybe-path
       (with-handlers ([exn:fail? on-load-failure])
         (dynamic-require maybe-path

@@ -168,7 +168,7 @@
 
 
 ; Unary flags
-(flag-out [-X --plugin] (cli-flag/unary XIDEN_MODS_MODULE keep "path"))
+(flag-out [-X --plugin] (cli-flag/unary XIDEN_PLUGIN_MODULE keep "path"))
 (flag-out [-M --sandbox-memory-limit] (cli-flag/unary XIDEN_SANDBOX_MEMORY_LIMIT_MB arg->value "mebibytes"))
 (flag-out [-e --sandbox-eval-memory-limit] (cli-flag/unary XIDEN_SANDBOX_EVAL_MEMORY_LIMIT_MB arg->value "mebibytes"))
 (flag-out [-S --sandbox-eval-time-limit] (cli-flag/unary XIDEN_SANDBOX_EVAL_TIME_LIMIT_SECONDS arg->value "seconds"))

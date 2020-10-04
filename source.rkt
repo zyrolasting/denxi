@@ -204,7 +204,7 @@
   (call-with-temporary-file
    (λ (tmp)
      (write-to-file plugin-module-datum tmp #:exists 'truncate/replace)
-     (parameterize ([(setting-derived-parameter XIDEN_MODS_MODULE) tmp])
+     (parameterize ([(setting-derived-parameter XIDEN_PLUGIN_MODULE) tmp])
        (define source (path->string tmp))
        (define (request-transfer in est-size)
          (test-equal? "Read file" (read in) plugin-module-datum)
