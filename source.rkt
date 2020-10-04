@@ -163,7 +163,7 @@
   (define est-size
     (if content-length-pair
         (string->number (or (cdr content-length-pair) "+inf.0"))
-        "+inf.0"))
+        +inf.0))
   (request-transfer (get-pure-port #:redirections (XIDEN_DOWNLOAD_MAX_REDIRECTS) (string->url source))
                     est-size))
 
