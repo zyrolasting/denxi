@@ -5,9 +5,10 @@
 @title[#:tag "new-pkg"]{Defining a Package}
 
 @project-name builds software using @tech{package definitions}. In this section
-we will write our own. This section follows along with the
-@hyperlink["https://github.com/zyrolasting/xiden-tutorial"]{zyrolasting/xiden-tutorial
-GitHub repository}.
+we will write our own step by step. Alternatively, you can skip to
+@secref{finished-definition}.
+
+@section{Create a New Definition File}
 
 Create a new blank Racket module. The name of that file is up to you, but I'll
 use @tt{definition.rkt}. We will use the @racketmodname[xiden] language.
@@ -27,21 +28,24 @@ with them. You can define the name of your package, your identity as a provider,
 a short description of your package, tags, and so on. Everything in this example
 should not need much explanation.
 
+Since I'm hosting the files for this guide on my site, I'll use my information
+here.
+
 @racketmod[#:file "definition.rkt"
 xiden
 
 (define package "my-first-package")
-(define provider "example.com")
+(define provider "sagegerard.com")
 (define description "Fun playtime in a tutorial")
 (define tags '("fun" "tutorial" "example"))
-(define home-page "https://github.com/zyrolasting/xiden-tutorial")
+(define home-page "https://sagegerard.com")
 ]
 
 @racket[provider] is a little less obvious. A provider is not necessarily the
 author of the package, but rather the name of the party responsible for
-distributing the software defined in this file. There's no restriction on how
-you name yourself as a provider, but a domain name is useful as an identifier
-across hosts.
+distributing the software defined in this file. In this case, they are the same
+party. There's no restriction on how you name yourself as a provider, but a
+domain name is useful as an identifier across hosts.
 
 
 @section[#:tag "versioning"]{Declare the Version}
@@ -52,10 +56,10 @@ Next, let's declare the version of our package.
 xiden
 
 (define package "my-first-package")
-(define provider "example.com")
+(define provider "sagegerard.com")
 (define description "Fun playtime in a tutorial")
 (define tags '("fun" "tutorial" "example"))
-(define home-page "https://github.com/zyrolasting/xiden-tutorial")
+(define home-page "https://sagegerard.com")
 
 (define edition "default")
 (define revision-number 0)
@@ -200,10 +204,10 @@ Here we'll define support for v5.0 and up.
 xiden
 
 (define package "my-first-package")
-(define provider "example.com")
+(define provider "sagegerard.com")
 (define description "Fun playtime in a tutorial")
 (define tags '("fun" "tutorial" "example"))
-(define home-page "https://example.com/packages/uri")
+(define home-page "https://sagegerard.com")
 
 (define edition "default")
 (define revision-number 0)
@@ -225,10 +229,10 @@ exact bytes. I'll just define one for now.
 xiden
 
 (define package "my-first-package")
-(define provider "example.com")
+(define provider "sagegerard.com")
 (define description "Fun playtime in a tutorial")
 (define tags '("fun" "tutorial" "example"))
-(define home-page "https://example.com/packages/uri")
+(define home-page "https://sagegerard.com")
 
 (define edition "default")
 (define revision-number 0)
@@ -237,7 +241,9 @@ xiden
 (define racket-versions '(("5.0" . #f)))
 
 (define inputs
-  (list (input "default.tgz" (sources "https://github.com/zyrolasting/xiden-tutorial/raw/master/files/default.tgz"))))]
+  (list (input "default.tgz"
+               (sources "https://sagegerard.com/xiden-tutorial/default.tgz"))))]
+
 
 This input defines an archive of source code we'll need to build our project.
 It contains a throwaway Racket module and Scribble document.
@@ -266,7 +272,7 @@ For that, we need to declare integrity information with our input.
 @racketblock[
 (define inputs
   (list (input "default.tgz"
-               (sources "https://github.com/zyrolasting/xiden-tutorial/raw/master/files/default.tgz"))
+               (sources "https://sagegerard.com/xiden-tutorial/default.tgz"))
                (integrity 'sha384 (hex "299e3eb744725387e0355937727cf6e3c938eda2355cda82d58596fd535188fa624217f52f8c6e7d5ee7cb1d458a7f75"))))]
 
 The integrity information tells @project-name if it got the @italic{right}
@@ -329,10 +335,10 @@ that is only used for this tutorial.
 @racketblock[
 (define inputs
   (list (input "default.tgz"
-               (sources "https://github.com/zyrolasting/xiden-tutorial/raw/master/files/default.tgz"))
+               (sources "https://sagegerard.com/xiden-tutorial/default.tgz"))
                (integrity 'sha384 (hex "299e3eb744725387e0355937727cf6e3c938eda2355cda82d58596fd535188fa624217f52f8c6e7d5ee7cb1d458a7f75"))
-               (signature "https://raw.githubusercontent.com/zyrolasting/xiden-tutorial/master/files/dummy-public.pem"
-                          "https://raw.githubusercontent.com/zyrolasting/xiden-tutorial/master/files/default.tgz.sign")))]
+               (signature "https://sagegerard.com/xiden-tutorial/public.pem"
+                          "https://sagegerard.com/xiden-tutorial/default.tgz.sign")))]
 
 The @racket[signature] form accepts a string that locates a public key, and a
 string that locates a signature, in that order. @binary uses the signature and
@@ -404,16 +410,15 @@ need a new @tech{package input} to go with this output.
 @racketblock[
 (define inputs
   (list (input "default.tgz"
-               (sources "https://github.com/zyrolasting/xiden-tutorial/raw/master/files/default.tgz")
+               (sources "https://sagegerard.com/xiden-tutorial/default.tgz")
                (integrity 'sha384 (hex "299e3eb744725387e0355937727cf6e3c938eda2355cda82d58596fd535188fa624217f52f8c6e7d5ee7cb1d458a7f75"))
-               (signature "https://raw.githubusercontent.com/zyrolasting/xiden-tutorial/master/files/dummy-public.pem"
-                          "https://raw.githubusercontent.com/zyrolasting/xiden-tutorial/master/files/default.tgz.sign"))
+               (signature "https://sagegerard.com/xiden-tutorial/public.pem"
+                          "https://sagegerard.com/xiden-tutorial/default.tgz.sign"))
         (input "minimal.tgz"
-               (sources "https://github.com/zyrolasting/xiden-tutorial/raw/master/files/minimal.tgz")
+               (sources "https://sagegerard.com/xiden-tutorial/minimal.tgz")
                (integrity 'sha384 (hex "6cc38a7e2513fa9abd2ac079e9c8efbab9385458275c927e77527a189ed9ac393d734a4cf306787425bf722a5ac025c6"))
-               (signature "https://raw.githubusercontent.com/zyrolasting/xiden-tutorial/master/files/dummy-public.pem"
-                          "https://raw.githubusercontent.com/zyrolasting/xiden-tutorial/master/files/minimal.tgz.sign"))))]
-
+               (signature "https://sagegerard.com/xiden-tutorial/public.pem"
+                          "https://sagegerard.com/xiden-tutorial/minimal.tgz.sign"))))]
 
 Now when our users choose to build @racket{minimal} output, they will only ever
 download and extract the @racket{minimal.tgz} archive.
@@ -443,3 +448,42 @@ probably not what you want.
 Again, different @tech{package outputs} are expected to produce different
 things. If you believe that two outputs are equivalent, then combine them into
 one output.
+
+@section[#:tag "finished-definition"]{The Finished Definition}
+
+Here is the file we've authored. To recap, it defines a build that simply
+extracts an archive depending on the requested output. We'll use this
+definition in the next section.
+
+@racketmod[#:file "definition.rkt"
+xiden
+
+(define package "my-first-package")
+(define provider "example.com")
+(define description "Fun playtime in a tutorial")
+(define tags '("fun" "tutorial" "example"))
+(define home-page "https://sagegerard.com")
+
+(define edition "default")
+(define revision-number 0)
+(define revision-names '("alpha"))
+
+(define racket-versions '(("5.0" . #f)))
+
+(define inputs
+  (list (input "default.tgz"
+               (sources "https://sagegerard.com/xiden-tutorial/default.tgz")
+               (integrity 'sha384 (hex "299e3eb744725387e0355937727cf6e3c938eda2355cda82d58596fd535188fa624217f52f8c6e7d5ee7cb1d458a7f75"))
+               (signature "https://sagegerard.com/xiden-tutorial/public.pem"
+                          "https://sagegerard.com/xiden-tutorial/default.tgz.sign"))
+        (input "minimal.tgz"
+               (sources "https://sagegerard.com/xiden-tutorial/minimal.tgz")
+               (integrity 'sha384 (hex "6cc38a7e2513fa9abd2ac079e9c8efbab9385458275c927e77527a189ed9ac393d734a4cf306787425bf722a5ac025c6"))
+               (signature "https://sagegerard.com/xiden-tutorial/public.pem"
+                          "https://sagegerard.com/xiden-tutorial/minimal.tgz.sign"))))
+
+(define outputs '("default" "minimal"))
+
+(define (build target)
+  (untgz (input-ref inputs (string-append target ".tgz"))))
+]
