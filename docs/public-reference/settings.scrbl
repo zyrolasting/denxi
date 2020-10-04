@@ -53,7 +53,7 @@ values and command-line flags.
 @(define-syntax (defsetting stx)
   (syntax-case stx ()
     [(_ s cnt pre-content ...)
-      #`(let ([cf (findf (λ (c) (eq? (cli-flag-setting c) s)) all-flags)])
+      #`(let ([cf (find-cli-flag s)])
           (defthing
             #:kind "setting"
             s cnt
