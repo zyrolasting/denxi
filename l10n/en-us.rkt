@@ -132,9 +132,6 @@
            url
            (format-cli-flags --trust-any-host))]
 
-  [($input-resolve-start name)
-   (format "Resolving input ~s" name)]
-
   [($integrity-violation name source)
    (format (~a "Integrity violation for ~s from source ~s.~n"
                "While unsafe, you can force installation using ~a.")

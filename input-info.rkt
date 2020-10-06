@@ -41,10 +41,6 @@
                input-info?)]))
 
 
-(define+provide-message $input (name))
-(define+provide-message $input-resolve-start       $input ())
-
-
 (struct input-info
   (name       ; The name to bind to bytes
    sources    ; Defines where said bytes come from
