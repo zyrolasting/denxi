@@ -18,3 +18,6 @@ For a high-level overview of @project-name, see  @other-doc['(lib "xiden/docs/gu
 @include-section{xiden.scrbl}
 @include-section{workspace.scrbl}
 @include-section{settings.scrbl}
+@include-section{message.scrbl}
+@include-section{codec.scrbl}
+@include-section{integrity.scrbl}

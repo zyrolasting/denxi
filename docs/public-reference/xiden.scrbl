@@ -54,33 +54,10 @@ The output is defined in regards to the @tech{package definition} created using
 @racket[(fetch pkgdef-source)].
 }
 
-@defproc[(integrity [algorithm xiden-hash-algorithm/c] [digest bytes?]) well-formed-integrity-info/c]{
-A contracted @racket[integrity-info] constructor.
-
-Declares integrity information used to verify byte-content.
-}
-
 @defproc[(signature [public-key-variant (or/c bytes? path-string?)] [signature-body (or/c bytes? path-string?)]) well-formed-signature-info/c]{
 A contracted @racket[signature-info] constructor.
 
 Declares signature information used to authenticate a responsible party for byte content.
-}
-
-@defproc[(hex [encoded (or/c non-empty-string? bytes?)]) bytes?]{
-Decodes @racket[encoded] from hex encoding to a byte string.
-
-@racket[encoded] may separate each pair of hex digits with @racket{:},
-such that
-
-@racketblock[(equal? (hex "deadbeef") (hex "de:ad:be:ef"))].
-}
-
-@defproc[(base64 [encoded (or/c non-empty-string? bytes?)]) bytes?]{
-Decodes @racket[encoded] from Base64 encoding to a byte string.
-}
-
-@defproc[(base32 [encoded (or/c non-empty-string? bytes?)]) bytes?]{
-Decodes @racket[encoded] from Base32 encoding to a byte string.
 }
 
 @defform[(from-file relative-path-expr)]{
