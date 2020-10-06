@@ -37,10 +37,6 @@ xiden}| documents.
 @racketmodname[xiden/pkgdef] is a module language superset
 of @racketmodname[setup/infotab].
 
-@defproc[(cd [path path-string?]) void?]{
-Equivalent to @racket[(current-directory path)].
-}
-
 @defproc[(input [local-name string?]
                 [sources (listof string?)]
                 [int (or/c #f well-formed-integrity-info/c) #f]
