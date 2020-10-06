@@ -172,7 +172,7 @@
               (map open-input-info-as-bytes
                    (xiden-evaluator-ref pkgeval 'inputs null)))
         (λ (build-dir)
-          (pkgeval `(cd ,build-dir))
+          (pkgeval `(current-directory ,build-dir))
           (pkgeval `(build ,output-name)))))
 
      (declare-output (xiden-evaluator-ref pkgeval 'provider)

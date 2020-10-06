@@ -8,6 +8,7 @@
 (provide #%app #%datum #%top #%top-interaction
          define define-values
          build-workspace-path
+         current-directory
          current-info-lookup
          error
          eval
@@ -37,9 +38,6 @@
          (rename-out [#%module-begin* #%module-begin]
                      [list sources])
          (contract-out
-          [cd
-           (-> path? void?)]
-
           [input
            (->* (non-empty-string?
                  (non-empty-listof path-string?))
@@ -102,9 +100,6 @@
          "workspace.rkt")
 
 (define current-info-lookup (make-parameter (λ (k f) (f))))
-
-(define (cd path)
-  (current-directory path))
 
 (define (input name sources [integrity #f] [signature #f])
   (input-info name sources integrity signature))
