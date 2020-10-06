@@ -59,7 +59,6 @@
 
 
 (require (for-syntax racket/base)
-         (only-in file/sha1 hex-string->bytes)
          file/untgz
          racket/function
          racket/list
