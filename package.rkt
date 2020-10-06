@@ -71,20 +71,13 @@
       (return (logged-unit (kill-evaluator pkgeval)))))
 
 
-(define (configure-evaluator pkgeval)
-  (pkgeval `(current-info-lookup
-             (let ([h ,(xiden-evaluator->hash pkgeval)])
-               (λ (k f) (hash-ref h k f)))))
-  pkgeval)
-
-
 (define (make-package-evaluator source)
   (do sourced-eval    <- (if (string? source)
                              (fetch-package-definition source)
                              (build-package-evaluator source))
       validated-eval  <- (validate-evaluator sourced-eval)
       supported-eval  <- (check-racket-support validated-eval)
-      (return (configure-evaluator supported-eval))))
+      (return supported-eval)))
 
 
 (define (validate-requested-output pkgeval output-name)

@@ -9,7 +9,6 @@
          define define-values
          build-workspace-path
          current-directory
-         current-info-lookup
          error
          eval
          hash
@@ -70,8 +69,6 @@
          "source.rkt"
          "url.rkt"
          "workspace.rkt")
-
-(define current-info-lookup (make-parameter (λ (k f) (f))))
 
 (define (install link-path output-name pkgdef)
   (define result (run+print-log (install-package link-path output-name pkgdef)))
