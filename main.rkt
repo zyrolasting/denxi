@@ -1,4 +1,4 @@
 #lang racket/base
-(require xiden/package-definition-module-language)
-(provide (all-from-out xiden/package-definition-module-language))
-(module reader syntax/module-reader xiden/package-definition-module-language)
+(require xiden/pkgdef)
+(provide (all-from-out xiden/pkgdef))
+(module reader syntax/module-reader xiden/pkgdef)

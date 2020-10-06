@@ -55,7 +55,7 @@
   (parameterize ([sandbox-input #f]
                  [sandbox-output (current-output-port)]
                  [sandbox-error-output (current-error-port)])
-    (make-module-evaluator #:language 'xiden/package-definition-module-language input-program)))
+    (make-module-evaluator #:language 'xiden/pkgdef input-program)))
 
 
 
@@ -108,7 +108,7 @@
 (define (hash+list->xiden-evaluator h [l null])
   (define keys (remove-duplicates (append l (hash-keys h))))
   (load-xiden-module
-   (~s `(module xinfotab xiden/package-definition-module-language
+   (~s `(module xinfotab xiden/pkgdef
           . ,(for/list ([k (in-list keys)])
                (define v (hash-ref h k))
                `(define ,k ,(if (list? v) `',v v)))))))
@@ -169,13 +169,13 @@
 
 
 (define (alist->infotab-module-datum alist)
-  `(module xinfotab xiden/package-definition-module-language
+  `(module xinfotab xiden/pkgdef
      . ,(for/list ([pair (in-list alist)])
           `(define ,(car pair) ,(cdr pair)))))
 
 
 (define (make-infotab-module-datum seval)
-  `(module xinfotab xiden/package-definition-module-language
+  `(module xinfotab xiden/pkgdef
      . ,(for/list ([k (in-list (seval '(#%info-domain)))])
           (define v (seval `(#%info-lookup ',k)))
           `(define ,k ,(if (list? v) `',v v)))))
@@ -185,7 +185,7 @@
   (match l
     [(? null? l)
      (open-input-string "")]
-    [(list 'module _ 'xiden/package-definition-module-language _ ...)
+    [(list 'module _ 'xiden/pkgdef _ ...)
      (open-input-string (~s l))]
     [(list (cons _ _) ...)
      (open-input-infotab (alist->infotab-module-datum l))]
@@ -237,7 +237,7 @@
             'at "12 pm"))
 
   (define dummy-module
-    '(module x xiden/package-definition-module-language
+    '(module x xiden/pkgdef
        (define who "the butler")
        (define with "the knife")
        (define in "the cellar")
@@ -279,7 +279,7 @@
             #rx"string:4:"
             (λ () (load-xiden-module
                    (string-join
-                    '("(module content xiden/package-definition-module-language"
+                    '("(module content xiden/pkgdef"
                       "  (define a 1)"
                       "  (define b 2)"
                       "  (define c))")
@@ -308,7 +308,7 @@
 
   (test-equal? "Create infotab from associative list"
                (alist->infotab-module-datum '((a . 1) (b . '())))
-               '(module xinfotab xiden/package-definition-module-language
+               '(module xinfotab xiden/pkgdef
                   (define a 1)
                   (define b '())))
 
@@ -334,13 +334,13 @@
     (check-equal? (lookup 'table) (hash "coolio" 'marked)))
 
   (test-exn "Accept only prescribed reader extensions"
-            #rx"expecting `xiden/package-definition-module-language"
+            #rx"expecting `xiden/pkgdef"
             (λ ()
               (define buffer (open-input-string "#lang racket/base (define table #hash((\"coolio\" . marked)))"))
               (load-xiden-module buffer)))
 
   (test-exn "Do not accept anything other than expander language"
-            #rx"expecting `xiden/package-definition-module-language"
+            #rx"expecting `xiden/pkgdef"
             (λ ()
               (define buffer (open-input-string "(module content racket/base (define a 1))"))
               (load-xiden-module buffer))))

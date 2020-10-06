@@ -125,7 +125,7 @@
       (unless e
         (set! e
               (call-with-trusted-sandbox-configuration
-               (λ () (make-evaluator 'xiden/package-definition-module-language)))))
+               (λ () (make-evaluator 'xiden/pkgdef)))))
         e)))
 
 
