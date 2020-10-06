@@ -147,27 +147,15 @@
            (format-cli-flags --trust-unsigned))]
 
 
-  [($integrity:missing name source)
-   (format (~a "~a does not declare integrity information.~n"
-               "If you are prototyping your own package, this is expected.~n"
-               "Otherwise, please declare integrity information for safety.")
-           name)]
-
-
-  [($integrity:unchecked name source)
-   (format "Dangerously trusting input ~s from source ~s" name (~a source))]
-
-
-  [($integrity:verified name source)
-   (format "Integrity verified for input ~s from source ~s" name (~a source))]
-
-
-  [($integrity:violation name source)
-   (format (~a "Integrity violation for ~s from source ~s.~n"
-               "While unsafe, you can force installation using ~a.")
-           name
-           (~a source)
-           (format-cli-flags --trust-any-digest))]
+  [($integrity algorithm status)
+   (case status
+     [(missing)  "cannot check integrity without well-formed integrity information"]
+     [(trusted)  "integrity assumed"]
+     [(verified) (format "integrity verified using ~a" algorithm)]
+     [(mismatch) (format (~a "integrity violation due to ~a digest mismatch (unsafe: ~a to bypass)")
+                         algorithm
+                         (format-cli-flags --trust-any-digest))]
+     [else (format "Unknown integrity status ~s. Please inform the maintainers!" status)])]
 
 
   [($signature-unchecked name source)

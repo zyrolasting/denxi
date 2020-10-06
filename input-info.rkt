@@ -131,16 +131,15 @@
 
 
 (define (check-input-integrity input file-record source messages)
-  (define $message-ctor
+  (define status
     (check-integrity #:trust-bad-digest (XIDEN_TRUST_BAD_DIGEST)
                      (input-info-integrity input)
                      (build-workspace-path (path-record-path file-record))))
 
   (define updated-messages
-    (cons ($message-ctor (input-info-name input) source)
-          messages))
+    (cons status messages))
 
-  (if (passed-integrity-check? $message-ctor)
+  (if (passed-integrity-check? status)
       (check-input-signature input file-record source updated-messages)
       (values FAILURE updated-messages)))
 

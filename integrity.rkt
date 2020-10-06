@@ -3,13 +3,9 @@
 (require "contract.rkt")
 
 ; Mirror OpenSSL
-(define xiden-hash-algorithms
-  '(blake2b512
-    blake2s256
-    md4
+(define md-algorithms
+  '(md4
     md5
-    rmd160
-    sha1
     sha1
     sha224
     sha256
@@ -20,42 +16,40 @@
     sha384
     sha512
     sha512-224
-    sha512-256
-    shake128
-    shake256
-    sm3))
+    sha512-256))
 
-(define xiden-hash-source/c
+(define md-bytes-source/c
   (or/c path-string? bytes? input-port?))
 
-(define xiden-hash-algorithm/c
-  (apply or/c xiden-hash-algorithms))
+(define md-algorithm/c
+  (apply or/c md-algorithms))
 
 (provide (struct-out integrity-info)
          (contract-out
           [integrity
-           (-> xiden-hash-algorithm/c
+           (-> md-algorithm/c
                bytes?
                integrity-info?)]
-          [xiden-hash-algorithms
+          [md-algorithms
            (non-empty-listof symbol?)]
-          [xiden-hash-algorithm/c
+          [md-algorithm/c
+           flat-contract?]
+          [md-bytes-source/c
            flat-contract?]
           [well-formed-integrity-info/c
            flat-contract?]
           [make-digest
-           (-> xiden-hash-source/c
-               xiden-hash-algorithm/c
+           (-> md-bytes-source/c
+               md-algorithm/c
                bytes?)]
-          [make-fingerprint
-           (-> path-string? bytes?)]
           [passed-integrity-check?
-           predicate/c]
+           (-> $integrity?
+               boolean?)]
           [check-integrity
            (-> #:trust-bad-digest any/c
                any/c
-               xiden-hash-source/c
-               (unconstrained-domain-> $integrity?))]))
+               md-bytes-source/c
+               $integrity?)]))
 
 (require racket/sequence
          racket/format
@@ -64,11 +58,7 @@
          "message.rkt"
          "openssl.rkt")
 
-(define+provide-message $integrity           (input-name input-source))
-(define+provide-message $integrity:verified  $integrity ())
-(define+provide-message $integrity:missing   $integrity ())
-(define+provide-message $integrity:unchecked $integrity ())
-(define+provide-message $integrity:violation $integrity ())
+(define+provide-message $integrity (algorithm status))
 
 (struct integrity-info (algorithm digest) #:prefab)
 
@@ -80,19 +70,12 @@
                                      (integrity-info-algorithm info)))))
 
 
-(define (make-fingerprint path)
-  (subbytes (make-digest path 'sha384) 0 20))
-
 
 (define well-formed-integrity-info/c
   (and/c (struct/c integrity-info
-                   xiden-hash-algorithm/c
+                   md-algorithm/c
                    bytes?)
          digest-length-ok?))
-
-
-(define (make-integrity-info variant algorithm)
-  (integrity-info algorithm (make-digest variant algorithm)))
 
 
 (define (make-digest variant algorithm)
@@ -110,29 +93,29 @@
                                     variant)]))
 
 
-(define (check-integrity #:trust-bad-digest trust-bad-digest intinfo variant)
-  (if trust-bad-digest
-      $integrity:unchecked
-      (if (well-formed-integrity-info/c intinfo)
-          (if (equal? (integrity-info-digest intinfo)
-                      (make-digest variant (integrity-info-algorithm intinfo)))
-              $integrity:verified
-              $integrity:violation)
-          $integrity:missing)))
-
-(define (passed-integrity-check? m)
-  (and (member m (list $integrity:verified
-                       $integrity:unchecked))
+(define (passed-integrity-check? status)
+  (and (member ($integrity-status status) '(trusted verified))
        #t))
+
+(define (check-integrity #:trust-bad-digest trust-bad-digest intinfo variant)
+  (let ([return (λ (v) ($integrity (integrity-info-algorithm intinfo) v))])
+    (if trust-bad-digest
+        (return 'trusted)
+        (if (well-formed-integrity-info/c intinfo)
+            (if (equal? (integrity-info-digest intinfo)
+                        (make-digest variant (integrity-info-algorithm intinfo)))
+                (return 'verified)
+                (return 'mismatch))
+            (return 'missing)))))
 
 
 (module+ test
   (require rackunit)
 
   (test-case "Create integrity information"
-    (for ([algorithm (in-list xiden-hash-algorithms)])
+    (for ([algorithm (in-list md-algorithms)])
       (define bstr (string->bytes/utf-8 (symbol->string algorithm)))
-      (define info (make-integrity-info bstr algorithm))
+      (define info (integrity-info bstr algorithm))
       (check-pred integrity-info? info)
       (check-eq? (integrity-info-algorithm info) algorithm)
       (check-equal? (integrity-info-digest info)
