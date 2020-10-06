@@ -85,7 +85,6 @@
   (integrity-info algorithm (make-digest variant algorithm)))
 
 
-
 (define (make-digest variant algorithm)
   (cond [(path-string? variant)
          (call-with-input-file variant (λ (i) (make-digest i algorithm)))]
