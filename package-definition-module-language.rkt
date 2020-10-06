@@ -5,41 +5,61 @@
 
 (require racket/contract)
 
-(provide #%app #%datum #%top #%top-interaction
-         define define-values
+(provide #%app
+         #%datum
+         #%top
+         #%top-interaction
+         append
+         base32
+         base64
+         build-path
          build-workspace-path
+         car
+         case
+         cdr
+         collection-path
+         cond
+         cons
          current-directory
+         define
+         define-values
+         equal?
          error
          eval
-         hash
-         hash-ref
-         install
-         lambda λ
-         let let-values
-         quote quasiquote unquote unquote-splicing
-         if
-         cond
-         case
-         list cons car cdr list* append reverse
-         equal?
          from-catalogs
          from-file
+         getenv
+         hash
+         hash
+         hash-clear
+         hash-ref
+         hash-remove
+         hash-set
+         hash-set*
+         hash-update
+         hex
+         if
          input
          input-ref
-         make-immutable-hash hash hash-set hash-set* hash-remove hash-clear hash-update
-         void
-         string-append
+         install
+         integrity
+         lambda λ
+         let let-values
+         list
+         list*
+         make-immutable-hash
          path->string
-         build-path
-         use-input
-         collection-path
+         quasiquote
+         quote
+         reverse
+         signature
+         string-append
          system-library-subpath
-         getenv
-         (all-from-out "archiving.rkt"
-                       "codec.rkt"
-                       "integrity.rkt"
-                       "signature.rkt"
-                       file/untgz)
+         unquote
+         unquote-splicing
+         untgz
+         use-input
+         void
          (rename-out [#%module-begin* #%module-begin]
                      [list sources]))
 
