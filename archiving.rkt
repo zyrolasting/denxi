@@ -6,18 +6,33 @@
 (require racket/contract)
 
 (provide (contract-out [pack   (-> (listof path-string?) output-port? any)]
-                       [unpack (-> input-port? void?)]))
+                       [unpack (-> (or/c path-string? input-port?) void?)]))
 
 (require "file.rkt"
          racket/path
          file/tar
-         file/untar)
+         file/untar
+         file/untgz
+         file/unzip)
 
 (define (pack paths out)
   (tar->output paths out #:follow-links? #f))
 
 (define (unpack in)
-  (void (untar in)))
+  (if (path-string? in)
+      (call-with-input-file in unpack)
+      (void ((get-extract-procedure (object-name in)) in))))
+
+(define (get-extract-procedure name)
+  (if (path-string? name)
+      (get-extract-procedure (path-get-extension name))
+      (case name
+        [(#".tar") untar]
+        [(#".tgz") untgz]
+        [(#".zip") unzip]
+        [else (error 'unpack
+                     "Cannot infer archive format: ~a"
+                     name)])))
 
 (module+ test
   (require rackunit)

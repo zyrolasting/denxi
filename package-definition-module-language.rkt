@@ -55,9 +55,9 @@
          signature
          string-append
          system-library-subpath
+         unpack
          unquote
          unquote-splicing
-         untgz
          use-input
          void
          (rename-out [#%module-begin* #%module-begin]
@@ -65,7 +65,6 @@
 
 
 (require (for-syntax racket/base)
-         file/untgz
          racket/function
          racket/list
          racket/sequence
