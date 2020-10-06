@@ -55,7 +55,7 @@
            (-> #:trust-bad-digest any/c
                any/c
                xiden-hash-source/c
-               (unconstrained-domain-> $integrity-status?))]))
+               (unconstrained-domain-> $integrity?))]))
 
 (require racket/sequence
          racket/format
@@ -64,11 +64,11 @@
          "message.rkt"
          "openssl.rkt")
 
-(define+provide-message $integrity-status    (input-name input-source))
-(define+provide-message $integrity-verified  $integrity-status ())
-(define+provide-message $integrity-missing   $integrity-status ())
-(define+provide-message $integrity-unchecked $integrity-status ())
-(define+provide-message $integrity-violation $integrity-status ())
+(define+provide-message $integrity           (input-name input-source))
+(define+provide-message $integrity:verified  $integrity ())
+(define+provide-message $integrity:missing   $integrity ())
+(define+provide-message $integrity:unchecked $integrity ())
+(define+provide-message $integrity:violation $integrity ())
 
 (struct integrity-info (algorithm digest) #:prefab)
 
@@ -112,17 +112,17 @@
 
 (define (check-integrity #:trust-bad-digest trust-bad-digest intinfo variant)
   (if trust-bad-digest
-      $integrity-unchecked
+      $integrity:unchecked
       (if (well-formed-integrity-info/c intinfo)
           (if (equal? (integrity-info-digest intinfo)
                       (make-digest variant (integrity-info-algorithm intinfo)))
-              $integrity-verified
-              $integrity-violation)
-          $integrity-missing)))
+              $integrity:verified
+              $integrity:violation)
+          $integrity:missing)))
 
 (define (passed-integrity-check? m)
-  (and (member m (list $integrity-verified
-                       $integrity-unchecked))
+  (and (member m (list $integrity:verified
+                       $integrity:unchecked))
        #t))
 
 

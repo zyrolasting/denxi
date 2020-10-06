@@ -132,13 +132,6 @@
            url
            (format-cli-flags --trust-any-host))]
 
-  [($integrity-violation name source)
-   (format (~a "Integrity violation for ~s from source ~s.~n"
-               "While unsafe, you can force installation using ~a.")
-           name
-           (~a source)
-           (format-cli-flags --trust-any-digest))]
-
   [($signature-mismatch name source)
    (format (~a "Signature mismatch for ~s from source ~s.~n"
                "While unsafe, you can trust bad signatures using ~a.")
@@ -153,11 +146,29 @@
            name
            (format-cli-flags --trust-unsigned))]
 
-  [($integrity-verified name source)
+
+  [($integrity:missing name source)
+   (format (~a "~a does not declare integrity information.~n"
+               "If you are prototyping your own package, this is expected.~n"
+               "Otherwise, please declare integrity information for safety.")
+           name)]
+
+
+  [($integrity:unchecked name source)
+   (format "Dangerously trusting input ~s from source ~s" name (~a source))]
+
+
+  [($integrity:verified name source)
    (format "Integrity verified for input ~s from source ~s" name (~a source))]
 
-  [($integrity-unchecked name source)
-   (format "Dangerously trusting input ~s from source ~s" name (~a source))]
+
+  [($integrity:violation name source)
+   (format (~a "Integrity violation for ~s from source ~s.~n"
+               "While unsafe, you can force installation using ~a.")
+           name
+           (~a source)
+           (format-cli-flags --trust-any-digest))]
+
 
   [($signature-unchecked name source)
    (format "Not checking signature for input ~s from source ~s"
@@ -172,12 +183,6 @@
            (~a source)
            (setting-id XIDEN_TRUSTED_PUBLIC_KEYS)
            (~a (encode 'hex (make-digest pubkey-path 'sha384))))]
-
-  [($integrity-missing name source)
-   (format (~a "~a does not declare integrity information.~n"
-               "If you are prototyping your own package, this is expected.~n"
-               "Otherwise, please declare integrity information for safety.")
-           name)]
 
   [($signature-trust-unsigned name source)
    (format "Trusting unsigned input ~s from source ~s" name (~a source))]
