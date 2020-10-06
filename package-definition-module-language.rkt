@@ -34,6 +34,7 @@
          getenv
          (all-from-out "archiving.rkt"
                        "codec.rkt"
+                       "integrity.rkt"
                        file/untgz)
          (rename-out [#%module-begin* #%module-begin]
                      [list sources])
@@ -57,11 +58,6 @@
           [from-catalogs
            (-> string?
                (listof url-string?))]
-
-          [integrity
-           (-> xiden-hash-algorithm/c
-               bytes?
-               integrity-info?)]
 
           [signature
            (-> (or/c bytes? path-string?)
@@ -157,7 +153,6 @@
     (map (λ (url-string) (string-replace url-string "$QUERY" encoded))
          (XIDEN_CATALOGS))))
 
-(define integrity integrity-info)
 (define signature signature-info)
 
 (define-syntax (#%module-begin* stx)

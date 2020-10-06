@@ -33,6 +33,10 @@
 
 (provide (struct-out integrity-info)
          (contract-out
+          [integrity
+           (-> xiden-hash-algorithm/c
+               bytes?
+               integrity-info?)]
           [xiden-hash-algorithms
            (non-empty-listof symbol?)]
           [xiden-hash-algorithm/c
@@ -57,6 +61,8 @@
          "openssl.rkt")
 
 (struct integrity-info (algorithm digest) #:prefab)
+
+(define integrity integrity-info)
 
 (define (digest-length-ok? info)
   (equal? (bytes-length (integrity-info-digest info))
