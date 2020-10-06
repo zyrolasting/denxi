@@ -35,7 +35,6 @@
          "openssl.rkt"
          "workspace.rkt")
 
-(define+provide-message $consent-note ())
 (define+provide-message $no-package-info (source))
 (define+provide-message $package (info))
 (define+provide-message $package-installed $package ())
