@@ -1,6 +1,8 @@
 export SHELL=/bin/bash
 
-.PHONY: test clean
+.PHONY: default test clean
+
+default: setup
 
 install:
 	raco pkg install -i --skip-installed
