@@ -186,7 +186,4 @@
    (format "Trusting unsigned input ~s from source ~s" name (~a source))]
 
   [($signature-verified name source)
-   (format "Signature verified for input ~s from source ~s" name (~a source))]
-
-  [($signature-mismatch name source)
-   (format "Signature mismatch for input ~s from source ~s" name (~a source))])
+   (format "Signature verified for input ~s from source ~s" name (~a source))])
