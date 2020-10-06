@@ -34,7 +34,6 @@
            (-> xiden-encoding/c
                (or/c bytes? string?)
                (or/c bytes? string?))]
-
           [base32 abbreviated-decode-procedure/c]
           [base64 abbreviated-decode-procedure/c]
           [hex abbreviated-decode-procedure/c]))
@@ -59,14 +58,9 @@
   (apply or/c xiden-encodings))
 
 (define (encoded-file-name variant)
-  (define encoded (encode 'base32 variant))
-  (define as-string
-    (if (bytes? encoded)
-        (bytes->string/utf-8 encoded)
-        encoded))
-
-  (substring as-string 0
-             (min (string-length as-string) 32)))
+  (let ([as-string (coerce-string (encode 'base32 variant))])
+    (substring (coerce-string as-string) 0
+               (min (string-length as-string) 32))))
 
 
 (define (encode encoding variant)
