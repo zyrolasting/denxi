@@ -30,8 +30,8 @@
          "workspace.rkt")
 
 
-(define+provide-message $unrecognized-command (command))
-(define+provide-message $show-command-help (body-string suffix-string-key))
+(define+provide-message $cli:undefined-command (command))
+(define+provide-message $cli:show-help (body-string suffix-string-key))
 
 (define (entry-point args format-message run-args)
   (run-io (make-entry-point args format-message run-args)))
@@ -85,7 +85,7 @@
   ; and -h is not set.  Show help anyway.
   (define (show-help-on-zero-arguments e)
     (halt 1
-          ($show-command-help (exn-message e)
+          ($cli:show-help (exn-message e)
            (and (and (regexp-match? #px"given 0 arguments" (exn-message e))
                      (not help-requested?))
                 help-suffix-string-key))))
@@ -97,4 +97,4 @@
                         arg-help-strings
                         (λ (help-str)
                           (halt (if help-requested? 0 1)
-                                ($show-command-help help-str help-suffix-string-key))))))
+                                ($cli:show-help help-str help-suffix-string-key))))))

@@ -38,8 +38,11 @@
                (~a bytes-recovered
                    " bytes")))]
 
-  [($show-command-help body suffix-key)
+  [($cli:show-help body suffix-key)
    (format "~a~a" body (if suffix-key (~a "\n" (get-string suffix-key)) ""))]
+
+  [($cli:undefined-command m)
+   (format "Unrecognized command: ~s. Run with -h for usage information.~n" m)]
 
   [($output-not-found query output-name)
    (format "Cannot find output ~s output for ~s"
@@ -50,9 +53,6 @@
 
   [($compilation-error module-path message)
    (format "Bytecode compilation error in: ~a~n~a" module-path message)]
-
-  [($unrecognized-command m)
-   (format "Unrecognized command: ~s. Run with -h for usage information.~n" m)]
 
   [($invalid-workspace-envvar)
    (format "Ignoring envvar value for XIDEN_WORKSPACE: ~a~n  falling back to ~a"

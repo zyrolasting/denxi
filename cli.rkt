@@ -69,7 +69,7 @@
            ["do" do-command]
            ["show" show-command]
            ["gc" gc-command]
-           [_ (const (halt 1 ($unrecognized-command action)))]))
+           [_ (const (halt 1 ($cli:undefined-command action)))]))
        (proc args halt)))))
 
 
@@ -171,7 +171,7 @@
         (halt 0 ($show-string (path->string (workspace-directory))))]
 
        [_
-        (halt 1 ($unrecognized-command what))]))))
+        (halt 1 ($cli:undefined-command what))]))))
 
 
 
