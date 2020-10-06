@@ -43,11 +43,6 @@
 
 (define+provide-message $input (name))
 (define+provide-message $input-resolve-start       $input ())
-(define+provide-message $input-integrity-status    $input (source))
-(define+provide-message $input-integrity-verified  $input-integrity-status ())
-(define+provide-message $input-integrity-violation $input-integrity-status ())
-(define+provide-message $input-integrity-assumed   $input-integrity-status ())
-(define+provide-message $input-integrity-missing   $input-integrity-status ())
 
 
 (struct input-info
@@ -141,22 +136,15 @@
 
 (define (check-input-integrity input file-record source messages)
   (define $message-ctor
-    (if (XIDEN_TRUST_BAD_DIGEST)
-        $input-integrity-assumed
-        (if (input-info-integrity input)
-            (if (check-integrity (input-info-integrity input)
-                                 (build-workspace-path (path-record-path file-record)))
-                $input-integrity-verified
-                $input-integrity-violation)
-            $input-integrity-missing)))
+    (check-integrity #:trust-bad-digest (XIDEN_TRUST_BAD_DIGEST)
+                     (input-info-integrity input)
+                     (build-workspace-path (path-record-path file-record))))
 
   (define updated-messages
     (cons ($message-ctor (input-info-name input) source)
           messages))
 
-  (if (member $message-ctor
-              (list $input-integrity-verified
-                    $input-integrity-assumed))
+  (if (passed-integrity-check? $message-ctor)
       (check-input-signature input file-record source updated-messages)
       (values FAILURE updated-messages)))
 

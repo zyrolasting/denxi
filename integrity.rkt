@@ -49,16 +49,26 @@
                bytes?)]
           [make-fingerprint
            (-> path-string? bytes?)]
+          [passed-integrity-check?
+           predicate/c]
           [check-integrity
-           (-> well-formed-integrity-info/c
+           (-> #:trust-bad-digest any/c
+               any/c
                xiden-hash-source/c
-               boolean?)]))
+               (unconstrained-domain-> $integrity-status?))]))
 
 (require racket/sequence
          racket/format
          "codec.rkt"
          "file.rkt"
+         "message.rkt"
          "openssl.rkt")
+
+(define+provide-message $integrity-status    (input-name input-source))
+(define+provide-message $integrity-verified  $integrity-status ())
+(define+provide-message $integrity-missing   $integrity-status ())
+(define+provide-message $integrity-unchecked $integrity-status ())
+(define+provide-message $integrity-violation $integrity-status ())
 
 (struct integrity-info (algorithm digest) #:prefab)
 
@@ -99,9 +109,22 @@
                                     "A path, bytes, or an input port"
                                     variant)]))
 
-(define (check-integrity info variant)
-  (equal? (integrity-info-digest info)
-          (make-digest variant (integrity-info-algorithm info))))
+
+(define (check-integrity #:trust-bad-digest trust-bad-digest intinfo variant)
+  (if trust-bad-digest
+      $integrity-unchecked
+      (if (well-formed-integrity-info/c intinfo)
+          (if (equal? (integrity-info-digest intinfo)
+                      (make-digest variant (integrity-info-algorithm intinfo)))
+              $integrity-verified
+              $integrity-violation)
+          $integrity-missing)))
+
+(define (passed-integrity-check? m)
+  (and (member m (list $integrity-verified
+                       $integrity-unchecked))
+       #t))
+
 
 (module+ test
   (require rackunit)

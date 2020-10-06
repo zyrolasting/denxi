@@ -81,7 +81,7 @@
 (define (bind-trusted-public-keys trusted)
   (λ (public-key-path)
     (for/or ([integrity trusted])
-      (check-integrity integrity public-key-path))))
+      (passed-integrity-check? (check-integrity #:trust-bad-digest #f integrity public-key-path)))))
 
 (define (get-public-key-path variant)
   (get-cached-file* variant ESTIMATED_SIGNATURE_AND_PUBKEY_MAX_SIZE))

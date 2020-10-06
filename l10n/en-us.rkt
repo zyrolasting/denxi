@@ -135,7 +135,7 @@
   [($input-resolve-start name)
    (format "Resolving input ~s" name)]
 
-  [($input-integrity-violation name source)
+  [($integrity-violation name source)
    (format (~a "Integrity violation for ~s from source ~s.~n"
                "While unsafe, you can force installation using ~a.")
            name
@@ -156,10 +156,10 @@
            name
            (format-cli-flags --trust-unsigned))]
 
-  [($input-integrity-verified name source)
+  [($integrity-verified name source)
    (format "Integrity verified for input ~s from source ~s" name (~a source))]
 
-  [($input-integrity-assumed name source)
+  [($integrity-unchecked name source)
    (format "Dangerously trusting input ~s from source ~s" name (~a source))]
 
   [($signature-unchecked name source)
@@ -176,7 +176,7 @@
            (setting-id XIDEN_TRUSTED_PUBLIC_KEYS)
            (~a (encode 'hex (make-digest pubkey-path 'sha384))))]
 
-  [($input-integrity-missing name source)
+  [($integrity-missing name source)
    (format (~a "~a does not declare integrity information.~n"
                "If you are prototyping your own package, this is expected.~n"
                "Otherwise, please declare integrity information for safety.")
