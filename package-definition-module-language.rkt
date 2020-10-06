@@ -35,6 +35,7 @@
          (all-from-out "archiving.rkt"
                        "codec.rkt"
                        "integrity.rkt"
+                       "signature.rkt"
                        file/untgz)
          (rename-out [#%module-begin* #%module-begin]
                      [list sources])
@@ -57,12 +58,7 @@
 
           [from-catalogs
            (-> string?
-               (listof url-string?))]
-
-          [signature
-           (-> (or/c bytes? path-string?)
-               (or/c bytes? path-string?)
-               signature-info?)]))
+               (listof url-string?))]))
 
 
 (require (for-syntax racket/base
@@ -152,8 +148,6 @@
   (let ([encoded (uri-encode query-string)])
     (map (λ (url-string) (string-replace url-string "$QUERY" encoded))
          (XIDEN_CATALOGS))))
-
-(define signature signature-info)
 
 (define-syntax (#%module-begin* stx)
   (syntax-case stx ()

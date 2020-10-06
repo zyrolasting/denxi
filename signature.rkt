@@ -4,6 +4,10 @@
 
 (provide (struct-out signature-info)
          (contract-out
+          [signature
+           (-> (or/c bytes? path-string?)
+               (or/c bytes? path-string?)
+               signature-info?)]
           [bind-trusted-public-keys
            (-> (listof well-formed-integrity-info/c)
                (-> path-string? boolean?))]
@@ -63,6 +67,8 @@
 
 
 (struct signature-info (pubkey body) #:prefab)
+
+(define signature signature-info)
 
 (define well-formed-signature-info/c
   (struct/c signature-info
