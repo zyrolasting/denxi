@@ -9,7 +9,12 @@
          net/base64
          base32)
 
+(define abbreviated-decode-procedure/c
+  (-> (or/c non-empty-string? bytes?) bytes?))
+
 (provide (contract-out
+          [abbreviated-decode-procedure/c
+           chaperone-contract?]
           [coerce-string
            (-> (or/c string? bytes?) string?)]
           [coerce-bytes
@@ -28,7 +33,14 @@
           [decode
            (-> xiden-encoding/c
                (or/c bytes? string?)
-               (or/c bytes? string?))]))
+               (or/c bytes? string?))]
+
+          [base32 abbreviated-decode-procedure/c]
+          [base64 abbreviated-decode-procedure/c]
+          [hex abbreviated-decode-procedure/c]))
+
+
+
 
 (define (coerce-string v)
   (if (string? v)
@@ -88,6 +100,21 @@
      (base32-decode-bytes (coerce-string encoded))]
     [(base64)
      (base64-decode (coerce-bytes encoded))]))
+
+
+(define (base32 v)
+  (decode 'base32 v))
+
+
+(define (base64 v)
+  (decode 'base64 v))
+
+
+(define (hex variant)
+  (decode (if (string-contains? (coerce-string variant) ":")
+              'colon-separated-hex
+              'hex)
+          variant))
 
 
 (module+ test

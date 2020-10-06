@@ -32,6 +32,7 @@
          system-library-subpath
          getenv
          (all-from-out "archiving.rkt"
+                       "encode.rkt"
                        file/untgz)
          (rename-out [#%module-begin* #%module-begin]
                      [list sources])
@@ -67,18 +68,7 @@
           [signature
            (-> (or/c bytes? path-string?)
                (or/c bytes? path-string?)
-               signature-info?)]
-
-          [base32
-           (-> (or/c non-empty-string? bytes?) bytes?)]
-
-          [base64
-           (-> (or/c non-empty-string? bytes?) bytes?)]
-
-          [hex
-           (-> (or/c non-empty-string? bytes?) bytes?)]))
-
-
+               signature-info?)]))
 
 
 (require (for-syntax racket/base
@@ -174,14 +164,6 @@
 
 (define integrity integrity-info)
 (define signature signature-info)
-
-(define base32 (curry decode 'base32))
-(define base64 (curry decode 'base64))
-(define (hex variant)
-  (decode (if (string-contains? (coerce-string variant) ":")
-              'colon-separated-hex
-              'hex)
-          variant))
 
 (define-syntax (#%module-begin* stx)
   (syntax-case stx ()
