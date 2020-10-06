@@ -9,8 +9,8 @@
          racket/sequence
          net/head
          version/utils
+         "codec.rkt"
          "contract.rkt"
-         "encode.rkt"
          "exn.rkt"
          "file.rkt"
          "format.rkt"

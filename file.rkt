@@ -12,7 +12,7 @@
          racket/port
          racket/set
          racket/sequence
-         "encode.rkt"
+         "codec.rkt"
          "message.rkt"
          "path.rkt"
          "query.rkt"

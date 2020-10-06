@@ -52,7 +52,7 @@
 
 (require racket/sequence
          racket/format
-         "encode.rkt"
+         "codec.rkt"
          "file.rkt"
          "openssl.rkt")
 

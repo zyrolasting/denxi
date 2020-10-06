@@ -6,7 +6,7 @@
 
 (r "../cli-flag.rkt"
    "../cmdline.rkt"
-   "../encode.rkt"
+   "../codec.rkt"
    "../exn.rkt"
    "../format.rkt"
    "../input-info.rkt"

@@ -12,7 +12,7 @@
 (require racket/contract
          racket/file
          racket/path
-         "encode.rkt"
+         "codec.rkt"
          "message.rkt")
 
 (define CONVENTIONAL_WORKSPACE_NAME "xiden-workspace")

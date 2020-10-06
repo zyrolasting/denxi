@@ -92,7 +92,7 @@
          racket/stream
          racket/vector
          db
-         "encode.rkt"
+         "codec.rkt"
          "exn.rkt"
          "file.rkt"
          "format.rkt"

@@ -32,7 +32,7 @@
          system-library-subpath
          getenv
          (all-from-out "archiving.rkt"
-                       "encode.rkt"
+                       "codec.rkt"
                        file/untgz)
          (rename-out [#%module-begin* #%module-begin]
                      [list sources])
@@ -82,7 +82,7 @@
          racket/sequence
          racket/string
          "archiving.rkt"
-         "encode.rkt"
+         "codec.rkt"
          "compression.rkt"
          "format.rkt"
          "input-info.rkt"

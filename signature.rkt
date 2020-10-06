@@ -45,7 +45,7 @@
 (require racket/sequence
          racket/format
          racket/port
-         "encode.rkt"
+         "codec.rkt"
          "file.rkt"
          "integrity.rkt"
          "message.rkt"
