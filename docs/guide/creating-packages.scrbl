@@ -362,7 +362,7 @@ such as documentation, libraries, or tests.
 
 @racketblock[
 (define (build target)
-  (unpack (input-ref inputs (string-append target ".tgz"))))]
+  (call-with-input (input-ref inputs (string-append target ".tgz")) unpack))]
 
 In this example, @racket[target] is bound to the requested @tech{package output}.
 But, we haven't defined any outputs in our @tech{package definition}.  That's
@@ -434,11 +434,10 @@ makes a human error possible. Assume we changed @racket[build] such that
 (define outputs '("full" "minimal"))
 
 (define (build target)
-  (unpack (input-ref inputs
-                     (string-append (if (equal? target "default")
-                                        "full"
-                                        "minimal")
-                                    ".tgz"))))]
+  (define archive (input-ref inputs
+                             (string-append (if (equal? target "default") "full" "minimal")
+                                            ".tgz")))
+  (call-with-input archive unpack))]
 
 This works, but if a user requests the @racket{full} output and then the
 @racket{default} output, then the same archive would be extracted twice into
@@ -485,5 +484,5 @@ xiden
 (define outputs '("default" "minimal"))
 
 (define (build target)
-  (untgz (input-ref inputs (string-append target ".tgz"))))
+  (call-with-input (input-ref inputs (string-append target ".tgz")) unpack))
 ]
