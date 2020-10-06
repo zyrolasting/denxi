@@ -33,6 +33,7 @@
 
 (require "cli-flag.rkt"
          "exn.rkt"
+         "logged.rkt"
          "message.rkt"
          "package.rkt")
 

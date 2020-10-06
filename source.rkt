@@ -62,6 +62,7 @@
          "format.rkt"
          "integrity.rkt"
          "localstate.rkt"
+         "logged.rkt"
          "mod.rkt"
          "monad.rkt"
          "path.rkt"

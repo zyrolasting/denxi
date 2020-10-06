@@ -6,6 +6,7 @@
          "integrity.rkt"
          "l10n.rkt"
          "localstate.rkt"
+         "logged.rkt"
          "message.rkt"
          "monad.rkt"
          "printer.rkt"

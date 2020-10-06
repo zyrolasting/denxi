@@ -17,6 +17,7 @@
          "input-info.rkt"
          "integrity.rkt"
          "localstate.rkt"
+         "logged.rkt"
          "message.rkt"
          "mod.rkt"
          "monad.rkt"
