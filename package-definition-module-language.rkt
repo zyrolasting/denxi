@@ -5,7 +5,8 @@
 
 (require racket/contract)
 
-(provide #%app
+(provide λ
+         #%app
          #%datum
          #%top
          #%top-interaction
