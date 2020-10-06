@@ -28,13 +28,17 @@
                 ((or/c #f integrity-info?)
                  (or/c #f signature-info?))
                 input-info?)]
-          [use-input
+          [call-with-input
+           (-> input-info?
+               (-> path-string? any)
+               any)]
+          [keep-input!
            (-> input-info?
                path-string?)]
           [input-ref
            (-> (listof input-info?)
                path-string?
-               path-string?)]))
+               input-info?)]))
 
 
 (define+provide-message $input (name))
@@ -67,15 +71,20 @@
 
 
 (define (input-ref inputs str)
-  (define input (findf (λ (info) (equal? str (input-info-name info))) inputs))
-  (if input
-      (use-input input)
+  (or (findf (λ (info) (equal? str (input-info-name info))) inputs)
       (raise-user-error 'input-ref
                         "~s does not match a declared input"
                         str)))
 
 
-(define (use-input input)
+(define (call-with-input input proc)
+  (define path (keep-input! input))
+  (dynamic-wind void
+                (λ () (proc path))
+                (λ () (delete-file path))))
+
+
+(define (keep-input! input)
   (define path (run+print-log (resolve-input input)))
   (if (eq? path FAILURE)
       (raise-user-error 'input-ref

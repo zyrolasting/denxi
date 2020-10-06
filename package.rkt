@@ -208,6 +208,11 @@
 
 
 (define (make-pkgeval-file-guard allowed-executables write-dirs)
+  (define (check-destructive-op op path)
+    (define test (curry path-prefix? (normalize-path path)))
+    (unless (ormap test write-dirs)
+      (raise-user-error (format "Unauthorized attempt to ~a in ~a" op path))))
+
   (λ (sym path-or-#f ops)
     (when path-or-#f
       (cond [(member 'execute ops)
@@ -217,16 +222,10 @@
                                  path-or-#f))]
 
             [(member 'write ops)
-             (unless (ormap (λ (write-dir) (path-prefix? (normalize-path path-or-#f) write-dir))
-                            write-dirs)
-               (raise-user-error 'security
-                                 "Unauthorized attempt to write in ~a"
-                                 path-or-#f))]
+             (check-destructive-op "write" path-or-#f)]
 
             [(member 'delete ops)
-             (raise-user-error 'security
-                               "Unauthorized attempt to delete ~a"
-                               path-or-#f)]))))
+             (check-destructive-op "delete" path-or-#f)]))))
 
 
 (define (make-pkgeval-network-guard)

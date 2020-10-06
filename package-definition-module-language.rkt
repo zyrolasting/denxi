@@ -14,6 +14,7 @@
          base64
          build-path
          build-workspace-path
+         call-with-input
          car
          case
          cdr
@@ -43,8 +44,10 @@
          input-ref
          install
          integrity
-         lambda λ
-         let let-values
+         keep-input!
+         lambda
+         let
+         let-values
          list
          list*
          make-immutable-hash
@@ -58,7 +61,6 @@
          unpack
          unquote
          unquote-splicing
-         use-input
          void
          (rename-out [#%module-begin* #%module-begin]
                      [list sources]))
