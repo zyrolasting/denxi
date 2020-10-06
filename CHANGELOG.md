@@ -7,9 +7,9 @@ This project follows [these versioning rules](https://sagegerard.com/edition-rev
 
 ## [Unreleased]
 
-- Rewrite project to support transactions
+- Rewrite project to support transactions and content addressable package outputs
 - Add `tags`, `home-page`, `racket-versions`, and `description` fields to package definition
-- Switch to `xiden/derivation-forms` and `#lang xiden` as canonical configuration language.
+- Switch to `xiden/package-definition-module-language` and `#lang xiden` as canonical languages.
 
 
 ## [draft:alpha] - 2020-08-02
