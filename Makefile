@@ -1,12 +1,14 @@
 export SHELL=/bin/bash
 
-.PHONY: build test clean
+.PHONY: test clean
 
-build:
+install:
 	raco pkg install -i --skip-installed
+
+setup: install
 	raco setup --doc-index --fail-fast -j 8 xiden
 
-test:
+test: setup
 	raco test -j 8 -c xiden
 
 exe: build test
