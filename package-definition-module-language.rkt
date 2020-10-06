@@ -25,11 +25,14 @@
          equal?
          from-catalogs
          from-file
+         input
+         input-ref
          make-immutable-hash hash hash-set hash-set* hash-remove hash-clear hash-update
          void
          string-append
          path->string
          build-path
+         use-input
          collection-path
          system-library-subpath
          getenv
@@ -39,23 +42,7 @@
                        "signature.rkt"
                        file/untgz)
          (rename-out [#%module-begin* #%module-begin]
-                     [list sources])
-         (contract-out
-          [input
-           (->* (non-empty-string?
-                 (non-empty-listof path-string?))
-                ((or/c #f integrity-info?)
-                 (or/c #f signature-info?))
-                input-info?)]
-
-          [use-input
-           (-> input-info?
-               path-string?)]
-
-          [input-ref
-           (-> (listof input-info?)
-               path-string?
-               path-string?)]))
+                     [list sources]))
 
 
 (require (for-syntax racket/base)
@@ -85,29 +72,6 @@
          "workspace.rkt")
 
 (define current-info-lookup (make-parameter (λ (k f) (f))))
-
-(define (input name sources [integrity #f] [signature #f])
-  (input-info name sources integrity signature))
-
-
-(define (input-ref inputs str)
-  (define input (findf (λ (info) (equal? str (input-info-name info))) inputs))
-  (if input
-      (use-input input)
-      (raise-user-error 'input-ref
-                        "~s does not match a declared input"
-                        str)))
-
-
-(define (use-input input)
-  (define path (run+print-log (resolve-input input)))
-  (if (eq? path FAILURE)
-      (raise-user-error 'input-ref
-                        "Could not resolve input ~a~nSources:~n~a~n"
-                        (input-info-name input)
-                        (join-lines (map ~a (input-info-sources input))))
-      path))
-
 
 (define (install link-path output-name pkgdef)
   (define result (run+print-log (install-package link-path output-name pkgdef)))

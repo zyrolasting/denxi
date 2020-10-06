@@ -21,7 +21,20 @@
           [resolve-input
            (-> input-info? logged?)]
           [well-formed-input-info/c
-           flat-contract?]))
+           flat-contract?]
+          [input
+           (->* (non-empty-string?
+                 (non-empty-listof path-string?))
+                ((or/c #f integrity-info?)
+                 (or/c #f signature-info?))
+                input-info?)]
+          [use-input
+           (-> input-info?
+               path-string?)]
+          [input-ref
+           (-> (listof input-info?)
+               path-string?
+               path-string?)]))
 
 
 (define+provide-message $input (name))
@@ -47,6 +60,29 @@
             (non-empty-listof path-string?)
             (or/c #f well-formed-integrity-info/c)
             (or/c #f well-formed-signature-info/c)))
+
+
+(define (input name sources [integrity #f] [signature #f])
+  (input-info name sources integrity signature))
+
+
+(define (input-ref inputs str)
+  (define input (findf (λ (info) (equal? str (input-info-name info))) inputs))
+  (if input
+      (use-input input)
+      (raise-user-error 'input-ref
+                        "~s does not match a declared input"
+                        str)))
+
+
+(define (use-input input)
+  (define path (run+print-log (resolve-input input)))
+  (if (eq? path FAILURE)
+      (raise-user-error 'input-ref
+                        "Could not resolve input ~a~nSources:~n~a~n"
+                        (input-info-name input)
+                        (join-lines (map ~a (input-info-sources input))))
+      path))
 
 
 (define (resolve-input info)
