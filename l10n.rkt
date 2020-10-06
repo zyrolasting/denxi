@@ -1,11 +1,23 @@
 #lang racket/base
 
-(provide get-message-formatter)
+(provide get-message-formatter
+         run+print-log)
 
-(require racket/runtime-path
+(require racket/list
+         racket/runtime-path
+         racket/sequence
+         "message.rkt"
          "printer.rkt")
 
 (define-runtime-path here "l10n")
+
+(define (run+print-log logged-inst)
+  (define-values (result messages) (run-log logged-inst))
+  (define format-message (get-message-formatter))
+  (sequence-for-each
+   (λ (m) (write-message m format-message))
+   (in-list (reverse (flatten messages))))
+  result)
 
 (define (dynamic-require/localized key)
   (let ([on-failure (americentric-fallback key)])

@@ -118,14 +118,6 @@
                         output-name)
       (void)))
 
-(define (run+print-log logged-inst)
-  (define-values (result messages) (run-log logged-inst))
-  (define format-message (get-message-formatter))
-  (sequence-for-each
-   (λ (m) (write-message m format-message))
-   (in-list (reverse (flatten messages))))
-  result)
-
 (define-syntax (#%module-begin* stx)
   (syntax-case stx ()
     [(mod-beg defn ...)
