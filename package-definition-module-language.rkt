@@ -23,6 +23,7 @@
          case
          list cons car cdr list* append reverse
          equal?
+         from-catalogs
          from-file
          make-immutable-hash hash hash-set hash-set* hash-remove hash-clear hash-update
          void
@@ -54,18 +55,11 @@
           [input-ref
            (-> (listof input-info?)
                path-string?
-               path-string?)]
-
-          [from-catalogs
-           (-> string?
-               (listof url-string?))]))
+               path-string?)]))
 
 
-(require (for-syntax racket/base
-                     syntax/location
-                     syntax/parse)
+(require (for-syntax racket/base)
          (only-in file/sha1 hex-string->bytes)
-         (only-in net/uri-codec uri-encode)
          file/untgz
          racket/function
          racket/list
@@ -131,23 +125,6 @@
    (λ (m) (write-message m format-message))
    (in-list (reverse (flatten messages))))
   result)
-
-(define-syntax (from-file stx)
-  (syntax-parse stx
-    [(_ user-path:string)
-     (for ([el (in-list (explode-path (syntax-e #'user-path)))])
-       (when (eq? el 'up)
-         (raise-syntax-error 'from-file
-                             "A relative path source may not reference parent directories."
-                             #'user-path)))
-     (with-syntax ([wrt (syntax-source-directory stx)])
-       #'(normalize-path user-path wrt))]))
-
-
-(define (from-catalogs query-string)
-  (let ([encoded (uri-encode query-string)])
-    (map (λ (url-string) (string-replace url-string "$QUERY" encoded))
-         (XIDEN_CATALOGS))))
 
 (define-syntax (#%module-begin* stx)
   (syntax-case stx ()

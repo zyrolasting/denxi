@@ -21,8 +21,12 @@
 
 
 (provide (struct-out fetch-state)
+         from-file
          (contract-out
           [request-transfer/c contract?]
+          [from-catalogs
+           (-> string?
+               (listof url-string?))]
           [fetch
            (-> non-empty-string?
                (non-empty-listof any/c)
@@ -45,7 +49,11 @@
 ;-----------------------------------------------------------------------
 ; Implementation
 
-(require racket/function
+(require (for-syntax racket/base
+                     syntax/location
+                     syntax/parse)
+         (only-in net/uri-codec uri-encode)
+         racket/function
          racket/sequence
          net/head
          "cli-flag.rkt"
@@ -172,6 +180,24 @@
   (define (mod-fallback . _) (const #f))
   ((load-plugin 'fetch-source mod-fallback mod-fallback)
    source request-transfer))
+
+
+(define-syntax (from-file stx)
+  (syntax-parse stx
+    [(_ user-path:string)
+     (for ([el (in-list (explode-path (syntax-e #'user-path)))])
+       (when (eq? el 'up)
+         (raise-syntax-error 'from-file
+                             "A relative path source may not reference parent directories."
+                             #'user-path)))
+     (with-syntax ([wrt (syntax-source-directory stx)])
+       #'(normalize-path user-path wrt))]))
+
+
+(define (from-catalogs query-string)
+  (let ([encoded (uri-encode query-string)])
+    (map (λ (url-string) (string-replace url-string "$QUERY" encoded))
+         (XIDEN_CATALOGS))))
 
 
 (module+ test
