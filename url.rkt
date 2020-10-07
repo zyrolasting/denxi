@@ -13,8 +13,7 @@
                 (non-empty-listof path/param?))]
           [indicates-fs-path? (-> url? boolean?)]
           [url->maybe-path (->* (url?) (path-string?) (or/c #f path?))]
-          [url-string? predicate/c]
-          [merge-urls (-> url? url? url?)]))
+          [url-string? predicate/c]))
 
 
 (define (build-url-path . els)
@@ -57,19 +56,6 @@
       (raise-argument-error 'get-leading-path-element "URL with a path" u)
       (path/param-path (car path/params))))
 
-
-; TODO: Should preference be given to b?
-(define (merge-urls a b)
-  (define (or+ p) (or (p a) (p b)))
-
-  (apply url (map or+ (list url-scheme
-                            url-user
-                            url-host
-                            url-port
-                            url-path-absolute?
-                            url-path
-                            url-query
-                            url-fragment))))
 
 (module+ test
   (require rackunit)
