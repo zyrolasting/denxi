@@ -59,35 +59,3 @@ A contracted @racket[signature-info] constructor.
 
 Declares signature information used to authenticate a responsible party for byte content.
 }
-
-@defform[(from-file relative-path-expr)]{
-Expands to a complete path. @racket[relative-path-expr] is a relative path
-made complete with regards to the source directory in which this expression
-appears.
-
-Due to this behavior, @racket[from-file] will return different results when the
-containing source file changes location on disk.
-}
-
-@defproc[(from-catalogs [query string?] [catalogs (listof string?) (XIDEN_CATALOGS)]) (listof url-string?)]{
-Returns a list of URL strings suitable for use in @racket[input]
-as possible sources for bytes.
-
-For each string in @racket[catalogs], all occurances of @racket{$QUERY} are
-replaced with the @racket[(uri-encode query)] in the output.
-
-Examples:
-
-@racketblock[
-(input "my-definition.rkt"
-       (from-catalogs "example.com:widget"))
-]
-
-@racketblock[
-(input "my-definition.rkt"
-       (append (from-catalogs "example.com:widget"
-                              '("https://mirrorA.example.com/$QUERY"
-                                "https://mirrorB.example.com/?q=$QUERY"))
-               (from-file "local.rkt")))
-]
-}

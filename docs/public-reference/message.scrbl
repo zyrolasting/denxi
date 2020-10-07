@@ -11,10 +11,10 @@
 @defmodule[xiden/message]
 
 A @deftech{message} is an instance of the @racket[$message]
-@tech{structure} used to share data in the @project-name runtime and
-between Racket processes. @racket[$message] and all of its subtypes
-are @tech/reference{prefab} @tech/reference{structures}.  When the
-term “@tech{message}” is ambiguous, then prefer the term
+@tech/reference{structure} used to share data in the @project-name
+runtime and between Racket processes. @racket[$message] and all of its
+subtypes are @tech/reference{prefab} @tech/reference{structures}.
+When the term “@tech{message}” is ambiguous, then prefer the term
 @deftech{@project-name message} to apply the context of this section.
 
 All @tech{message} types form a heirarchy using colon-separated
@@ -27,6 +27,28 @@ start with @tt{$cli}, not @tt{$message:cli}.
 @defstruct*[$message () #:prefab]{
 The base type for all @project-name messages.
 }
+
+@defform*[((define-message id [field-expr ...])
+           (define-message id super-id [field-expr ...]))]{
+Like @racket[struct], in that @racket[(define-message foo (a b c))] is
+equivalent to @racket[(struct foo $message (a b c) #:prefab)].
+
+The second form allows declaration of a supertype, but that supertype
+must be a subtype of @racket[$message].
+}
+
+@defform[(define+provide-message id form ...)]{
+Like @racket[define-message], with an included @racket[(provide (struct-out id))].
+}
+
+@defstruct*[($show-datum $message) ([value any/c]) #:prefab]{
+Represents a request to show the user the given Racket value.
+}
+
+@defstruct*[($show-string $message) ([message any/c]) #:prefab]{
+Represents a request to show the user the given string.
+}
+
 
 @section{Program Results}
 
