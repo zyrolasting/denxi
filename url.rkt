@@ -7,21 +7,9 @@
 
 (provide (all-from-out net/url)
          (contract-out
-          [build-url-path
-           (->* ()
-                #:rest (non-empty-listof (or/c path/param? path-string?))
-                (non-empty-listof path/param?))]
           [indicates-fs-path? (-> url? boolean?)]
           [url->maybe-path (->* (url?) (path-string?) (or/c #f path?))]
           [url-string? predicate/c]))
-
-
-(define (build-url-path . els)
-  (map (λ (el)
-         (cond [(path/param? el) el]
-               [(string? el) (path/param el null)]
-               [(path? el) (path/param (path->string el) null)]))
-       els))
 
 
 (define (url-string? s)
@@ -61,16 +49,4 @@
   (require rackunit)
 
   (check-equal? (get-leading-path-element (string->url "https://example.com/blah;uh/foo?a=b#baz"))
-                "blah")
-
-  (test-equal? "Build a URL path"
-               (apply build-url-path "a"
-                      (path/param "b" null)
-                      (build-path "c")
-                      '("d" "e" "f"))
-               (list (path/param "a" null)
-                     (path/param "b" null)
-                     (path/param "c" null)
-                     (path/param "d" null)
-                     (path/param "e" null)
-                     (path/param "f" null))))
+                "blah"))
