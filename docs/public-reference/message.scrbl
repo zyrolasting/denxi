@@ -75,7 +75,7 @@ Otherwise, @racket[($fail v)] is shown as @racket[(~s v)].
 @section{Package Messages}
 
 @defstruct*[($output-not-found $message) ([query xiden-query-string?] [output-name string?]) #:prefab]{
-A @tech{package output} was not defined in the @tech{package definition} matching @racket[query].
+A package output was not defined in the @tech{package definition} matching @racket[query].
 }
 
 

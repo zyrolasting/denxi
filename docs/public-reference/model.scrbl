@@ -7,10 +7,9 @@
 @project-name builds dependencies atomically and deterministically
 using @tech{package definitions}.  A package definition contains
 discovery information and a declaration of program structure. The
-program structure consists of @deftech{package inputs},
-@deftech{package outputs}, and a @deftech{package build procedure} for
-processing. In this sense, a package is a branded program that
-reliably reproduces exact files.
+program structure consists of @tech{package inputs}, package outputs,
+and a package build procedure for processing. In this sense, a package
+is a branded program that reliably reproduces exact files.
 
 All of @|project-name|'s files are stored in a @tech{workspace}
 directory. Barring direct user modifications, the content of a workspace

@@ -88,7 +88,7 @@ from doing work unless it recognizes the string as something it can
 process. If @racket[handle-source] returns @racket[#f] as a
 consequence of @racket[supported?] returning @racket[#f], then @project-name
 will raise an error alerting the user that it cannot make an
-@tech{input} from @racket[user-string].
+@deftech{input} from @racket[user-string].
 
 @racket[request-transfer] should be called in tail position.  It
 accepts two arguments. The first is an input port that produces
