@@ -36,7 +36,7 @@
      (values FAILURE
              (cons (cond [(exn? e) ($show-string (exn->string e))]
                          [($message? e) e]
-                         [else (~s e)])
+                         [else ($show-datum e)])
                        m)))))
 
 ; Like State, except execution can be halted and the state is always a
