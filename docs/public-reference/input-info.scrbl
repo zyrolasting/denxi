@@ -3,7 +3,8 @@
 @require[@for-label[racket/base
                     racket/contract
                     xiden/message
-                    xiden/integrity]
+                    xiden/integrity
+                    xiden/input-info]
          "../shared.rkt"]
 
 @title{Resolving Inputs}
