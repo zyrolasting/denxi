@@ -8,6 +8,8 @@
  with-rc
  run-command-line
  (contract-out
+  [exit-code flat-contract?]
+  [arguments/c flat-contract?]
   [entry-point
    (-> arguments/c
        message-formatter/c
