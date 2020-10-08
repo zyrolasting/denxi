@@ -25,5 +25,6 @@ For a high-level overview, see @other-doc['(lib "xiden/docs/guide/xiden-guide.sc
 @include-section{signature.scrbl}
 @include-section{source.scrbl}
 @include-section{input-info.scrbl}
+@include-section{cmdline.scrbl}
 @include-section{url.scrbl}
 @include-section{string.scrbl}

@@ -21,8 +21,8 @@ A @deftech{message} is an instance of the @racket[$message]
 @tech/reference{structure} used to share data in the @project-name
 runtime and between Racket processes. @racket[$message] and all of its
 subtypes are @tech/reference{prefab} @tech/reference{structures}.
-When the term “@tech{message}” is ambiguous, then prefer the term
-@deftech{@project-name message} to apply the context of this section.
+When the term “@tech{message}” is ambiguous, then @deftech{@project-name message}
+applies the context of this section.
 
 All @tech{message} types form a heirarchy using colon-separated
 identifiers that start with @racket[$]. @racket[$message] itself has
@@ -153,16 +153,6 @@ the context of a @tech{package definition} module.
 @defstruct*[($package-malformed $message) ([name string?] [errors (listof string?)]) #:prefab]{
 }
 
-
-@section{CLI Messages}
-
-@defstruct*[($cli $message) () #:prefab]{
-A message that pertains to the command line interface.
-}
-
-@defstruct*[($cli:undefined-command $cli) ([command string?])  #:prefab]{
-A user passed @racket[command] as a subcommand, but it is not defined.
-}
 
 @section{Transfer Messages}
 
