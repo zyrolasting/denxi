@@ -1,6 +1,7 @@
 #lang racket/base
 
 (require "contract.rkt")
+
 (define exit-code/c (integer-in 0 255))
 (define arguments/c (or/c (vectorof string?) (listof string?)))
 
