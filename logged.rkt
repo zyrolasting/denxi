@@ -10,6 +10,7 @@
          logged-unit
          logged-failure
          logged-attachment
+         messy-log/c
          run-log
          get-log)
 
@@ -21,6 +22,10 @@
 
 (define SUCCESS (string->uninterned-symbol "SUCCESS"))
 (define FAILURE (string->uninterned-symbol "FAILURE"))
+
+(define messy-log/c
+  (or/c $message?
+        (listof (recursive-contract messy-log/c))))
 
 (struct logged (thnk)
   #:transparent
