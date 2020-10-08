@@ -55,6 +55,7 @@ Equivalent to
 }
 
 @defproc[(coerce-bytes [v (or/c string? bytes?)]) bytes?]{
+Equivalent to
 
 @racketblock[(if (bytes? v) v (string->bytes/utf-8 v))]
 }
