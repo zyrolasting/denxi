@@ -1,6 +1,6 @@
 #lang scribble/manual
 
-@require["../shared.rkt" @for-label[racket/base]]
+@require["../shared.rkt" @for-label[@except-in[xiden/pkgdef #%module-begin] racket/base]]
 
 @title[#:tag "new-pkg"]{Defining a Package}
 
