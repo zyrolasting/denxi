@@ -4,19 +4,21 @@
 
 (define exit-code/c (integer-in 0 255))
 (define arguments/c (or/c (vectorof string?) (listof string?)))
+(define program-log/c (or/c $message? (listof $message?)))
 
 (provide
  with-rc
  run-command-line
  (contract-out
-  [exit-code/c contract?]
-  [arguments/c contract?]
+  [exit-code/c flat-contract?]
+  [arguments/c chaperone-contract?]
+  [program-log/c chaperone-contract?]
   [entry-point
    (-> arguments/c
        message-formatter/c
        (-> arguments/c
-           (-> exit-code/c (or/c $message? list?) any)
-           (values exit-code/c (or/c $message? (listof $message?))))
+           (-> exit-code/c program-log/c any)
+           (values exit-code/c program-log/c))
        exit-code/c)]))
 
 (require racket/cmdline
