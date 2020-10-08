@@ -35,8 +35,9 @@
          "workspace.rkt")
 
 
-(define+provide-message $cli:undefined-command (command))
-(define+provide-message $cli:show-help (body-string suffix-string-key))
+(define+provide-message $cli $message ())
+(define+provide-message $cli:undefined-command $cli (command))
+(define+provide-message $cli:show-help $cli (body-string suffix-string-key))
 
 (define (entry-point args format-message run-args)
   (run-io (make-entry-point args format-message run-args)))
