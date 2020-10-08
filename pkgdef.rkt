@@ -27,11 +27,9 @@
          define-values
          equal?
          error
-         eval
          from-catalogs
          from-file
          getenv
-         hash
          hash
          hash-clear
          hash-ref
