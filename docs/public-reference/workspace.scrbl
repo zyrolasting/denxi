@@ -44,6 +44,11 @@ Bound to @racketfont{"@CONVENTIONAL_WORKSPACE_NAME"}. Use the identifier instead
 hard-coded string to track changes in conventions.
 }
 
+@defstruct*[($invalid-workspace-envvar $message) () #:prefab]{
+A @tech{message} indicating that @racket[(getenv "XIDEN_WORKSPACE")]
+is not useable as a @tech{workspace} path.
+}
+
 @section[#:tag "workspace-selection"]{Selecting a Workspace}
 
 When @project-name starts, it selects a value to install in

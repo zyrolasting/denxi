@@ -164,10 +164,6 @@ A message that pertains to the command line interface.
 A user passed @racket[command] as a subcommand, but it is not defined.
 }
 
-@defstruct*[($invalid-workspace-envvar $message) () #:prefab]{
-@racket[(getenv "XIDEN_WORKSPACE")] is not useable as a @tech{workspace} path.
-}
-
 @section{Transfer Messages}
 
 @defstruct*[($transfer $message) ([name string?]) #:prefab]{
