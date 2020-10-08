@@ -161,7 +161,7 @@ Defines installations in a transaction.
 Each list in @racket[XIDEN_INSTALL_SOURCES] consists of three strings:
 
 @itemlist[#:style 'ordered
-@item{The name of a symbolic link to create in @racket[(current-directory)].}
+@item{The path to a symbolic link to create with respect to @racket[(current-directory)].}
 @item{The name of a desired output from a @tech{package definition}.}
 @item{A URL, file path, or plugin-specific string used to find the @tech{package definition}.}
 ]
@@ -181,7 +181,7 @@ Like @racket[XIDEN_INSTALL_SOURCES], except each list only needs two strings:
 
 
 @itemlist[#:style 'ordered
-@item{The name of a symbolic link to create in @racket[(current-directory)].}
+@item{The path of a symbolic link to create with respect to @racket[(current-directory)].}
 @item{A URL, file path, or plugin-specific string used to find the @tech{package definition}.}
 ]
 
