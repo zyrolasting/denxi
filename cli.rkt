@@ -110,7 +110,7 @@
                                  (install-package link-path output-name source)]))))
 
        (if (null? actions)
-           (halt 1 ($show-string "Nothing to do."))
+           (halt 0 null)
            (let-values ([(commit rollback) (start-transaction!)])
              (parameterize ([current-https-protocol (if (XIDEN_TRUST_UNVERIFIED_HOST) 'auto 'secure)])
                (transact actions
