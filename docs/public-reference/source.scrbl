@@ -70,6 +70,10 @@ Assuming the returned @racket[fetch-state] is @racketid[F]:
 The following procedures are useful for declaring sources in a
 @tech{package input}.
 
+@defproc[(sources [v any/c] ...) list?]{
+A semantic alias for @racket[list].
+}
+
 @defform[(from-file relative-path-expr)]{
 Expands to a complete path. @racket[relative-path-expr] is a relative path
 made complete with regards to the source directory in which this expression

@@ -55,14 +55,14 @@
          quote
          reverse
          signature
+         sources
          string-append
          system-library-subpath
          unpack
          unquote
          unquote-splicing
          void
-         (rename-out [#%module-begin* #%module-begin]
-                     [list sources]))
+         (rename-out [#%module-begin* #%module-begin]))
 
 
 (require (for-syntax racket/base)

@@ -22,6 +22,7 @@
 
 (provide (struct-out fetch-state)
          from-file
+         sources
          (contract-out
           [request-transfer/c contract?]
           [from-catalogs
@@ -75,6 +76,7 @@
          "string.rkt"
          "url.rkt")
 
+(define sources (procedure-rename list 'sources))
 
 (define (fetch name sources request-transfer)
   (if (null? sources)

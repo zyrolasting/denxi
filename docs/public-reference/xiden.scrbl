@@ -76,6 +76,7 @@ The output is defined in regards to the @tech{package definition} created using
 @item{@racket[let]}
 @item{@racket[let-values]}
 @item{@racket[signature]}
+@item{@racket[sources]}
 @item{@racket[unpack]}
 @item{@racket[void]}
 ]
