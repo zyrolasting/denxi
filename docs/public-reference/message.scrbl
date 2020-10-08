@@ -4,6 +4,7 @@
                     racket/contract
                     racket/fasl
                     racket/match
+                    racket/pretty
                     racket/serialize
                     xiden/l10n
                     xiden/message
