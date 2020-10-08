@@ -32,7 +32,7 @@ does. For example, identifiers pertaining to command line messages
 start with @tt{$cli}, not @tt{$message:cli}.
 
 @defstruct*[$message () #:prefab]{
-The base type for all @project-name messages.
+The base type for all @tech{messages}.
 }
 
 @defform*[((define-message id [field-expr ...])
