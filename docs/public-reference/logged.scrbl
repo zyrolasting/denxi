@@ -2,24 +2,29 @@
 
 @require["../shared.rkt" @for-label[racket/base racket/contract xiden/logged xiden/message]]
 
-@title{Monadic Control}
+@title{Logged Programs}
 
 @defmodule[xiden/logged]
 
-@project-name uses monadic operations to attach @tech{messages} to
-values and control program flow. The monadic value type is
-@racket[logged], which represents a delayed program that eventually
-terminates with a @tech{message} log.
-
-@racket[logged] instances act like a hybrid of the State and Maybe
-monads in Haskell. The State-like aspect adds messages to a log and
-adds room for a computed value. The Maybe-like aspect short-circuits
-evaluation if a special value appears.
+@project-name uses instances of the monadic value type @racket[logged]
+to attach @tech{messages} to values and control program
+flow. @racket[logged] represents a delayed program that eventually
+terminates with a @tech{message} log along with a @racket[SUCCESS]
+or @racket[FAILURE] value.
 
 
 @section{Fundamentals}
 
-@defstruct*[logged ([thnk (-> (listof $message?) (values any/c (listof $message?)))]) #:transparent]{
+@defthing[messy-log/c contract? #:value (or/c $message? (listof (recursive-contract messy-log/c)))]{
+A @deftech{messy log} is a @tech{message} or an arbitrarily-nested
+list where @tech{messages} are the only non-list elements.
+
+This contract is not used in some parts of the implementation for
+performance reasons, but will be cited in this reference for
+clarification reasons.
+}
+
+@defstruct*[logged ([thnk (-> (listof $message?) (values any/c (listof messy-log/c)))]) #:transparent]{
 A monadic type that represents a computed value alongside @tech{messages}.
 The @racket[thnk] must accept a list of currently accumulated messages, then
 perform planned work that may add at least zero new messages.
@@ -45,7 +50,7 @@ as the computed value.
 ]
 
 It's fine to @racket[cons] another list of messages onto an existing
-list, since @racket[get-log] can clean up the result.
+list. This creates a @tech{messy log}. since @racket[get-log] can clean up the result.
 
 @racketblock[
 (logged (lambda (messages)
@@ -55,14 +60,19 @@ list, since @racket[get-log] can clean up the result.
 ]
 }
 
-@defthing[SUCCESS symbol?]{
-Represents a finished program with a desired result.
-}
+@section{Terminal Values}
 
-@defthing[FAILURE symbol?]{
-Represents a finished program with a undesired result.
-}
+@deftogether[(
+@defthing[SUCCESS symbol?]
+@defthing[FAILURE symbol?]
+)]{
+When using an instance of @racket[logged], evaluation stops at the
+moment one of these @tech/reference{uninterned}
+@tech/reference{symbols} are encountered.
 
+@project-name uses these values to distinguish between Racket booleans
+and values that control @racket[logged] evaluation.
+}
 
 @section{Alternative Constructors}
 

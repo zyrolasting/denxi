@@ -24,3 +24,4 @@ For a high-level overview of @project-name, see  @other-doc['(lib "xiden/docs/gu
 @include-section{integrity.scrbl}
 @include-section{input-info.scrbl}
 @include-section{url.scrbl}
+@include-section{string.scrbl}

@@ -2,11 +2,17 @@
 
 @require[@for-label[racket/base
                     racket/contract
+                    racket/fasl
+                    racket/match
+                    racket/serialize
+                    xiden/l10n
                     xiden/message
-                    xiden/integrity]
+                    xiden/integrity
+                    xiden/printer
+                    xiden/rc]
          "../shared.rkt"]
 
-@title{Message Structures}
+@title{Messages}
 
 @defmodule[xiden/message]
 
@@ -50,12 +56,62 @@ Represents a request to show the user the given string.
 }
 
 
-@section{Program Results}
+@section{Printing Messages}
 
-@defstruct*[($finished-collecting-garbage $message) ([bytes-recovered exact-nonnegative-integer?]) #:prefab]{
-Returned from @|project-name|'s garbage collector. Reports the number
-of bytes freed from disk as a result of the operation.
+@defmodule[xiden/printer]
+
+@defstruct*[($verbose $message) ([message $message?]) #:prefab]{
+A wrapper for a message that only appears to a user if
+@racket[(XIDEN_VERBOSE)] is @racket[#t].
 }
+
+@defthing[message-formatter/c chaperone-contract? #:value (-> $message? string?)]{
+A @deftech{message formatter} is a procedure that translates a
+@tech{message} to a human-readable string.
+}
+
+@defform[(message-formatter patts ...)]{
+Expands to @racket[(λ (m) (match m patts ...))]
+}
+
+
+@defform[(define-message-formatter id patts ...)]{
+Expands to @racket[(define id (message-formatter patts ...))]
+}
+
+@defform[(define+provide-message-formatter id patts ...)]{
+Expands to
+
+@racketblock[
+(begin (provide (contract-out [id message-formatter/c]))
+       (define-message-formatter id patts ...))]
+}
+
+@defproc[(combine-message-formatters [formatter message-formatter/c] ...) message-formatter/c]{
+Returns a @tech{message formatter} that uses each @racket[formatter]
+in the order passed.
+}
+
+@defproc[(write-message [m $message?] [format-message message-formatter/c] [out output-port? (current-output-port)]) void?]{
+Writes a @tech{message} to @racket[out] according to the values of
+@racket[(XIDEN_READER_FRIENDLY_OUTPUT)], @racket[(XIDEN_FASL_OUTPUT)],
+and @racket[(XIDEN_VERBOSE)].
+
+Given @racket[(and (not (XIDEN_VERBOSE)) ($verbose? m))],
+@racket[write-message] does nothing.
+
+Otherwise, @racket[write-message] does the following:
+
+@racketblock[
+(let ([to-send (if (XIDEN_READER_FRIENDLY_OUTPUT) m (format-message m))])
+  (if (XIDEN_FASL_OUTPUT)
+      (s-exp->fasl (serialize to-send) out)
+      (if (XIDEN_READER_FRIENDLY_OUTPUT)
+          (pretty-write #:newline? #t to-send out)
+          (displayln to-send out))))]
+
+}
+
 
 @section{High-level Messages}
 
@@ -214,4 +270,26 @@ A @tech{package input} was rejected when transferred from a given
 with the input.
 
 See @racket[XIDEN_TRUST_UNSIGNED].
+}
+
+@section{Localization}
+
+@defmodule[xiden/l10n]
+
+@racketmodname[xiden/l10n] uses @tech{messages} to communicate with
+the user according to the value of @racket[(system-language+country)].
+Currently, the only supported locale is @tt{en-US}.
+
+@defproc[(get-message-formatter) message-formatter/c]{
+Returns a @tech{message formatter} for translating @tech{messages}
+to strings in the user's locale.
+}
+
+@defproc[(run+print-log [l logged?]) any/c]{
+Returns the first value from @racket[(run-log l)].
+
+Before returning control, each @tech{message} @racketid[M] from
+@racket[run-log] is printed using
+
+@racketblock[(write-message M (get-message-formatter) (current-output-port))]
 }

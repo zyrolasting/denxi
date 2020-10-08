@@ -2,9 +2,11 @@
 
 @require[@for-label[racket/base
                     racket/contract
+                    xiden/logged
                     xiden/message
                     xiden/integrity
-                    xiden/input-info]
+                    xiden/input-info
+                    xiden/string]
          "../shared.rkt"]
 
 @title{Resolving Inputs}
@@ -26,6 +28,17 @@ A structure representing a request for exact bytes.
 An abbreviated @racket[input-info] constructor that performs stronger validation on its arguments.
 }
 
+
+@defthing[well-formed-input-info/c
+          flat-contract?
+          #:value (struct/c input-info
+                            file-name-string?
+                            (non-empty-listof string?)
+                            (or/c #f well-formed-integrity-info/c)
+                            (or/c #f well-formed-signature-info/c))]{
+A contract that recognizes @tech{package inputs} suitable for use in
+@tech{package definitions}.
+}
 
 @defproc[(input-ref [inputs (listof input-info?)] [name string?]) (or/c #f input-info?)]{
 Returns the first element of @racket[inputs] @racket[I] where

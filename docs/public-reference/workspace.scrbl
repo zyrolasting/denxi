@@ -17,6 +17,9 @@ I/O. That directory's name is either @wsdir, or @racket[(file-name-from-path
 workspace is defined in @racket[workspace-directory], and must comply with
 @racket[workspace-directory/c].
 
+A @deftech{target workspace} is the directory referenced by the value
+of @racket[(workspace-directory)].
+
 @defthing[workspace-directory/c contract?
           #:value (and/c complete-path?
                          (or/c directory-exists?
@@ -63,3 +66,24 @@ path.
 If no directories were found in the walk towards a root directory, then
 @racket[workspace-directory] is set to @racket[(build-path (current-directory)
 CONVENTIONAL_WORKSPACE_NAME)].
+
+@section{State Management}
+
+@defmodule[xiden/localstate]
+
+@subsection{Garbage Collection}
+
+@defstruct*[($finished-collecting-garbage $message) ([bytes-recovered exact-nonnegative-integer?]) #:prefab]{
+A message for reporting the number of bytes freed from disk using @racket[xiden-collect-garbage].
+}
+
+@defproc[(xiden-collect-garbage) exact-nonnegative-integer?]{
+Deletes all records of links that do not actually exist on disk, and
+deleltes any installed files or directories in the @tech{target
+workspace} with no referencing links.
+
+Returns the estimated number of bytes recovered from disk. This number
+is not fully accurate, because of inaccuracies from
+@racket[file-size], and the fact that empty directories and links are
+treated as negligibly small.
+}

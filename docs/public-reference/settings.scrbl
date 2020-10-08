@@ -12,16 +12,84 @@
           xiden/cli-flag
           "../shared.rkt")
 
-@title{Runtime Configuration}
+@title{Configuration}
+
+@project-name dynamically binds configurable values using
+@tech{settings} when launched. Once established, those values are
+considered constant. This helps keep the runtime predictable.
+
+@section{Settings}
+
+@defmodule[xiden/setting]
+
+A @deftech{setting} is an instance of the @racket[setting]
+@tech/reference{structure}.  Settings are used as a canonical source
+of dynamically bound values, along with validation information and
+contextual help.
+
+@defstruct*[setting ([id symbol?] [valid? predicate/c] [parameter parameter?] [derived-parameter parameter?] [description string?])]{
+Defines a @tech{setting}. You likely do not need to create an instance
+directly because the constructor does not enforce a meaningful
+structural relationship between the fields. Use
+@racket[define-setting] instead.
+
+@racket[setting] implements @racket[prop:procedure]. For an instance @racket[S]:
+
+@itemlist[
+@item{@racket[(S)] is @racket[((setting-derived-parameter S))].}
+@item{@racket[(S val proc)] applies the procedure @racket[proc] in a @tech/reference{parameterization} where @racket[(setting-derived-parameter S)] is @racket[val].}
+]
+}
+
+
+@defform[(define-setting id contract-expr default-expr description)]{
+Binds a new @tech{setting} to @racket[id].
+
+@racket[contract-expr] must evaluate to a @tech/reference{flat contract}.
+Any attempt to install a value in the setting that does not pass this
+contract will fail.
+
+@racket[default-expr] must evaluate to either a @racket[(-> symbol?
+any/c)] procedure, or a non-procedure. The procedure form must accept
+@racket[id] (as a symbol) as the sole formal argument and return a
+default value.
+
+@racket[description] must evaluate to a string that briefly summarizes
+the effect of the setting.
+
+@racketblock[
+(define-setting PICKED_NUMBER (integer-in 0 100) 0 "a user's guess for a freshman year project")
+]
+}
+
+@defproc[(call-with-applied-settings [settings (if/c hash?
+                                                     (hash/c setting? any/c)
+                                                     (listof (cons/c setting? any/c)))]
+                                     [thunk (-> any)])
+                                     any]{
+Applies @racket[thunk] in a @tech/reference{parameterization} where
+each @tech{setting} in @racket[settings] is bound to a new value.
+
+@racketblock[
+(define-setting USERNAME string? "" "username")
+(define-setting PASSWORD string? "" "password")
+(call-with-applied-settings (hasheq USERNAME "insecure" PASSWORD "hunter2") PASSWORD)
+(call-with-applied-settings (list (cons USERNAME "insecure") (cons PASSWORD "hunter2")) PASSWORD)
+]
+
+}
+
+
+
+@section{Runtime Configuration}
 
 @defmodule[xiden/rc]
 
-@racketmodname[xiden/rc] provides several settings, which contain
-@tech/reference{parameters} that change how @project-name behaves to reflect
-the user's wishes. This section documents each setting with its command-line
-flags, contract, and default value.
+@racketmodname[xiden/rc] provides several @tech{settings} that change
+how @project-name behaves. This section documents each setting with
+its command-line flags, contract, and default value.
 
-@section{Changing a Setting Value}
+@subsection{Changing a Runtime Configuration Value}
 
 Here are the ways one can change a setting. Each method overrides
 the method before it.
@@ -37,7 +105,7 @@ the method before it.
 ]
 
 
-@section{Setting Reference}
+@subsection{Setting Reference}
 
 These are the defined settings for @|project-name|, along with their default
 values and command-line flags.
