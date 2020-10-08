@@ -6,11 +6,12 @@
 
 @defmodule[xiden/logged]
 
-@project-name uses instances of the monadic value type @racket[logged]
-to attach @tech{messages} to values and control program
-flow. @racket[logged] represents a delayed program that eventually
-terminates with a @tech{message} log along with a @racket[SUCCESS]
-or @racket[FAILURE] value.
+A @deftech{logged procedure} is an instance of the monadic value type
+@racket[logged]. A @tech{logged procedure} is a procedure that returns
+some value and related @tech{messages}. A program composed of
+@tech{logged procedures} eventually terminates with a complete
+@tech{message} log along with a @racket[SUCCESS] or @racket[FAILURE]
+value.
 
 
 @section{Fundamentals}

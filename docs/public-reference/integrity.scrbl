@@ -3,7 +3,8 @@
 @require[@for-label[racket/base
                     racket/contract
                     xiden/message
-                    xiden/integrity]
+                    xiden/integrity
+                    xiden/rc]
          racket/format
          racket/pretty
          xiden/integrity

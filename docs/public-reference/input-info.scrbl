@@ -6,6 +6,7 @@
                     xiden/message
                     xiden/integrity
                     xiden/input-info
+                    xiden/signature
                     xiden/string]
          "../shared.rkt"]
 

@@ -215,63 +215,6 @@ See @racket[XIDEN_FETCH_TIMEOUT_MS].
 @defstruct*[($unsupported-racket-version $message) ([name string?] [versions (listof string?)]) #:prefab]{
 }
 
-@defstruct*[($source-fetched $message) ([source-name string?] [fetch-name string?]) #:prefab]{
-}
-
-@defstruct*[($fetch-failure $message) ([name string?]) #:prefab]{
-}
-
-@defstruct*[($source-method-ruled-out $message) ([source-name string?] [fetch-name string?] [method-name string?] [reason string?]) #:prefab]{
-}
-
-@defstruct*[($unverified-host $message) ([url string?]) #:prefab]{
-GET @racket[url] failed because the host did not pass authentication using HTTPS.
-
-See @racket[XIDEN_TRUST_UNVERIFIED_HOST].
-}
-
-
-@section{Signature Checking}
-
-@defstruct*[($signature-status $message) ([input-name string?] [input-source string?]) #:prefab]{
-A message pertaining to a signature check on a @tech{package input} named
-@racket[input-name].  The bytes for the input came from @racket[input-source].
-}
-
-@defstruct*[($signature-unchecked $signature-status) () #:prefab]{
-A @tech{package input} transferred from a given @racket[source] skipped
-the signature check.
-}
-
-@defstruct*[($signature-distrust-public-key $signature-status) ([public-key-path path-string?]) #:prefab]{
-A @tech{package input} was rejected because the user did not trust the
-public key located at @racket[public-key-path].
-
-See @racket[XIDEN_TRUST_ANY_PUBLIC_KEY] and @racket[XIDEN_TRUSTED_PUBLIC_KEYS].
-}
-
-@defstruct*[($signature-trust-unsigned $message) ([name string?] [source string?]) #:prefab]{
-}
-
-@defstruct*[($signature-verified $message) ([name string?] [source string?]) #:prefab]{
-
-}
-
-@defstruct*[($signature-mismatch $message) ([name string?] [source string?]) #:prefab]{
-A @tech{package input} was rejected when transferred from a given
-@racket[source].  The reason being that the signature on the input
-failed verification with the associated public key.
-
-See @racket[XIDEN_TRUST_BAD_SIGNATURE].
-}
-
-@defstruct*[($signature-missing $message) ([source string?]) #:prefab]{
-A @tech{package input} was rejected when transferred from a given
-@racket[source].  The reason being that there was no signature declared
-with the input.
-
-See @racket[XIDEN_TRUST_UNSIGNED].
-}
 
 @section{Localization}
 

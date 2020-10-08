@@ -37,13 +37,7 @@ xiden}| documents.
 @racketmodname[xiden/pkgdef] is a module language superset
 of @racketmodname[setup/infotab].
 
-@defproc[(input [local-name string?]
-                [sources (listof string?)]
-                [int (or/c #f well-formed-integrity-info/c) #f]
-                [sig (or/c #f well-formed-signature-info/c) #f])
-          input-info?]{
-Declares an input along with optional verification data.
-}
+@subsection{Special Bindings}
 
 @defproc[(install [link-path path-string?] [output-name string?] [pkgdef-source string?]) void?]{
 Builds an output named @racket[output-name] in the @tech{workspace}, and
@@ -54,8 +48,34 @@ The output is defined in regards to the @tech{package definition} created using
 @racket[(fetch pkgdef-source)].
 }
 
-@defproc[(signature [public-key-variant (or/c bytes? path-string?)] [signature-body (or/c bytes? path-string?)]) well-formed-signature-info/c]{
-A contracted @racket[signature-info] constructor.
+@subsection{Additional Bindings}
 
-Declares signature information used to authenticate a responsible party for byte content.
-}
+@itemlist[
+@item{@racket[λ]}
+@item{@racket[#%app]}
+@item{@racket[#%top-interaction]}
+@item{@racket[base32]}
+@item{@racket[base64]}
+@item{@racket[build-path]}
+@item{@racket[build-workspace-path]}
+@item{@racket[call-with-input]}
+@item{@racket[car]}
+@item{@racket[case]}
+@item{@racket[cdr]}
+@item{@racket[current-directory]}
+@item{@racket[define-values]}
+@item{@racket[error]}
+@item{@racket[from-catalogs]}
+@item{@racket[from-file]}
+@item{@racket[hex]}
+@item{@racket[input]}
+@item{@racket[input-ref]}
+@item{@racket[integrity]}
+@item{@racket[keep-input!]}
+@item{@racket[lambda]}
+@item{@racket[let]}
+@item{@racket[let-values]}
+@item{@racket[signature]}
+@item{@racket[unpack]}
+@item{@racket[void]}
+]
