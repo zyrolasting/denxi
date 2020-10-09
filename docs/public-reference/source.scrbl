@@ -13,6 +13,10 @@
 
 @defmodule[xiden/source]
 
+A @deftech{source} is a Racket string that refers to bytes.  The
+string may contain a URL, a filesystem path, or custom information
+understood by a plugin.
+
 @defthing[request-transfer/c
   chaperone-contract?
   #:value
