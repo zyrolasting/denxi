@@ -146,15 +146,11 @@
 
 
 (define (check-input-signature input file-record source messages)
-  (define $message-ctor (get-signature-status input))
-  (values (if (member $message-ctor
-                      (list $signature-verified
-                            $signature-unchecked
-                            $signature-trust-unsigned))
+  (define status (get-signature-status input))
+  (values (if ($signature-ok? status)
               file-record
               FAILURE)
-          (cons ($message-ctor (input-info-name input) source)
-                messages)))
+          (cons status messages)))
 
 ; This procedure uses most of the bindings from xiden/signature
 ; in terms of the runtime configuration. Look at the tests for
@@ -174,6 +170,7 @@
           (λ (p) #t)
           (bind-trusted-public-keys (XIDEN_TRUSTED_PUBLIC_KEYS))))
     (consider-public-key-trust #:trust-public-key? trust-public-key?
+                               #:public-key-path (get-public-key-path (signature-info-pubkey siginfo))
                                siginfo
                                verify-signature-info))
 
@@ -182,6 +179,6 @@
                        siginfo
                        verify-public-key))
 
-  (consider-trust #:trust-bad-digest (XIDEN_TRUST_BAD_DIGEST)
-                  (input-info-signature input)
-                  verify-unsigned))
+  (consider-integrity-trust #:trust-bad-digest (XIDEN_TRUST_BAD_DIGEST)
+                            (input-info-signature input)
+                            verify-unsigned))

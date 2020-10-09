@@ -132,19 +132,29 @@
            url
            (format-cli-flags --trust-any-host))]
 
-  [($signature-mismatch name source)
-   (format (~a "Signature mismatch for ~s from source ~s.~n"
-               "While unsafe, you can trust bad signatures using ~a.")
-           name
-           (~a source)
-           (format-cli-flags --trust-bad-signature))]
+  [($signature ok? stage public-key-path)
+   (format (~a "Signature check ~a: ~a")
+           (if ok? "PASS" "FAIL")
+           (cond [(eq? stage (object-name consider-integrity-trust))
+                  "Trusting implicitly"]
+                 [(eq? stage (object-name consider-unsigned))
+                  (if ok?
+                      "Trusting unsigned"
+                      (format "Signature required (bypass: ~a)"
+                              (format-cli-flags --trust-unsigned)))]
 
-  [($signature-missing name source)
-   (format (~a "~a does not have a signature. If you are prototyping your own package, this is expected.~n"
-               "If you got the package from the Internet, then exercise caution!~n"
-               "To trust unsigned packages, use ~a.")
-           name
-           (format-cli-flags --trust-unsigned))]
+                 [(eq? stage (object-name consider-public-key-trust))
+                  (if ok?
+                      ""
+                      (format (~a "Public key not trusted. To trust this key, add this to ~a:~n"
+                                  "(integrity 'sha384 (hex ~s))")
+                              (setting-id XIDEN_TRUSTED_PUBLIC_KEYS)
+                              (~a (encode 'hex (make-digest public-key-path 'sha384)))))]
+
+                 [(eq? stage (object-name consider-signature-info))
+                  (if ok?
+                      "Signature verified"
+                      "Signature not verified")]))]
 
 
   [($integrity algorithm status)
@@ -155,25 +165,4 @@
      [(mismatch) (format (~a "integrity violation due to ~a digest mismatch (unsafe: ~a to bypass)")
                          algorithm
                          (format-cli-flags --trust-any-digest))]
-     [else (format "Unknown integrity status ~s. Please inform the maintainers!" status)])]
-
-
-  [($signature-unchecked name source)
-   (format "Not checking signature for input ~s from source ~s"
-           name
-           (~a source))]
-
-  [($signature-distrust-public-key name source pubkey-path)
-   (format (~a "Refusing input ~s from source ~s because public key is not trusted.~n"
-               "If you trust this key, then add the following to ~a:~n"
-               "(integrity 'sha384 (hex ~s))")
-           name
-           (~a source)
-           (setting-id XIDEN_TRUSTED_PUBLIC_KEYS)
-           (~a (encode 'hex (make-digest pubkey-path 'sha384))))]
-
-  [($signature-trust-unsigned name source)
-   (format "Trusting unsigned input ~s from source ~s" name (~a source))]
-
-  [($signature-verified name source)
-   (format "Signature verified for input ~s from source ~s" name (~a source))])
+     [else (format "Unknown integrity status ~s. Please inform the maintainers!" status)])])
