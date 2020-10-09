@@ -49,6 +49,11 @@ A @tech{message} indicating that @racket[(getenv "XIDEN_WORKSPACE")]
 is not useable as a @tech{workspace} path.
 }
 
+@defproc[(build-workspace-path [path-element (and/c path-string? (not/c complete-path?))]) complete-path?]{
+Like @racket[build-path], but the base of the returned path is
+@racket[(workspace-directory)].
+}
+
 @section[#:tag "workspace-selection"]{Selecting a Workspace}
 
 When @project-name starts, it selects a value to install in
