@@ -17,8 +17,8 @@
    (-> arguments/c
        message-formatter/c
        (-> arguments/c
-           (-> exit-code/c program-log/c any)
-           (values exit-code/c program-log/c))
+           (-> exit-code/c messy-log/c any)
+           (values exit-code/c messy-log/c))
        exit-code/c)]))
 
 (require racket/cmdline
@@ -26,6 +26,7 @@
          racket/format
          racket/vector
          "cli-flag.rkt"
+         "logged.rkt"
          "message.rkt"
          "monad.rkt"
          "printer.rkt"
