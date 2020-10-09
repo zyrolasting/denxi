@@ -3,6 +3,7 @@
 @require[@for-label[racket/base
                     racket/contract
                     xiden/logged
+                    xiden/port
                     xiden/rc
                     xiden/source
                     xiden/url]
@@ -124,4 +125,101 @@ One of the means by which @racket[fetch] finds bits did not work.
 GET @racket[url] failed because the host did not pass authentication using HTTPS.
 
 See @racket[XIDEN_TRUST_UNVERIFIED_HOST].
+}
+
+
+
+@require["../shared.rkt"
+         @for-label[racket/base
+                    racket/contract
+                    xiden/cmdline
+                    xiden/message
+                    xiden/printer]]
+
+@section{Transferring Bytes}
+
+@defmodule[xiden/port]
+
+@racketmodname[xiden/port] reprovides all bindings from
+@racketmodname[racket/port], in addition to the bindings defined in
+this section.
+
+@defproc[(mebibytes->bytes [mebibytes real?]) exact-nonnegative-integer?]{
+Converts mebibytes to bytes, rounded up to the nearest exact integer.
+}
+
+@defproc[(transfer [bytes-source input-port?]
+                   [bytes-sink output-port?]
+                   [#:on-status on-status (-> $transfer? any)]
+                   [#:max-size max-size (or/c +inf.0 exact-positive-integer?)]
+                   [#:buffer-size buffer-size exact-positive-integer?]
+                   [#:transfer-name transfer-name non-empty-string?]
+                   [#:est-size est-size (or/c +inf.0 real?)]
+                   [#:timeout-ms timeout-ms (>=/c 0)])
+                   void?]{
+Like @racket[copy-port], except bytes are copied from
+@racket[bytes-source] to @racket[bytes-sink], with at most
+@racket[buffer-size] bytes at a time.
+
+@racket[transfer] applies @racket[on-status] repeatedly and
+synchronously with @racket[$transfer] @tech{messages}.  Each such
+message is tagged with the given @racket[transfer-name] to identify
+the specific transfer.
+
+@racket[transfer] sets a budget @racketid[N] for the maximum expected
+size using @racket[est-size] and @racket[max-size]. @racket[max-size]
+is the hard upper limit for total bytes to copy (typically decided by
+the user). If @racket[max-size] is @racket[+inf.0], then
+@racket[transfer] will not terminate if @racket[bytes-source] does not
+produce @racket[eof]. @racket[est-size] is an estimate for the number
+of bytes that @racket[bytes-source] will produce (typically
+@italic{not} decided by the user) . If @racket[(> est-size max-size)],
+then the transfer will not start to respect the user's budget.
+Otherwise @racketid[N] is bound to @racket[est-size] to hold
+@racket[bytes-source] accountable for the estimate.
+
+@racket[transfer] will copy no more than @racketid[N] bytes, and will
+wait no longer than @racket[timeout-ms] for the next available byte.
+}
+
+
+@defstruct*[($transfer $message) ([name string?]) #:prefab]{
+Represents a transfer status with a given @racket[name]. The name is
+derived from a @tech{package input}'s name, or the name of a source
+used for that input.
+}
+
+@defstruct*[($transfer-progress $transfer) ([bytes-read exact-nonnegative-integer?] [max-size (or/c +inf.0 exact-positive-integer?)] [timestamp exact-positive-integer?]) #:prefab]{
+Represents progress transferring bytes to a local source.
+
+Unless @racket[max-size] is @racket[+inf.0], @racket[(/ bytes-read
+max-size)] approaches @racket[1].  You can use this along with the
+@racket[timestamp] (in seconds) to reactively compute an estimated
+time to complete.
+}
+
+
+@defstruct*[($transfer-small-budget $transfer) () #:prefab]{
+A request to transfer bytes was rejected because the user does not
+allow downloads of a required size.  This message also applies if a
+transfer cannot estimate the number bytes to read, and the user does
+not allow unlimited transfers.
+
+See @racket[XIDEN_FETCH_TOTAL_SIZE_MB] and @racket[XIDEN_FETCH_PKGDEF_SIZE_MB].
+}
+
+
+@defstruct*[($transfer-over-budget $message) ([size exact-positive-integer?]) #:prefab]{
+A request to transfer bytes was halted because the transfer read more
+than @racket[size] bytes, which the user's configuration forbids.
+
+See @racket[XIDEN_FETCH_TOTAL_SIZE_MB] and @racket[XIDEN_FETCH_PKGDEF_SIZE_MB].
+}
+
+
+@defstruct*[($transfer-timeout $message) ([bytes-read exact-nonnegative-integer?]) #:prefab]{
+A request to transfer bytes was halted after @racket[bytes-read] bytes
+because no more bytes were available after so much time.
+
+See @racket[XIDEN_FETCH_TIMEOUT_MS].
 }
