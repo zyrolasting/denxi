@@ -28,8 +28,12 @@
                        on-failure))))
 
 (define (get-message-formatter)
-  (combine-message-formatters (dynamic-require/localized 'format-message)
-                              default-message-formatter))
+  (define f
+    (combine-message-formatters (dynamic-require/localized 'format-message/locale)
+                                default-message-formatter))
+  (λ (m)
+    (parameterize ([current-message-formatter f])
+      (f m))))
 
 (define (get-string-lookup key)
   (dynamic-require/localized 'get-string))

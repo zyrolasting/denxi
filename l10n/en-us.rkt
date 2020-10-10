@@ -21,7 +21,7 @@
         "  links      Show a list of issued links"
         "  workspace  Show the path to the target workspace directory")]))
 
-(define+provide-message-formatter format-message
+(define+provide-message-formatter format-message/locale
   [($output v)
    (format-message v)]
 
