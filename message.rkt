@@ -28,6 +28,7 @@
 (struct $message () #:prefab)
 (define+provide-message $show-datum  (value))
 (define+provide-message $show-string (message))
+(define+provide-message $regarding   (subject body))
 
 (module+ test
   (require rackunit)

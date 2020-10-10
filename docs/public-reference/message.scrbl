@@ -54,6 +54,10 @@ Represents a request to show the user the given Racket value.
 Represents a request to show the user the given string.
 }
 
+@defstruct*[($regarding $message) ([subject $message?] [body $message?]) #:prefab]{
+Represents a request to show one message in the context of another.
+}
+
 
 @section{Printing Messages}
 

@@ -30,6 +30,11 @@
          [(string? v) v]
          [else (~s v)])]
 
+  [($regarding name v)
+   (format "~a: ~a"
+           (format-message name)
+           (format-message v))]
+
   [($finished-collecting-garbage bytes-recovered)
    (format "Recovered ~a"
            (if (> bytes-recovered (/ (* 1024 2024) 10))
