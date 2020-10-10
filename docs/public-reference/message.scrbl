@@ -22,12 +22,16 @@ subtypes are @tech/reference{prefab} @tech/reference{structures}.
 When the term “@tech{message}” is ambiguous, then @deftech{@project-name message}
 applies the context of this section.
 
-All @tech{message} types form a heirarchy using colon-separated
+@tech{Message} types may form a heirarchy using colon-separated
 identifiers that start with @racket[$]. @racket[$message] itself has
 no semantics beyond serving as the root type, and its identifier does
 not appear in other structure type identifiers like @racket[exn]'s
 does. For example, identifiers pertaining to command line messages
 start with @tt{$cli}, not @tt{$message:cli}.
+
+In the event a type heirarchy is unhelpful, a message may provide
+context for any other message type using @tech/reference{continuation marks}.
+
 
 @defstruct*[$message () #:prefab]{
 The base type for all @tech{messages}.
@@ -56,6 +60,31 @@ Represents a request to show the user the given string.
 
 @defstruct*[($regarding $message) ([subject $message?] [body $message?]) #:prefab]{
 Represents a request to show one message in the context of another.
+}
+
+
+@defproc[(scope-message [m $message?] [scope (listof $message?) (get-message-scope)]) $message?]{
+Returns @racket[m] if @racket[scope] is @racket[null].
+
+Otherwise, returns @racket[(scope-message ($regarding (car scope) m) (cdr scope))].
+
+Use to wrap a @tech{message} with @racket[$regarding], where the exact
+structure of the output may depend on the current
+@tech/reference{dynamic extent}.
+}
+
+@defproc[(call-in-message-scope [m $message] [proc (-> any)]) any]{
+Returns @racket[(proc)]. While @racket[proc] has control, @racket[(car
+(get-message-scope))] is @racket[eq?] to @racket[m].
+}
+
+@defform[(in-message-scope m body ...)]{
+Expands to @racket[(call-in-message-scope m (lambda () body ...))].
+}
+
+@defproc[(get-message-scope) (listof $message?)]{
+Returns a list of @tech{messages} representing a dynamic scope
+for other messages. See @racket[call-in-message-scope].
 }
 
 
