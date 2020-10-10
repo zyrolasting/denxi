@@ -21,8 +21,7 @@ For a high-level overview, see @other-doc['(lib "xiden/docs/guide/xiden-guide.sc
 @include-section{message.scrbl}
 @include-section{logged.scrbl}
 @include-section{codec.scrbl}
-@include-section{integrity.scrbl}
-@include-section{signature.scrbl}
+@include-section{verification.scrbl}
 @include-section{source.scrbl}
 @include-section{input-info.scrbl}
 @include-section{cmdline.scrbl}
