@@ -53,37 +53,34 @@ for that algorithm.
 
 
 @defproc[(check-integrity [#:trust-bad-digest trust-bad-digest any/c] [intinfo any/c] [variant md-bytes-source/c]) $integrity?]{
-Returns an instance of @racket[$integrity] @racket[I], such that
-@racket[($integrity-status I)] reports the relationship between the
-user's configuration, the bytes from @racket[variant], and the
-integrity information in @racket[intinfo].
+Performs an @deftech{integrity check} and returns an instance of
+@racket[$integrity] @racket[I].
 
-@racket[intinfo] must pass @racket[well-formed-integrity-info/c] to be
-used in a full integrity check. Otherwise @racket[($integrity-status
-I)] will be bound to @racket['missing].
+If @racket[trust-bad-digest] is a true value, the integrity check
+passes unconditionally. Otherwise, the check passes if a message
+digest derived from @racket[variant] is consistent with
+@racket[intinfo].
 
-If @racket[trust-bad-digest] is a true value, the integrity check is
-skipped. In that case, @racket[($integrity-status I)] will be bound to
-@racket['trusted].
+The check fails in all other conditions.
 }
 
 
-@defstruct*[($integrity $message) ([algorithm md-algorithm/c] [status (or/c 'mismatch 'verified 'trusted 'mismatch)]) #:prefab]{
-A @tech{message} pertaining to the integrity of a @tech{package input}'s
-bytes from a source.  The meaning of the message depends on the value
-bound to the @racket[status] field:
+@defstruct*[($integrity $message) ([ok? boolean?] [stage symbol?] [intinfo any/c]) #:prefab]{
+A @tech{message} that reports the results of an integrity check, and
+the return value of an @tech{affirmation procedure} defined by
+@racketmod[xiden/integrity].
 
-@itemlist[
-@item{@racket['trusted]: The bytes were not checked. This only happens when @racket[(XIDEN_TRUST_BAD_DIGEST)] is
-@racket[#t].}
+Given an instance @racket[I], @racket[(integrity-ok? I)] is
+@racket[#t] if the check passed.
 
-@item{@racket['verified]: The hash @racket[algorithm] applied to the bytes produced the expected digest.}
+@racket[(integrity-stage I)] is @racket[eq?] to the
+@racket[object-name] of the @tech{affirmation} used to conclude the
+check. Note for auditing purposes that a stage other than
+@racket[(object-name consider-digest-match)] indicates a higher trust
+(and thus less secure) @tech{runtime configuration}.
 
-@item{@racket['missing]: No well formed integrity information was declared, making it impossible to compare digests.}
-
-@item{@racket['mismatch]: The hash @racket[algorithm] applied to the bytes produced a different digest.}
-]
-
+@racket[($integrity-info I)] is the value presented as integrity
+information for the check. It can be any Racket value.
 }
 
 
