@@ -37,17 +37,20 @@
          "workspace.rkt")
 
 (define+provide-message $no-package-info (source))
-(define+provide-message $package (info))
-(define+provide-message $package-installed $package ())
-(define+provide-message $package-in-use $package ())
-(define+provide-message $built-package-output $package (output-name))
-(define+provide-message $reused-package-output $package (output-name))
-(define+provide-message $package-not-installed $package ())
-(define+provide-message $undeclared-racket-version $package ())
-(define+provide-message $unsupported-racket-version $package (versions))
-(define+provide-message $undefined-package-output $package (output-name))
-(define+provide-message $package-malformed $package (errors))
 (define+provide-message $output-not-found (query output-name))
+
+(define+provide-message $package (info))
+(define+provide-message $package:installed $package ())
+(define+provide-message $package:in-use $package ())
+(define+provide-message $package:output $package (output-name))
+(define+provide-message $package:output:built $package:output ())
+(define+provide-message $package:output:reused $package:output ())
+(define+provide-message $package:output:undefined $package:output ())
+
+(define+provide-message $package:not-installed $package ())
+(define+provide-message $package:undeclared-racket-version $package ())
+(define+provide-message $package:unsupported-racket-version $package (versions))
+(define+provide-message $package:malformed $package (errors))
 
 (define DEFAULT_OUTPUT "default")
 
@@ -83,7 +86,7 @@
 (define (validate-requested-output pkgeval output-name)
   (if (member output-name (cons DEFAULT_OUTPUT (xiden-evaluator-ref pkgeval 'outputs null)))
       (logged-unit output-name)
-      (logged-failure ($undefined-package-output (package-name pkgeval) output-name))))
+      (logged-failure ($package:output:undefined (package-name pkgeval) output-name))))
 
 
 (define (validate-evaluator pkgeval)
@@ -113,7 +116,7 @@
 
   (if (null? errors)
       (logged-unit pkgeval)
-      (logged-failure ($package-malformed (package-name pkgeval) errors))))
+      (logged-failure ($package:malformed (package-name pkgeval) errors))))
 
 
 (define (package-name pkgeval)
@@ -123,8 +126,8 @@
 (define (report-installation-results name build-output)
   (logged-attachment build-output
                      (if (eq? build-output SUCCESS)
-                         ($package-installed name)
-                         ($package-not-installed name))))
+                         ($package:installed name)
+                         ($package:not-installed name))))
 
 
 (define (install-output! pkgeval output-name link-path)
@@ -146,7 +149,7 @@
      (define directory-record (find-path-record (output-record-path-id output-record-inst)))
      (make-addressable-link directory-record link-path)
      (values SUCCESS
-             (cons ($reused-package-output (package-name pkgeval) output-name)
+             (cons ($package:output:reused (package-name pkgeval) output-name)
                    messages)))))
 
 
@@ -179,7 +182,7 @@
      (make-addressable-link directory-record link-path)
 
      (values SUCCESS
-             (cons ($built-package-output (package-name pkgeval) output-name)
+             (cons ($package:output:built (package-name pkgeval) output-name)
                    messages)))))
 
 
@@ -289,14 +292,14 @@
       [(unsupported)
        (if (XIDEN_ALLOW_UNSUPPORTED_RACKET)
            (logged-unit pkgeval)
-           (logged-failure ($unsupported-racket-version
+           (logged-failure ($package:unsupported-racket-version
                             (package-name pkgeval)
                             (pkgeval 'racket-versions))))]
       [(undeclared)
        (if (or (XIDEN_ALLOW_UNSUPPORTED_RACKET)
                (XIDEN_ALLOW_UNDECLARED_RACKET_VERSIONS))
            (logged-unit pkgeval)
-           (logged-failure ($undeclared-racket-version (package-name pkgeval))))])))
+           (logged-failure ($package:undeclared-racket-version (package-name pkgeval))))])))
 
 
 (module+ test
@@ -314,10 +317,10 @@
     (test-case "Detect packages that do not declare a supported Racket version"
       (define pkginfo (make-dummy-pkginfo null))
       (check-equal? (get-log (check-racket-support pkginfo))
-                    (list ($undeclared-racket-version (package-name pkginfo)))))
+                    (list ($package:undeclared-racket-version (package-name pkginfo)))))
 
     (test-case "Detect packages that declare an unsupported Racket version"
       (define pkginfo (make-dummy-pkginfo (list "0.0")))
       (check-equal? (get-log (check-racket-support pkginfo))
-                    (list ($unsupported-racket-version (package-name pkginfo)
-                                                       (pkginfo 'racket-versions)))))))
+                    (list ($package:unsupported-racket-version (package-name pkginfo)
+                                                               (pkginfo 'racket-versions)))))))

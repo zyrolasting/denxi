@@ -76,25 +76,25 @@
   [($transfer-timeout name bytes-read)
    (format "Halting transfer ~s after ~a bytes. Read timed out." name bytes-read)]
 
-  [($built-package-output name output-name)
+  [($package:output:built name output-name)
    (format "~a: built ~a" name output-name)]
 
-  [($reused-package-output name output-name)
+  [($package:output:reused name output-name)
    (format "~a: reused ~a" name output-name)]
 
-  [($undeclared-racket-version info)
+  [($package:undeclared-racket-version info)
    (join-lines
     (list (format "~a does not declare a supported Racket version."
                   info)
           (format "To install this package anyway, run again with ~a"
                   (shortest-cli-flag --allow-undeclared-racket))))]
 
-  [($package-malformed name errors)
+  [($package:malformed name errors)
    (format "~a has an invalid definition. Here are the errors for each field:~n~a"
            name
            (join-lines (indent-lines errors)))]
 
-  [($unsupported-racket-version name versions)
+  [($package:unsupported-racket-version name versions)
    (join-lines
     (list (format "~a does not support this version of Racket (~a)."
                   name
