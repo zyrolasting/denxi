@@ -37,15 +37,6 @@ a command like @litchar{openssl dgst -sign ...}, then you would be
 signing an ANS.1-encoded digest. Use @litchar{openssl pkeyutl -binary
 ...} instead.
 
-@project-name verifies signature information using a multi-stage
-process that considers @tech{runtime configuration} and the available
-information. A high-trust configuration may skip signature
-verification entirely, or perform a signature verification with
-implicit trust in a public key. Both are ill-advised, but can be
-tracked if used. The output of the signature check is a
-@racket[$signature] @tech{message}, which reports if the check passed,
-and at what stage the verification process stopped.
-
 
 @section{Signature Check Bindings}
 
@@ -91,92 +82,47 @@ Recognizes an instance of @racket[signature-info] that is suitable for use in si
 Returns a @tech{workspace}-relative path to a public key file. The file may be cached.
 }
 
-@defproc[(check-signature [digest bytes?] [public-key-path path-string?] [signature-variant siginfo-variant/c]) boolean?]{
-Returns @racket[#t] if the public key located at the given path
-verifies the signature against the @racket[digest].
+@defproc[(check-signature [#:trust-public-key? trust-public-key? (-> path-string? any/c)]
+                          [#:public-key-path public-key-path path-string?]
+                          [#:trust-unsigned trust-unsigned any/c]
+                          [#:trust-bad-digest trust-bad-digest any/c]
+                          [siginfo any/c]
+                          [intinfo well-formed-integrity-info/c]) $signature?]{
+This procedure returns the result of a @deftech{signature check},
+which follows the high-level rules shown below. Each rule is processed
+in the order shown.
+
+If @racket[trust-bad-digest] is true, then the check passes regardless
+of the value set for any other argument. This is because if any data
+are trusted, then the same applies to any signature.
+
+If @racket[trust-unsigned] is true and
+@racket[(well-formed-signature-info/c siginfo)] is @racket[#f], then
+the check passes. This is because a failure to declare a signature is
+the same as not providing a signature. Trusting unsigned input means
+being okay with this.
+
+If @racket[(trust-public-key? public-key-path)] is true, both
+@racket[siginfo] and @racket[intinfo] are well-formed, and the public
+key verifies the signature against the integrity information, the check
+passes.
+
+The check fails in all other conditions.
 }
-
-@section{Authentication Factors}
-
-The @racketmodname[xiden/signature] procedures that start with
-@racket[consider-*] each offer exactly one check regarding
-authentication. They can be used independently of each other, but a
-full signature check requires use of every procedure. Failure to pass
-control through any procedure is the same as implicitly trusting
-whatever was not checked.
-
-Each procedure uses continuation-passing style to advance to other
-checks, but may instead return a @racket[$signature] instance to
-finish authentication.
-
-This approach aids testing security-critical points of the program,
-and aids auditing efforts in field use.
 
 @defstruct*[($signature $message) ([ok? boolean?]
                                    [stage symbol?]
                                    [public-key-path (or/c #f path-string?)])
                                   #:prefab]{
-A @tech{message} that reports the results of a signature check. Given
-an instance @racket[S], @racket[($signature-ok? S)] is @racket[#t] if
-the check passed.
+A @tech{message} that reports the results of a signature check.
+
+Given an instance @racket[S], @racket[($signature-ok? S)] is
+@racket[#t] if the check passed.
 
 @racket[($signature-stage S)] is @racket[eq?] to the
-@racket[object-name] of the @racketid[consider-*] procedure used to
-conclude the check. Note for auditing purposes that any other stage
-indicates a higher trust (and thus less secure) @tech{runtime
-configuration}.
+@racket[object-name] of an internal procedure used to conclude the
+check.
 
 @racket[($signature-public-key-path S)] is a path to a public key file
-used for a check, or @racket[#f] if a public key is not relevant for
-the @racket[stage].
-}
-
-@defproc[(consider-integrity-trust [#:trust-bad-digest trust-bad-digest any/c]
-                                   [siginfo any/c]
-                                   [continue (-> any/c any)]) any]{
-Returns @racket[($signature #t (object-name consider-integrity-trust)
-#f)] if @racket[trust-bad-digest] is true. Otherwise, returns
-@racket[(continue siginfo)].
-
-@bold{Premise}: If a user is willing to trust bytes regardless of the
-results of an @tech{integrity check}, then a signature check offers no
-added value.
-}
-
-@defproc[(consider-unsigned [#:trust-unsigned trust-unsigned any/c]
-                            [siginfo any/c]
-                            [continue (-> any/c any)]) any]{
-Returns @racket[($signature #t (object-name consider-unsigned) #f)] if
-@racket[trust-unsigned] is true, and @racket[siginfo] is not
-well-formed. Otherwise, returns @racket[(continue siginfo)].
-
-@bold{Premise}: It is a provider's responsibility to provide a
-well-formed signature for their data. Failing to do so is considered
-equivalent to not signing the data at all.
-}
-
-@defproc[(consider-public-key-trust [#:trust-public-key? trust-public-key? (-> path-string? any/c)]
-                                    [#:public-key-path public-key-path path-string?]
-                                    [siginfo well-formed-signature-info/c]
-                                    [continue (-> path-string? well-formed-signature-info/c any)]) any]{
-Returns @racket[($signature #f (object-name consider-public-key-trust)
-public-key-path)] if @racket[(trust-public-key? public-key-path)] is
-@racket[#f].  Otherwise, returns @racket[(continue public-key-path
-siginfo)].
-
-@bold{Premise}: Nothing stops a stranger from publishing someone
-else's public key, so a user must vet public keys on their own
-and provide affirmative consent to use any particular key for
-authentication.
-}
-
-@defproc[(consider-signature-info [public-key-path path-string?]
-                                  [intinfo well-formed-integrity-info/c]
-                                  [siginfo well-formed-signature-info/c]) $signature?]{
-Returns @racket[($signature pass? (object-name
-consider-signature-info) public-key-path)], where @racket[pass?] is
-bound to the result of a @racket[check-signature] call.
-
-This is the last possible procedure used out of the
-@racketid[consider-*] procedures.
+used for a check, or @racket[#f] if a public key is not relevant.
 }
