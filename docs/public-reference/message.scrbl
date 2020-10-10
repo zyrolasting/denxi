@@ -8,9 +8,7 @@
                     racket/serialize
                     xiden/l10n
                     xiden/message
-                    xiden/integrity
-                    xiden/printer
-                    xiden/rc]
+                    xiden/printer]
          "../shared.rkt"]
 
 @title{Messages}
