@@ -80,3 +80,35 @@ The output is defined in regards to the @tech{package definition} created using
 @item{@racket[unpack]}
 @item{@racket[void]}
 ]
+
+
+@section{Package API}
+
+@defmodule[xiden/package]
+
+@subsection{Package Messages}
+
+@defstruct*[($output-not-found $message) ([query xiden-query-string?] [output-name string?]) #:prefab]{
+A package output was not defined in the @tech{package definition} matching @racket[query].
+}
+
+
+@defstruct*[($built-package-output $message) ([name string?] [output-name string?]) #:prefab]{
+@project-name successfully processed @racket[(build output-name)] in
+the context of a @tech{package definition} module.
+}
+
+
+@defstruct*[($reused-package-output $message) ([name string?] [output-name string?]) #:prefab]{
+}
+
+
+@defstruct*[($undeclared-racket-version $message) ([name string?]) #:prefab]{
+}
+
+
+@defstruct*[($package-malformed $message) ([name string?] [errors (listof string?)]) #:prefab]{
+}
+
+@defstruct*[($unsupported-racket-version $message) ([name string?] [versions (listof string?)]) #:prefab]{
+}
