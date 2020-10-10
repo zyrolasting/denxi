@@ -19,32 +19,13 @@
           [get-public-key-path
            (-> siginfo-variant/c path?)]
           [check-signature
-           (-> bytes?
-               path-string?
-               siginfo-variant/c
-               boolean?)]
-          [consider-integrity-trust
-           (-> #:trust-bad-digest any/c
-               any/c
-               (-> any/c any)
-               any)]
-          [consider-unsigned
-           (-> #:trust-unsigned any/c
-               any/c
-               (-> any/c any)
-               any)]
-          [consider-public-key-trust
            (-> #:trust-public-key? (-> path-string? any/c)
                #:public-key-path path-string?
-               well-formed-signature-info/c
-               (-> path-string? well-formed-signature-info/c any)
-               any)]
-          [consider-signature-info
-           (-> path-string?
+               #:trust-unsigned any/c
+               #:trust-bad-digest any/c
+               (or/c #f well-formed-signature-info/c)
                well-formed-integrity-info/c
-               well-formed-signature-info/c
                $signature?)]))
-
 
 
 
@@ -67,21 +48,20 @@
 
 (define well-formed-signature-info/c
   (struct/c signature-info
-            (or/c bytes? string?)
-            (or/c bytes? string?)))
-
+            siginfo-variant/c
+            siginfo-variant/c))
 
 (define ESTIMATED_SIGNATURE_AND_PUBKEY_MAX_SIZE (* 100 1024))
 
 (define (bind-trusted-public-keys trusted)
   (λ (public-key-path)
     (for/or ([integrity trusted])
-      (passed-integrity-check? (check-integrity #:trust-bad-digest #f integrity public-key-path)))))
+      ($integrity-ok? (check-integrity #:trust-bad-digest #f integrity public-key-path)))))
 
 (define (get-public-key-path variant)
   (get-cached-file* variant ESTIMATED_SIGNATURE_AND_PUBKEY_MAX_SIZE))
 
-(define (check-signature digest public-key-path signature-variant)
+(define (verify-signature digest public-key-path signature-variant)
   (with-handlers ([exn:fail:xiden:openssl?
                    (λ (e) (if (regexp-match? #rx"Signature Verification Failure"
                                              (exn:fail:xiden:openssl-output e))
@@ -99,21 +79,19 @@
 
 
 
-; All of the below consider-* use CPS to keep cyclomatic complexity
-; low and to aid testing. The more consider-* procedures used, the
-; stronger the verification.
+; ------------------------------------------------------------------------------
+; Affirmations
+
 
 (define (consider-integrity-trust #:trust-bad-digest trust-bad-digest siginfo k)
   (if trust-bad-digest
       ($signature #t (object-name consider-integrity-trust) #f)
       (k siginfo)))
 
-(define (consider-unsigned #:trust-unsigned trust-unsigned siginfo k)
+(define (consider-signature-info #:trust-unsigned trust-unsigned siginfo k)
   (if (well-formed-signature-info/c siginfo)
       (k siginfo)
-      (if trust-unsigned
-          ($signature #t (object-name consider-unsigned) #f)
-          ($signature #f (object-name consider-unsigned) #f))))
+      ($signature trust-unsigned (object-name consider-signature-info) #f)))
 
 (define (consider-public-key-trust #:trust-public-key? trust-public-key?
                                    #:public-key-path public-key-path siginfo k)
@@ -123,12 +101,28 @@
                   (object-name consider-public-key-trust)
                   public-key-path)))
 
-(define (consider-signature-info public-key-path intinfo siginfo)
-  ($signature (check-signature (integrity-info-digest intinfo)
-                               public-key-path
-                               (signature-info-body siginfo))
-              (object-name consider-signature-info)
+(define (consider-signature public-key-path intinfo siginfo)
+  ($signature (verify-signature (integrity-info-digest intinfo)
+                                public-key-path
+                                (signature-info-body siginfo))
+              (object-name consider-signature)
               public-key-path))
+
+(define (check-signature #:trust-public-key? trust-public-key?
+                         #:public-key-path public-key-path
+                         #:trust-unsigned trust-unsigned
+                         #:trust-bad-digest trust-bad-digest
+                         siginfo
+                         intinfo)
+  (consider-integrity-trust #:trust-bad-digest trust-bad-digest siginfo
+   (λ _
+     (consider-signature-info #:trust-unsigned trust-unsigned siginfo
+      (λ _
+        (consider-public-key-trust #:trust-public-key? trust-public-key? #:public-key-path public-key-path siginfo
+          (λ _
+            (consider-signature public-key-path intinfo siginfo))))))))
+
+
 
 ; The following tests are most valuable when viewed with coverage information.
 ; If consider-* procedure expressions are uncovered with a zero-trust configuration,
@@ -194,18 +188,18 @@
                  siginfo)
 
     (test-equal? "Trust unsigned inputs if instructed, but announce doing so"
-                 (consider-unsigned #:trust-unsigned #t #f fails)
-                 ($signature #t (object-name consider-unsigned) #f))
+                 (consider-signature-info #:trust-unsigned #t #f fails)
+                 ($signature #t (object-name consider-signature-info) #f))
 
     (test-case "Detect missing signatures"
-      (check-equal? (consider-unsigned #:trust-unsigned #f #f fails)
-                    ($signature #f (object-name consider-unsigned) #f))
+      (check-equal? (consider-signature-info #:trust-unsigned #f #f fails)
+                    ($signature #f (object-name consider-signature-info) #f))
 
-      (check-equal? (consider-unsigned #:trust-unsigned #f  (signature-info #"" #f) fails)
-                    ($signature #f (object-name consider-unsigned) #f)))
+      (check-equal? (consider-signature-info #:trust-unsigned #f  (signature-info #"" #f) fails)
+                    ($signature #f (object-name consider-signature-info) #f)))
 
     (test-eq? "Continue if user does not trust unsigned inputs, and a signature is present"
-              (consider-unsigned #:trust-unsigned #f siginfo values)
+              (consider-signature-info #:trust-unsigned #f siginfo values)
               siginfo)
 
     (test-equal? "Do not implicitly trust any public key"
@@ -227,17 +221,17 @@
       (check-eq? s siginfo)
 
       (test-equal? "Find valid signature"
-                   (consider-signature-info public-key-path intinfo siginfo)
-                   ($signature #t (object-name consider-signature-info) public-key-path))
+                   (consider-signature public-key-path intinfo siginfo)
+                   ($signature #t (object-name consider-signature) public-key-path))
 
       (test-equal? "Catch tampered integrity as signature mismatch"
-                   (consider-signature-info public-key-path (integrity-info 'sha384 #"different") siginfo)
-                   ($signature #f (object-name consider-signature-info) public-key-path))
+                   (consider-signature public-key-path (integrity-info 'sha384 #"different") siginfo)
+                   ($signature #f (object-name consider-signature) public-key-path))
 
       (test-equal? "Catch tampered signature as signature mismatch"
-                   (consider-signature-info public-key-path intinfo (signature-info pubkey-bytes #"different"))
-                   ($signature #f (object-name consider-signature-info) public-key-path))
+                   (consider-signature public-key-path intinfo (signature-info pubkey-bytes #"different"))
+                   ($signature #f (object-name consider-signature) public-key-path))
 
       (test-exn "Don't hide OpenSSL errors"
                 exn:fail:xiden:openssl?
-                (λ () (consider-signature-info "garbage!" intinfo siginfo))))))
+                (λ () (consider-signature "garbage!" intinfo siginfo))))))

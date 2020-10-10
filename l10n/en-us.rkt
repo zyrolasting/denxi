@@ -138,36 +138,52 @@
            (format-cli-flags --trust-any-host))]
 
   [($signature ok? stage public-key-path)
-   (format (~a "Signature check ~a: ~a")
-           (if ok? "PASS" "FAIL")
-           (cond [(eq? stage (object-name consider-integrity-trust))
-                  "Trusting implicitly"]
-                 [(eq? stage (object-name consider-unsigned))
-                  (if ok?
-                      "Trusting unsigned"
-                      (format "Signature required (bypass: ~a)"
-                              (format-cli-flags --trust-unsigned)))]
+   (format (~a "signature ~a: ~a")
+           (if ok? "ok" "violation")
+           (case stage
+             [(consider-integrity-trust)
+              (if ok?
+                  "trusting implicitly"
+                  "requires verification")]
 
-                 [(eq? stage (object-name consider-public-key-trust))
-                  (if ok?
-                      ""
-                      (format (~a "Public key not trusted. To trust this key, add this to ~a:~n"
-                                  "(integrity 'sha384 (hex ~s))")
-                              (setting-id XIDEN_TRUSTED_PUBLIC_KEYS)
-                              (~a (encode 'hex (make-digest public-key-path 'sha384)))))]
+             [(consider-signature-info)
+              (if ok?
+                  "trusting unsigned"
+                  (format "signature required (bypass: ~a)"
+                          (format-cli-flags --trust-unsigned)))]
 
-                 [(eq? stage (object-name consider-signature-info))
-                  (if ok?
-                      "Signature verified"
-                      "Signature not verified")]))]
+             [(consider-public-key-trust)
+              (if ok?
+                  "basing trust in input on trust in public key"
+                  (format (~a "public key not trusted. To trust this key, add this to ~a:~n"
+                              "(integrity 'sha384 (hex ~s))")
+                          (setting-id XIDEN_TRUSTED_PUBLIC_KEYS)
+                          (~a (encode 'hex (make-digest public-key-path 'sha384)))))]
+
+             [(consider-signature)
+              (if ok?
+                  "signature verified"
+                  "signature not verified")]))]
 
 
-  [($integrity algorithm status)
-   (case status
-     [(missing)  "cannot check integrity without well-formed integrity information"]
-     [(trusted)  "integrity assumed"]
-     [(verified) (format "integrity verified using ~a" algorithm)]
-     [(mismatch) (format (~a "integrity violation due to ~a digest mismatch (unsafe: ~a to bypass)")
-                         algorithm
-                         (format-cli-flags --trust-any-digest))]
-     [else (format "Unknown integrity status ~s. Please inform the maintainers!" status)])])
+  [($integrity ok? stage intinfo)
+   (format (~a "integrity ~a: ~a")
+           (if ok? "ok" "violation")
+           (case stage
+             [(consider-digest-trust)
+              (if ok?
+                  "trusting implicitly"
+                  "not trusting")]
+
+             [(consider-integrity-info)
+              (if ok?
+                  "trusting implicitly"
+                  "no well-formed integrity information")]
+
+             [(consider-digest-match)
+              (format "~a integrity ~a" (integrity-info-algorithm intinfo)
+                      (if ok? "verified" (format "violation (bypass: ~a)"
+                                                 (format-cli-flags --trust-any-digest))))]
+
+             [else (format "Unknown integrity status: ~s Please inform the maintainers!"
+                           stage)]))])

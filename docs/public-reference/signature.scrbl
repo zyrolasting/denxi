@@ -67,8 +67,8 @@ An abbreviated @racket[signature-info] constructor for use in @tech{package defi
 @defproc[(bind-trusted-public-keys [trusted-keys (listof well-formed-integrity-info/c)]) (-> path-string? boolean?)]{
 Returns a procedure @racket[P], such that @racket[(P
 "/path/to/key.pem")] (for example) is @racket[#t] if the given key
-passes an integrity check for one of the @racket[integrity-info]
-structures in @racket[trusted-keys].
+passes an @tech{integrity check} for one of the
+@racket[integrity-info] structures in @racket[trusted-keys].
 
 This is used internally to determine a user's trust in a key
 before using a @tech{package input}.
@@ -86,7 +86,7 @@ Returns a @tech{workspace}-relative path to a public key file. The file may be c
                           [#:public-key-path public-key-path path-string?]
                           [#:trust-unsigned trust-unsigned any/c]
                           [#:trust-bad-digest trust-bad-digest any/c]
-                          [siginfo any/c]
+                          [siginfo (or/c #f signature-info?)]
                           [intinfo well-formed-integrity-info/c]) $signature?]{
 This procedure returns the result of a @deftech{signature check},
 which follows the high-level rules shown below. Each rule is processed
@@ -116,13 +116,11 @@ The check fails in all other conditions.
                                   #:prefab]{
 A @tech{message} that reports the results of a signature check.
 
-Given an instance @racket[S], @racket[($signature-ok? S)] is
-@racket[#t] if the check passed.
+@racket[ok?] is @racket[#t] if the check passed.
 
-@racket[($signature-stage S)] is @racket[eq?] to the
-@racket[object-name] of an internal procedure used to conclude the
-check.
+@racket[stage] is a symbol for tracing the source of corresponding
+instance.
 
-@racket[($signature-public-key-path S)] is a path to a public key file
+@racket[public-key-path] is a path to a cached public key file
 used for a check, or @racket[#f] if a public key is not relevant.
 }

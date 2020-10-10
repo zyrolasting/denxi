@@ -131,6 +131,11 @@
        (find-path-record (integrity-info-digest (input-info-integrity info)))))
 
 
+(define ($regarding-input+source input source m)
+  ($regarding ($show-string (input-info-name input))
+              ($regarding ($show-string source)
+                          m)))
+
 (define (check-input-integrity input file-record source messages)
   (define status
     (check-integrity #:trust-bad-digest (XIDEN_TRUST_BAD_DIGEST)
@@ -138,47 +143,33 @@
                      (build-workspace-path (path-record-path file-record))))
 
   (define updated-messages
-    (cons status messages))
+    (cons ($regarding-input+source input source status)
+          messages))
 
-  (if (passed-integrity-check? status)
+  (if ($integrity-ok? status)
       (check-input-signature input file-record source updated-messages)
       (values FAILURE updated-messages)))
 
 
 (define (check-input-signature input file-record source messages)
-  (define status (get-signature-status input))
+  (define siginfo (input-info-signature input))
+  (define intinfo (input-info-integrity input))
+  (define public-key-path (get-public-key-path (signature-info-pubkey siginfo)))
+  (define trust-public-key?
+    (if (XIDEN_TRUST_ANY_PUBLIC_KEY)
+        (λ (p) #t)
+        (bind-trusted-public-keys (XIDEN_TRUSTED_PUBLIC_KEYS))))
+
+  (define status
+    (check-signature #:public-key-path public-key-path
+                     #:trust-unsigned (XIDEN_TRUST_UNSIGNED)
+                     #:trust-bad-digest (XIDEN_TRUST_BAD_DIGEST)
+                     #:trust-public-key? trust-public-key?
+                     siginfo
+                     intinfo))
+
   (values (if ($signature-ok? status)
               file-record
               FAILURE)
-          (cons status messages)))
-
-; This procedure uses most of the bindings from xiden/signature
-; in terms of the runtime configuration. Look at the tests for
-; xiden/signature to better understand what is happening.
-;
-; Due to use of CPS, each siginfo is eq? to (input-info-signature input),
-; and you should read this procedure from bottom to top.
-(define (get-signature-status input)
-  (define (verify-signature-info public-key-path siginfo)
-    (consider-signature-info public-key-path
-                             (input-info-integrity input)
-                             siginfo))
-
-  (define (verify-public-key siginfo)
-    (define trust-public-key?
-      (if (XIDEN_TRUST_ANY_PUBLIC_KEY)
-          (λ (p) #t)
-          (bind-trusted-public-keys (XIDEN_TRUSTED_PUBLIC_KEYS))))
-    (consider-public-key-trust #:trust-public-key? trust-public-key?
-                               #:public-key-path (get-public-key-path (signature-info-pubkey siginfo))
-                               siginfo
-                               verify-signature-info))
-
-  (define (verify-unsigned siginfo)
-    (consider-unsigned #:trust-unsigned (XIDEN_TRUST_UNSIGNED)
-                       siginfo
-                       verify-public-key))
-
-  (consider-integrity-trust #:trust-bad-digest (XIDEN_TRUST_BAD_DIGEST)
-                            (input-info-signature input)
-                            verify-unsigned))
+          (cons ($regarding-input+source input source status)
+                messages)))

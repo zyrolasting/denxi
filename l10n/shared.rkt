@@ -12,6 +12,7 @@
    "../input-info.rkt"
    "../integrity.rkt"
    "../localstate.rkt"
+   "../message.rkt"
    "../package.rkt"
    "../printer.rkt"
    "../port.rkt"
