@@ -13,12 +13,16 @@
          (contract-out
           [message-formatter/c
            contract?]
+          [current-message-formatter
+           (parameter/c message-formatter/c)]
+          [format-message
+           (-> $message? string?)]
           [combine-message-formatters
            (->* () #:rest (listof message-formatter/c) message-formatter/c)]
           [write-message
-           (->* ($message? message-formatter/c) (output-port?) void?)]
+           (->* ($message?) (message-formatter/c output-port?) void?)]
           [mwrite-message
-           (->* ($message? message-formatter/c) (output-port?) io-return?)]))
+           (->* ($message?) (message-formatter/c output-port?) io-return?)]))
 
 (require racket/date
          racket/fasl
@@ -48,11 +52,11 @@
       m))
 
 
-(define (mwrite-message v formatter [out (current-output-port)])
+(define (mwrite-message v [formatter (current-message-formatter)] [out (current-output-port)])
   (io-return (λ () (write-message v formatter out))))
 
 
-(define (write-message v formatter [out (current-output-port)])
+(define (write-message v [formatter (current-message-formatter)] [out (current-output-port)])
   (define maybe-message (filter-output v))
   (when maybe-message
     (parameterize ([current-output-port out])
@@ -84,6 +88,11 @@
   [($show-datum v) (pretty-format #:mode 'write v)]
   [v (~s v)])
 
+(define current-message-formatter
+  (make-parameter default-message-formatter))
+
+(define (format-message m)
+  ((current-message-formatter) m))
 
 (module+ test
   (require racket/format
