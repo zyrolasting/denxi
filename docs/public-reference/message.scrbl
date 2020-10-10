@@ -95,6 +95,19 @@ Returns a @tech{message formatter} that uses each @racket[formatter]
 in the order passed.
 }
 
+@defthing[default-message-formatter message-formatter/c]{
+A @tech{message formatter} useful only for producing locale-independent fallback strings.
+}
+
+@defthing[current-message-formatter (parameter/c message-formatter/c) #:value default-message-formatter]{
+A @tech/reference{parameter} holding the @tech{message formatter} for
+use with @racket[format-message].
+}
+
+@defproc[(format-message [m $message?]) string?]{
+Equivalent to @racket[((current-message-formatter) m)].
+}
+
 @defproc[(write-message [m $message?] [format-message message-formatter/c] [out output-port? (current-output-port)]) void?]{
 Writes a @tech{message} to @racket[out] according to the values of
 @racket[(XIDEN_READER_FRIENDLY_OUTPUT)], @racket[(XIDEN_FASL_OUTPUT)],
