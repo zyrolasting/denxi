@@ -21,8 +21,8 @@ real number is an element of an exclusive interval.
   (and (> n lo) (< n hi)))
 ]
 
-If we define this process as @tech{affirmation procedures}, the
-code becomes far more verbose.
+If we define the computation with @tech{affirmations}, the code
+becomes far more verbose.
 
 @racketblock[
 (define-message $between (ok? stage))
