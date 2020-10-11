@@ -14,6 +14,7 @@
          define+provide-message
          scope-message
          call-in-message-scope
+         call-in-message-scope*
          in-message-scope
          get-message-scope)
 
@@ -48,9 +49,13 @@
       (scope-message ($regarding (car scope) m)
                      (cdr scope))))
 
-(define (call-in-message-scope m proc)
-  (with-continuation-mark mark-key (cons m (get-message-scope))
+(define (call-in-message-scope* ms proc)
+  (with-continuation-mark mark-key ms
     (proc)))
+
+(define (call-in-message-scope m proc)
+  (call-in-message-scope* (cons m (get-message-scope))
+                          proc))
 
 (define-syntax-rule (in-message-scope m body ...)
   (call-in-message-scope m (λ () body ...)))

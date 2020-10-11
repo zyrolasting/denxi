@@ -82,10 +82,17 @@ structure of the output may depend on the current
 @tech/reference{dynamic extent}.
 }
 
+
 @defproc[(call-in-message-scope [m $message] [proc (-> any)]) any]{
-Returns @racket[(proc)]. While @racket[proc] has control, @racket[(car
-(get-message-scope))] is @racket[eq?] to @racket[m].
+Equivalent to @racket[(call-in-message-scope* (cons m (get-message-scope)) proc)].
 }
+
+
+@defproc[(call-in-message-scope* [ms (listof $message?)] [proc (-> any)]) any]{
+Returns @racket[(proc)]. While @racket[proc] has control,
+@racket[(get-message-scope)] is @racket[eq?] to @racket[ms].
+}
+
 
 @defform[(in-message-scope m body ...)]{
 Expands to @racket[(call-in-message-scope m (lambda () body ...))].
