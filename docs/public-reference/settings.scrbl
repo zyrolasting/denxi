@@ -1,6 +1,6 @@
 #lang scribble/manual
 
-@(require (for-label racket/base racket/contract xiden/rc)
+@(require (for-label racket/base racket/contract xiden/rc xiden/setting)
           (for-syntax "../shared.rkt"
                       racket
                       syntax/stx
