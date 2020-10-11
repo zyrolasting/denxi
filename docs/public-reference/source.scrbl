@@ -183,24 +183,24 @@ Like @racket[copy-port], except bytes are copied from
 @racket[buffer-size] bytes at a time.
 
 @racket[transfer] applies @racket[on-status] repeatedly and
-synchronously with @racket[$transfer] @tech{messages}.  Each such
-message is tagged with the given @racket[transfer-name] to identify
-the specific transfer.
+synchronously with @racket[$transfer] @tech{messages}.
 
-@racket[transfer] sets a budget @racketid[N] for the maximum expected
-size using @racket[est-size] and @racket[max-size]. @racket[max-size]
-is the hard upper limit for total bytes to copy (typically decided by
-the user). If @racket[max-size] is @racket[+inf.0], then
-@racket[transfer] will not terminate if @racket[bytes-source] does not
-produce @racket[eof]. @racket[est-size] is an estimate for the number
-of bytes that @racket[bytes-source] will produce (typically
-@italic{not} decided by the user) . If @racket[(> est-size max-size)],
-then the transfer will not start to respect the user's budget.
-Otherwise @racketid[N] is bound to @racket[est-size] to hold
-@racket[bytes-source] accountable for the estimate.
+@racket[transfer] reads no more than @racketid[N] bytes from
+@racket[bytes-source], and will wait no longer than
+@racket[timeout-ms] for the next available byte.
 
-@racket[transfer] will copy no more than @racketid[N] bytes, and will
-wait no longer than @racket[timeout-ms] for the next available byte.
+The value of @racketid[N] is computed using @racket[est-size] and
+@racket[max-size]. @racket[max-size] is the prescribed upper limit for
+total bytes to copy. @racket[est-size] is an estimated for the number
+of bytes that @racket[bytes-source] will actually produce (this is
+typically not decided by the user). If @racket[(> est-size max-size)],
+then the transfer will not start.  Otherwise @racketid[N] is bound to
+@racket[est-size] to hold @racket[bytes-source] accountable for the
+estimate.
+
+If @racket[est-size] and @racket[max-size] are both @racket[+inf.0],
+then @racket[transfer] will not terminate if @racket[bytes-source]
+does not produce @racket[eof].
 }
 
 
@@ -208,8 +208,10 @@ wait no longer than @racket[timeout-ms] for the next available byte.
 A @tech{message} pertaining to a @racket[transfer] status.
 }
 
-@defstruct*[($transfer:scope $transfer) ([name string?]) #:prefab]{
-Represents a transfer with a given @racket[name].
+@defstruct*[($transfer:scope $transfer) ([name string?] [message (and/c $transfer? (not/c $transfer:scope?))]) #:prefab]{
+Contains a @racket[$transfer] message from a call to @racket[transfer]
+where the @racketid[transfer-name] argument was bound to
+@racket[name].
 }
 
 @defstruct*[($transfer:progress $transfer) ([bytes-read exact-nonnegative-integer?]

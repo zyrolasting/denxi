@@ -22,11 +22,13 @@
                #:timeout-ms (>=/c 0)
                void?)]))
 
-(define+provide-message $transfer (name))
-(define+provide-message $transfer-progress $transfer (bytes-read max-size timestamp))
-(define+provide-message $transfer-small-budget $transfer ())
-(define+provide-message $transfer-over-budget $transfer (size))
-(define+provide-message $transfer-timeout $transfer (bytes-read))
+(define+provide-message $transfer ())
+(define+provide-message $transfer:scope $transfer (name message))
+(define+provide-message $transfer:progress $transfer (bytes-read max-size timestamp))
+(define+provide-message $transfer:timeout $transfer (bytes-read wait-time))
+(define+provide-message $transfer:budget $transfer (allowed-max-size))
+(define+provide-message $transfer:budget:exceeded $transfer:budget (overrun-size))
+(define+provide-message $transfer:budget:rejected $transfer:budget (proposed-max-size))
 
 (define (mebibytes->bytes mib)
   (inexact->exact (ceiling (* mib 1024 1024))))
@@ -38,22 +40,23 @@
                   #:transfer-name transfer-name
                   #:est-size est-size
                   #:timeout-ms timeout-ms)
-  (define (on-status/void m) (on-status m) (void))
+  (define (on-status/void m)
+    (on-status ($transfer:scope transfer-name m))
+    (void))
+
   (if (<= est-size max-size)
       (copy-port/incremental from to
-                             #:transfer-name transfer-name
                              #:on-status on-status/void
                              #:bytes-read 0
                              #:max-size (min est-size max-size)
                              #:buffer-size buffer-size
                              #:buffer (make-bytes buffer-size 0)
                              #:timeout timeout-ms)
-      (on-status/void ($transfer-small-budget transfer-name))))
+      (on-status/void ($transfer:budget:rejected max-size est-size))))
 
 
 (define (copy-port/incremental
          from to
-         #:transfer-name transfer-name
          #:bytes-read bytes-read
          #:on-status on-status
          #:max-size max-size
@@ -64,23 +67,22 @@
          (alarm-evt (+ (current-inexact-milliseconds)
                        timeout))
          (λ (e)
-           (on-status ($transfer-timeout bytes-read transfer-name))))
+           (on-status ($transfer:timeout bytes-read timeout))))
         (handle-evt
          (read-bytes-avail!-evt buffer from)
          (λ (variant)
            (cond [(eof-object? variant)
-                  (on-status ($transfer-progress transfer-name max-size max-size (current-seconds)))
+                  (on-status ($transfer:progress max-size max-size (current-seconds)))
                   (void)]
                  [(and (number? variant) (> variant 0))
                   (define bytes-read* (+ bytes-read variant))
                   (write-bytes buffer to 0 variant)
                   ; 100% is always reported at the end. Don't double report it here.
                   (unless (equal? bytes-read* max-size)
-                    (on-status ($transfer-progress transfer-name bytes-read* max-size (current-seconds))))
+                    (on-status ($transfer:progress bytes-read* max-size (current-seconds))))
                   (if (> bytes-read* max-size)
-                      (on-status ($transfer-over-budget transfer-name max-size))
+                      (on-status ($transfer:budget:exceeded max-size  (- bytes-read* max-size)))
                       (copy-port/incremental from to
-                                             #:transfer-name transfer-name
                                              #:bytes-read bytes-read*
                                              #:on-status on-status
                                              #:max-size max-size
@@ -111,15 +113,12 @@
     (define expected-progress-val 0)
 
     (define (on-status m)
-      (check-true
-       (match m
-         [($transfer-progress
-           "anon"
-           (? (integer-in 0 size) i)
-           size
-           (? exact-integer? _))
-          #t]
-         [_ #f])))
+      (check-match m
+                   ($transfer:scope "anon"
+                                    ($transfer:progress
+                                     (? (integer-in 0 size) i)
+                                     size
+                                     (? exact-integer? _)))))
 
     (check-pred void?
                 (transfer bytes/source bytes/sink
@@ -140,7 +139,10 @@
               #:timeout-ms 1
               #:max-size 100
               #:est-size +inf.0
-              #:on-status (λ (m) (check-pred $transfer-small-budget? m))))
+              #:on-status (λ (m)
+                            (check-equal? m
+                             ($transfer:scope "anon"
+                                              ($transfer:budget:rejected 100 +inf.0))))))
 
   (test-case "Time out on reads that block for too long"
     ; Reading from a pipe in this way will block indefinitely.
@@ -152,26 +154,29 @@
                 #:max-size 100
                 #:est-size 10
                 #:on-status
-                (λ (m) (check-pred $transfer-timeout? m)))))
+                (λ (m) (check-equal?
+                        m
+                        ($transfer:scope "anon"
+                                         ($transfer:timeout 0 1)))))))
 
   (test-case "Reject reading too many bytes"
     (define bstr #"ABCDEFG")
     (define bytes/source (open-input-bytes bstr))
     (define bytes/sink (open-output-bytes))
     (define size (bytes-length bstr))
-    (define encountered-halt #f)
-    (transfer bytes/source bytes/sink
-              #:transfer-name "anon"
-              #:buffer-size 5
-              #:timeout-ms 1
-              #:max-size 1
-              #:est-size 1
-              #:on-status
-              (λ (m)
-                (match m
-                  [($transfer-over-budget name actual-size)
-                   (check-equal? name "anon")
-                   (check-equal? actual-size 1)
-                   (set! encountered-halt #t)]
-                  [_ (void)])))
-    (check-true encountered-halt)))
+    (check-true
+     (call/cc
+      (λ (return)
+        (transfer bytes/source bytes/sink
+                  #:transfer-name "anon"
+                  #:buffer-size 5
+                  #:timeout-ms 1
+                  #:max-size 1
+                  #:est-size 1
+                  #:on-status
+                  (λ (m)
+                    (match m
+                      [($transfer:scope "anon"
+                                        ($transfer:budget:exceeded 1 4))
+                       (return #t)]
+                      [_ (void)]))))))))
