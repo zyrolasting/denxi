@@ -86,7 +86,7 @@ If @racket{links}, @racket[show-command] returns @racket[(halt 0 (list
 ($show-string L) ...))], where @racket[L] is a string that shows a
 path to a symbolic link and a path to another filesystem entry
 referenced by that link. These symbolic links are special in that they
-are tracked by @racket-name for garbage collection purposes.
+are tracked by @project-name for garbage collection purposes.
 
 If @racket{workspace}, @racket[show-command] returns @racket[(halt 0
 ($show-string (path->string (workspace-directory))))].
