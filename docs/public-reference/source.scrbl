@@ -2,12 +2,16 @@
 
 @require[@for-label[racket/base
                     racket/contract
+                    xiden/cmdline
                     xiden/logged
                     xiden/port
                     xiden/rc
                     xiden/source
+                    xiden/message
+                    xiden/printer
                     xiden/url]
                     "../shared.rkt"]
+
 
 @title{Data Sourcing}
 
@@ -32,21 +36,20 @@ read. This estimate could be @racket[+inf.0] to allow unlimited
 reading, provided the user allows this in their configuration.
 }
 
-@defstruct*[fetch-state ([source string?]
-                         [name string?]
-                         [result any/c]
-                         [request-transfer request-transfer/c])
-                        #:transparent]{
-Represents the status of a @racket[fetch].
+@defstruct*[fetch-state ([source (or/c #f string?)] [result any/c]) #:transparent]{
+Represents the status of a @racket[fetch], such that @racket[source]
+is a freeform string that @racket[fetch] uses to compute the value of
+@racket[result].
+
+If @racket[source] is @racket[#f], then @racket[result] should be
+considered unusable.
 }
 
 @defproc[(fetch [name string?]
                 [sources (non-empty-listof string?)]
                 [request-transfer request-transfer/c])
                 logged?]{
-Returns a @tech{logged procedure} that returns a @racket[fetch-state].
-Any status messages associated with the fetch operation will appear in
-@tech{messages} using @racket[name].
+Returns a @tech{logged procedure} to compute a @racket[fetch-state].
 
 A fetch operation consults the given @racket[sources] in order. A
 source string can have any format. @racket[fetch] will use the string
@@ -58,13 +61,26 @@ the estimated maximum number of bytes that port is expected to
 produce. If bytes were transferred successfully, then the process is
 finished.
 
+Any @tech{message} produced by @racket[fetch] is an instance of
+@racket[$fetch]. Each instance @racketid[m] is scoped using
+@racket[($regarding ($fetch:scope name related-source) m)], where
+@racketid[related-source] is an element of @racket[sources], or
+@racket[#f]. When @racketid[related-source] is @racket[#f],
+@racketid[m] is a source-independent statement about the fetch
+operation.
+
 Assuming the returned @racket[fetch-state] is @racketid[F]:
 
 @itemlist[
-@item{@racket[(fetch-state-name F)] is @racket[name].}
-@item{@racket[(fetch-state-source F)] is the element of @racket[sources] most recently used by @racket[fetch], or @racket[#f] if no source produced bytes. @racket[#f] therefore represents failure here.}
-@item{@racket[(fetch-state-result F)] is the value returned from the most recent application of @racket[request-transfer], or @racket[#f] if @racket[(fetch-state-source F)] is @racket[#f].}
-@item{@racket[(fetch-state-request-transfer F)] is @racket[request-transfer].}
+
+@item{@racket[(fetch-state-source F)] is the element of
+@racket[sources] most recently used by @racket[fetch], or @racket[#f].
+If @racket[#f], then no source produced a value.}
+
+@item{@racket[(fetch-state-result F)] is the value returned from the
+most recent application of @racket[request-transfer], or @racket[#f]
+if @racket[(fetch-state-source F)] is @racket[#f].}
+
 ]
 
 }
@@ -113,32 +129,33 @@ Examples:
 
 @section{Data Sourcing Messages}
 
-@defstruct*[($source-fetched $message) ([source-name string?] [fetch-name string?]) #:prefab]{
-Bits were successfully read using @racket[fetch].
+@defstruct*[($fetch $message) () #:prefab]{
+A @tech{message} pertaining to @racket[fetch].
 }
 
-@defstruct*[($fetch-failure $message) ([name string?]) #:prefab]{
-No source used in a @racket[fetch] produced any bits.
+@defstruct*[($fetch:scope $message) ([fetch-name string?] [source-name (or/c string? #f)]) #:prefab]{
+Holds a user-provided name that helps trace an instance of
+@racket[$fetch] back to a particular application of @racket[fetch].
+
+If @racket[source-name] is not @racket[#f], then the clarified message
+pertains to a particular source.
 }
 
-@defstruct*[($source-method-ruled-out $message) ([source-name string?] [fetch-name string?] [method-name string?] [reason string?]) #:prefab]{
-One of the means by which @racket[fetch] finds bits did not work.
+@defstruct*[($fetch:fail $message) ([method symbol?] [reason (or/c #f string?)]) #:prefab]{
+A particular approach used to compute a value of
+@racket[fetch-state-result] failed. The reason for the failure is a
+human-readable string bound to @racket[reason].
+
+If @racket[reason] is @racket[#f], then a reason could not be inferred
+for the failure.
 }
 
-@defstruct*[($unverified-host $message) ([url string?]) #:prefab]{
-GET @racket[url] failed because the host did not pass authentication using HTTPS.
-
-See @racket[XIDEN_TRUST_UNVERIFIED_HOST].
+@defstruct*[($fetch:done $fetch) ([ok? boolean?]) #:prefab]{
+A call to @racket[fetch] finished. @racket[ok?] is @racket[#t] if the
+@racket[fetch-state-result] of the computed @racket[fetch-state] is
+not @racket[#f].
 }
 
-
-
-@require["../shared.rkt"
-         @for-label[racket/base
-                    racket/contract
-                    xiden/cmdline
-                    xiden/message
-                    xiden/printer]]
 
 @section{Transferring Bytes}
 
@@ -187,13 +204,17 @@ wait no longer than @racket[timeout-ms] for the next available byte.
 }
 
 
-@defstruct*[($transfer $message) ([name string?]) #:prefab]{
-Represents a transfer status with a given @racket[name]. The name is
-derived from a @tech{package input}'s name, or the name of a source
-used for that input.
+@defstruct*[($transfer $message) () #:prefab]{
+A @tech{message} pertaining to a @racket[transfer] status.
 }
 
-@defstruct*[($transfer-progress $transfer) ([bytes-read exact-nonnegative-integer?] [max-size (or/c +inf.0 exact-positive-integer?)] [timestamp exact-positive-integer?]) #:prefab]{
+@defstruct*[($transfer:scope $transfer) ([name string?]) #:prefab]{
+Represents a transfer with a given @racket[name].
+}
+
+@defstruct*[($transfer:progress $transfer) ([bytes-read exact-nonnegative-integer?]
+                                            [max-size (or/c +inf.0 exact-positive-integer?)]
+                                            [timestamp exact-positive-integer?]) #:prefab]{
 Represents progress transferring bytes to a local source.
 
 Unless @racket[max-size] is @racket[+inf.0], @racket[(/ bytes-read
@@ -203,27 +224,33 @@ time to complete.
 }
 
 
-@defstruct*[($transfer-small-budget $transfer) () #:prefab]{
-A request to transfer bytes was rejected because the user does not
-allow downloads of a required size.  This message also applies if a
-transfer cannot estimate the number bytes to read, and the user does
-not allow unlimited transfers.
+@defstruct*[($transfer:budget $transfer) () #:prefab]{
+A message pertaining to a transfer space budget.
+}
+
+
+@defstruct*[($transfer:budget:exceeded $message) ([size exact-positive-integer?]) #:prefab]{
+A request to transfer bytes was halted because the transfer read
+@racket[overrun-size] bytes more than @racket[allowed-max-size] bytes.
 
 See @racket[XIDEN_FETCH_TOTAL_SIZE_MB] and @racket[XIDEN_FETCH_PKGDEF_SIZE_MB].
 }
 
 
-@defstruct*[($transfer-over-budget $message) ([size exact-positive-integer?]) #:prefab]{
-A request to transfer bytes was halted because the transfer read more
-than @racket[size] bytes, which the user's configuration forbids.
+@defstruct*[($transfer:budget:rejected $message) ([proposed-max-size (or/c +inf.0 exact-positive-integer?)]
+                                                  [allowed-max-size exact-positive-integer?]) #:prefab]{
+A request to transfer bytes never started because the transfer estimated
+@racket[proposed-max-size] bytes, which exceeds the user's maximum of @racket[allowed-max-size].
 
 See @racket[XIDEN_FETCH_TOTAL_SIZE_MB] and @racket[XIDEN_FETCH_PKGDEF_SIZE_MB].
 }
 
 
-@defstruct*[($transfer-timeout $message) ([bytes-read exact-nonnegative-integer?]) #:prefab]{
+
+@defstruct*[($transfer:timeout $message) ([bytes-read exact-nonnegative-integer?] [wait-time (>=/c 0)]) #:prefab]{
 A request to transfer bytes was halted after @racket[bytes-read] bytes
-because no more bytes were available after so much time.
+because no more bytes were available after @racket[wait-time]
+milliseconds.
 
 See @racket[XIDEN_FETCH_TIMEOUT_MS].
 }

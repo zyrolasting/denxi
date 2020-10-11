@@ -110,32 +110,25 @@
                                               (or (cdr variant)
                                                   PRESUMED_MAXIMUM_RACKET_VERSION))
                                       variant)))
-                        versions)))
-          (format "To install this package anyway, run again with ~a"
-                  (format-cli-flags --assume-support))))]
+                        versions)))))]
 
-  [($source-fetched source-name fetch-name)
-   (format "Fetched ~a" (or fetch-name source-name))]
+  [($fetch:scope name source message)
+   (format "~a: ~a"
+           (if (or (equal? name source)
+                   (not source))
+               (format "fetch ~s" (~a name))
+               (format "fetch ~a from ~s" name (~a source)))
+           (format-message message))]
 
-  [($fetch-failure name)
-   (format "Failed to fetch ~a" name)]
+  [($fetch:done ok?)
+   (if ok? "done" "failed")]
 
-  [($source-method-ruled-out source-name fetch-name method-name reason)
-   (format "Ruling out ~a ~a~a"
-           method-name
-           (if (equal? source-name fetch-name)
-               (format "for source ~v" source-name)
-               (format "for ~a from source ~v" fetch-name source-name))
+  [($fetch:fail method reason)
+   (format "ruling out ~a~a"
+           method
            (if reason
                (~a ": " reason)
                ""))]
-
-  [($unverified-host url)
-   (format (~a "~a does not have a valid certificate.~n"
-               "Connections to this server are not secure.~n"
-               "To trust servers without valid certificates, use ~a.")
-           url
-           (format-cli-flags --trust-any-host))]
 
   [($signature ok? stage public-key-path)
    (format (~a "signature ~a: ~a")
