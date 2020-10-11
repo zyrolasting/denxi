@@ -51,7 +51,7 @@ as the computed value.
 ]
 
 It's fine to @racket[cons] another list of messages onto an existing
-list. This creates a @tech{messy log}. since @racket[get-log] can clean up the result.
+list. This creates a @tech{messy log}.
 
 @racketblock[
 (logged (lambda (messages)
