@@ -64,20 +64,26 @@
            (getenv "XIDEN_WORKSPACE")
            (workspace-directory))]
 
-  [($transfer-progress name bytes-read max-size timestamp)
-   (format "~a: ~a%" name (~r (* 100 (/ bytes-read max-size)) #:precision 0))]
+  [($transfer:scope name msg)
+   (format "transfer ~a: ~a" name (format-message msg))]
 
-  [($transfer-small-budget name)
-   (format "Cannot transfer ~s. The configured budget is too small." name)]
+  [($transfer:progress bytes-read max-size timestamp)
+   (~r (* 100 (/ bytes-read max-size)) #:precision 0)]
 
-  [($transfer-over-budget name size)
-   (format "Halting transfer ~s. The transfer produced more than the estimated ~a bytes." name size)]
+  [($transfer:budget:rejected allowed-max-size proposed-max-size)
+   (format "can only copy ~a bytes, but estimate is ~a bytes"
+           allowed-max-size
+           proposed-max-size)]
 
-  [($transfer-timeout name bytes-read)
-   (format "Halting transfer ~s after ~a bytes. Read timed out." name bytes-read)]
+  [($transfer:budget:exceeded allowed-max-size overrun-size)
+   (format "produced ~a more than the allowed ~a bytes"
+           overrun-size
+           allowed-max-size)]
 
-  [($package:output:built name output-name)
-   (format "~a: built ~a" name output-name)]
+  [($transfer:timeout bytes-read wait-time)
+   (format "timed out after reading and ~a bytes waiting ~a ms for more"
+           bytes-read
+           wait-time)]
 
   [($package:output:reused name output-name)
    (format "~a: reused ~a" name output-name)]
