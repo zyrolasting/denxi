@@ -11,3 +11,6 @@
 
 (define (join-lines lines)
   (string-join lines "\n"))
+
+(define (join-lines* . lines)
+  (join-lines lines))
