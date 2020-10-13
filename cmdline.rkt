@@ -23,9 +23,9 @@
 
 (require racket/cmdline
          racket/list
-         racket/format
          racket/vector
          "cli-flag.rkt"
+         "format.rkt"
          "logged.rkt"
          "message.rkt"
          "monad.rkt"

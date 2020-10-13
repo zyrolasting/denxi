@@ -6,6 +6,7 @@
 (require racket/list
          racket/runtime-path
          racket/sequence
+         "format.rkt"
          "logged.rkt"
          "message.rkt"
          "printer.rkt")
