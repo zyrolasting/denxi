@@ -88,15 +88,28 @@
            rackunit
            "setting.rkt")
 
+  (check-equal? (format-symbol-for-message 'foo) "`foo`")
+  (check-equal? (indent-lines '("a" "b")) '("  a" "  b"))
+  (check-equal? (join-lines '("a" "b" "c")) "a\nb\nc")
+  (check-equal? (join-lines* "a" "b" "c") "a\nb\nc")
+
   (define dummy ($show-string "Testing: Blah"))
+
+  (test-case "Use fallback strings for message formatting"
+    (check-equal? (format-message dummy)
+                  ($show-string-message dummy))
+    (check-equal? (format-message ($show-datum '(1 (2) 3)))
+                  (pretty-format #:mode 'write '(1 (2) 3)))
+    (check-equal? (format-message '(1 (2) 3))
+                  (~s '(1 (2) 3))))
 
   (test-case "Compose message formatters"
     (define-message $other (message))
-    (define-message-formatter a [($show-string v) v])
-    (define-message-formatter b [($show-datum  v) (~s v)])
-    (define c (combine-message-formatters a b))
-    (check-equal? (c ($show-string "foo")) "foo")
-    (check-equal? (c ($show-datum  "bar")) "\"bar\"")
-    (check-exn
-     exn:fail?
-     (λ () (c ($other "whatever"))))))
+    (define-message-formatter upper [($show-string v) (string-upcase v)])
+    (define-message-formatter writer [($show-datum v) (format-message ($show-string (~s v)))])
+    (parameterize ([current-message-formatter (combine-message-formatters upper writer)])
+      (check-equal? (format-message ($show-string "foo")) "FOO")
+      (check-equal? (format-message ($show-datum  "bar")) "\"BAR\"")
+      (check-exn
+       exn:fail?
+       (λ () (format-message ($other "whatever")))))))
