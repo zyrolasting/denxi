@@ -21,6 +21,8 @@
                  #:hi revision-number?
                  #:named-interval (or/c #f string?))
                 (values revision-number? revision-number?))]
+          [abbreviate-exact-xiden-query
+           (-> xiden-query? string?)]
           [string->xiden-query (-> string? xiden-query?)]))
 
 
@@ -117,6 +119,14 @@
                                 ":")
                    ""))
 
+(define (abbreviate-exact-xiden-query q)
+  (string-join (map (λ (acc) (acc q))
+                    (list xiden-query-provider-name
+                          xiden-query-package-name
+                          xiden-query-edition-name
+                          xiden-query-revision-min))
+               ":"))
+
 
 (define (get-xiden-query-revision-range d
                                         #:named-interval [named-interval #f]
@@ -172,6 +182,10 @@
 
 (module+ test
   (require rackunit)
+
+  (test-equal? "Abbreviate queries"
+               (abbreviate-exact-xiden-query (xiden-query "a" "b" "c" "0" "0" "ii"))
+               "a:b:c:0")
 
   (test-case "Convert between queries and strings"
     (define (verify s expected) (check-equal? (xiden-query->string (string->xiden-query s)) expected))
