@@ -113,46 +113,6 @@ A wrapper for a message that only appears to a user if
 @racket[(XIDEN_VERBOSE)] is @racket[#t].
 }
 
-@defthing[message-formatter/c chaperone-contract? #:value (-> $message? string?)]{
-A @deftech{message formatter} is a procedure that translates a
-@tech{message} to a human-readable string.
-}
-
-@defform[(message-formatter patts ...)]{
-Expands to @racket[(λ (m) (match m patts ...))]
-}
-
-
-@defform[(define-message-formatter id patts ...)]{
-Expands to @racket[(define id (message-formatter patts ...))]
-}
-
-@defform[(define+provide-message-formatter id patts ...)]{
-Expands to
-
-@racketblock[
-(begin (provide (contract-out [id message-formatter/c]))
-       (define-message-formatter id patts ...))]
-}
-
-@defproc[(combine-message-formatters [formatter message-formatter/c] ...) message-formatter/c]{
-Returns a @tech{message formatter} that uses each @racket[formatter]
-in the order passed.
-}
-
-@defthing[default-message-formatter message-formatter/c]{
-A @tech{message formatter} useful only for producing locale-independent fallback strings.
-}
-
-@defthing[current-message-formatter (parameter/c message-formatter/c) #:value default-message-formatter]{
-A @tech/reference{parameter} holding the @tech{message formatter} for
-use with @racket[format-message].
-}
-
-@defproc[(format-message [m $message?]) string?]{
-Equivalent to @racket[((current-message-formatter) m)].
-}
-
 @defproc[(write-message [m $message?] [format-message message-formatter/c] [out output-port? (current-output-port)]) void?]{
 Writes a @tech{message} to @racket[out] according to the values of
 @racket[(XIDEN_READER_FRIENDLY_OUTPUT)], @racket[(XIDEN_FASL_OUTPUT)],
