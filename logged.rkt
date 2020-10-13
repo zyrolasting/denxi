@@ -12,7 +12,12 @@
          logged-attachment
          messy-log/c
          run-log
-         get-log)
+         get-log
+         (contract-out
+          [logged-map
+           (-> (-> $message? $message?)
+               logged?
+               logged?)]))
 
 (require racket/list
          "exn.rkt"
@@ -71,8 +76,46 @@
   (define-values (_ messages) (run-log m))
   (reverse (flatten messages)))
 
+; Use to "scope" a selection of messages.
+;
+; (define pkg-build
+;   (logged-map $package
+;     (build-package ...)))
+;
+(define (logged-map f l)
+  (logged (λ (messages)
+            (let-values ([(v to-map) (run-log l null)])
+              (values v (append (map f to-map)
+                                messages))))))
+
+
 (module+ test
   (require rackunit)
+
+  (test-case "Map a selection of logged messages"
+    (define-message $wrapper     (v))
+    (define-message $wrappable   (v))
+    (define-message $unwrappable (v))
+
+    (define will-wrap
+      (logged-map (λ (m)
+                    (check-pred $wrappable? m)
+                    ($wrapper m))
+                  (logged (λ (messages)
+                            (values #t
+                                    (append (build-list 3 $wrappable)
+                                            messages))))))
+
+    (call-with-values (λ () (run-log will-wrap (build-list 3 $unwrappable)))
+                      (λ (v messages)
+                        (check-true v)
+                        (check-equal? messages
+                                      (list ($wrapper ($wrappable 0))
+                                            ($wrapper ($wrappable 1))
+                                            ($wrapper ($wrappable 2))
+                                            ($unwrappable 0)
+                                            ($unwrappable 1)
+                                            ($unwrappable 2))))))
 
   (test-case "Accumulate messages via do notation"
     (define-message $foo (v))

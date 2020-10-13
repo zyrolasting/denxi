@@ -1,6 +1,6 @@
 #lang scribble/manual
 
-@require["../shared.rkt" @for-label[racket/base racket/contract xiden/logged xiden/message]]
+@require["../shared.rkt" @for-label[racket/base racket/contract racket/function xiden/logged xiden/message]]
 
 @title{Logged Programs}
 
@@ -96,6 +96,25 @@ where @racket[V] is
 Returns @racket[(logged (λ (m) (values v (cons next m))))].
 }
 
+@defproc[(logged-map [f (-> $message? $message?)] [to-map logged?]) logged?]{
+Returns a new @racket[logged] instance such that each message produced
+by @racket[to-map] is included in the combined log using @racket[(map
+f (run-log to-map null))].
+
+Use this to “scope” messages.
+
+@racketblock[
+(define-message $build-log-entry (name message))
+
+(code:comment "hypothetical")
+(define (create-build) (logged (lambda (messages) ...)))
+
+(define build
+  (logged-map (curry $build-log-entry "my-build")
+              (create-build)))
+]
+
+}
 
 @section{Entry Points for Logged Programs}
 
