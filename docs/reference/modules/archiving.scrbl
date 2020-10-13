@@ -1,7 +1,7 @@
 #lang scribble/manual
 
 @require[@for-label[racket/base file/tar racket/contract xiden/archiving]
-          "../shared.rkt"]
+          "../../shared.rkt"]
 
 @title{Archiving}
 

@@ -10,7 +10,7 @@
                     xiden/message
                     xiden/printer
                     xiden/url]
-                    "../shared.rkt"]
+                    "../../shared.rkt"]
 
 
 @title{Data Sourcing}

@@ -16,5 +16,5 @@ data.  Data verification is addressed using an @tech{integrity check}
 and a @tech{signature check} under a @tech{runtime
 configuration}. Each check is security critical.
 
-@include-section{integrity.scrbl}
-@include-section{signature.scrbl}
+@include-section{modules/integrity.scrbl}
+@include-section{modules/signature.scrbl}

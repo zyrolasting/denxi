@@ -9,7 +9,7 @@
                     xiden/l10n
                     xiden/message
                     xiden/printer]
-         "../shared.rkt"]
+         "../../shared.rkt"]
 
 @title{Messages}
 

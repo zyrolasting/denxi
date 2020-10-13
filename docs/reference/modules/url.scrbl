@@ -1,7 +1,7 @@
 #lang scribble/manual
 
 @require[@for-label[racket/base racket/contract xiden/url]
-          "../shared.rkt"]
+          "../../shared.rkt"]
 
 @title{URLs}
 

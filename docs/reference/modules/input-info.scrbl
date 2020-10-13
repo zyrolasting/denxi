@@ -8,7 +8,7 @@
                     xiden/input-info
                     xiden/signature
                     xiden/string]
-         "../shared.rkt"]
+         "../../shared.rkt"]
 
 @title{Resolving Inputs}
 

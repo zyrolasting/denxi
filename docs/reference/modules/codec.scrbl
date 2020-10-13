@@ -6,7 +6,7 @@
                     @except-in[xiden/pkgdef #%module-begin]]
          xiden/codec
          racket/pretty
-         "../shared.rkt"]
+         "../../shared.rkt"]
 
 @title{Codec}
 

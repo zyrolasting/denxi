@@ -7,7 +7,7 @@
                     xiden/logged
                     xiden/message
                     xiden/rc]
-          "../shared.rkt"]
+          "../../shared.rkt"]
 
 @title{Command Line Interface}
 

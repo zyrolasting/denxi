@@ -1,6 +1,6 @@
 #lang scribble/manual
 
-@require["../shared.rkt"
+@require["../../shared.rkt"
          xiden/workspace
          @for-label[racket/base
                     racket/contract

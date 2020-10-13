@@ -9,7 +9,7 @@
          racket/pretty
          xiden/integrity
          @for-syntax[racket/base]
-         "../shared.rkt"]
+         "../../shared.rkt"]
 
 @title{Integrity Checking}
 

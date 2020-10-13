@@ -6,7 +6,7 @@
                     racket/string
                     xiden/format
                     xiden/message]
-                    "../shared.rkt"]
+                    "../../shared.rkt"]
 
 
 @title{Formatting}

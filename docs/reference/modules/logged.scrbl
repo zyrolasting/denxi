@@ -1,6 +1,6 @@
 #lang scribble/manual
 
-@require["../shared.rkt" @for-label[racket/base racket/contract racket/function xiden/logged xiden/message]]
+@require["../../shared.rkt" @for-label[racket/base racket/contract racket/function xiden/logged xiden/message]]
 
 @title{Logged Programs}
 
