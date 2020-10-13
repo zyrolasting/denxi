@@ -6,6 +6,9 @@
 (require racket/format
          racket/string)
 
+(define (format-symbol-for-message i)
+  (format "`~a`" i))
+
 (define (indent-lines lines)
   (map (λ (s) (~a "  " s)) lines))
 
