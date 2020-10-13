@@ -85,27 +85,53 @@
            bytes-read
            wait-time)]
 
-  [($package:output:reused name output-name)
-   (format "~a: reused ~a" name output-name)]
+  [($package:log query output-name messages)
+   (format "~a, output ~a~n~a"
+           query
+           output-name
+           (join-lines (map format-message messages)))]
 
-  [($package:undeclared-racket-version info)
+  [($package:output:built)
+   "built output"]
+
+  [($package:output:reused)
+   "reused output"]
+
+  [($package:output:undefined)
+   "requested output is not defined"]
+
+  [($package:definition:value:missing id)
+   (format "~a is not defined" (format-symbol-for-message id))]
+
+  [($package:definition:value:invalid id value)
+   (format "expected ~a for ~a, but got ~e"
+           (case id
+             [(provider package edition)
+              "a non-empty string"]
+             [(racket-versions)
+              "a list of Racket version range pairs, e.g. '((\"7.0\" . \"7.8\") ...) (Use #f to remove bound)."]
+             [(revision-names)
+              "a list of non-empty strings, where each string has at least one non-digit."]
+             [(outputs)
+              "a list of non-empty strings"]
+             [(inputs)
+              "a list of well-formed input-info instances"]
+             [(revision-number)
+              "an exact nonnegative integer"])
+           (format-symbol-for-message id)
+           value)]
+
+  [($package:definition:undeclared-racket-version)
    (join-lines
-    (list (format "~a does not declare a supported Racket version."
-                  info)
-          (format "To install this package anyway, run again with ~a"
+    (list (format "does not declare supported Racket versions (bypass: ~a)"
                   (shortest-cli-flag --allow-undeclared-racket))))]
 
-  [($package:malformed name errors)
-   (format "~a has an invalid definition. Here are the errors for each field:~n~a"
-           name
-           (join-lines (indent-lines errors)))]
-
-  [($package:unsupported-racket-version name versions)
+  [($package:definition:unsupported-racket-version versions)
    (join-lines
-    (list (format "~a does not support this version of Racket (~a)."
-                  name
-                  (version))
-          (format "Supported versions (ranges are inclusive):~n~a~n"
+    (list (format "does not support Racket ~a (bypass: ~a)"
+                  (version)
+                  (format-cli-flags --assume-support))
+          (format "supported versions (ranges are inclusive):~n~a~n"
                   (join-lines
                    (map (λ (variant)
                           (format "  ~a"

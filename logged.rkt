@@ -14,9 +14,14 @@
          run-log
          get-log
          (contract-out
+          [logged-combine
+           (-> logged?
+               (-> list? list? list?)
+               logged?)]
+
           [logged-map
-           (-> (-> $message? $message?)
-               logged?
+           (-> logged?
+               (-> $message? $message?)
                logged?)]))
 
 (require racket/list
@@ -82,29 +87,35 @@
 ;   (logged-map $package
 ;     (build-package ...)))
 ;
-(define (logged-map f l)
+(define (logged-map l f)
+  (logged-combine l (λ (to-map messages)
+                      (append (map f to-map)
+                              messages))))
+
+(define (logged-combine l f)
   (logged (λ (messages)
-            (let-values ([(v to-map) (run-log l null)])
-              (values v (append (map f to-map)
-                                messages))))))
+            (let-values ([(v to-wrap) (run-log l null)])
+              (values v
+                      (f to-wrap
+                         messages))))))
 
 
 (module+ test
   (require rackunit)
 
-  (test-case "Map a selection of logged messages"
+  (test-case "Wrap a selection of logged messages"
     (define-message $wrapper     (v))
     (define-message $wrappable   (v))
     (define-message $unwrappable (v))
 
     (define will-wrap
-      (logged-map (λ (m)
-                    (check-pred $wrappable? m)
-                    ($wrapper m))
-                  (logged (λ (messages)
+      (logged-map (logged (λ (messages)
                             (values #t
                                     (append (build-list 3 $wrappable)
-                                            messages))))))
+                                            messages))))
+                  (λ (m)
+                    (check-pred $wrappable? m)
+                    ($wrapper m))))
 
     (call-with-values (λ () (run-log will-wrap (build-list 3 $unwrappable)))
                       (λ (v messages)

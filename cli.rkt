@@ -101,13 +101,17 @@
          (fold-transaction-actions
           flags
           (hasheq XIDEN_INSTALL_ABBREVIATED_SOURCES
-                  install-package/abbreviated
+                  (match-lambda [source
+                                 (run-package source)])
                   XIDEN_INSTALL_DEFAULT_SOURCES
                   (match-lambda [(list link-path source)
-                                 (install-package/default link-path source)])
+                                 (run-package source
+                                              #:link-path link-path)])
                   XIDEN_INSTALL_SOURCES
                   (match-lambda [(list link-path output-name source)
-                                 (install-package link-path output-name source)]))))
+                                 (run-package source
+                                              #:output-name output-name
+                                              #:link-path link-path)]))))
 
        (if (null? actions)
            (halt 0 null)

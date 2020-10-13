@@ -92,7 +92,7 @@
          "workspace.rkt")
 
 (define (install link-path output-name pkgdef)
-  (define result (run+print-log (install-package link-path output-name pkgdef)))
+  (define result (run+print-log (run-package link-path output-name pkgdef)))
   (if (eq? result FAILURE)
       (raise-user-error 'install
                         "Could not install package output ~a"

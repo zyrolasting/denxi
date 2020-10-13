@@ -2,11 +2,11 @@
 
 @require["../shared.rkt" @for-label[@except-in[xiden/pkgdef #%module-begin] racket/base]]
 
-@title[#:tag "new-pkg"]{Defining a Package}
+@title[#:tag "new-pkg"]{Defining Packages}
 
-@project-name builds software using @tech{package definitions}. In this section
-we will write our own step by step. Alternatively, you can skip to
-@secref{finished-definition}.
+@project-name builds software using @tech{package definitions}. In
+this section we will write our own step by step. Alternatively, you
+can skip to @secref{finished-definition}.
 
 @section{Create a New Definition File}
 

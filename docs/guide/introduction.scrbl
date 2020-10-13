@@ -9,11 +9,12 @@ control. Many programmers do not do this to avoid overhead, but it raises the
 issue of how you can reproduce dependencies as if they @italic{were} checked
 in. @project-name uses Racket to solve this problem.
 
-In the context of @|project-name|, a @deftech{package} is a program.
-Dependencies, setup instructions, scripts, and the output of @italic{other}
-packages are all inputs to a package. The outputs of a package are
-content-addressable files built from the inputs within a transaction. If you
-have used Guix or Nix, this will seem familiar.
+In the context of @|project-name|, a @deftech{package} is an actively
+running program. The program itself is a @tech{package definition}.
+Dependencies, setup instructions, scripts, and the output of
+@italic{other} packages are all inputs to a package. The outputs of a
+package are content-addressable files built from the inputs within a
+transaction. If you have used Guix or Nix, this will seem familiar.
 
 This approach has several benefits. It makes a package installation atomic,
 meaning that an installation failure does not impact your Racket installation
