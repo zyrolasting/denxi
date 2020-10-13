@@ -158,7 +158,7 @@
   [($fetch:fail method reason)
    (format "ruling out ~a~a"
            method
-           (if reason
+           (if (and (XIDEN_VERBOSE) reason)
                (~a ": " reason)
                ""))]
 
