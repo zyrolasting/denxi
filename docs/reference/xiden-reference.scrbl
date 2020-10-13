@@ -8,7 +8,7 @@
 
 This is the API reference for @|project-name|.
 
-For maintenance information, see @other-doc['(lib "xiden/docs/private-reference/xiden-private-reference.scrbl")].
+For maintenance information, see @other-doc['(lib "xiden/docs/maintenance/xiden-maintenance.scrbl")].
 For a high-level overview, see @other-doc['(lib "xiden/docs/guide/xiden-guide.scrbl")].
 
 @bold{Warning}: The API is currently unstable.

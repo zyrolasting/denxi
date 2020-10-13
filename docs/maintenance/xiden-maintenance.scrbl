@@ -11,7 +11,7 @@ implemented the way they are. That is, the context that cannot be
 adequately summarized in code comments.
 
 If you were looking for the API reference, see @other-doc['(lib
-"xiden/docs/public-reference/xiden-public-reference.scrbl")]. If you
+"xiden/docs/reference/xiden-reference.scrbl")]. If you
 want a high-level overview of what @project-name is, see
 @other-doc['(lib "xiden/docs/guide/xiden-guide.scrbl")].
 
