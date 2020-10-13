@@ -1,6 +1,6 @@
 #lang scribble/manual
 
-@require[@for-label[racket/base racket/contract xiden/archiving]
+@require[@for-label[racket/base file/tar racket/contract xiden/archiving]
           "../shared.rkt"]
 
 @title{Archiving}
@@ -10,7 +10,7 @@
 @racketmodname[xiden/archiving] provides generic procedures for
 combining multiple files into a single file, and vice-versa.
 
-@defproc[(pack [paths (listof path-string?)] [out output-port]) void?]{
+@defproc[(pack [paths (listof path-string?)] [out output-port?]) void?]{
 A simplified interface for @racket[tar->output].
 }
 
