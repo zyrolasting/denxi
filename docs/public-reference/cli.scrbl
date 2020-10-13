@@ -1,6 +1,12 @@
 #lang scribble/manual
 
-@require[@for-label[racket/base racket/contract xiden/url]
+@require[@for-label[racket/base
+                    racket/contract
+                    xiden/cmdline
+                    xiden/cli
+                    xiden/logged
+                    xiden/message
+                    xiden/rc]
           "../shared.rkt"]
 
 @title{Command Line Interface}
@@ -11,7 +17,7 @@
 @|project-name|. Each handler uses continuation passing style to
 return program output and an exit code.
 
-@racketmodname[(submod xiden/cli main)] is the entry point for the
+@racket[(submod xiden/cli main)] is the entry point for the
 @litchar{xiden} and @litchar{raco zcpkg} commands. It only calls
 the default @tech/reference{exit handler} using the output
 of @racket[entry-point] like so:
@@ -22,7 +28,7 @@ of @racket[entry-point] like so:
                      (get-message-formatter)
                      top-level-cli)))]
 
-@defthing[after-program/c chaperone-contract? #:value (-> exit-code/c (or/c $message? (listof $message?)) exit-code/c)]{
+@defthing[after-program/c chaperone-contract? #:value (-> exit-code/c messy-log/c exit-code/c)]{
 After a program finishes running, an @racket[after-program/c]
 procedure is called for its effect.  In normal operation, it must
 return the first argument, the exit code, unchanged. The
@@ -68,7 +74,7 @@ Returns @racket[(halt 0 ($finished-collecting-garbage (xiden-collect-garbage)))]
 }
 
 
-@defproc[(gc-command [args arguments/c] [halt after-program/c]) exit-code/c]{
+@defproc[(show-command [args arguments/c] [halt after-program/c]) exit-code/c]{
 @racket[show-command] accepts no flags. The first argument @racket[A] determines its behavior:
 
 If no case shown below fits, then @racket[show-command] returns
