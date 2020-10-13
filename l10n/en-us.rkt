@@ -161,8 +161,8 @@
 
              [(consider-signature)
               (if ok?
-                  "signature verified"
-                  "signature not verified")]))]
+                  "verified"
+                  "unverified")]))]
 
 
   [($integrity ok? stage intinfo)
