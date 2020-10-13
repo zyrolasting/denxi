@@ -92,10 +92,12 @@
                (~a (xiden-evaluator-ref pkgeval 'revision-number ""))
                "ii"))
 
+
 (define (query-ref s def)
   (if (non-empty-string? s)
       s
       def))
+
 
 (define (xiden-query-string? s)
   (with-handlers ([values (const #f)])
