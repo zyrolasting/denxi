@@ -66,7 +66,8 @@
 ; output.
 (define-syntax-rule (with-rc flags body ...)
   (with-handlers ([exn:fail? (λ (e) (values 0 ($show-string (exn-message e))))])
-    (with-xiden-rcfile (call-with-bound-cli-flags flags (λ () body ...)))))
+    (call-with-rcfile
+     (λ () (call-with-bound-cli-flags flags (λ () body ...))))))
 
 
 ; Base bindings follow

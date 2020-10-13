@@ -101,12 +101,45 @@ the method before it.
 
 @item{Do nothing. Every setting has a hard-coded default.}
 @item{Set an environment variable, e.g. @litchar{export XIDEN_VERBOSE="#t"}.}
-@item{Open @litchar{etc/xiden.rkt} in a @tech{workspace} and add @racket[(define XIDEN_VERBOSE #t)].}
+@item{Open @tech{workspace} and add @racket[(define XIDEN_VERBOSE #t)].}
 @item{When applicable, use @litchar{--XIDEN_VERBOSE '#t'} in a command line (or an alternative flag).}
 @item{In a program, use @racket[(parameterize ([(setting-derived-parameter XIDEN_VERBOSE) #t]) ...)].}
 
 ]
 
+@subsection{Runtime Configuration File}
+
+A @deftech{runtime configuration file}, or @deftech{rcfile}, is a
+@racketmodname[xiden/pkgdef] Racket module. It defines values for a
+@tech{runtime configuration} using identifiers that match the
+@racket[setting-id] of each defined @tech{setting}. e.g.
+@racket[(define XIDEN_VERBOSE #t)].
+
+The @deftech{target runtime configuration file}, or @deftech{target
+rcfile}, is located at @litchar{etc/xiden.rkt} with respect to the
+@tech{target workspace}.
+
+
+@subsection{Runtime Configuration API}
+
+@defthing[XIDEN_SETTINGS (hash/c symbol? setting? #:immutable #t)]{
+A hash table of all defined @tech{settings}, such that the key for
+each setting is @racket[(setting-id S)].
+}
+
+@defproc[(call-with-rcfile [thunk (-> any)]) any]{
+Calls @racket[thunk] in a @tech/reference{parameterization} where
+fallback values for @tech{settings} consider values from the
+@tech{target rcfile}.
+
+Each call to @racket[call-with-rcfile] reads the content of the
+@tech{target rcfile} into memory.
+}
+
+@defproc[(dump-xiden-settings) (hash/c symbol? any/c)]{
+Returns a hash table containing the value of every @tech{setting} in
+@racket[XIDEN_SETTINGS] in the current @tech/reference{parameterization}.
+}
 
 @subsection{Setting Reference}
 

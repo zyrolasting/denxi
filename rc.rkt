@@ -4,21 +4,13 @@
 
 (require "contract.rkt")
 (provide
- with-xiden-rcfile
  (contract-out
-  [setting-ref
-   (-> (or/c string? symbol?)
-       (or/c setting? #f))]
+  [call-with-rcfile
+   (-> (-> any) any)]
   [XIDEN_SETTINGS
    (hash/c symbol? setting? #:immutable #t)]
-  [get-xiden-settings-path
-   (-> complete-path?)]
-  [load-xiden-rcfile
-   (-> (-> any/c any))]
   [dump-xiden-settings
-   (-> (hash/c symbol? any/c))]
-  [save-xiden-settings!
-   (-> any)]))
+   (-> (hash/c symbol? any/c))]))
 
 
 (require racket/function
@@ -72,14 +64,6 @@
         [else (read (open-input-string env))]))
 
 
-(define (setting-ref name)
-  (hash-ref XIDEN_SETTINGS
-            (if (string? name)
-                (string->symbol name)
-                name)
-            #f))
-
-
 (define (get-xiden-settings-path)
   (build-workspace-path "etc/xiden.rkt"))
 
@@ -92,9 +76,9 @@
         void)))
 
 
-(define-syntax-rule (with-xiden-rcfile body ...)
+(define (call-with-rcfile proc)
   (parameterize ([current-xiden-rcfile-cache (load-xiden-rcfile)])
-    body ...))
+    (proc)))
 
 
 (define (dump-xiden-settings)
@@ -239,17 +223,18 @@
 
     (test-case "Override hard-coded value with rcfile"
       (XIDEN_PRIVATE_KEY_PATH "foo" save-xiden-settings!)
-      (with-xiden-rcfile (check-equal? (XIDEN_PRIVATE_KEY_PATH) "foo")))
+      (call-with-rcfile
+       (λ () (check-equal? (XIDEN_PRIVATE_KEY_PATH) "foo"))))
 
     (test-case "Override rcfile value with envvar value"
       (dynamic-wind (λ () (putenv "XIDEN_PRIVATE_KEY_PATH" "\"bar\""))
                     (λ () (check-equal? (XIDEN_PRIVATE_KEY_PATH) "bar"))
                     (λ ()
                       (putenv "XIDEN_PRIVATE_KEY_PATH" "")
-                      (with-xiden-rcfile
-                        (test-equal? "Do not use empty envvar strings as a source for settings"
-                                     (XIDEN_PRIVATE_KEY_PATH)
-                                     "foo"))))))
+                      (call-with-rcfile
+                        (λ () (test-equal? "Do not use empty envvar strings as a source for settings"
+                                           (XIDEN_PRIVATE_KEY_PATH)
+                                           "foo")))))))
 
   (test-workspace "Lazily validate fallback values"
     (test-exn "Reject invalid values from ennvar"
