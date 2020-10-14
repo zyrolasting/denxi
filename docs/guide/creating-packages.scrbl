@@ -162,7 +162,8 @@ affected by those changes. That's as good as it gets.
 If you still prefer Semantic Versioning after reading all that, then
 you can always define an @tech{edition} that uses semantic version
 strings as @tech{revision names} and use a plugin that resolves
-Semantic Version queries. See @secref{plugin} for more information.
+Semantic Version queries. See @secref["Plugins" #:doc '(lib
+"xiden/docs/reference/xiden-reference.scrbl")] for more information.
 
 
 @section{Declare Supported Racket Versions}
