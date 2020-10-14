@@ -8,6 +8,7 @@
                     racket/serialize
                     xiden/l10n
                     xiden/message
+                    xiden/port
                     xiden/printer]
          "../../shared.rkt"]
 
