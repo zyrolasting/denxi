@@ -26,6 +26,7 @@ For a high-level overview, see @other-doc['(lib "xiden/docs/guide/xiden-guide.sc
 @include-section{modules/input-info.scrbl}
 @include-section{modules/cmdline.scrbl}
 @include-section{modules/cli.scrbl}
+@include-section{modules/plugin.scrbl}
 @include-section{modules/format.scrbl}
 @include-section{modules/url.scrbl}
 @include-section{modules/string.scrbl}

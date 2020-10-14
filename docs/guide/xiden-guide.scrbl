@@ -28,5 +28,4 @@ If you need the reference material, see  @other-doc['(lib "xiden/docs/reference/
 @include-section{cli.scrbl}
 @include-section{queries.scrbl}
 @include-section{security.scrbl}
-@include-section{plugin.scrbl}
 @include-section{project.scrbl}

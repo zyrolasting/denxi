@@ -9,12 +9,12 @@
 
 (provide
  (contract-out
-  [load-plugin
+  [load-from-plugin
    (-> symbol? (-> any/c) (-> exn? any) any/c)]))
 
 (require "rc.rkt")
 
-(define (load-plugin key fail-thunk on-load-failure)
+(define (load-from-plugin key fail-thunk on-load-failure)
   (define maybe-path (XIDEN_PLUGIN_MODULE))
   (if maybe-path
       (with-handlers ([exn:fail? on-load-failure])

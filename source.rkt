@@ -225,7 +225,7 @@
 
 (define (fetch-source/plugin source request-transfer)
   (define (mod-fallback . _) (const #f))
-  ((load-plugin 'fetch-source mod-fallback mod-fallback)
+  ((load-from-plugin 'fetch-source mod-fallback mod-fallback)
    source request-transfer))
 
 
