@@ -19,6 +19,7 @@
          "sandbox.rkt"
          "signature.rkt"
          "source.rkt"
+         "version.rkt"
          "workspace.rkt")
 
 (define+provide-message $no-package-info (source))
@@ -85,7 +86,7 @@
     (do (assert 'provider string?)
         (assert 'package string?)
         (assert 'edition string?)
-        (assert 'revision-number exact-nonnegative-integer?)
+        (assert 'revision-number revision-number?)
         (assert 'inputs (listof well-formed-input-info/c))
         (assert 'build (λ (p) (and (procedure? p) (= 1 (procedure-arity p)))))
         (assert #:optional #t 'outputs (listof string?))
