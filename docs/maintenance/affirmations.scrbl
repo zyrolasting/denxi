@@ -53,7 +53,7 @@ isn't. If we see @racket[(object-name affirm-<)], then we know that
 the number was too large for the interval without using @racket[<] or
 keeping a reference to @racketid[hi].
 
- In the event an @tech{affirmation procedure} allows a dangerous
-operation, a program log will point to it.  The goal is to offer
-transparent logs, reduced debugging time, and more accessible testing
-at the expense of more verbose code.
+In the event an @tech{affirmation} allows a dangerous operation, a
+program log will point to it.  The goal is to offer transparent logs,
+reduced debugging time, and more accessible testing at the expense of
+more verbose code.
