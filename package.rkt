@@ -19,6 +19,7 @@
          "sandbox.rkt"
          "signature.rkt"
          "source.rkt"
+         "string.rkt"
          "version.rkt"
          "workspace.rkt")
 
