@@ -39,23 +39,25 @@
           [hex abbreviated-decode-procedure/c]))
 
 
-
-
 (define (coerce-string v)
   (if (string? v)
       v
       (bytes->string/utf-8 v)))
+
 
 (define (coerce-bytes v)
   (if (bytes? v)
       v
       (string->bytes/utf-8 v)))
 
+
 (define xiden-encodings
   '(base64 base32 hex colon-separated-hex))
 
+
 (define xiden-encoding/c
   (apply or/c xiden-encodings))
+
 
 (define (encoded-file-name variant)
   (let ([as-string (coerce-string (encode 'base32 variant))])
@@ -77,10 +79,10 @@
         ":")]
       [(base32) (base32-encode-bytes bstr)]
       [(base64) (base64-encode bstr #"")]))
-
   (if (bytes? variant)
       (coerce-bytes output)
       (coerce-string output)))
+
 
 (define (decode encoding encoded)
   (case encoding
