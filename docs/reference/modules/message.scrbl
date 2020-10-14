@@ -38,9 +38,10 @@ an overrun.
 A message may require another message to serve as context.  A type
 heirarchy is unhelpful for this purpose, since
 @racket[$transfer:budget:exceeded] could apply to a download in the
-context of a build process or a verification process. Having a single
-type this kind of variation can be confusing, so @project-name instead
-composes messages to create machine-readable documents.
+context of a build process or a verification process. It is difficult
+to define a single type to capture this kind of variation, so
+@project-name instead composes messages into machine-readable
+documents.
 
 
 @defstruct*[$message () #:prefab]{
