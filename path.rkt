@@ -11,11 +11,6 @@
 (define (../ path)
   (simplify-path (build-path path 'up)))
 
-(define (strip-ups path)
-  (define filtered (filter-not (curry eq? 'up) (explode-path path)))
-  (and (not (null? filtered))
-       (apply build-path filtered)))
-
 (define (path-prefix? to-check prefix-pathy)
   (define maybe-prefixed (explode-path (simplify-path (path->complete-path to-check))))
   (define pref (explode-path (simplify-path (path->complete-path prefix-pathy))))
