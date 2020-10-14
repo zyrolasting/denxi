@@ -138,21 +138,6 @@ Otherwise, @racket[write-message] does the following:
 }
 
 
-@section{High-level Messages}
-
-@defstruct*[($fail $message) ([v any/c]) #:prefab]{
-Represents a general failure. When
-@racket[XIDEN_READER_FRIENDLY_OUTPUT] is @racket[#f], this message is
-presented differently depending value of @racket[v]:
-
-If @racket[(exn? v)], then @racket[($fail v)] is shown as @racket[(exn->string v)].
-
-If @racket[(string? v)], then @racket[($fail v)] is shown as @racket[v].
-
-Otherwise, @racket[($fail v)] is shown as @racket[(~s v)].
-}
-
-
 @section{Localization}
 
 @defmodule[xiden/l10n]
