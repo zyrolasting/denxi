@@ -7,7 +7,7 @@
                     racket/path
                     xiden/workspace]]
 
-@title{Workspace}
+@title{Workspaces}
 
 @defmodule[xiden/workspace]
 
