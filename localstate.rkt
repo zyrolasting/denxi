@@ -103,6 +103,7 @@
          "port.rkt"
          "query.rkt"
          "string.rkt"
+         "version.rkt"
          "workspace.rkt")
 
 
@@ -796,12 +797,10 @@
        (or (find-revision-number v edition-id)
            (fail)))
 
-     (define-values (lo hi)
-       (with-handlers ([exn:fail? fail])
-         (get-xiden-query-revision-range #:named-interval "db"
-                                         #:lo (revision->revision-number revision-min)
-                                         #:hi (revision->revision-number revision-max)
-                                         query)))
+     (define-values (lo hi) (get-resolved-revision-interval query))
+
+     (when (< hi lo)
+       (fail))
 
      (define sql
        (~a "select O.name, R.id, R.number, P.id, P.path from "

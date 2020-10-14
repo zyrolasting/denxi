@@ -6,54 +6,30 @@
 
 (provide (struct-out xiden-query)
          (contract-out
-          [revision-string? predicate/c]
-          [revision-number? predicate/c]
-          [revision-number-string? predicate/c]
-          [well-formed-xiden-query/c flat-contract?]
+          [well-formed-xiden-query? predicate/c]
+          [resolved-xiden-query? predicate/c]
+          [malformed-xiden-query? predicate/c]
+          [exact-xiden-query? predicate/c]
           [xiden-query-string? predicate/c]
           [xiden-query-variant? predicate/c]
           [coerce-xiden-query (-> xiden-query-variant? xiden-query?)]
-          [xiden-query->string (-> xiden-query? string?)]
+          [xiden-query->string (-> well-formed-xiden-query? string?)]
           [package-evaluator->xiden-query (-> (-> any/c any) xiden-query?)]
-          [get-xiden-query-revision-range
-           (->* (xiden-query?)
-                (#:lo revision-number?
-                 #:hi revision-number?
-                 #:named-interval (or/c #f string?))
-                (values revision-number? revision-number?))]
-          [abbreviate-exact-xiden-query
-           (-> xiden-query? string?)]
+          [abbreviate-exact-xiden-query (-> exact-xiden-query? string?)]
+          [get-resolved-revision-interval (-> resolved-xiden-query?
+                                              (values revision-number?
+                                                      revision-number?))]
           [string->xiden-query (-> string? xiden-query?)]))
 
 
-(require racket/format
-         racket/function
+(require racket/function
          racket/match
-         racket/generator
-         racket/match
-         racket/sequence
-         "exn.rkt"
+         "format.rkt"
+         "logged.rkt"
+         "message.rkt"
          "sandbox.rkt"
-         "string.rkt")
-
-(define-exn exn:fail:xiden:invalid-revision-interval exn:fail:xiden (lo hi))
-
-(define revision-number-pattern-string "\\d+")
-
-(define revision-number-string?
-  (make-rx-predicate revision-number-pattern-string))
-
-(define revision-number?
-  exact-nonnegative-integer?)
-
-(define revision-string?
-  (or/c revision-number-string?
-        file-name-string?))
-
-(define (coerce-revision-number n)
-  (if (revision-number-string? n)
-      (string->number n)
-      n))
+         "string.rkt"
+         "version.rkt")
 
 (struct xiden-query
   (provider-name
@@ -64,7 +40,8 @@
    interval-bounds)
   #:transparent)
 
-(define well-formed-xiden-query/c
+
+(define well-formed-xiden-query?
   (struct/c xiden-query
             non-empty-string?
             non-empty-string?
@@ -72,6 +49,24 @@
             string?
             string?
             (or/c "" "ii" "ee" "ie" "ei")))
+
+
+(define malformed-xiden-query?
+  (negate well-formed-xiden-query?))
+
+
+(define (resolved-xiden-query? v)
+  (and (well-formed-xiden-query? v)
+       (revision-number-string? (xiden-query-revision-min v))
+       (revision-number-string? (xiden-query-revision-max v))))
+
+
+(define (exact-xiden-query? v)
+  (and (resolved-xiden-query? v)
+       (equal? (xiden-query-revision-min v)
+               (xiden-query-revision-max v))
+       (equal? (xiden-query-interval-bounds v)
+               "ii")))
 
 
 (define (xiden-query-variant? v)
@@ -101,7 +96,7 @@
 
 (define (xiden-query-string? s)
   (with-handlers ([values (const #f)])
-    (well-formed-xiden-query/c (string->xiden-query s))))
+    (well-formed-xiden-query? (string->xiden-query s))))
 
 
 (define (string->xiden-query s)
@@ -130,56 +125,24 @@
                ":"))
 
 
-(define (get-xiden-query-revision-range d
-                                        #:named-interval [named-interval #f]
-                                        #:lo [lo (string->number (xiden-query-revision-min d))]
-                                        #:hi [hi (string->number (xiden-query-revision-max d))])
-  (define bounds (query-ref (xiden-query-interval-bounds d) "ii"))
-  (define (->bool i)
-    (define flag (string-ref bounds i))
-    (match flag
-      [#\i #f]
-      [#\e #t]
-      [_ (raise-argument-error 'string->xiden-query
-                               (format "\"i\" or \"e\" for ~a" named-interval)
-                               flag)]))
-  (get-inclusive-revision-range #:named-interval named-interval
-                                (->bool 0)
-                                (->bool 1)
-                                lo
-                                hi))
+(define (boundary-flag->boolean flag)
+  (case flag
+    [(#\i) #f]
+    [(#\e) #t]
+    [else (raise-argument-error 'boundary-flag->boolean
+                                "#\\i or #\\e"
+                                flag)]))
+
+(define (boolean->boundary-flag flag)
+  (if flag #\e #\i))
 
 
-(define (get-inclusive-revision-range #:named-interval [named-interval #f]
-                                      min-exclusive?
-                                      max-exclusive?
-                                      lo hi)
-  (define (add1-if do-it? low-num)
-    (if do-it? (add1 low-num) low-num))
-  (define (sub1-if do-it? hi-num)
-    (if do-it? (sub1 hi-num) hi-num))
-
-  (define adjusted-lo (add1-if min-exclusive? (coerce-revision-number lo)))
-  (define adjusted-hi (sub1-if max-exclusive? (coerce-revision-number hi)))
-  (assert-valid-revision-range adjusted-lo adjusted-hi named-interval)
-  (values adjusted-lo
-          adjusted-hi))
-
-
-(define (assert-valid-revision-range lo hi [named-interval #f])
-  (when (< hi lo)
-    (raise
-     (exn:fail:xiden:invalid-revision-interval
-      (if named-interval
-          (format (string-append
-                   "~v makes invalid interval [~v, ~v]. "
-                   "If the names are correct, then are they reversed?")
-                  named-interval lo hi)
-          (format "Cannot use revision interval [~v, ~v]: The upper bound is less than the lower bound."
-                  lo hi))
-      (current-continuation-marks)
-      lo
-      hi))))
+(define (get-resolved-revision-interval query)
+  (make-revision-interval
+   (string->number (xiden-query-revision-min query))
+   (string->number (xiden-query-revision-max query))
+   #:lo-exclusive (boundary-flag->boolean (string-ref (xiden-query-interval-bounds query) 0))
+   #:hi-exclusive (boundary-flag->boolean (string-ref (xiden-query-interval-bounds query) 1))))
 
 
 (module+ test
@@ -199,41 +162,4 @@
     (verify "a:b:c:d:e"       "a:b:c:d:e")
     (verify "a:b:c:d:e:f"     "a:b:c:d:e:f")
     (verify "a:b:c:d:e:f:g"   "a:b:c:d:e:f")
-    (verify "a:b:c::e:f:g:h"  "a:b:c::e:f"))
-
-  (define (test-true* p seq)
-    (for ([args (in-values-sequence seq)])
-      (test-true (format "Expect: (eq? #t (~a ~a))"
-                         (object-name p)
-                         (string-join (map ~v args)
-                                      " "))
-                 (apply p args))))
-
-  (test-true "Accept (large) positive integers"
-             (revision-number-string? "87897679687236872363278692984"))
-
-  (test-true "Accept \"0\""
-             (revision-number-string? "0"))
-
-  (test-false "Reject negative numbers"
-              (revision-number-string? "-1"))
-
-  (test-false "Reject floating-point numbers"
-              (revision-number-string? "1.224"))
-
-  (test-false "Reject expressions"
-              (revision-number-string? "1/2"))
-
-  (test-false "Reject alphanumeric"
-              (revision-number-string? "70O"))
-
-  (test-case "Create inclusive revision ranges"
-    (define (check-range expected-lo expected-hi . args)
-      (define-values (actual-lo actual-hi) (apply get-inclusive-revision-range args))
-      (check-equal? actual-lo expected-lo)
-      (check-equal? actual-hi expected-hi))
-
-    (check-range 0 0 #f #f 0 0)
-    (check-range 1 2 #t #t 0 3)
-    (check-range 1 2 #t #f 0 2)
-    (check-range 1 2 #f #t 1 3)))
+    (verify "a:b:c::e:f:g:h"  "a:b:c::e:f")))

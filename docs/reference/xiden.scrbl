@@ -19,3 +19,5 @@ bindings described in this document.
 @include-section{modules/main.scrbl}
 @include-section{modules/pkgdef.scrbl}
 @include-section{modules/package.scrbl}
+@include-section{modules/version.scrbl}
+@include-section{modules/query.scrbl}
