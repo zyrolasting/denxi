@@ -101,7 +101,7 @@
    "requested output is not defined"]
 
   [($package:definition:value:missing id)
-   (format "~a is not defined" (format-symbol-for-message id))]
+   (format "~a is not defined" (format-symbol-for-display id))]
 
   [($package:definition:value:invalid id value)
    (format "expected ~a for ~a, but got ~e"
@@ -118,7 +118,7 @@
               "a list of well-formed input-info instances"]
              [(revision-number)
               "an exact nonnegative integer"])
-           (format-symbol-for-message id)
+           (format-symbol-for-display id)
            value)]
 
   [($package:definition:undeclared-racket-version)

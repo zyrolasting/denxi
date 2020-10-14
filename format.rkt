@@ -15,7 +15,7 @@
          define+provide-message-formatter
          message-formatter
          (contract-out
-          [format-symbol-for-message
+          [format-symbol-for-display
            (-> symbol? string?)]
           [indent-lines
            (-> (listof string?) (listof string?))]
@@ -37,7 +37,7 @@
 ;-----------------------------------------------------------------------------
 ; Conventional formatting procedures
 
-(define (format-symbol-for-message i)
+(define (format-symbol-for-display i)
   (format "`~a`" i))
 
 (define (indent-lines lines)
@@ -88,7 +88,7 @@
            rackunit
            "setting.rkt")
 
-  (check-equal? (format-symbol-for-message 'foo) "`foo`")
+  (check-equal? (format-symbol-for-display 'foo) "`foo`")
   (check-equal? (indent-lines '("a" "b")) '("  a" "  b"))
   (check-equal? (join-lines '("a" "b" "c")) "a\nb\nc")
   (check-equal? (join-lines* "a" "b" "c") "a\nb\nc")
