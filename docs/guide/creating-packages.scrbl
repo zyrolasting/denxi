@@ -218,6 +218,23 @@ xiden
 ]
 
 
+@section{Declare Supported Operating Systems}
+
+Racket is cross-platform, but your package might not be.
+
+You can declare the operating systems you support by defining
+@racketid[os-support]. The value must be a list of possible values
+returned from @racket[(system-type 'os)].
+
+By default, @project-name assumes that you support each operating
+system. This is the same as writing @racket[(define os-supported
+'(unix windows macosx))]. This is fine for the purposes of this
+section, so we won't include that line in the final version.
+
+Limiting OS support is helpful for making reasonable assumptions about
+available binaries, and for offering tailored experiences to users.
+
+
 @section{Package Inputs}
 
 Now we're getting into the interesting stuff. In @|project-name|, a package is

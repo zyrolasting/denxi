@@ -21,6 +21,20 @@
         "  links      Show a list of issued links"
         "  workspace  Show the path to the target workspace directory")]))
 
+(define (localized-comma-list l conjunction)
+  (case (length l)
+    [(0) ""]
+    [(1) (car l)]
+    [(2) (format "~a ~a ~a" (car l) conjunction (cadr l))]
+    [else
+     (let ([r (reverse l)])
+       (format "~a ~a"
+               (string-join
+                (reverse (cons conjunction (cdr r)))
+                ", ")
+               (car r)))]))
+
+
 (define+provide-message-formatter format-message/locale
   [($output v)
    (format-message v)]
@@ -125,6 +139,10 @@
    (join-lines
     (list (format "does not declare supported Racket versions (bypass: ~a)"
                   (shortest-cli-flag --allow-undeclared-racket))))]
+
+  [($package:definition:unsupported-os supported)
+   (format "OS unsupported. Expected ~a"
+           (localized-comma-list supported "or"))]
 
   [($package:definition:unsupported-racket-version versions)
    (join-lines

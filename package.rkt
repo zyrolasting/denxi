@@ -38,6 +38,7 @@
 (define+provide-message $package:definition:value:invalid $package:definition:value (value))
 (define+provide-message $package:definition:undeclared-racket-version $package:definition ())
 (define+provide-message $package:definition:unsupported-racket-version $package:definition (versions))
+(define+provide-message $package:definition:unsupported-os $package:definition (supported))
 
 (define DEFAULT_OUTPUT "default")
 
@@ -92,10 +93,22 @@
         (assert 'build (λ (p) (and (procedure? p) (= 1 (procedure-arity p)))))
         (assert #:optional #t 'outputs (listof non-empty-string?))
         (assert #:optional #t 'revision-names (listof non-empty-string?))
+        (validate-os-support pkgeval)
         (if (XIDEN_ALLOW_UNDECLARED_RACKET_VERSIONS)
             (assert #:optional #t 'racket-versions racket-version-ranges/c)
             (do (assert 'racket-versions racket-version-ranges/c)
                 (validate-racket-support pkgeval))))))
+
+
+(define (validate-os-support pkgeval)
+  (logged
+   (λ (messages)
+     (let ([supported (xiden-evaluator-ref pkgeval 'os-support '(unix windows macosx))])
+       (if (member (system-type 'os) supported)
+           (values pkgeval messages)
+           (values FAILURE
+                   (cons ($package:definition:unsupported-os supported)
+                         messages)))))))
 
 
 (define (validate-racket-support pkgeval)
