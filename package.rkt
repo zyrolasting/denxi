@@ -233,7 +233,7 @@
                    (make-pkgeval-network-guard)
                    (make-pkgeval-link-guard (workspace-directory)))]
                  [sandbox-make-environment-variables
-                  (bind-envvar-subset '(#"PATH"))]
+                  (bind-envvar-subset (XIDEN_ALLOW_ENV))]
                  [sandbox-namespace-specs
                   (append (sandbox-namespace-specs)
                           '(xiden/rc xiden/package))])

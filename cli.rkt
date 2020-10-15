@@ -84,6 +84,7 @@
                         ++install-abbreviated
                         ++install-default
                         ++trust-public-key
+                        ++envvar
                         ++host
                         --max-redirects
                         --trust-any-digest

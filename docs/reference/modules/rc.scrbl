@@ -250,3 +250,8 @@ does not declare supported versions of Racket.
 When true, continue installing when a @tech{package definition}
 declares that it does not support the running Racket version.
 }
+
+@defsetting*[XIDEN_ALLOW_ENV]{
+Holds name of @tech/reference{environment variables} exposed to
+@tech{packages}, and @project-name subprocesses.
+}

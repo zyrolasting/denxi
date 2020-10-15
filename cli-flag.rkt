@@ -227,6 +227,14 @@
                                           (XIDEN_INSTALL_ABBREVIATED_SOURCES)))
                     '("source")))
 
+(flag-out [+e ++env ++envvar]
+          (cli-flag XIDEN_ALLOW_ENV
+                    'multi null 1 (λ (flag name)
+                                    (cons name
+                                          (XIDEN_ALLOW_ENV)))
+                    '("envvar")))
+
+
 
 ; For use in REPL and tests. Provides a quick way to preview the effect of command
 ; line flags, and generated help strings shown.

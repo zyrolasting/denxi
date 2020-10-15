@@ -173,6 +173,8 @@
 (define-xiden-setting XIDEN_ALLOW_UNSUPPORTED_RACKET boolean? #f
   "Install packages even if they declare that they do not support the running version of Racket.")
 
+(define-xiden-setting XIDEN_ALLOW_ENV (listof (or/c bytes? string?)) null
+  "Names of environment variables to expose to packages and subprocesses")
 
 (module+ test
   (require rackunit
