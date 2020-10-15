@@ -227,7 +227,7 @@ You can declare the operating systems you support by defining
 returned from @racket[(system-type 'os)].
 
 By default, @project-name assumes that you support each operating
-system. This is the same as writing @racket[(define os-supported
+system. This is the same as writing @racket[(define os-support
 '(unix windows macosx))]. This is fine for the purposes of this
 section, so we won't include that line in the final version.
 

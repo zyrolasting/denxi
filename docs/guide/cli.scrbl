@@ -15,9 +15,9 @@ will only refer to it as @binary from now on.
 launch, and every one of its settings can be defined at the command line.
 This way each command feels like calling a pure function.
 
-@binary are explicit and verbose. If typing a command becomes tedious, then
-please leverage the features of your shell and review the @secref{config}
-section.
+@binary commands are explicit and possibly verbose. If typing a
+command becomes tedious, then please leverage the features of your
+shell and review the @secref{config} section.
 
 
 @section[#:tag "do"]{Running Our First Transaction}
