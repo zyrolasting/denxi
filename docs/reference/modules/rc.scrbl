@@ -1,8 +1,10 @@
 #lang scribble/manual
 
 @(require (for-label racket
+                     xiden/integrity
                      xiden/rc
-                     xiden/setting)
+                     xiden/setting
+                     xiden/url)
           (for-syntax "../../shared.rkt"
                       racket
                       syntax/stx
