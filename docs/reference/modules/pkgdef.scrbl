@@ -28,8 +28,8 @@ The output is defined in regards to the @tech{package definition} created using
 }
 
 
-@defproc[(run [#:expected-exit-codes expected-exit-codes '(0)]
-              [#:timeout timeout real? (XIDEN_SUBPROCESS_TIMEOUT_SECONDS)]
+@defproc[(run [#:expected-exit-codes expected-exit-codes (non-empty-listof exact-nonnegative-integer?) '(0)]
+              [#:timeout timeout real? (XIDEN_SUBPROCESS_TIMEOUT_S)]
               [command path-string?]
               [arg string?] ...)
               void?]{
