@@ -797,7 +797,11 @@
        (or (find-revision-number v edition-id)
            (fail)))
 
-     (define-values (lo hi) (get-resolved-revision-interval query))
+     (define-values (lo hi)
+       (get-resolved-revision-interval
+        (struct-copy xiden-query query
+                     [revision-min (~a (revision->revision-number (xiden-query-revision-min query)))]
+                     [revision-max (~a (revision->revision-number (xiden-query-revision-max query)))])))
 
      (when (< hi lo)
        (fail))
