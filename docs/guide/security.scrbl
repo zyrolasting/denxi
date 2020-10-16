@@ -10,9 +10,13 @@ tampering of executable code.
 
 First understand that @bold{@project-name does not in any way enhance
 or guarentee the security or integrity of your operating
-system}. @project-name can run programs from the Internet, and can
-spawn subprocesses. While there are ways to mitigate the risks of
-undesired behavior, there is no substitute for vigilance.
+system}. While there are ways to mitigate the risks of running
+programs from the Internet and spawning processes, the risks are yours
+to take.
+
+The first @project-name instance you install does not check the
+integrity or authenticity of its own dependencies. It is your
+responsibility to operate @project-name with integrous dependencies.
 
 
 @section{Caution is Configurable}
