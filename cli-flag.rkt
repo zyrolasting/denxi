@@ -234,6 +234,13 @@
                                           (XIDEN_ALLOW_ENV)))
                     '("envvar")))
 
+(flag-out [+b ++bin]
+          (cli-flag XIDEN_ALLOW_BIN
+                    'multi null 1 (λ (flag name)
+                                    (cons name
+                                          (XIDEN_ALLOW_BIN)))
+                    '("executable-name")))
+
 
 
 ; For use in REPL and tests. Provides a quick way to preview the effect of command

@@ -227,13 +227,15 @@
                  [sandbox-security-guard
                   (make-security-guard
                    (current-security-guard)
-                   (make-pkgeval-file-guard (make-bin-path-permissions '("openssl"))
+                   (make-pkgeval-file-guard (make-bin-path-permissions
+                                             (cons "openssl"
+                                                   (XIDEN_ALLOW_BIN)))
                                             (list (build-workspace-path "var/xiden")
                                                   (build-workspace-path "tmp")))
                    (make-pkgeval-network-guard)
                    (make-pkgeval-link-guard (workspace-directory)))]
                  [sandbox-make-environment-variables
-                  (bind-envvar-subset (XIDEN_ALLOW_ENV))]
+                  (bind-envvar-subset (cons "PATH" (XIDEN_ALLOW_ENV)))]
                  [sandbox-namespace-specs
                   (append (sandbox-namespace-specs)
                           '(xiden/rc xiden/package))])

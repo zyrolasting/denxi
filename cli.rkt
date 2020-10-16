@@ -85,6 +85,7 @@
                         ++install-default
                         ++trust-public-key
                         ++envvar
+                        ++bin
                         ++host
                         --max-redirects
                         --trust-any-digest

@@ -252,6 +252,24 @@ declares that it does not support the running Racket version.
 }
 
 @defsetting*[XIDEN_ALLOW_ENV]{
-Holds name of @tech/reference{environment variables} exposed to
-@tech{packages}, and @project-name subprocesses.
+Names of environment variables visible to @tech{packages}, and
+@project-name subprocesses.
+
+@racket{PATH} is included regardless of the value of this setting.
+}
+
+@defsetting*[XIDEN_ALLOW_BIN]{
+@bold{Dangerous}. Holds the names of executables that a @tech{package}
+may execute. Each name must be suitable for use in
+@racket[find-executable-path] on the running platform.
+
+Treat with caution. Any executable listed here inherits the OS-level
+permissions of the process, and is not subject to the restrictions of
+a @project-name @tech{runtime configuration}.  If you include a
+@project-name launcher or a sufficiently flexible Racket launcher, a
+@tech{package} can start a new @project-name process with a full-trust
+configuration.
+
+Regardless of this setting, @racket{openssl} is included. This will
+not be the case in a future release.
 }

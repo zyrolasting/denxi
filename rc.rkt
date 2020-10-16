@@ -176,6 +176,9 @@
 (define-xiden-setting XIDEN_ALLOW_ENV (listof (or/c bytes? string?)) null
   "Names of environment variables to expose to packages and subprocesses")
 
+(define-xiden-setting XIDEN_ALLOW_BIN (listof (or/c path-string?)) null
+  "Names of binaries in PATH that a package may execute (DANGER: A Racket launcher compromises restrictions)")
+
 (module+ test
   (require rackunit
            (submod "file.rkt" test))
