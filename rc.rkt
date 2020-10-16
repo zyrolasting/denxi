@@ -179,6 +179,9 @@
 (define-xiden-setting XIDEN_ALLOW_BIN (listof (or/c path-string?)) null
   "Names of binaries in PATH that a package may execute (DANGER: A Racket launcher compromises restrictions)")
 
+(define-xiden-setting XIDEN_SUBPROCESS_TIMEOUT_S (>=/c 0) (* 30 60)
+  "Maximum number of seconds a subprocess may run")
+
 (module+ test
   (require rackunit
            (submod "file.rkt" test))

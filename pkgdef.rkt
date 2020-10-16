@@ -54,14 +54,17 @@
          quasiquote
          quote
          reverse
+         run
          signature
          sources
          string-append
          system-library-subpath
          unpack
+         unless
          unquote
          unquote-splicing
          void
+         when
          (rename-out [#%module-begin* #%module-begin]))
 
 
@@ -70,6 +73,7 @@
          racket/list
          racket/sequence
          racket/string
+         racket/system
          "archiving.rkt"
          "codec.rkt"
          "compression.rkt"
@@ -98,6 +102,31 @@
                         "Could not install package output ~a"
                         output-name)
       (void)))
+
+
+(define (run #:expected-exit-codes [expected-exit-codes '(0)]
+             #:timeout [timeout (XIDEN_SUBPROCESS_TIMEOUT_S)]
+             cmd . args)
+  (define-values (handle stdout stdin stderr)
+    (apply subprocess
+           (current-output-port)
+           #f
+           (current-output-port)
+           #f
+           (find-executable-path cmd)
+           args))
+
+  (or (sync/timeout (min timeout (XIDEN_SUBPROCESS_TIMEOUT_S)) handle)
+      (begin (subprocess-kill handle)
+             (raise-user-error 'run
+                               "~a timed out after ~a seconds. args: ~s"
+                               cmd
+                               timeout
+                               args)))
+
+  (list? (member (subprocess-status handle)
+                 expected-exit-codes)))
+
 
 (define-syntax (#%module-begin* stx)
   (syntax-case stx ()

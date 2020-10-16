@@ -273,3 +273,8 @@ configuration.
 Regardless of this setting, @racket{openssl} is included. This will
 not be the case in a future release.
 }
+
+@defsetting*[XIDEN_SUBPROCESS_TIMEOUT_S]{
+The maximum number of seconds a subprocess spawned by a @tech{package}
+may live.
+}
