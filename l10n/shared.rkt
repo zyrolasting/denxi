@@ -18,10 +18,8 @@
    "../port.rkt"
    "../racket-version.rkt"
    "../rc.rkt"
-   "../sentry.rkt"
    "../setting.rkt"
    "../signature.rkt"
    "../source.rkt"
    "../string.rkt"
-   "../worker.rkt"
    "../workspace.rkt")

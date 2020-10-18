@@ -36,14 +36,6 @@
 
 
 (define+provide-message-formatter format-message/locale
-  [($output v)
-   (format-message v)]
-
-  [($fail v)
-   (cond [(exn? v) (exn->string v)]
-         [(string? v) v]
-         [else (~s v)])]
-
   [($regarding name v)
    (format "~a: ~a"
            (format-message name)
@@ -66,12 +58,6 @@
   [($output-not-found query output-name)
    (format "Cannot find output ~s output for ~s"
            output-name query)]
-
-  [($module-compiled module-path)
-   (format "Compiled: ~a" module-path)]
-
-  [($compilation-error module-path message)
-   (format "Bytecode compilation error in: ~a~n~a" module-path message)]
 
   [($invalid-workspace-envvar)
    (format "Ignoring envvar value for XIDEN_WORKSPACE: ~a~n  falling back to ~a"

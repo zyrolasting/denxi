@@ -34,16 +34,13 @@
          "racket-version.rkt"
          "rc.rkt"
          "sandbox.rkt"
-         "sentry.rkt"
          "setting.rkt"
          "signature.rkt"
          "source.rkt"
          "string.rkt"
-         "team.rkt"
          "transaction.rkt"
          "url.rkt"
          "openssl.rkt"
-         "worker.rkt"
          "workspace.rkt")
 
 (module+ main
