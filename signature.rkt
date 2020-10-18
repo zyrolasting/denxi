@@ -6,6 +6,8 @@
 
 (provide (struct-out signature-info)
          (contract-out
+          [make-signature-bytes
+           (-> bytes? path-string? (or/c #f path-string?) bytes?)]
           [siginfo-variant/c flat-contract?]
           [signature
            (-> siginfo-variant/c
@@ -77,6 +79,18 @@
                           "-pubin"
                           "-inkey" public-key-path))))
 
+
+(define (make-signature-bytes digest private-key-path password-path)
+  (define base-args
+    (list "pkeyutl"
+          "-sign"
+          "-inkey" private-key-path))
+  (apply run-openssl-command #:timeout +inf.0
+         (open-input-bytes digest)
+         (if password-path
+             (append base-args
+                     (list "-passin" (format "file:~a" password-path)))
+             base-args)))
 
 
 ; ------------------------------------------------------------------------------
