@@ -41,6 +41,7 @@
                   make-lock-file-name
                   make-directory*
                   make-temporary-file)
+         (only-in racket/dict dict? in-dict)
          (only-in racket/format ~s)
          (only-in racket/list remove-duplicates)
          (only-in racket/match match)
@@ -168,10 +169,10 @@
   (put-pure-port u (get-output-bytes o)))
 
 
-(define (alist->infotab-module-datum alist)
+(define (dict->infotab-module-datum dict)
   `(module xinfotab xiden/pkgdef
-     . ,(for/list ([pair (in-list alist)])
-          `(define ,(car pair) ,(cdr pair)))))
+     . ,(for/list ([(k v) (in-dict dict)])
+          `(define ,k ,v))))
 
 
 (define (make-infotab-module-datum seval)
@@ -187,8 +188,8 @@
      (open-input-string "")]
     [(list 'module _ 'xiden/pkgdef _ ...)
      (open-input-string (~s l))]
-    [(list (cons _ _) ...)
-     (open-input-infotab (alist->infotab-module-datum l))]
+    [(? dict? l)
+     (open-input-infotab (dict->infotab-module-datum l))]
     [_ (raise-argument-error 'open-input-infotab
                              "A valid list used for configuration"
                              l)]))
@@ -306,11 +307,16 @@
         (check-equal? l0 l1))
       (λ () (delete-file tmp-file))))
 
-  (test-equal? "Create infotab from associative list"
-               (alist->infotab-module-datum '((a . 1) (b . '())))
-               '(module xinfotab xiden/pkgdef
-                  (define a 1)
-                  (define b '())))
+  (test-case "Create infotab using a dictionary"
+    (define expected '(module xinfotab xiden/pkgdef
+                        (define a 1)
+                        (define b '())))
+
+    (define from-alist (dict->infotab-module-datum '((a . 1) (b . '()))))
+    (define from-hash  (dict->infotab-module-datum (hash 'a 1 'b ''())))
+
+    (check-equal? from-alist expected)
+    (check-equal? from-hash expected))
 
   (test-case "Read literal infotab config"
     (define decl (make-infotab-module-datum (hash+list->xiden-evaluator (hash 'a 1 'b 2 'c 3) '(a b c))))
