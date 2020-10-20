@@ -245,7 +245,7 @@
                              "A relative path source may not reference parent directories."
                              #'user-path)))
      (with-syntax ([wrt (or (syntax-source-directory stx) (current-directory))])
-       #'(normalize-path user-path wrt))]))
+       #'(path->string (path->complete-path user-path wrt)))]))
 
 
 (define (from-catalogs query-string [url-templates (XIDEN_CATALOGS)])
