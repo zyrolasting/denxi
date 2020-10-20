@@ -1,6 +1,6 @@
 [![](https://img.shields.io/badge/%E2%99%A5-Support%20Ethical%20Software-red)](https://sagegerard.com/show-support.html)
 
-A functional dependency manager for Racket that focuses on flexibility.
+A functional dependency manager for Racket. See the [RacketCon 2020 talk](https://youtu.be/bIi-tUzOwdw?t=2330) (Starts at 38:50)!
 
 * Install the _exact_ code you asked for, without any side-effect on the Racket installation.
 * Make links to the _exact_ files you need in your projects.
