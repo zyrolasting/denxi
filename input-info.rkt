@@ -161,7 +161,17 @@
 (define (check-input-signature input file-record source messages)
   (define siginfo (input-info-signature input))
   (define intinfo (input-info-integrity input))
-  (define public-key-path (get-public-key-path (signature-info-pubkey siginfo)))
+
+  ; The module level contract insists on a path string due
+  ; to the file-oriented implementation in signature.rkt, but
+  ; the signature info may not be declared. Use an unlikely
+  ; path as a workaround, since other checks won't actually
+  ; use the path.
+  (define public-key-path
+    (if (signature-info? siginfo)
+        (get-public-key-path (signature-info-pubkey siginfo))
+        "/nowhere"))
+
   (define trust-public-key?
     (if (XIDEN_TRUST_ANY_PUBLIC_KEY)
         (λ (p) #t)
