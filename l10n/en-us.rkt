@@ -68,7 +68,8 @@
    (format "transfer ~a: ~a" name (format-message msg))]
 
   [($transfer:progress bytes-read max-size timestamp)
-   (~r (* 100 (/ bytes-read max-size)) #:precision 0)]
+   (format "~a%"
+           (~r (* 100 (/ bytes-read max-size)) #:precision 0))]
 
   [($transfer:budget:rejected allowed-max-size proposed-max-size)
    (format "can only copy ~a bytes, but estimate is ~a bytes"

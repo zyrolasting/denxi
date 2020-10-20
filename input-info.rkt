@@ -9,6 +9,7 @@
          "logged.rkt"
          "message.rkt"
          "monad.rkt"
+         "port.rkt"
          "printer.rkt"
          "rc.rkt"
          "setting.rkt"
@@ -120,7 +121,13 @@
          (λ (in est-size)
            (make-addressable-file
             #:on-status (let ([formatter (get-message-formatter)])
-                          (λ (m) (write-message m formatter)))
+                          (λ (m)
+                            (if ($transfer:progress? ($transfer:scope-message m))
+                                (printf "\r~a~a" (formatter m)
+                                        (if (equal? ($transfer:progress-bytes-read ($transfer:scope-message m))
+                                                    ($transfer:progress-max-size ($transfer:scope-message m)))
+                                            "\n" ""))
+                                (write-message #:newline? #f m formatter))))
             (input-info-name info)
             in est-size))))
 
