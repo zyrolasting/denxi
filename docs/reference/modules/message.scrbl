@@ -117,7 +117,7 @@ A wrapper for a message that only appears to a user if
 @racket[(XIDEN_VERBOSE)] is @racket[#t].
 }
 
-@defproc[(write-message [m $message?] [format-message message-formatter/c] [out output-port? (current-output-port)]) void?]{
+@defproc[(write-message [m $message?] [#:newline? newline? any/c #t] [format-message message-formatter/c] [out output-port? (current-output-port)]) void?]{
 Writes a @tech{message} to @racket[out] according to the values of
 @racket[(XIDEN_READER_FRIENDLY_OUTPUT)], @racket[(XIDEN_FASL_OUTPUT)],
 and @racket[(XIDEN_VERBOSE)].
@@ -132,9 +132,10 @@ Otherwise, @racket[write-message] does the following:
   (if (XIDEN_FASL_OUTPUT)
       (s-exp->fasl (serialize to-send) out)
       (if (XIDEN_READER_FRIENDLY_OUTPUT)
-          (pretty-write #:newline? #t to-send out)
-          (displayln to-send out))))]
+          (pretty-write #:newline? newline? to-send out)
+          ((if newline? displayln display) to-send out))))]
 
+Note that @racket[newline?] is ignored when using fasl output.
 }
 
 

@@ -6,9 +6,9 @@
 
 (provide (contract-out
           [write-message
-           (->* ($message?) (message-formatter/c output-port?) void?)]
+           (->* ($message?) (#:newline? any/c message-formatter/c output-port?) void?)]
           [mwrite-message
-           (->* ($message?) (message-formatter/c output-port?) io-return?)]))
+           (->* ($message?) (#:newline? any/c message-formatter/c output-port?) io-return?)]))
 
 (require racket/date
          racket/fasl
@@ -29,11 +29,13 @@
       m))
 
 
-(define (mwrite-message v [formatter (current-message-formatter)] [out (current-output-port)])
-  (io-return (λ () (write-message v formatter out))))
+(define (mwrite-message v #:newline? [newline? #t] [formatter (current-message-formatter)] [out (current-output-port)])
+  (io-return (λ () (write-message #:newline? newline? v formatter out))))
 
 
-(define (write-message v [formatter (current-message-formatter)] [out (current-output-port)])
+(define (write-message v
+                       #:newline? [newline? #t]
+                       [formatter (current-message-formatter)] [out (current-output-port)])
   (define maybe-message (filter-output v))
   (when maybe-message
     (parameterize ([current-output-port out])
@@ -45,8 +47,8 @@
       (if (XIDEN_FASL_OUTPUT)
           (s-exp->fasl (serialize to-send) (current-output-port))
           (if (XIDEN_READER_FRIENDLY_OUTPUT)
-              (pretty-write #:newline? #t to-send)
-              (displayln to-send)))
+              (pretty-write #:newline? newline? to-send)
+              ((if newline? displayln display) to-send)))
       (flush-output))))
 
 (module+ test
