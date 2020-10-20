@@ -331,11 +331,6 @@ keep on your drive or from a repository you maintain.
 
 @subsection{Authenticating Inputs}
 
-@margin-note{This is the hardest part of the tutorial, but stick with it. It
-will help you stay safe when working with resources from the Internet.  You
-need a working understanding of how to use OpenSSL to check digital signatures
-to understand this section.}
-
 It's one thing to get the bytes we wanted, but did they come from someone we
 trust? Thankfully it is possible for people to sign their work so that we can
 check.
