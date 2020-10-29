@@ -3,6 +3,10 @@
 (require "contract.rkt")
 (provide (all-from-out racket/sandbox)
          (contract-out
+          [make-package-definition-datum
+           (unconstrained-domain-> list?)]
+          [dict->package-definition-datum
+           (-> dict? list?)]
           [make-xiden-sandbox
            (-> (or/c syntax? pair? path? input-port? string? bytes?)
                (-> any/c any))]
@@ -169,11 +173,20 @@
   (put-pure-port u (get-output-bytes o)))
 
 
-(define (dict->infotab-module-datum dict)
+(define (dict->package-definition-datum dict)
   `(module xinfotab xiden/pkgdef
      . ,(for/list ([(k v) (in-dict dict)])
           `(define ,k ,v))))
 
+(define make-package-definition-datum
+  (make-keyword-procedure
+   (λ (kws kwas)
+     (dict->package-definition-datum
+      (make-hasheq (map (λ (k v)
+                          (cons (string->symbol (keyword->string k))
+                                v))
+                        kws
+                        kwas))))))
 
 (define (make-infotab-module-datum seval)
   `(module xinfotab xiden/pkgdef
@@ -189,7 +202,7 @@
     [(list 'module _ 'xiden/pkgdef _ ...)
      (open-input-string (~s l))]
     [(? dict? l)
-     (open-input-infotab (dict->infotab-module-datum l))]
+     (open-input-infotab (dict->package-definition-datum l))]
     [_ (raise-argument-error 'open-input-infotab
                              "A valid list used for configuration"
                              l)]))
@@ -312,11 +325,17 @@
                         (define a 1)
                         (define b '())))
 
-    (define from-alist (dict->infotab-module-datum '((a . 1) (b . '()))))
-    (define from-hash  (dict->infotab-module-datum (hash 'a 1 'b ''())))
+    (define from-alist (dict->package-definition-datum '((a . 1) (b . '()))))
+    (define from-hash  (dict->package-definition-datum (hash 'a 1 'b ''())))
 
     (check-equal? from-alist expected)
     (check-equal? from-hash expected))
+
+  (test-equal? "Create package definition using a keyword procedure"
+               (make-package-definition-datum #:a 1 #:b ''())
+               '(module xinfotab xiden/pkgdef
+                  (define a 1)
+                  (define b '())))
 
   (test-case "Read literal infotab config"
     (define decl (make-infotab-module-datum (hash+list->xiden-evaluator (hash 'a 1 'b 2 'c 3) '(a b c))))
