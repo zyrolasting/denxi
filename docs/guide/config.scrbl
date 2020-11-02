@@ -109,17 +109,16 @@ path points to an existing entry on the filesystem, then that entry
 must be a directory. If the path points to no existing entry, then
 @binary will create a directory at that path.
 
-@section[#:tag "trusting-pubkeys"]{Trusting Public Keys}
+@section[#:tag "trusting-pubkeys"]{Trusting Public Keys and Executables}
 
-You can use @|project-name|'s integrity checking system to specify public keys
-that you trust when @racket[XIDEN_TRUST_ANY_PUBLIC_KEY] is @racket[#f].  You
-specify the integrity information the same way that you would for an input in a
+You can use @|project-name|'s integrity checking system to specify
+public keys and executables that you trust. You specify the integrity
+information the same way that you would for an input in a
 @tech{package definition}.
 
 This example value for @racket[XIDEN_TRUSTED_PUBLIC_KEYS] includes the
 integrity information for my own public key located at
 @visible-hyperlink{https://sagegerard.com/public.pem}.
-
 
 @racketblock[
 (define XIDEN_TRUSTED_PUBLIC_KEYS
@@ -132,3 +131,16 @@ an entire (trusted) public key file}. This avoids collision attacks due to
 short fingerprint lengths, but not collision attacks based on the digest
 algorithm.  If a digest algorithm is subject to a collision attack, you can
 upgrade the algorithm and expected digest.
+
+This example value for @racket[XIDEN_TRUSTED_EXECUTABLES] similarly
+verifies binaries that @project-name may use for a subprocess. This
+example shows integrity information for a Python 2.7 binary.
+
+@racketblock[
+(define XIDEN_TRUSTED_EXECUTABLES
+  (list (integrity 'sha1 (hex "3b1c5bcf6d6c0f584a07aed26ad18299b5a8311d"))))
+]
+
+Note that the integrity information applies only to the named
+executable.  This system will not detect something like a compromised
+dynamically-linked library.
