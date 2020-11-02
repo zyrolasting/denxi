@@ -69,8 +69,8 @@ A @tech{message} that reports the results of an integrity check.
 
 @racket[ok?] is @racket[#t] if the check passed.
 
-@racket[stage] is a symbol for tracing the source of corresponding
-instance.
+@racket[stage] is a symbol that tells a maintainer which procedure
+created the given @racket[$integrity] instance.
 
 @racket[info] is the Racket value presented as integrity information
 for the check.
