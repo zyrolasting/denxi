@@ -47,8 +47,8 @@ Given @racket[(bytes? V)] or @racket[(input-port? V)], the bytes are drawn direc
 @defthing[well-formed-integrity-info/c contract?]{
 A contract that recognizes instances of @racket[integrity-info], and
 verifies if the field values are logically consistent. It checks if
-the hash algorithm is valid, and if the digest has the correct length
-for that algorithm.
+the hash algorithm is valid, and if the digest is a byte string. It does
+not verify if the digest length is appropriate for the algorithm.
 }
 
 

@@ -137,6 +137,9 @@
 (define-xiden-setting XIDEN_TRUSTED_PUBLIC_KEYS (listof well-formed-integrity-info/c) null
   "Trust a given public key, by 160-bit SHA-384 fingerprint")
 
+(define-xiden-setting XIDEN_TRUSTED_EXECUTABLES (listof well-formed-integrity-info/c) null
+  "Trust an executable using integrity information")
+
 (define-xiden-setting XIDEN_FASL_OUTPUT boolean? #f
   "Use FASL program output")
 
@@ -175,9 +178,6 @@
 
 (define-xiden-setting XIDEN_ALLOW_ENV (listof (or/c bytes? string?)) null
   "Names of environment variables to expose to packages and subprocesses")
-
-(define-xiden-setting XIDEN_ALLOW_BIN (listof (or/c path-string?)) null
-  "Names of binaries in PATH that a package may execute (DANGER: A Racket launcher compromises restrictions)")
 
 (define-xiden-setting XIDEN_SUBPROCESS_TIMEOUT_S (>=/c 0) (* 30 60)
   "Maximum number of seconds a subprocess may run")

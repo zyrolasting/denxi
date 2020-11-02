@@ -227,9 +227,7 @@
                  [sandbox-security-guard
                   (make-security-guard
                    (current-security-guard)
-                   (make-pkgeval-file-guard (make-bin-path-permissions
-                                             (cons "openssl"
-                                                   (XIDEN_ALLOW_BIN)))
+                   (make-pkgeval-file-guard (XIDEN_TRUSTED_EXECUTABLES)
                                             (list (build-workspace-path "var/xiden")
                                                   (build-workspace-path "tmp")))
                    (make-pkgeval-network-guard)
@@ -248,10 +246,14 @@
     (unless (ormap test write-dirs)
       (raise-user-error (format "Unauthorized attempt to ~a in ~a" op path))))
 
+  (define trust-executable?
+    (bind-trust-list allowed-executables))
+
   (λ (sym path-or-#f ops)
     (when path-or-#f
       (cond [(member 'execute ops)
-             (unless (member path-or-#f allowed-executables)
+             (unless (or (equal? "openssl" (path->string (file-name-from-path path-or-#f)))
+                         (trust-executable? path-or-#f))
                (raise-user-error 'security
                                  "Unauthorized attempt to execute ~a"
                                  path-or-#f))]

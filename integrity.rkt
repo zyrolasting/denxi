@@ -68,10 +68,9 @@
 
 
 (define well-formed-integrity-info/c
-  (and/c (struct/c integrity-info
-                   md-algorithm/c
-                   bytes?)
-         digest-length-ok?))
+  (struct/c integrity-info
+            md-algorithm/c
+            bytes?))
 
 
 (define (make-digest variant algorithm)

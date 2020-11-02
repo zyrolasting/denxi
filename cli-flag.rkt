@@ -207,6 +207,13 @@
                                           (XIDEN_TRUSTED_PUBLIC_KEYS)))
                     '("integrity-expr")))
 
+(flag-out [+x ++trust-executable ++trust-exe]
+          (cli-flag XIDEN_TRUSTED_EXECUTABLES
+                    'multi null 1 (λ (flag integrity-expr)
+                                    (cons (arg->value/evaluated flag integrity-expr)
+                                          (XIDEN_TRUSTED_EXECUTABLES)))
+                    '("integrity-expr")))
+
 (flag-out [+s ++install-source]
           (cli-flag XIDEN_INSTALL_SOURCES
                     'multi null 3 (λ (flag link-name output-name source)
@@ -234,13 +241,6 @@
                                     (cons name
                                           (XIDEN_ALLOW_ENV)))
                     '("envvar")))
-
-(flag-out [+b ++bin]
-          (cli-flag XIDEN_ALLOW_BIN
-                    'multi null 1 (λ (flag name)
-                                    (cons name
-                                          (XIDEN_ALLOW_BIN)))
-                    '("executable-name")))
 
 
 

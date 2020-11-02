@@ -10,9 +10,6 @@
           [make-xiden-sandbox
            (-> (or/c syntax? pair? path? input-port? string? bytes?)
                (-> any/c any))]
-          [make-bin-path-permissions
-           (-> (listof path-string?)
-               (listof path?))]
           [bind-envvar-subset
            (-> (listof (or/c bytes? string?))
                (-> environment-variables?))]
@@ -77,18 +74,6 @@
                    (cons (environment-variables-ref (current-environment-variables) name)
                          mappings))))))
 
-
-; Allow access to some binaries in PATH
-(define (make-bin-path-permissions binaries)
-  (define windows? (eq? (system-type 'os) 'windows))
-  (filter file-exists?
-          (foldl (λ (s res)
-                   (append (map (λ (bin) (build-path s bin))
-                                binaries)
-                           res))
-                 null
-                 (string-split (getenv "PATH")
-                               (if windows? ";" ":")))))
 
 
 ;------------------------------------------------------------------------
