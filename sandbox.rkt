@@ -26,14 +26,14 @@
                 any/c)]
           [save-xiden-module!
            (->* ((-> any/c any)
-                 (or/c path-string? url? output-port?))
+                 (or/c path-string? output-port?))
                 void?)]
           [write-xiden-module
            (->* ((-> any/c any) output-port?)
                 (#:pretty? boolean?)
                 void?)]
           [load-xiden-module
-           (->* ((or/c path? url? string? bytes? input-port?))
+           (->* ((or/c path? string? bytes? input-port?))
                 (-> any/c any))]))
 
 
@@ -82,13 +82,11 @@
 
 (define (save-xiden-module! seval variant)
   (cond [(path-string? variant) (save-local-xiden-module! seval variant)]
-        [(url? variant) (save-remote-xiden-module! seval variant)]
         [(output-port? variant) (write-xiden-module seval variant)]))
 
 
 (define (load-xiden-module variant)
   (cond [(path? variant) (load-local-xiden-module variant)]
-        [(url? variant) (load-remote-xiden-module variant)]
         [(list? variant) (load-xiden-module (open-input-infotab variant))]
         [(string? variant) (load-xiden-module (open-input-string variant))]
         [(bytes? variant) (load-xiden-module (open-input-bytes variant))]
@@ -152,12 +150,6 @@
   (delete-file lockfile))
 
 
-(define (save-remote-xiden-module! seval u)
-  (define o (open-output-bytes))
-  (save-xiden-module! seval o)
-  (put-pure-port u (get-output-bytes o)))
-
-
 (define (dict->package-definition-datum dict)
   `(module xinfotab xiden/pkgdef
      . ,(for/list ([(k v) (in-dict dict)])
@@ -204,15 +196,6 @@
                   (let ([pp (sandbox-path-permissions)])
                     (cons '(exists "/") pp))])
     (make-xiden-sandbox in)))
-
-(define (load-remote-xiden-module u)
-  (define-values (in headers)
-    (get-pure-port/headers u #:status? #t))
-  (define status (regexp-match #px"(\\d\\d\\d)" headers))
-  (if (equal? status '("200"))
-      (read-xiden-module in)
-      (error "Non-200 response from ~a"
-             (url->string u))))
 
 (define (load-local-xiden-module path)
   (parameterize ([sandbox-path-permissions
