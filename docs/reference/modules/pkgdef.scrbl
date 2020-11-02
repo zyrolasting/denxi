@@ -34,7 +34,7 @@ The output is defined in regards to the @tech{package definition} created using
               [arg string?] ...)
               void?]{
 Runs a subprocess synchronously, and under the restrictions set by
-@racket[XIDEN_ALLOW_ENV] and @racket[XIDEN_ALLOW_BIN].
+@racket[XIDEN_ALLOW_ENV] and @racket[XIDEN_TRUSTED_EXECUTABLES].
 
 Standard output and standard error are both redirected to
 @racket[(current-output-port)]. Standard input is disabled.
