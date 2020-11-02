@@ -175,7 +175,7 @@
   (define trust-public-key?
     (if (XIDEN_TRUST_ANY_PUBLIC_KEY)
         (λ (p) #t)
-        (bind-trusted-public-keys (XIDEN_TRUSTED_PUBLIC_KEYS))))
+        (bind-trust-list (XIDEN_TRUSTED_PUBLIC_KEYS))))
 
   (define status
     (check-signature #:public-key-path public-key-path

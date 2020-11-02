@@ -64,14 +64,14 @@ created using a private key.
 An abbreviated @racket[signature-info] constructor for use in @tech{package definitions}.
 }
 
-@defproc[(bind-trusted-public-keys [trusted-keys (listof well-formed-integrity-info/c)]) (-> path-string? boolean?)]{
+@defproc[(bind-trust-list [trusted (listof well-formed-integrity-info/c)]) (-> path-string? boolean?)]{
 Returns a procedure @racket[P], such that @racket[(P
-"/path/to/key.pem")] (for example) is @racket[#t] if the given key
+"/path/to/file")] (for example) is @racket[#t] if the given file
 passes an @tech{integrity check} for one of the
-@racket[integrity-info] structures in @racket[trusted-keys].
+@racket[integrity-info] structures in @racket[trusted].
 
-This is used internally to determine a user's trust in a key
-before using a @tech{package input}.
+This is used internally to determine a user's trust in a public key or
+executable.
 }
 
 @defthing[well-formed-signature-info/c flat-contract?]{

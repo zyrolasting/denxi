@@ -13,7 +13,7 @@
            (-> siginfo-variant/c
                siginfo-variant/c
                signature-info?)]
-          [bind-trusted-public-keys
+          [bind-trust-list
            (-> (listof well-formed-integrity-info/c)
                (-> path-string? boolean?))]
           [well-formed-signature-info/c
@@ -55,7 +55,7 @@
 
 (define ESTIMATED_SIGNATURE_AND_PUBKEY_MAX_SIZE (* 100 1024))
 
-(define (bind-trusted-public-keys trusted)
+(define (bind-trust-list trusted)
   (λ (public-key-path)
     (for/or ([integrity trusted])
       ($integrity-ok? (check-integrity #:trust-bad-digest #f integrity public-key-path)))))
@@ -223,7 +223,7 @@
 
     (test-case "Continue when trusting a public key"
       (define trust-public-key?
-        (bind-trusted-public-keys
+        (bind-trust-list
          (list (integrity-info 'sha384
                                (make-digest pubkey-bytes 'sha384)))))
 
