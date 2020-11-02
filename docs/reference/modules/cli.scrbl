@@ -83,10 +83,11 @@ If no case shown below fits, then @racket[show-command] returns
 If @racketid[A] is @racket{config}, @racket[show-command] returns
 @racket[(halt 0 ($show-datum (dump-xiden-settings)))].
 
-If @racket{installed}, @racket[show-command] returns @racket[(halt 0 (list
-($show-string S) ...))], where @racket[S] is a string formatted to show
-a @tech{package query}, @tech{package output} and directory path. The list
-represents all installed outputs in the @tech{target workspace}.
+If @racket{installed}, @racket[show-command] returns @racket[(halt 0
+(list ($show-string S) ...))], where @racket[S] is a string formatted
+to show a @tech{package query}, a package output and a directory
+path. The list represents all installed outputs in the @tech{target
+workspace}.
 
 If @racket{links}, @racket[show-command] returns @racket[(halt 0 (list
 ($show-string L) ...))], where @racket[L] is a string that shows a

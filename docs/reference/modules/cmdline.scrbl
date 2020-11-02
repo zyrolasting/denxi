@@ -65,8 +65,9 @@ progress in long-running jobs.
 @defform[(with-rc flags body ...)]{
 Like @racket[begin], except the body is evaluated using a new
 @tech{runtime configuration} in terms of @racket[flags].
-@racket[flags] should be a value computed by
-@racket[run-command-line].
+@racket[flags] should be @racket[null], or flag data computed by
+@racket[parse-command-line]. The flag data is specific to
+@project-name, and you do not need to define it yourself.
 }
 
 

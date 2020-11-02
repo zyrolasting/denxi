@@ -1,15 +1,15 @@
 #lang scribble/manual
 
-@require[@for-label[racket/base]]
+@require[@for-label[racket/base] "../shared.rkt"]
 
 @title{Affirmations}
 
 Each security-critical check is implemented using a composition of
 @deftech{affirmations}.  An @tech{affirmation} is a pure procedure
-that either returns a @tech{message}, or the result of applying
-another procedure in tail position. The message says if an operation
-is consistent with the user's affirmative consent, and names the
-@tech{affirmation} used to create that message.  Additionally, an
+that either returns a @tech/xiden-reference{message}, or the result of
+applying another procedure in tail position. The message says if an
+operation is consistent with the user's affirmative consent, and names
+the @tech{affirmation} used to create that message.  Additionally, an
 affirmation procedure must have a cyclomatic complexity of at most
 @racket[2].
 
