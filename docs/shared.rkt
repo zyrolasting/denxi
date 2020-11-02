@@ -19,3 +19,6 @@
 
 (define (tech/reference tag)
   (tech #:doc '(lib "scribblings/reference/reference.scrbl") tag))
+
+(define (tech/xiden-reference tag)
+  (tech #:doc '(lib "xiden/docs/reference/xiden-reference.scrbl") tag))
