@@ -1,13 +1,10 @@
 #lang racket/base
 
-; Define means for fetching bytes from some origin.
+; Define methods for fetching bytes using `source' strings.
 ;
 ; This addresses a core problem in dependency management: If you
 ; didn't check your dependencies into version control, then how do you
 ; get those EXACT dependencies later?
-;
-; At a high-level, this module defines a "fetch" as an operation that
-; tries to fulfill a request for bytes through various methods.
 
 (require "contract.rkt")
 

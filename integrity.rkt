@@ -1,5 +1,7 @@
 #lang racket/base
 
+; Verify integrity of bytes
+
 (require "contract.rkt")
 
 ; Mirror OpenSSL

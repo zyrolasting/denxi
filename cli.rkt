@@ -1,5 +1,7 @@
 #lang racket/base
 
+; Define primary entry point for the program.
+
 (require racket/function
          racket/path
          racket/pretty

@@ -1,5 +1,8 @@
 #lang racket/base
 
+; Extend racket/cmdline. cli.rkt defines the CLI in terms of this
+; module.
+
 (require "contract.rkt")
 
 (define exit-code/c (integer-in 0 255))

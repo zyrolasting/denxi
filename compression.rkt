@@ -1,6 +1,6 @@
 #lang racket/base
 
-; Define an interface to (de)compress bytes, hiding the algorithm at work.
+; Encapsulate byte (de)compression algorithms
 
 (require racket/contract
          file/gzip

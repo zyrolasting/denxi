@@ -1,5 +1,7 @@
 #lang racket/base
 
+; Extend racket/contract
+
 (require racket/contract)
 
 (provide (all-from-out racket/contract)

@@ -1,5 +1,7 @@
 #lang racket/base
 
+; Extend racket/format
+
 (require racket/format
          racket/match
          racket/pretty

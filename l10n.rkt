@@ -1,5 +1,7 @@
 #lang racket/base
 
+; Loads human-readable strings dynamically
+
 (provide get-message-formatter
          run+print-log)
 

@@ -1,5 +1,7 @@
 #lang racket/base
 
+; Extend file system operations
+
 (provide (all-defined-out)
          (all-from-out racket/file))
 

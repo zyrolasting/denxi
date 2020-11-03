@@ -1,6 +1,7 @@
 #lang racket/base
 
-; Define a monadic type
+; Define a monadic type that combines a single value with logged
+; messages.
 
 (require "contract.rkt")
 (provide (struct-out logged)

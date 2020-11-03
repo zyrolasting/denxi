@@ -1,5 +1,7 @@
 #lang racket/base
 
+; Extend racket/path
+
 (provide (all-defined-out)
          (all-from-out racket/path))
 

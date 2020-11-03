@@ -1,5 +1,7 @@
 #lang racket/base
 
+; Extend net/url
+
 (require net/url
          "contract.rkt")
 

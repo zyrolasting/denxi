@@ -1,5 +1,7 @@
 #lang racket/base
 
+; Define a directory used for all file I/O
+
 (provide build-workspace-path
          find-workspace-directory
          make-workspace-path-builder

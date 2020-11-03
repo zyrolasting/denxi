@@ -1,5 +1,7 @@
 #lang racket/base
 
+; Extend racket/string
+
 (provide (all-defined-out)
          (all-from-out racket/string))
 

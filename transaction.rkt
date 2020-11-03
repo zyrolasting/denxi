@@ -1,19 +1,13 @@
 #lang racket/base
 
-; This module interprets command line flags in a given order
-; in the context of a transactional control flow.
-;
 ; Consider the following command line, where -i and -u can be
-; specified multiple times. Each value is accumulated into
-; a list for the corresponding flag.
+; specified multiple times.
 ;
 ;  $ ... -i a -u b -i c -u d
 ;
-; -i produces (c a) when accumulated using (cons), and -u produces (d b)
-;
-; The user expects actions to run in the visible order: (a b c d).
-; This module transforms the accumulated lists into procedures that
-; run in the expected order, and fail to a rollback procedure.
+; The user expects the command to handle arguments in the shown
+; order: (a b c d).  This module does so in a transactional
+; control flow.
 
 
 (require "contract.rkt")

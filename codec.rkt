@@ -1,7 +1,6 @@
 #lang racket/base
 
-; Define supported decoding and encoding algorithms and a simple
-; interface for them all.
+; Decode and encode byte strings with prescribed algorithms.
 
 (require racket/contract
          racket/string

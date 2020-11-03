@@ -1,5 +1,7 @@
 #lang racket/base
 
+; Authenticate source of bytes.
+
 (require "contract.rkt")
 
 (define siginfo-variant/c (or/c bytes? string?))

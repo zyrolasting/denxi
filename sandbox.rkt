@@ -1,5 +1,10 @@
 #lang racket/base
 
+; Extend racket/sandbox with operations to define and edit
+; xiden/pkgdef modules. TODO: Redefine the interface such that saving
+; a module requires syntax objects instead of loaded values from an
+; evaluator.
+
 (require "contract.rkt")
 (provide (all-from-out racket/sandbox)
          (contract-out

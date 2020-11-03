@@ -1,5 +1,9 @@
 #lang racket/base
 
+; Define a package input as a request for exact bytes from at least
+; one source. Requires knowledge of source.rkt, integrity.rkt and
+; signature.rkt.
+
 (require "cli-flag.rkt"
          "contract.rkt"
          "format.rkt"

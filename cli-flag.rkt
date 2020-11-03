@@ -1,10 +1,10 @@
 #lang racket/base
 
-; This module produces values suitable for `parse-command-line`. The
-; flag handlers produce procedures that together bind settings in a
-; new parameterization. This prevents oddities that arise when
-; maintaining mutable storage for CLI-provided values in addition to a
-; set of parameters.
+; This module produces flag specifications suitable for
+; `parse-command-line`. The flag handlers return procedures that apply
+; thunks in new parameterizations. This prevents oddities that arise
+; when maintaining mutable storage for CLI-provided values in addition
+; to a set of parameters.
 ;
 ; (parse-command-line "prog" (current-command-line-arguments)
 ;                     (make-cli-flag-table a b c ...)

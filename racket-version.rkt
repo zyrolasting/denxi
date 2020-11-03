@@ -1,5 +1,7 @@
 #lang racket/base
 
+; Define and compare Racket version intervals
+
 (require racket/contract
          version/utils
          "exn.rkt")

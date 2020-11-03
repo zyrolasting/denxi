@@ -1,7 +1,6 @@
 #lang racket/base
 
-; Pack and unpack archives containing packages.
-; Hide the algorithms responsible from the user.
+; Create and extract archives. Hide algorithms from the user.
 
 (require racket/contract)
 
