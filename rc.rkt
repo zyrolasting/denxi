@@ -97,6 +97,7 @@
 
 
 ;; Begin runtime configuration space
+;; TODO: Use string keys for l10n
 ;; =================================
 
 (define-xiden-setting XIDEN_SANDBOX_MEMORY_LIMIT_MB (>=/c 0) 200 "Total memory quota for a sandbox")
