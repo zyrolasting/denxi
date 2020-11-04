@@ -10,7 +10,7 @@ This project follows [these versioning rules](https://sagegerard.com/edition-rev
 - Rewrite project to support transactions and content addressable package outputs
 - Add `tags`, `home-page`, `racket-versions`, and `description` fields to package definition
 - Switch to `xiden/pkgdef` and `#lang xiden` as canonical languages.
-
+- Add `mkint` command
 
 ## [draft:alpha] - 2020-08-02
 

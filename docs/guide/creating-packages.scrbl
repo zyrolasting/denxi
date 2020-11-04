@@ -293,6 +293,9 @@ For that, we need to declare integrity information with our input.
                (sources "https://sagegerard.com/xiden-tutorial/default.tgz"))
                (integrity 'sha384 (hex "299e3eb744725387e0355937727cf6e3c938eda2355cda82d58596fd535188fa624217f52f8c6e7d5ee7cb1d458a7f75"))))]
 
+
+@subsubsection{What Integrity Means}
+
 The integrity information tells @project-name if it got the @italic{right}
 bytes. If @project-name cannot get the @italic{exact bytes} this input demands,
 then the build will fail. This is a good thing! It makes builds reproducible,
@@ -314,19 +317,59 @@ elsewhere.  Here we tell @project-name that the SHA-384 digest of
 @racket{default.tgz} comes from a hex string. That tells @project-name how to
 translate the digest as a string back to bytes for comparison.
 
-If you followed @secref{setup}, then you should have OpenSSL installed on
-your system. You can check the digest for yourself by downloading the
-file at the link shown in the code, and then running this command:
+
+@subsubsection{Creating an Integrity Expression}
+
+There are a couple of ways you can generate an integrity expression.
+Before you try, download the file at the link shown in the integrity
+expression in the previous snippet. Our goal is to create the same
+expression we saw in the code.
+
+Let's start by making an integrity expression by hand.  If you
+followed @secref{setup}, then you should have OpenSSL installed on
+your system. You can check the digest for yourself by running this
+command:
 
 @verbatim|{
 $ openssl dgst -sha384 default.tgz
 SHA384(default.tgz)= 299e3eb744725387e...
 }|
 
-There's a tricky part here. Yes, the digests match our code, but that doesn't
-mean you should paste it right into new definitions. Typically you want to
-write a definition using a @italic{trusted copy} of a file, such as one you
-keep on your drive or from a repository you maintain.
+There's a tricky part here. Yes, the digests match our code, but that
+doesn't mean you should paste it right into new definitions. Typically
+you want to write a definition using a @italic{trusted copy} of a
+file, such as one you keep on your drive or from a repository you
+maintain.
+
+From here you can write an integrity expression by hand. Just paste it
+in this example where you see @racketfont{DIGEST}.
+
+@racketblock[(integrity 'sha384 (hex DIGEST))]
+
+An external tool gives you a digest with whatever encoding options it
+supports. You also have to know what encoding and algorithm are being
+used for a given digest.  If you want the entire integrity expression
+with options supported by @|project-name|, then use the @litchar{xiden
+mkint} command. This example does the same thing, except you'll get an
+entire integrity expression as output.
+
+@verbatim|{
+$ xiden mkint sha384 hex default.tgz
+(integrity 'sha384 (hex "299e3eb744725387e...
+}|
+
+Alternatively, you can tell @project-name to read from standard input.
+Just use a dash in place of the file.
+
+@verbatim|{
+$ cat default.tgz | xiden mkint sha384 hex -
+(integrity 'sha384 (hex "299e3eb744725387e...
+}|
+
+Assuming you trust the input, you only need to copy and paste the
+expression into your definition. If you want programmatic control over
+integrity expressions, then use the @racketmodname[xiden/integrity]
+module.
 
 
 @subsection{Authenticating Inputs}

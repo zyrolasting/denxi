@@ -10,9 +10,10 @@
   (case key
     [(top-level-cli-help)
      (L "<action> is one of"
-        "  do   Run transaction"
-        "  gc   Collect garbage"
-        "  show Print report")]
+        "  do     Run transaction"
+        "  gc     Collect garbage"
+        "  show   Print report"
+        "  mkint  Make integrity info for bytes")]
 
     [(show-command-help)
      (L "where <what> is one of"

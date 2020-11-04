@@ -20,6 +20,7 @@
          "archiving.rkt"
          "cli-flag.rkt"
          "cmdline.rkt"
+         "codec.rkt"
          "contract.rkt"
          "exn.rkt"
          "file.rkt"
@@ -68,6 +69,7 @@
            ["do" do-command]
            ["show" show-command]
            ["gc" gc-command]
+           ["mkint" mkint-command]
            [_ (const (halt 1 ($cli:undefined-command action)))]))
        (proc args halt)))))
 
@@ -178,6 +180,34 @@
        [_
         (halt 1 ($cli:undefined-command what))]))))
 
+
+(define (mkint-command args halt)
+  (run-command-line
+   #:args args
+   #:halt halt
+   #:program "mkint"
+   #:arg-help-strings '("algorithm" "encoding" "file")
+   (λ (flags algorithm-str encoding-str file-or-stdin)
+     (with-handlers ([exn? (λ (e) (raise-user-error 'mkint (exn-message e)))])
+       (let ([algo (string->symbol algorithm-str)]
+             [encoding (string->symbol encoding-str)]
+             [port
+              (if (equal? "-" file-or-stdin)
+                  (current-input-port)
+                  (open-input-file file-or-stdin))])
+         (halt 0
+               ($show-datum
+                `(integrity
+                  ',algo
+                  (,(if (member encoding '(hex colon-separated-hex))
+                        'hex
+                        encoding)
+                   ,(coerce-string
+                     (encode encoding (dynamic-wind void
+                                                    (λ ()
+                                                      (make-digest port algo))
+                                                    (λ ()
+                                                      (close-input-port port))))))))))))))
 
 
 
