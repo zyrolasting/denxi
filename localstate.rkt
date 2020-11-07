@@ -793,15 +793,12 @@
      (define package-id  (q (package-record  #f package-name provider-id)))
      (define edition-id  (q (edition-record  #f edition-name package-id)))
 
-     (define (revision->revision-number v)
-       (or (find-revision-number v edition-id)
-           (fail)))
-
      (define-values (lo hi)
-       (get-resolved-revision-interval
-        (struct-copy xiden-query query
-                     [revision-min (~a (revision->revision-number (xiden-query-revision-min query)))]
-                     [revision-max (~a (revision->revision-number (xiden-query-revision-max query)))])))
+       (resolve-revision-interval
+        query
+        (λ (_ rev)
+          (string->number (~a (or (find-revision-number rev edition-id)
+                                  (fail)))))))
 
      (when (< hi lo)
        (fail))

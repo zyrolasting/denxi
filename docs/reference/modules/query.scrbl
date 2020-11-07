@@ -154,10 +154,27 @@ are populated from @racket[pkgeval].
 module, or a procedure that acts like one.
 }
 
-@defproc[(get-resolved-revision-interval [query resolved-xiden-query?])
+@defproc[(resolve-revision-interval [query xiden-query?]
+                                    [make-revision-number
+                                     (-> boolean? string? revision-number?)])
          (values revision-number? revision-number?)]{
-Applies @racket[make-revision-interval] based on the information in
-the given @tech{resolved package query}.
+Returns a value computed from @racket[make-revision-interval].  The
+arguments for @racket[make-revision-interval] is based on the
+information in @racket[query], such that each revision endpoint is
+first transformed to a @tech{revision number} using
+@racket[make-revision-number].
+
+@racket[make-revision-number] accepts two arguments.
+
+If the first argument is @racket[#f], then the second argument is
+the same value bound to @racket[(xiden-query-revision-min query)].
+
+If the first argument is @racket[#t], then the second argument is
+the same value bound to @racket[(xiden-query-revision-max query)].
+
+The first argument is useful for generating mock data for tests, but
+is otherwise unhelpful when normalizing an arbitrary @tech{revision}
+to a @tech{revision number}.
 }
 
 @defproc[(abbreviate-exact-xiden-query [query exact-xiden-query?]) string?]{

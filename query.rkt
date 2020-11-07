@@ -16,9 +16,10 @@
           [xiden-query->string (-> well-formed-xiden-query? string?)]
           [package-evaluator->xiden-query (-> (-> any/c any) xiden-query?)]
           [abbreviate-exact-xiden-query (-> exact-xiden-query? string?)]
-          [get-resolved-revision-interval (-> resolved-xiden-query?
-                                              (values revision-number?
-                                                      revision-number?))]
+          [resolve-revision-interval (-> xiden-query?
+                                         (-> boolean? string? revision-number?)
+                                         (values revision-number?
+                                                 revision-number?))]
           [string->xiden-query (-> string? xiden-query?)]))
 
 
@@ -137,10 +138,10 @@
   (if flag #\e #\i))
 
 
-(define (get-resolved-revision-interval query)
+(define (resolve-revision-interval query revision->revision-number)
   (make-revision-interval
-   (string->number (xiden-query-revision-min query))
-   (string->number (xiden-query-revision-max query))
+   (revision->revision-number #f (xiden-query-revision-min query))
+   (revision->revision-number #t (xiden-query-revision-max query))
    #:lo-exclusive (boundary-flag->boolean (string-ref (xiden-query-interval-bounds query) 0))
    #:hi-exclusive (boundary-flag->boolean (string-ref (xiden-query-interval-bounds query) 1))))
 
@@ -151,6 +152,24 @@
   (test-equal? "Abbreviate queries"
                (abbreviate-exact-xiden-query (xiden-query "a" "b" "c" "0" "0" "ii"))
                "a:b:c:0")
+
+  (test-case "Resolve non-numeric revision intervals"
+    (define test-data
+      '((97 100 "ii")
+        (97 99  "ie")
+        (98 100 "ei")
+        (98 99  "ee")))
+    (for ([test-datum test-data])
+      (match-define (list expected-lo expected-hi interval-flags) test-datum)
+      (call-with-values (λ ()
+                          (resolve-revision-interval
+                           (xiden-query #f #f #f #\a #\d interval-flags)
+                           (λ (_ r) (char->integer r))))
+                        (λ (lo hi)
+                          (test-equal? (format "Resolve non-numeric interval: ~a"
+                                               interval-flags)
+                                       (cons lo hi)
+                                       (cons expected-lo expected-hi))))))
 
   (test-case "Convert between queries and strings"
     (define (verify s expected) (check-equal? (xiden-query->string (string->xiden-query s)) expected))
