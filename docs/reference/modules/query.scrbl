@@ -135,6 +135,11 @@ be a string, an instance of @racket[xiden-query], or a procedure that
 behaves like an evaluator for a @racketmodname[xiden/pkgdef] module.
 }
 
+@defthing[boundary-flags-string? predicate/c]{
+Returns @racket[#t] if the argument is a suitable value for
+@racket[xiden-query-interval-bounds].
+}
+
 
 @defproc[(coerce-xiden-query [variant xiden-query-variant?]) xiden-query?]{
 Returns a @racket[xiden-query] from a variant value type.

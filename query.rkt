@@ -6,6 +6,7 @@
 
 (provide (struct-out xiden-query)
          (contract-out
+          [boundary-flags-string? predicate/c]
           [well-formed-xiden-query? predicate/c]
           [resolved-xiden-query? predicate/c]
           [malformed-xiden-query? predicate/c]
@@ -42,6 +43,13 @@
   #:transparent)
 
 
+(define (boundary-flags-string? s)
+  (with-handlers ([exn? (λ (e) #f)])
+    (boundary-flag->boolean (string-ref s 0))
+    (boundary-flag->boolean (string-ref s 1))
+    #t))
+
+
 (define well-formed-xiden-query?
   (struct/c xiden-query
             non-empty-string?
@@ -49,8 +57,7 @@
             string?
             string?
             string?
-            (or/c "" "ii" "ee" "ie" "ei")))
-
+            (or/c "" boundary-flags-string?)))
 
 (define malformed-xiden-query?
   (negate well-formed-xiden-query?))
@@ -149,6 +156,16 @@
 (module+ test
   (require rackunit)
 
+  (test-case "Detect boundary flag strings"
+    (check-true (boundary-flags-string? "ii"))
+    (check-true (boundary-flags-string? "ie"))
+    (check-true (boundary-flags-string? "ee"))
+    (check-true (boundary-flags-string? "ei"))
+    (check-false (boundary-flags-string? "e"))
+    (check-false (boundary-flags-string? "i"))
+    (check-false (boundary-flags-string? ""))
+    (check-false (boundary-flags-string? "ab")))
+
   (test-equal? "Abbreviate queries"
                (abbreviate-exact-xiden-query (xiden-query "a" "b" "c" "0" "0" "ii"))
                "a:b:c:0")
@@ -167,7 +184,9 @@
                            (λ (_ r) (char->integer r))))
                         (λ (lo hi)
                           (test-equal? (format "Resolve non-numeric interval: ~a"
-                                               interval-flags)
+                                               (if (equal? interval-flags "")
+                                                   "<empty-string>"
+                                                   interval-flags))
                                        (cons lo hi)
                                        (cons expected-lo expected-hi))))))
 
