@@ -161,9 +161,10 @@ module, or a procedure that acts like one.
 
 @defproc[(resolve-revision-interval [query xiden-query?]
                                     [make-revision-number
-                                     (-> boolean? string? revision-number?)])
+                                     (-> boolean? string? revision-number?)]
+                                    [#:default-bounds default-bounds "ii"])
          (values revision-number? revision-number?)]{
-Returns a value computed from @racket[make-revision-interval].  The
+Returns values created from @racket[make-revision-interval].  The
 arguments for @racket[make-revision-interval] is based on the
 information in @racket[query], such that each revision endpoint is
 first transformed to a @tech{revision number} using
@@ -180,6 +181,11 @@ the same value bound to @racket[(xiden-query-revision-max query)].
 The first argument is useful for generating mock data for tests, but
 is otherwise unhelpful when normalizing an arbitrary @tech{revision}
 to a @tech{revision number}.
+
+The output integers are adjusted according to
+@racket[(xiden-query-interval-bounds query)], or
+@racket[default-bounds] if @racket[(boundary-flags-string?
+(xiden-query-interval-bounds query))] is @racket[#f].
 }
 
 @defproc[(abbreviate-exact-xiden-query [query exact-xiden-query?]) string?]{

@@ -17,10 +17,10 @@
           [xiden-query->string (-> well-formed-xiden-query? string?)]
           [package-evaluator->xiden-query (-> (-> any/c any) xiden-query?)]
           [abbreviate-exact-xiden-query (-> exact-xiden-query? string?)]
-          [resolve-revision-interval (-> xiden-query?
-                                         (-> boolean? string? revision-number?)
-                                         (values revision-number?
-                                                 revision-number?))]
+          [resolve-revision-interval (->* (xiden-query? (-> boolean? string? revision-number?))
+                                          (#:default-bounds boundary-flags-string?)
+                                          (values revision-number?
+                                                  revision-number?))]
           [string->xiden-query (-> string? xiden-query?)]))
 
 
@@ -145,12 +145,15 @@
   (if flag #\e #\i))
 
 
-(define (resolve-revision-interval query revision->revision-number)
-  (make-revision-interval
-   (revision->revision-number #f (xiden-query-revision-min query))
-   (revision->revision-number #t (xiden-query-revision-max query))
-   #:lo-exclusive (boundary-flag->boolean (string-ref (xiden-query-interval-bounds query) 0))
-   #:hi-exclusive (boundary-flag->boolean (string-ref (xiden-query-interval-bounds query) 1))))
+(define (resolve-revision-interval #:default-bounds [default-bounds "ii"] query revision->revision-number)
+  (let ([bounds (if (boundary-flags-string? (xiden-query-interval-bounds query))
+                    (xiden-query-interval-bounds query)
+                    default-bounds)])
+    (make-revision-interval
+     (revision->revision-number #f (xiden-query-revision-min query))
+     (revision->revision-number #t (xiden-query-revision-max query))
+     #:lo-exclusive (boundary-flag->boolean (string-ref bounds 0))
+     #:hi-exclusive (boundary-flag->boolean (string-ref bounds 1)))))
 
 
 (module+ test
@@ -175,7 +178,8 @@
       '((97 100 "ii")
         (97 99  "ie")
         (98 100 "ei")
-        (98 99  "ee")))
+        (98 99  "ee")
+        (97 100 "")))
     (for ([test-datum test-data])
       (match-define (list expected-lo expected-hi interval-flags) test-datum)
       (call-with-values (λ ()
