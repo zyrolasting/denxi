@@ -63,8 +63,8 @@ The empty string is equivalent to accepting only default values.
 A @deftech{parsed package query} is an instance of @racket[xiden-query].
 
 A @deftech{well-formed package query} is a @tech{parsed package query}
-that uses non-empty strings for package and provider names, has
-defined interval boundaries, and strings for all other fields.
+that uses non-empty strings for package and provider names, and has
+strings for all other fields.
 
 A @deftech{malformed package query} is a @tech{parsed package query}
 that is not a @tech{well-formed package query}.
