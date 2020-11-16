@@ -11,6 +11,7 @@ This project follows [these versioning rules](https://sagegerard.com/edition-rev
 - Add `tags`, `home-page`, `racket-versions`, and `description` fields to package definition
 - Switch to `xiden/pkgdef` and `#lang xiden` as canonical languages.
 - Add `mkint` command
+- Help authors make input expressions
 
 ## [draft:alpha] - 2020-08-02
 

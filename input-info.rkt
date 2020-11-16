@@ -5,6 +5,7 @@
 ; signature.rkt.
 
 (require "cli-flag.rkt"
+         "codec.rkt"
          "contract.rkt"
          "format.rkt"
          "integrity.rkt"
@@ -13,6 +14,7 @@
          "logged.rkt"
          "message.rkt"
          "monad.rkt"
+         "path.rkt"
          "port.rkt"
          "printer.rkt"
          "rc.rkt"
@@ -28,6 +30,16 @@
            (-> input-info? logged?)]
           [well-formed-input-info/c
            flat-contract?]
+          [make-input-expression-from-files
+           (->* (path-string?
+                 (-> bytes? path-string? (non-empty-listof string?))
+                 md-algorithm/c
+                 string?
+                 path-string?)
+                (#:local-name string?
+                 #:byte-encoding (or/c #f xiden-encoding/c)
+                 (or/c #f path-string?))
+                list?)]
           [input
            (->* (non-empty-string?
                  (non-empty-listof path-string?))
@@ -194,3 +206,32 @@
               FAILURE)
           (cons ($regarding-input+source input source status)
                 messages)))
+
+
+;-------------------------------------------------------------------------------
+; Authoring aids
+
+(define (make-input-expression-from-files
+         path
+         #:local-name [local-name (path->string (file-name-from-path path))]
+         #:byte-encoding [byte-encoding 'base64]
+         make-sources
+         message-digest-algorithm
+         public-key-source
+         private-key-path
+         [private-key-password-path #f])
+  (let ([digest (make-digest (expand-user-path path) message-digest-algorithm)]
+        [make-byte-expression
+         (if byte-encoding
+             (λ (bstr) `(,byte-encoding ,(coerce-string (encode byte-encoding bstr))))
+             values)])
+    `(input ,local-name
+            (sources . ,(make-sources digest path))
+            (integrity ',message-digest-algorithm ,(make-byte-expression digest))
+            (signature ,public-key-source
+                       ,(make-byte-expression
+                         (make-signature-bytes
+                          digest
+                          (expand-user-path private-key-path)
+                          (and private-key-password-path
+                               (expand-user-path private-key-password-path))))))))
