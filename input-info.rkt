@@ -32,11 +32,11 @@
            flat-contract?]
           [make-input-expression-from-files
            (->* (path-string?
-                 (-> bytes? path-string? (non-empty-listof string?))
-                 md-algorithm/c
+                 (-> bytes? path-string? (non-empty-listof any/c))
                  string?
                  path-string?)
                 (#:local-name string?
+                 #:md-algorithm md-algorithm/c
                  #:byte-encoding (or/c #f xiden-encoding/c)
                  (or/c #f path-string?))
                 list?)]
@@ -215,8 +215,8 @@
          path
          #:local-name [local-name (path->string (file-name-from-path path))]
          #:byte-encoding [byte-encoding 'base64]
+         #:md-algorithm [message-digest-algorithm 'sha384]
          make-sources
-         message-digest-algorithm
          public-key-source
          private-key-path
          [private-key-password-path #f])

@@ -86,8 +86,8 @@ configuration does not place trust in the bytes.
          [path path-string?]
          [#:local-name local-name string? (path->string (file-name-from-path path))]
          [#:byte-encoding byte-encoding (or/c #f xiden-encoding/c) 'base64]
-         [make-sources (-> bytes? path-string? (non-empty-listof string?))]
-         [message-digest-algorithm md-algorithm/c]
+         [#:md-algorithm message-digest-algorithm md-algorithm/c 'sha384]
+         [make-sources (-> bytes? path-string? (non-empty-listof any/c))]
          [public-key-source string?]
          [private-key-path path-string?]
          [private-key-password-path (or/c #f path-string?) #f])
@@ -120,7 +120,10 @@ This takes an archive called @racket{source-code.tar.gz} from the file
 system. In the package definition, it will be referred to simply as
 @racket{code.tar.gz}. The source list is computed dynamically from
 @racket[make-sources], which accepts the message digest (as bytes) and
-a reference @racket[eq?] to @racket[path] as arguments.
+a reference @racket[eq?] to @racket[path] as arguments. Note that the
+sources are used literally in the output expression, so procedures
+like @racket[(lambda (digest path) `((from-file ,(bytes->string/utf-8
+digest))))] are valid.
 
 The input expression will contain integrity information using a
 @racket['sha384] digest. Finally, the signature information will
