@@ -90,6 +90,7 @@
                         ++host
                         --max-redirects
                         --trust-any-digest
+                        --trust-any-exe
                         --trust-any-pubkey
                         --trust-bad-signature
                         --trust-unsigned

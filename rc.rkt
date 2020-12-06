@@ -135,6 +135,9 @@
 (define-xiden-setting XIDEN_TRUST_ANY_PUBLIC_KEY boolean? #f
   "(DANGEROUS) Trust any public key")
 
+(define-xiden-setting XIDEN_TRUST_ANY_EXECUTABLE boolean? #f
+  "(DANGEROUS) Trust any executable")
+
 (define-xiden-setting XIDEN_TRUSTED_PUBLIC_KEYS (listof well-formed-integrity-info/c) null
   "Trust a given public key, by 160-bit SHA-384 fingerprint")
 

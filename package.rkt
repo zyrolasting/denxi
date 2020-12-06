@@ -256,6 +256,7 @@
     (when path-or-#f
       (cond [(member 'execute ops)
              (unless (or (equal? "openssl" (path->string (file-name-from-path path-or-#f)))
+                         (XIDEN_TRUST_ANY_EXECUTABLE)
                          (trust-executable? path-or-#f))
                (raise-user-error 'security
                                  (~a "Unauthorized attempt to execute ~a.~n"

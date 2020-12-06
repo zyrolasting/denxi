@@ -177,6 +177,10 @@ to load extensions.
 @bold{Dangerous}. When true, trust any input.
 }
 
+@defsetting*[XIDEN_TRUST_ANY_EXECUTABLE]{
+@bold{Dangerous}. When true, allow the Racket runtime to start a subprocess with any executable.
+}
+
 @defsetting*[XIDEN_TRUST_ANY_PUBLIC_KEY]{
 @bold{Dangerous}. When true, trust any public key used to verify a signature.
 }
