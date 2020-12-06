@@ -10,7 +10,7 @@
 (provide (all-from-out racket/port)
          (contract-out
           [mebibytes->bytes
-           (-> real? exact-nonnegative-integer?)]
+           (-> real? (or/c +inf.0 exact-nonnegative-integer?))]
           [transfer
            (-> input-port?
                output-port?
@@ -31,7 +31,9 @@
 (define+provide-message $transfer:budget:rejected $transfer:budget (proposed-max-size))
 
 (define (mebibytes->bytes mib)
-  (inexact->exact (ceiling (* mib 1024 1024))))
+  (if (eq? mib +inf.0)
+      mib
+      (inexact->exact (ceiling (* mib 1024 1024)))))
 
 (define (transfer from to
                   #:on-status on-status
@@ -98,6 +100,7 @@
            rackunit)
 
   (test-case "Convert mebibytes to bytes"
+    (check-eq? (mebibytes->bytes +inf.0) +inf.0)
     (check-eq? (mebibytes->bytes 0) 0)
     (check-eqv? (mebibytes->bytes 1)
                 1048576)

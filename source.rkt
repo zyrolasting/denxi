@@ -208,16 +208,20 @@
 
 
 (define (fetch-source/http source request-transfer)
-  (define in (head-impure-port (string->url source)))
-  (define headers (extract-all-fields (port->string in)))
-  (define content-length-pair (assf (λ (el) (equal? (string-downcase el) "content-length")) headers))
-  (define est-size
-    (if content-length-pair
-        (string->number (or (cdr content-length-pair) "+inf.0"))
-        +inf.0))
-  (request-transfer (get-pure-port #:redirections (XIDEN_DOWNLOAD_MAX_REDIRECTS)
-                                   (string->url source))
-                    est-size))
+  (define-values (in headers-string)
+    (get-pure-port/headers #:redirections (XIDEN_DOWNLOAD_MAX_REDIRECTS)
+                           #:method #"GET"
+                           (string->url source)))
+
+  (define content-length-pair
+    (assf (λ (el) (equal? (string-downcase el) "content-length"))
+          (extract-all-fields headers-string)))
+
+  (request-transfer in
+                    (if content-length-pair
+                        (string->number (or (cdr content-length-pair) "+inf.0"))
+                        +inf.0)))
+
 
 
 (define (fetch-source/plugin source request-transfer)
