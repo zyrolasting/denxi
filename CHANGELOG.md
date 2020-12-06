@@ -12,6 +12,8 @@ This project follows [these versioning rules](https://sagegerard.com/edition-rev
 - Switch to `xiden/pkgdef` and `#lang xiden` as canonical languages.
 - Add `mkint` command
 - Help authors make input expressions
+- Redirected downloads with no limit now work properly
+- Add missing flags to CLI
 
 ## [draft:alpha] - 2020-08-02
 
