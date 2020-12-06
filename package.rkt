@@ -3,7 +3,9 @@
 (provide (all-defined-out))
 
 (require racket/function
+         racket/format
          version/utils
+         "codec.rkt"
          "contract.rkt"
          "input-info.rkt"
          "integrity.rkt"
@@ -17,6 +19,7 @@
          "racket-version.rkt"
          "rc.rkt"
          "sandbox.rkt"
+         "setting.rkt"
          "signature.rkt"
          "source.rkt"
          "string.rkt"
@@ -255,8 +258,12 @@
              (unless (or (equal? "openssl" (path->string (file-name-from-path path-or-#f)))
                          (trust-executable? path-or-#f))
                (raise-user-error 'security
-                                 "Unauthorized attempt to execute ~a"
-                                 path-or-#f))]
+                                 (~a "Unauthorized attempt to execute ~a.~n"
+                                     "To trust this executable, add this to ~a:~n"
+                                     "(integrity 'sha384 (hex ~s))")
+                                 path-or-#f
+                                 (setting-id XIDEN_TRUSTED_EXECUTABLES)
+                                 (~a (encode 'hex (make-digest path-or-#f 'sha384)))))]
 
             [(member 'write ops)
              (check-destructive-op "write" path-or-#f)]
