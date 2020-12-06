@@ -121,14 +121,14 @@
                                 messages)))
       (logged
        (λ (messages)
-         (define-values (fetch-result logged)
+         (define-values (fetch-result messages*)
            (run-log (fetch-input info) messages))
          (if (path-record? (fetch-state-result fetch-result))
              (check-input-integrity info
                                     (fetch-state-result fetch-result)
                                     (fetch-state-source fetch-result)
-                                    logged)
-             (values FAILURE logged))))))
+                                    messages*)
+             (values FAILURE messages*))))))
 
 
 (define (fetch-input info)
