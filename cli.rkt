@@ -88,6 +88,9 @@
                         ++trust-executable
                         ++envvar
                         ++host
+                        --fetch-total-size
+                        --fetch-buffer-size
+                        --fetch-pkgdef-size
                         --max-redirects
                         --trust-any-digest
                         --trust-any-exe
