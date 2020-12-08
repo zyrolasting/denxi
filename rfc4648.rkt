@@ -18,10 +18,13 @@
 ; loops based on a literal interpretation of the RFC, and allow for
 ; configurable alphabets.
 
-(provide base32-encode base32-decode)
+(provide base32-encode
+         base32-decode
+         base32-rfc-alphabet
+         base32-crockford-alphabet)
 
-
-(define rfc-defined #"ABCDEFGHIJKLMNOPQRSTUVWXYZ234567")
+(define base32-rfc-alphabet         #"ABCDEFGHIJKLMNOPQRSTUVWXYZ234567")
+(define base32-crockford-alphabet   #"0123456789abcdefghjkmnpqrstvwxyz")
 
 (define (process-bytes bstr continue . args)
   (let ([out (open-output-bytes)])
@@ -29,10 +32,10 @@
     (get-output-bytes out #t)))
 
 
-(define (base32-encode bstr [alphabet rfc-defined] [padding-byte (char->integer #\=)])
+(define (base32-encode bstr [alphabet base32-crockford-alphabet] [padding-byte (char->integer #\=)])
   (process-bytes bstr base32-encode/ports alphabet padding-byte))
 
-(define (base32-decode bstr [alphabet rfc-defined] [padding-byte (char->integer #\=)])
+(define (base32-decode bstr [alphabet base32-crockford-alphabet] [padding-byte (char->integer #\=)])
   (process-bytes bstr base32-decode/ports alphabet padding-byte))
 
 
@@ -122,12 +125,12 @@
   ; https://tools.ietf.org/html/rfc4648
   (define function
     '((#"" . #"")
-      (#"f" . #"MY======")
-      (#"fo" . #"MZXQ====")
-      (#"foo" . #"MZXW6===")
-      (#"foob" . #"MZXW6YQ=")
-      (#"fooba" . #"MZXW6YTB")
-      (#"foobar" . #"MZXW6YTBOI======")))
+      (#"f" . #"cr======")
+      (#"fo" . #"csqg====")
+      (#"foo" . #"csqpy===")
+      (#"foob" . #"csqpyrg=")
+      (#"fooba" . #"csqpyrk1")
+      (#"foobar" . #"csqpyrk1e8======")))
 
   (for ([pairing (in-list function)])
     (check-equal? (base32-encode (car pairing)) (cdr pairing))
