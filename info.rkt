@@ -4,7 +4,7 @@
 
 (define version "0.0") ; Don't use. This project defines its own scheme.
 
-(define deps '("base" "rackunit-lib" "db-lib" "base32"))
+(define deps '("base" "rackunit-lib" "db-lib"))
 
 (define scribblings
   '(("docs/reference/xiden-reference.scrbl" (multi-page) (tool-library))
