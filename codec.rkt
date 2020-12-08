@@ -6,7 +6,7 @@
          racket/string
          file/sha1
          net/base64
-         base32)
+         "rfc4648.rkt")
 
 (define abbreviated-decode-procedure/c
   (-> (or/c non-empty-string? bytes?) bytes?))
@@ -76,7 +76,7 @@
         (for/list ([i (in-range 0 (sub1 (string-length hexed)) 2)])
           (string (string-ref hexed i) (string-ref hexed (add1 i))))
         ":")]
-      [(base32) (base32-encode-bytes bstr)]
+      [(base32) (base32-encode bstr)]
       [(base64) (base64-encode bstr #"")]))
   (if (bytes? variant)
       (coerce-bytes output)
@@ -92,7 +92,7 @@
        (raise-user-error 'decode "~v is not a valid colon-separated hex string." encoded))
      (decode 'hex (string-replace (coerce-string encoded) ":" ""))]
     [(base32)
-     (base32-decode-bytes (coerce-string encoded))]
+     (base32-decode (coerce-bytes encoded))]
     [(base64)
      (base64-decode (coerce-bytes encoded))]))
 
