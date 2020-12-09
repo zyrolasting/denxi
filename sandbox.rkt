@@ -47,7 +47,7 @@
                   make-lock-file-name
                   make-directory*
                   make-temporary-file)
-         (only-in racket/dict dict? in-dict)
+         (only-in racket/dict dict? dict-keys dict-ref)
          (only-in racket/format ~s)
          (only-in racket/list remove-duplicates)
          (only-in racket/match match)
@@ -157,8 +157,8 @@
 
 (define (dict->package-definition-datum dict)
   `(module xinfotab xiden/pkgdef
-     . ,(for/list ([(k v) (in-dict dict)])
-          `(define ,k ,v))))
+     . ,(for/list ([k (in-list (sort (dict-keys dict) symbol<?))])
+          `(define ,k ,(dict-ref dict k)))))
 
 (define make-package-definition-datum
   (make-keyword-procedure

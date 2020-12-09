@@ -77,7 +77,7 @@
 (module+ test
   (require rackunit)
 
-  (check-eq? (string->value "+inf.0") +inf.0)
+  (check-equal? (string->value "+inf.0") +inf.0)
 
   (check-equal? (get-shortest-string '("alvin" "bob" "v" "superduper"))
                 "v")

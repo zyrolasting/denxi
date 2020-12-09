@@ -8,6 +8,7 @@
 (require racket/list
          racket/runtime-path
          racket/sequence
+         "codec.rkt"
          "format.rkt"
          "logged.rkt"
          "message.rkt"
@@ -45,10 +46,11 @@
   (path-replace-extension
    (build-path here
                (string-downcase
-                (regexp-replace
-                 #rx"_"
-                 (regexp-replace #px"\\..+" locale "")
-                 "-")))
+                (coerce-string
+                 (regexp-replace
+                  #rx"_"
+                  (regexp-replace #px"\\..+" locale "")
+                  "-"))))
    #".rkt"))
 
 (define (americentric-fallback sym)

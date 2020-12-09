@@ -272,7 +272,7 @@
 
 
   (check-eq? (keep "-a" 1) 1)
-  (check-eq? (arg->value "--whatever" "+inf.0") +inf.0)
+  (check-equal? (arg->value "--whatever" "+inf.0") +inf.0)
   (check-equal? ((keep-for (λ () '(2 3))) "--whatever" 1)
                 '(1 2 3))
 
@@ -309,7 +309,7 @@
     (match-define (cli-flag-state flag-string cli-flag-inst args-bound) (handler "-t" "+inf.0"))
     (check-equal? flag-string "-t")
     (check-eq? cli-flag-inst TEST_SETTING/flag)
-    (define callback-bound (args-bound (λ () (check-eq? (TEST_SETTING) +inf.0))))
+    (define callback-bound (args-bound (λ () (check-equal? (TEST_SETTING) +inf.0))))
 
     (callback-bound))
 
