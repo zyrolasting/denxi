@@ -15,7 +15,8 @@
          file/untar
          file/untgz
          file/unzip
-         "file.rkt")
+         "file.rkt"
+         "plugin.rkt")
 
 (define (pack paths out)
   (tar->output paths out #:follow-links? #f))
@@ -26,21 +27,32 @@
       (void ((get-extract-procedure (object-name in)) in))))
 
 (define (get-extract-procedure name)
-  (if (path-string? name)
-      (get-extract-procedure (cdr (string-split (~a (file-name-from-path name)) ".")))
-      (match name
-        [(list "tar")
-         untar]
-        [(or (list "tgz") (list "tar" "gz"))
-         untgz]
-        [(list "zip")
-         unzip]
-        [else (error 'unpack
-                     "Cannot infer archive format: ~a"
-                     name)])))
+  (match (reverse (string-split (~a (file-name-from-path name)) "."))
+    [(list "tar" _ ...)
+     untar]
+    [(or (list "tgz" _ ...) (list "gz" "tar" _ ...))
+     untgz]
+    [(list "zip" _ ...)
+     unzip]
+    [else
+     (define (on-failure . _)
+       (error 'unpack "Cannot infer archive format: ~a" name))
+
+     (define ext
+       (load-from-plugin 'get-extract-procedure on-failure on-failure))
+
+     (define get-extract-procedure/plugin
+       (invariant-assertion (or/c #f (-> input-port? void?))
+                            (if (procedure? ext)
+                                (ext name)
+                                (on-failure))))
+
+     (or get-extract-procedure/plugin
+         (on-failure))]))
+
 
 (module+ test
-  (require rackunit)
+  (require rackunit "rc.rkt")
 
   (define (make-file path-string)
     (define path (string->path path-string))
@@ -54,10 +66,42 @@
                  "data"))
 
   (test-case "Select correct algorithms based on file extension"
+    (check-equal? (get-extract-procedure "a..tar") untar)
     (check-equal? (get-extract-procedure "a.tar") untar)
     (check-equal? (get-extract-procedure "a.tgz") untgz)
     (check-equal? (get-extract-procedure "a.zip") unzip)
-    (check-equal? (get-extract-procedure "a.tar.gz") untgz))
+    (check-equal? (get-extract-procedure "a.extra....tar.gz") untgz)
+
+    (define plugin-path (make-temporary-file))
+    (dynamic-wind void
+                  (λ ()
+                    (call-with-output-file #:exists 'truncate/replace plugin-path
+                      (λ (o)
+                        (writeln
+                         '(module anonymous racket/base
+                            (provide get-extract-procedure)
+                            (define (get-extract-procedure name)
+                              (λ (in) (void (read-byte in)))))
+                         o)))
+
+                    (XIDEN_PLUGIN_MODULE
+                     plugin-path
+                     (λ ()
+                       (test-exn "Plugin procedure is under contract"
+                                 exn:fail:contract?
+                                 (λ () ((get-extract-procedure "a.xz") (void))))
+
+                       ; Confirm that the plugin read the only
+                       ; available byte.
+                       (define-values (i o) (make-pipe))
+                       (write-byte 1 o)
+                       (flush-output o)
+                       (close-output-port o)
+                       ((get-extract-procedure "a.xz") i)
+                       (check-pred eof-object? (read-byte i)))))
+
+                  (λ ()
+                    (delete-file plugin-path))))
 
   (test-case "Can pack and unpack an archive"
     (define working-dir (make-temporary-file "tmp~a" 'directory))

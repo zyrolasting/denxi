@@ -40,3 +40,12 @@ of a @tech{source} that @project-name does not understand.
 @racket[fetch-source] may return @racket[#f] or raise an exception
 if it cannot function as expected.
 }
+
+
+@defproc[(get-extract-procedure [path path-string?]) (-> input-port? void?)]{
+Return a procedure used to extract files from the archive located at
+@racket[path], or @racket[#f] if no such procedure is available.
+
+Used by @racketmodname[xiden/archiving] when it cannot extract files
+from @racket[path] on its own.
+}

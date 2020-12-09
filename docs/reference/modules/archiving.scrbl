@@ -25,4 +25,9 @@ archive format from the file extension in @racket[(object-name in)].
 If this is @racket{.tar}, then @racket[unpack] behaves like
 @racket[untar].  If @racket{.tgz} or @racket{.tar.gz}, then
 @racket[untgz]. If @racket{.zip}, @racket[unzip].
+
+If none of these cases apply, then @racket[unpack] will use a
+procedure returned from a @tech{plugin}'s
+@racket[get-extract-procedure]. If even that fails, then
+@racket[unpack] will raise an error.
 }
