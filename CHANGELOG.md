@@ -7,6 +7,7 @@ This project follows [these versioning rules](https://sagegerard.com/edition-rev
 
 ## [Unreleased]
 
+- Can now extract from any archive format using a plugin
 - Can now extract from both `.tar.gz` and `.tgz`, not just the latter.
 - Rewrite project to support transactions and content addressable package outputs
 - Add `tags`, `home-page`, `racket-versions`, and `description` fields to package definition
