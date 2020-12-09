@@ -8,6 +8,9 @@
 
 (define build-deps '("scribble-lib"))
 
+(define racket-launcher-names '("xiden"))
+(define racket-launcher-libraries '("cli.rkt"))
+
 (define scribblings
   '(("docs/reference/xiden-reference.scrbl" (multi-page) (tool-library))
     ("docs/maintenance/xiden-maintenance.scrbl" (multi-page))
