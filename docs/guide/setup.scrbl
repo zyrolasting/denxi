@@ -6,6 +6,7 @@
 
 This section covers how to install @binary on your system.
 
+
 @section{Required Programs}
 
 First, make sure the following programs are available in your @tt{PATH}.
@@ -16,34 +17,77 @@ First, make sure the following programs are available in your @tt{PATH}.
 @item{OpenSSL 0.9.8+. Verify with @litchar{openssl version}}
 ]
 
-@section{Step 1: Get the Code}
 
-There are currently no pre-built binaries for @|project-name|, so we need to
-build from source. The goal of this step is to get a directory named
-@binary somewhere on your disk.
+@section{The Easy Way: Use Racket's Default Package Catalog}
+
+@project-name is available as a vanilla Racket package on the default
+catalog. Run @litchar|{raco pkg install xiden}| to install it, and
+you're done.
+
+If this fails and you can connect to the catalog fine, then these are
+the likely reasons:
+
+@itemlist[
+
+@item{Your Racket installation may contain a package that defines a
+conflicting @litchar|{xiden}| collection. That package can either be a
+different edition of @|project-name|, or any package snuck into your
+installation designed to create that conflict.}
+
+@item{@|project-name|'s package tracks the latest release and is
+subject to backwards-incompatible changes as a
+@hyperlink["https://sagegerard.com/new-racket-pkg-releases.html"]{matter
+of policy.} In this case, uninstall the old version of Xiden and
+review the
+@hyperlink["https://github.com/zyrolasting/xiden/blob/master/CHANGELOG.md"]{change
+log}.}
+
+]
+
+Use the next method to avoid all of these risks.
+
+
+@section{The Stable Way: Install from Source}
+
+This method builds @project-name from your desired version of its
+source code.
+
+@subsection{Step 1: Get the Code}
+
+The goal of this step is to get a directory named @binary somewhere on
+your disk.
 
 You can either use Git or download an archive.
 
-@subsection{Method: Use Git}
 
-If you wish to use Git, you can clone the default branch from @|project-name|'s
-repository. If you use SSH, then run @litchar|{git clone
-git@github.com:zyrolasting/xiden.git}|.  Or, if you use HTTPS, then run
-@litchar|{git clone https://github.com/zyrolasting/xiden.git}|
+@subsubsection{Method: Use Git}
 
-Either command will leave a @binary directory in your working directory,
-and you can move on to Step 2.
+If you wish to use Git, you can clone @|project-name|'s repository. If
+you use SSH, then run @litchar|{git clone
+git@github.com:zyrolasting/xiden.git}|.  Or, if you use HTTPS, then
+run @litchar|{git clone https://github.com/zyrolasting/xiden.git}|.
+If you know what you are looking for, check out the commit you want to
+use.  Otherwise, move on to Step 2.
 
-@subsection{Method: Download Archive}
+
+@subsubsection{Method: Download Archive}
 
 If you do not have Git, then you can download a ZIP file
 of the latest source code from the following link:
 
 @centered[@hyperlink["https://github.com/zyrolasting/xiden/archive/master.zip"]{https://github.com/zyrolasting/xiden/archive/master.zip}]
 
-You can then extract the archive using whatever tool you prefer.
+If you know what you are looking for, replace @litchar{master} with
+the commit reference you want to use. Once the archive is on your
+disk, extract its files.
 
-@section{Step 2: Build The Project}
+@bold{You should have a directory named @|binary| with a bunch of
+Racket modules in it}. If you have a different directory name, or if
+the directories are nested, then make sure to reorganize the
+directories accordingly.
+
+
+@subsection{Step 2: Build The Project}
 
 Enter the source directory created from Step 1. We will now build the
 executable and offline documentation. If you see @tt{Makefile} in your current
