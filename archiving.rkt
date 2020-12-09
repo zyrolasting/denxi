@@ -7,15 +7,15 @@
 (provide (contract-out [pack   (-> (listof path-string?) output-port? any)]
                        [unpack (-> (or/c path-string? input-port?) void?)]))
 
-(require "file.rkt"
-         racket/format
+(require racket/format
          racket/match
          racket/path
          racket/string
          file/tar
          file/untar
          file/untgz
-         file/unzip)
+         file/unzip
+         "file.rkt")
 
 (define (pack paths out)
   (tar->output paths out #:follow-links? #f))
