@@ -6,6 +6,8 @@
 
 (define deps '("base" "rackunit-lib" "db-lib"))
 
+(define build-deps '("scribble-lib"))
+
 (define scribblings
   '(("docs/reference/xiden-reference.scrbl" (multi-page) (tool-library))
     ("docs/maintenance/xiden-maintenance.scrbl" (multi-page))
