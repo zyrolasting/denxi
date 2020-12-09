@@ -8,7 +8,10 @@
                        [unpack (-> (or/c path-string? input-port?) void?)]))
 
 (require "file.rkt"
+         racket/format
+         racket/match
          racket/path
+         racket/string
          file/tar
          file/untar
          file/untgz
@@ -24,11 +27,14 @@
 
 (define (get-extract-procedure name)
   (if (path-string? name)
-      (get-extract-procedure (path-get-extension name))
-      (case name
-        [(#".tar") untar]
-        [(#".tgz") untgz]
-        [(#".zip") unzip]
+      (get-extract-procedure (cdr (string-split (~a (file-name-from-path name)) ".")))
+      (match name
+        [(list "tar")
+         untar]
+        [(or (list "tgz") (list "tar" "gz"))
+         untgz]
+        [(list "zip")
+         unzip]
         [else (error 'unpack
                      "Cannot infer archive format: ~a"
                      name)])))
@@ -46,6 +52,12 @@
     (test-equal? (format "~a restored" path)
                  (file->string path)
                  "data"))
+
+  (test-case "Select correct algorithms based on file extension"
+    (check-equal? (get-extract-procedure "a.tar") untar)
+    (check-equal? (get-extract-procedure "a.tgz") untgz)
+    (check-equal? (get-extract-procedure "a.zip") unzip)
+    (check-equal? (get-extract-procedure "a.tar.gz") untgz))
 
   (test-case "Can pack and unpack an archive"
     (define working-dir (make-temporary-file "tmp~a" 'directory))

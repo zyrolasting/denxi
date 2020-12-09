@@ -23,6 +23,6 @@ is equivalent to @racket[(call-with-input-file in unpack)].
 When @racket[in] is an input port, then @racket[unpack] infers the
 archive format from the file extension in @racket[(object-name in)].
 If this is @racket{.tar}, then @racket[unpack] behaves like
-@racket[untar].  If @racket{.tgz}, then @racket[untgz]. If
-@racket{.zip}, @racket[unzip].
+@racket[untar].  If @racket{.tgz} or @racket{.tar.gz}, then
+@racket[untgz]. If @racket{.zip}, @racket[unzip].
 }
