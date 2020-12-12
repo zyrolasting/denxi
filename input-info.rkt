@@ -27,8 +27,10 @@
 (provide (struct-out input-info)
          (contract-out
           [resolve-input
-           (-> input-info? logged?)]
+           (-> concrete-input-info/c logged?)]
           [well-formed-input-info/c
+           flat-contract?]
+          [abstract-input-info/c
            flat-contract?]
           [make-input-expression-from-files
            (->* (path-string?
@@ -41,9 +43,9 @@
                  (or/c #f path-string?))
                 list?)]
           [input
-           (->* (non-empty-string?
-                 (non-empty-listof path-string?))
-                ((or/c #f integrity-info?)
+           (->* (non-empty-string?)
+                ((listof path-string?)
+                 (or/c #f integrity-info?)
                  (or/c #f signature-info?))
                 input-info?)]
           [call-with-input
@@ -70,12 +72,23 @@
 (define well-formed-input-info/c
   (struct/c input-info
             file-name-string?
-            (non-empty-listof string?)
+            (listof path-string?)
             (or/c #f well-formed-integrity-info/c)
             (or/c #f well-formed-signature-info/c)))
 
 
-(define (input name sources [integrity #f] [signature #f])
+(define abstract-input-info/c
+  (struct/c input-info
+            file-name-string?
+            null?
+            #f
+            #f))
+
+(define concrete-input-info/c
+  (and/c well-formed-input-info/c
+         (not/c abstract-input-info/c)))
+
+(define (input name [sources null] [integrity #f] [signature #f])
   (input-info name sources integrity signature))
 
 
@@ -235,3 +248,26 @@
                           (expand-user-path private-key-path)
                           (and private-key-password-path
                                (expand-user-path private-key-password-path))))))))
+
+(module+ test
+  (require rackunit)
+
+  (define abstract-input-args
+    '(("x" ())
+      ("x" () #f)
+      ("x" () #f #f)))
+
+  (define concrete-input-args
+    '(("x" ("x") #f #f)))
+
+  (for ([aargs (in-list abstract-input-args)])
+    (let ([i (apply input aargs)])
+      (test-case (format "~s is abstract" i)
+        (check-true (abstract-input-info/c i))
+        (check-false (concrete-input-info/c i)))))
+
+  (for ([cargs (in-list concrete-input-args)])
+    (let ([i (apply input cargs)])
+      (test-case (format "~s is concrete" i)
+        (check-false (abstract-input-info/c i))
+        (check-true (concrete-input-info/c i))))))

@@ -409,6 +409,23 @@ verified by that key won't offer you any value.  See @secref{trusting-pubkeys}
 to learn how to affirm trust for individual public keys.
 
 
+@subsection{Abstract and Concrete Package Inputs}
+
+An @deftech{abstract package input} (or just “abstract input”) is a
+@tech{package input} with only a name.
+
+@racketblock[(define inputs (list (input "server.rkt")))]
+
+Such inputs cannot be used to fetch exact bytes. Abstract inputs are
+useful as placeholders in package definitions that require the end
+user to define inputs.
+
+By contrast, a @deftech{concrete package input} is a package input
+that also defines at least one source that @project-name can use to
+fetch bytes. A concrete package input does not have to include
+integrity information or a signature.
+
+
 @section{Package Outputs}
 
 The processing step occurs in the @deftech{package build procedure}, which

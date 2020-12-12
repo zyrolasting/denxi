@@ -23,11 +23,12 @@ A structure representing a request for exact bytes.
 
 
 @defproc[(input [name string?]
-                [sources (non-empty-listof string?)]
+                [sources (listof path-string?) null]
                 [integrity (or/c #f well-formed-integrity-info/c) #f]
                 [signature (or/c #f well-formed-signature-info/c) #f])
          well-formed-input-info/c]{
-An abbreviated @racket[input-info] constructor that performs stronger validation on its arguments.
+An abbreviated @racket[input-info] constructor that performs stronger
+validation on its arguments.
 }
 
 
@@ -41,6 +42,19 @@ An abbreviated @racket[input-info] constructor that performs stronger validation
 A contract that recognizes @tech{package inputs} suitable for use in
 @tech{package definitions}.
 }
+
+@defthing[abstract-input-info/c
+          flat-contract?
+          #:value (struct/c input-info file-name-string? null? #f #f)]{
+A contract that recognizes @tech{package inputs} with only a name defined.
+}
+
+@defthing[concrete-input-info/c
+          flat-contract?
+          #:value (and/c well-formed-input-info/c (not/c abstract-input-info/c))]{
+A contract that recognizes @tech{package inputs} with a name and at least one source.
+}
+
 
 @defproc[(input-ref [inputs (listof input-info?)] [name string?]) (or/c #f input-info?)]{
 Returns the first element of @racket[inputs] @racket[I] where
