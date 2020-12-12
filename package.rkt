@@ -211,6 +211,15 @@
                    messages)))))
 
 
+(define (package-evaluator->xiden-query pkgeval)
+  (xiden-query (xiden-evaluator-ref pkgeval 'provider "")
+               (xiden-evaluator-ref pkgeval 'package "")
+               (xiden-evaluator-ref pkgeval 'edition "")
+               (~a (xiden-evaluator-ref pkgeval 'revision-number ""))
+               (~a (xiden-evaluator-ref pkgeval 'revision-number ""))
+               "ii"))
+
+
 ;----------------------------------------------------------------------------
 ; Operations on package definitions, as evaluators
 

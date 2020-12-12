@@ -15,7 +15,6 @@
           [xiden-query-variant? predicate/c]
           [coerce-xiden-query (-> xiden-query-variant? xiden-query?)]
           [xiden-query->string (-> well-formed-xiden-query? string?)]
-          [package-evaluator->xiden-query (-> (-> any/c any) xiden-query?)]
           [abbreviate-exact-xiden-query (-> exact-xiden-query? string?)]
           [resolve-revision-interval (->* (xiden-query? (-> boolean? string? revision-number?))
                                           (#:default-bounds boundary-flags-string?)
@@ -29,7 +28,6 @@
          "format.rkt"
          "logged.rkt"
          "message.rkt"
-         "sandbox.rkt"
          "string.rkt"
          "version.rkt")
 
@@ -78,22 +76,12 @@
 
 
 (define (xiden-query-variant? v)
-  ((disjoin string? xiden-query? procedure?) v))
+  ((disjoin string? xiden-query?) v))
 
 
 (define (coerce-xiden-query v)
   (cond [(xiden-query? v) v]
-        [(string? v) (string->xiden-query v)]
-        [(procedure? v) (package-evaluator->xiden-query v)]))
-
-
-(define (package-evaluator->xiden-query pkgeval)
-  (xiden-query (xiden-evaluator-ref pkgeval 'provider "")
-               (xiden-evaluator-ref pkgeval 'package "")
-               (xiden-evaluator-ref pkgeval 'edition "")
-               (~a (xiden-evaluator-ref pkgeval 'revision-number ""))
-               (~a (xiden-evaluator-ref pkgeval 'revision-number ""))
-               "ii"))
+        [(string? v) (string->xiden-query v)]))
 
 
 (define (query-ref s def)
