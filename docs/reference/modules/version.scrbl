@@ -49,7 +49,7 @@ Returns @racket[#t] if the input value is useable as a @tech{revision number}.
 
 @defthing[revision-number-string? predicate/c]{
 Returns @racket[#t] if the input value is a string that, when converted to a
-a number, is useable as a @tech{revision number}.
+number, is useable as a @tech{revision number}.
 }
 
 @defproc[(make-revision-interval [lo revision-number?]
