@@ -11,6 +11,15 @@
 
 @defmodule[xiden/package]
 
+A @deftech{package} is an instance of a @tech{package definition}.
+Because a @tech{package definition} corresponds to the source code of
+a Racket module, a @tech{package} corresponds to an instantiation of
+that module.
+
+@racketmodname[xiden/package] performs sandboxed evaluation of
+@tech{packages}.
+
+
 @defthing[DEFAULT_OUTPUT string? #:value "default"]{
 The name of an output implicitly defined in all @tech{package definitions}.
 }

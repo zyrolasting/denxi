@@ -28,6 +28,7 @@ For a high-level overview, see @other-doc['(lib "xiden/docs/guide/xiden-guide.sc
 @include-section{modules/cli.scrbl}
 @include-section{modules/plugin.scrbl}
 @include-section{modules/format.scrbl}
+@include-section{modules/exn.scrbl}
 @include-section{modules/url.scrbl}
 @include-section{modules/string.scrbl}
 @include-section{modules/archiving.scrbl}
