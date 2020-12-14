@@ -8,8 +8,6 @@
 (require "contract.rkt")
 (provide (all-from-out racket/sandbox)
          (contract-out
-          [make-package-definition-datum
-           (unconstrained-domain-> list?)]
           [dict->package-definition-datum
            (-> dict? list?)]
           [make-xiden-sandbox
@@ -160,16 +158,6 @@
      . ,(for/list ([k (in-list (sort (dict-keys dict) symbol<?))])
           `(define ,k ,(dict-ref dict k)))))
 
-(define make-package-definition-datum
-  (make-keyword-procedure
-   (λ (kws kwas)
-     (dict->package-definition-datum
-      (make-hasheq (map (λ (k v)
-                          (cons (string->symbol (keyword->string k))
-                                v))
-                        kws
-                        kwas))))))
-
 (define (make-infotab-module-datum seval)
   `(module xinfotab xiden/pkgdef
      . ,(for/list ([k (in-list (seval '(#%info-domain)))])
@@ -303,12 +291,6 @@
 
     (check-equal? from-alist expected)
     (check-equal? from-hash expected))
-
-  (test-equal? "Create package definition using a keyword procedure"
-               (make-package-definition-datum #:a 1 #:b ''())
-               '(module xinfotab xiden/pkgdef
-                  (define a 1)
-                  (define b '())))
 
   (test-case "Read literal infotab config"
     (define decl (make-infotab-module-datum (hash+list->xiden-evaluator (hash 'a 1 'b 2 'c 3) '(a b c))))
