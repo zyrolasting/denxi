@@ -32,6 +32,8 @@
            flat-contract?]
           [abstract-input-info/c
            flat-contract?]
+          [concrete-input-info/c
+           flat-contract?]
           [make-input-expression-from-files
            (->* (path-string?
                  (-> bytes? path-string? (non-empty-listof any/c))

@@ -94,7 +94,7 @@
         (assert 'package non-empty-string?)
         (assert 'edition non-empty-string?)
         (assert 'revision-number revision-number?)
-        (assert 'inputs (listof well-formed-input-info/c))
+        (assert 'inputs (listof concrete-input-info/c))
         (assert 'build (λ (p) (and (procedure? p) (= 1 (procedure-arity p)))))
         (assert #:optional #t 'outputs (listof non-empty-string?))
         (assert #:optional #t 'revision-names (listof non-empty-string?))
