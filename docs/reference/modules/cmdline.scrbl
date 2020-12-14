@@ -3,7 +3,12 @@
 @require["../../shared.rkt"
          @for-label[racket/base
                     racket/contract
+                    racket/cmdline
+                    xiden/cli
+                    xiden/cli-flag
                     xiden/cmdline
+                    xiden/l10n
+                    xiden/logged
                     xiden/message
                     xiden/printer]]
 
@@ -27,9 +32,27 @@ meaning, so expect to see @racket[1] (@tt{E_FAIL}) to represent an
 error state. Lean on the @tech{program log} for specifics.
 }
 
+@defthing[exit-handler/c contract? #:value (-> exit-code/c any)]{
+A procedure that reacts to an exit code, like @racket[exit].
+}
+
+@defthing[bound-program/c contract? #:value (-> (-> exit-code/c messy-log/c any) any)]{
+A procedure meant to run predetermined program logic in the context of
+a @tech{runtime configuration}.
+
+The only argument is a procedure (probably representing a
+@tech/reference{continuation}) that accepts an exit code and a
+@tech{messy log} representing program output. That continuation
+will decide how to react to the given information.
+}
+
 @defthing[arguments/c chaperone-contract? #:value (or/c (listof string?) (listof vector?))]{
 Represents arguments provided in a command line. An argument list may
 be a vector or list of strings for flexibility reasons.
+}
+
+@defthing[argument-parser/c contract? #:value (-> arguments/c (values (listof cli-flag-state?) bound-program/c))]{
+A procedure that parses command line arguments and plans further action.
 }
 
 @defthing[program-log/c chaperone-contract? #:value (or/c $message? (listof $message?))]{
@@ -39,36 +62,88 @@ A @deftech{program log} is a single @tech{message} or list of
 
 @section{CLI Flow Control}
 
-@defproc[(entry-point [args arguments/c]
-                      [formatter message-formatter/c]
-                      [handler (-> arguments/c
-                                   (-> exit-code/c program-log/c any)
-                                   (values exit-code/c program-log/c))])
-         exit-code/c]{
-Applies @racket[(handler args continue)], where @racket[continue] is a
-@tech/reference{continuation} that expects an exit code and then a
-@tech{program log} as arguments. Alternatively, @racket[handler] can
-just return an exit code and @tech{program log} without applying
-@racket[continue].
+@defproc[(run-entry-point! [args arguments/c]
+                           [formatter message-formatter/c]
+                           [parse-args argument-parser/c]
+                           [on-exit exit-handler/c])
+                           any]{
+This translates the given command-line arguments to a program to run
+in the relevant @tech{runtime configuration}, and applies
+@racket[on-exit] to the exit code of the process.
 
-Once @racket[handler] returns control, @racket[entry-point]
-emits all @tech{messages} in the @tech{program log}. It will then
-return the exit code.
+This module mimics production behavior.
 
-Notice that a consequence of this behavior is that showing the
-@tech{program log} is the last action of the runtime.  This makes
-@racket[entry-point] unsuitable for sharing @tech{messages} about
-progress in long-running jobs.
+@racketblock[
+(module+ main
+  (run-entry-point! (current-command-line-arguments)
+                    (get-message-formatter)
+                    top-level-cli
+                    exit))]
 }
 
 
-@defform[(with-rc flags body ...)]{
-Like @racket[begin], except the body is evaluated using a new
-@tech{runtime configuration} in terms of @racket[flags].
-@racket[flags] should be @racket[null], or flag data computed by
-@racket[parse-command-line]. The flag data is specific to
-@project-name, and you do not need to define it yourself.
+
+@defproc[(cli [#:program program string?]
+              [#:flags flags list? null]
+              [#:args args (or/c (vector/c string?) (listof string?)) (current-command-line-arguments)]
+              [#:help-suffix-string-key help-suffix-string-key (or/c #f symbol?) #f]
+              [#:arg-help-strings arg-help-strings (listof string?)]
+              [handle-arguments (->* ((listof cli-flag-state?)) () #:rest list?
+                                (values (listof cli-flag-state?)
+                                        bound-program/c))])
+         (values (listof cli-flag-state?)
+                 bound-program/c)]{
+@racket[cli] does not actually run program logic. It only @italic{plans} it
+in terms of command line arguments.
+
+Applies the following expression:
+
+@racketblock[
+(parse-command-line program argv flags handle-arguments arg-help-strings handle-help)]
+
+Note that some arguments used as-is. Others are computed towards the
+same ends.
+
+@racket[argv] is bound to a vector coerced from @racket[args].
+
+@racket[handle-help] is configured to generates a program that uses
+@racket[help-suffix-string-key] to add localized contextual help. The
+exit code from such a program is @racket[0] if the user actually
+requested help in @racket[args]. @racket[1] otherwise. The same help
+suffix is used in the event the user does not pass enough positional
+arguments for @racket[handle-arguments].
+
+The following example shows the relationship between command line
+parsing, a @tech{runtime configuration} based on flags, and actual
+program execution.
+
+@racketblock[
+(define (say-hello . args)
+  (cli #:program "hi"
+       #:flags null
+       #:args args
+       #:arg-help-strings '("names")
+       (lambda (flags . names)
+         (values flags
+                 (lambda (halt)
+                    (halt 0
+                          (for/list ([name names])
+                            ($show-string (format "Hello, ~a!" name)))))))))
+
+
+(define-values (flags program) (say-hello "john" "sage" "mary"))
+(define message->string (get-message-formatter))
+
+(call-with-bound-cli-flags flags
+  (lambda ()
+    (program (lambda (exit-code messages)
+      (printf "Exit code: ~a~n" exit-code)
+      (for ([m messages])
+        (write-message m message->string))))))
+]
+
 }
+
 
 
 @section{CLI Messages}

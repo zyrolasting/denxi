@@ -21,11 +21,10 @@ For a high-level overview, see @other-doc['(lib "xiden/docs/guide/xiden-guide.sc
 @include-section{modules/message.scrbl}
 @include-section{modules/logged.scrbl}
 @include-section{modules/codec.scrbl}
+@include-section{cli.scrbl}
 @include-section{verification.scrbl}
 @include-section{modules/source.scrbl}
 @include-section{modules/input-info.scrbl}
-@include-section{modules/cmdline.scrbl}
-@include-section{modules/cli.scrbl}
 @include-section{modules/plugin.scrbl}
 @include-section{modules/format.scrbl}
 @include-section{modules/exn.scrbl}
