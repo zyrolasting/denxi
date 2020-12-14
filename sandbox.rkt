@@ -36,7 +36,7 @@
                 (#:pretty? boolean?)
                 void?)]
           [load-xiden-module
-           (->* ((or/c path? string? bytes? input-port?))
+           (->* ((or/c syntax? path? string? bytes? input-port?))
                 (-> any/c any))]))
 
 
@@ -89,7 +89,8 @@
 
 
 (define (load-xiden-module variant)
-  (cond [(path? variant) (load-local-xiden-module variant)]
+  (cond [(syntax? variant) (make-xiden-sandbox variant)]
+        [(path? variant) (load-local-xiden-module variant)]
         [(list? variant) (load-xiden-module (open-input-infotab variant))]
         [(string? variant) (load-xiden-module (open-input-string variant))]
         [(bytes? variant) (load-xiden-module (open-input-bytes variant))]
