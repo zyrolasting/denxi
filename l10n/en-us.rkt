@@ -20,7 +20,97 @@
         "  config     Show a (read)able hash table of current settings"
         "  installed  Show a list of installed outputs"
         "  links      Show a list of issued links"
-        "  workspace  Show the path to the target workspace directory")]))
+        "  workspace  Show the path to the target workspace directory")]
+
+    [(XIDEN_SANDBOX_MEMORY_LIMIT_MB)
+     "Total memory quota for a sandbox"]
+
+    [(XIDEN_SANDBOX_EVAL_MEMORY_LIMIT_MB)
+     "Memory quota for each sandboxed expression"]
+
+    [(XIDEN_SANDBOX_EVAL_TIME_LIMIT_SECONDS)
+     "Time limit for each sandboxed expression"]
+
+    [(XIDEN_INSTALL_SOURCES)
+     "Add installation to transaction"]
+
+    [(XIDEN_INSTALL_ABBREVIATED_SOURCES)
+     "Add installation to transaction, assuming \"default\" output and package name link"]
+
+    [(XIDEN_INSTALL_DEFAULT_SOURCES)
+     "Add installation to transaction, assuming \"default\" output"]
+
+    [(XIDEN_PLUGIN_MODULE)
+     "A path to a module that extends Xiden."]
+
+    [(XIDEN_TRUST_UNSIGNED)
+     "Trust unsigned packages"]
+
+    [(XIDEN_TRUST_BAD_SIGNATURE)
+     "Trust signatures that don't match public key"]
+
+    [(XIDEN_TRUST_UNVERIFIED_HOST)
+     "Download from any server without authenticating"]
+
+    [(XIDEN_TRUST_BAD_DIGEST)
+     "(DANGEROUS) Trust any input."]
+
+    [(XIDEN_TRUST_ANY_PUBLIC_KEY)
+     "(DANGEROUS) Trust any public key"]
+
+    [(XIDEN_TRUST_ANY_EXECUTABLE)
+     "(DANGEROUS) Trust any executable"]
+
+    [(XIDEN_TRUSTED_PUBLIC_KEYS)
+     "Trust a given public key, by 160-bit SHA-384 fingerprint"]
+
+    [(XIDEN_TRUSTED_EXECUTABLES)
+     "Trust an executable using integrity information"]
+
+    [(XIDEN_FASL_OUTPUT)
+     "Use FASL program output"]
+
+    [(XIDEN_FETCH_TOTAL_SIZE_MB)
+     "Maximum size, in mebibytes, to read from a source. +inf.0 = no limit"]
+
+    [(XIDEN_FETCH_BUFFER_SIZE_MB)
+     "Buffer size, in mebibytes, used when reading bytes"]
+
+    [(XIDEN_FETCH_PKGDEF_SIZE_MB)
+     "The maximum expected size, in mebibytes, of a package definition when scoping out work"]
+
+    [(XIDEN_FETCH_TIMEOUT_MS)
+     "The maximum time, in milliseconds, to wait for a distinct read of bytes from a source"]
+
+    [(XIDEN_READER_FRIENDLY_OUTPUT)
+     "Use (read)able program output"]
+
+    [(XIDEN_VERBOSE)
+     "Show more information in program output"]
+
+    [(XIDEN_PRIVATE_KEY_PATH)
+     "The location of a private key"]
+
+    [(XIDEN_CATALOGS)
+     "Services to contact when searching for package definitions"]
+
+    [(XIDEN_DOWNLOAD_MAX_REDIRECTS)
+     "Maximum redirects to follow when downloading an artifact"]
+
+    [(XIDEN_ALLOW_UNDECLARED_RACKET_VERSIONS)
+     "Install packages even if they do not declare supported Racket versions"]
+
+    [(XIDEN_ALLOW_UNSUPPORTED_RACKET)
+     "Install packages even if they declare that they do not support the running version of Racket."]
+
+    [(XIDEN_ALLOW_ENV)
+     "Names of environment variables to expose to packages and subprocesses"]
+
+    [(XIDEN_SUBPROCESS_TIMEOUT_S)
+     "Maximum number of seconds a subprocess may run"]))
+
+
+
 
 (define (localized-comma-list l conjunction)
   (case (length l)

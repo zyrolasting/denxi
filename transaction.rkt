@@ -96,9 +96,9 @@
            "setting.rkt")
 
 
-  (define-setting TEST_LETTER_STRINGS  list? null "")
-  (define-setting TEST_NUMBER_STRINGS  list? null "")
-  (define-setting TEST_RED_HERRING     list? null "Should not be used")
+  (define-setting TEST_LETTER_STRINGS  list? null)
+  (define-setting TEST_NUMBER_STRINGS  list? null)
+  (define-setting TEST_RED_HERRING     list? null)
 
   (define str-flag (cli-flag TEST_LETTER_STRINGS 'multi '("-l") 1 void '("any")))
   (define num-flag (cli-flag TEST_NUMBER_STRINGS 'multi '("-n") 1 void '("any")))

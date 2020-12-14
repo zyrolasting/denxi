@@ -58,8 +58,7 @@ setting.
 @racketblock[
 (define-setting TRIPLET_LIST
   (listof (list/c real? real? real?))
-  null
-  "A list of numerical 3-tuples")
+  null)
 
 ; You can use --TRIPLET_LIST, -t, or --triplet
 (define --triplet

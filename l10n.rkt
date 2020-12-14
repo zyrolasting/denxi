@@ -3,6 +3,7 @@
 ; Loads human-readable strings dynamically
 
 (provide get-message-formatter
+         get-localized-string-lookup
          run+print-log)
 
 (require racket/list
@@ -39,7 +40,7 @@
     (parameterize ([current-message-formatter f])
       (f m))))
 
-(define (get-string-lookup key)
+(define (get-localized-string-lookup)
   (dynamic-require/localized 'get-string))
 
 (define (get-module-path locale)

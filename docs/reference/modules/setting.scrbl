@@ -21,7 +21,7 @@ A @deftech{setting} is an instance of the @racket[setting]
 of dynamically bound values, along with validation information and
 contextual help.
 
-@defstruct*[setting ([id symbol?] [valid? predicate/c] [parameter parameter?] [derived-parameter parameter?] [description string?])]{
+@defstruct*[setting ([id symbol?] [valid? predicate/c] [parameter parameter?] [derived-parameter parameter?])]{
 Defines a @tech{setting}. You likely do not need to create an instance
 directly because the constructor does not enforce a meaningful
 structural relationship between the fields. Use
@@ -36,7 +36,7 @@ structural relationship between the fields. Use
 }
 
 
-@defform[(define-setting id contract-expr default-expr description)]{
+@defform[(define-setting id contract-expr default-expr)]{
 Binds a new @tech{setting} to @racket[id].
 
 @racket[contract-expr] must evaluate to a @tech/reference{flat contract}.
@@ -48,11 +48,8 @@ any/c)] procedure, or a non-procedure. The procedure form must accept
 @racket[id] (as a symbol) as the sole formal argument and return a
 default value.
 
-@racket[description] must evaluate to a string that briefly summarizes
-the effect of the setting.
-
 @racketblock[
-(define-setting PICKED_NUMBER (integer-in 0 100) 0 "a user's guess for a freshman year project")
+(define-setting PICKED_NUMBER (integer-in 0 100))
 ]
 }
 
@@ -65,8 +62,8 @@ Applies @racket[thunk] in a @tech/reference{parameterization} where
 each @tech{setting} in @racket[settings] is bound to a new value.
 
 @racketblock[
-(define-setting USERNAME string? "" "username")
-(define-setting PASSWORD string? "" "password")
+(define-setting USERNAME string? "")
+(define-setting PASSWORD string? "")
 (call-with-applied-settings (hasheq USERNAME "insecure" PASSWORD "hunter2") PASSWORD)
 (call-with-applied-settings (list (cons USERNAME "insecure") (cons PASSWORD "hunter2")) PASSWORD)
 ]

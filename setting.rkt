@@ -24,12 +24,12 @@
          "url.rkt")
 
 
-(struct setting (id valid? parameter derived-parameter description)
+(struct setting (id valid? parameter derived-parameter)
   #:property prop:procedure
   (case-lambda [(self) ((setting-derived-parameter self))]
                [(self v proc) (parameterize ([(setting-derived-parameter self) v]) (proc))]))
 
-(define (make-setting id-sym get-default valid? desc)
+(define (make-setting id-sym get-default valid?)
   (define param (make-parameter (void)))
   (define derived-parameter
     (make-derived-parameter
@@ -39,8 +39,7 @@
   (setting id-sym
            valid?
            param
-           derived-parameter
-           desc))
+           derived-parameter))
 
 
 (define (make-setting-parameter-guard id valid?)
@@ -78,8 +77,8 @@
 
 (define-syntax (define-setting stx)
   (syntax-parse stx
-    [(_ name:id cnt:expr get-default:expr description:expr)
-     #'(define name (make-setting 'name get-default cnt description))]))
+    [(_ name:id cnt:expr get-default:expr)
+     #'(define name (make-setting 'name get-default cnt))]))
 
 
 
@@ -98,14 +97,12 @@
   ; <!> for an example of this.
 
   (test-case "Define a setting"
-    (define help-strings "Desc")
-    (define-setting TAKES_LIST (list/c real? string?) '(1 "foo") help-strings)
+    (define-setting TAKES_LIST (list/c real? string?) '(1 "foo"))
     (check-eq? (setting-id TAKES_LIST) 'TAKES_LIST)
     (check-pred (setting-valid? TAKES_LIST) '(1 "foo"))
     (check-pred (negate (setting-valid? TAKES_LIST)) '("foo" 1))
     (check-pred parameter? (setting-parameter TAKES_LIST))
     (check-pred parameter? (setting-derived-parameter TAKES_LIST))
-    (check-equal? (setting-description TAKES_LIST) help-strings)
 
     (test-exn "Reject invalid values"
               exn:fail:contract?
@@ -118,27 +115,27 @@
 
   (test-case "Define fallback values"
     (test-case "Compute fallback values using procedures"
-      (define-setting NUM real? (const 1) "number!")
+      (define-setting NUM real? (const 1))
       ; (void) represents an unset setting
       (check-equal? (NUM (void) NUM) 1))
     (test-case "Use exact fallback values"
-      (define-setting NUM real? 1 "number!")
+      (define-setting NUM real? 1)
       (check-equal? (NUM (void) NUM) 1))
 
     (test-exn "Validate computed fallback values"
               exn:fail:contract?
               (λ ()
-                (define-setting NUM real? (const "not a number") "number!")
+                (define-setting NUM real? (const "not a number"))
                 (NUM (void) NUM)))
 
     (test-exn "Validate exact fallback values"
               exn:fail:contract?
               (λ ()
-                (define-setting NUM real? "not a number" "number!")
+                (define-setting NUM real? "not a number")
                 (NUM (void) NUM))))
 
-  (define-setting GROUP_A boolean? #f "Fuh")
-  (define-setting GROUP_B boolean? #f "Buh")
+  (define-setting GROUP_A boolean? #f)
+  (define-setting GROUP_B boolean? #f)
 
   ; This case is important because a command line handler can specify no flags.
   (test-equal? "Allow useless parameterizations"

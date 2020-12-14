@@ -35,9 +35,9 @@
 
 ; The only difference between a vanilla setting an a Xiden setting is how a
 ; fallback value is computed.
-(define-syntax-rule (define-xiden-setting id cnt default-value description)
+(define-syntax-rule (define-xiden-setting id cnt default-value)
   (begin (provide (contract-out [id setting?]))
-         (define-setting id cnt (xiden-setting-find-value default-value) description)
+         (define-setting id cnt (xiden-setting-find-value default-value))
          (set! XIDEN_SETTINGS (hash-set XIDEN_SETTINGS 'id id))))
 
 
@@ -97,94 +97,37 @@
 
 
 ;; Begin runtime configuration space
-;; TODO: Use string keys for l10n
 ;; =================================
 
-(define-xiden-setting XIDEN_SANDBOX_MEMORY_LIMIT_MB (>=/c 0) 200 "Total memory quota for a sandbox")
-
-(define-xiden-setting XIDEN_SANDBOX_EVAL_MEMORY_LIMIT_MB (>=/c 0) 200
-  "Memory quota for each sandboxed expression")
-
-(define-xiden-setting XIDEN_SANDBOX_EVAL_TIME_LIMIT_SECONDS (>=/c 0) (* 5 60)
-  "Time limit for each sandboxed expression")
-
-(define-xiden-setting XIDEN_INSTALL_SOURCES (listof (list/c string? string? string?)) null
-  "Add installation to transaction")
-
-(define-xiden-setting XIDEN_INSTALL_ABBREVIATED_SOURCES (listof string?) null
-  "Add installation to transaction, assuming \"default\" output and package name link")
-
-(define-xiden-setting XIDEN_INSTALL_DEFAULT_SOURCES (listof (list/c string? string?)) null
-  "Add installation to transaction, assuming \"default\" output")
-
-(define-xiden-setting XIDEN_PLUGIN_MODULE (or/c #f path-string?) #f
-  "A path to a module that extends Xiden.")
-
-(define-xiden-setting XIDEN_TRUST_UNSIGNED boolean? #f
-  "Trust unsigned packages")
-
-(define-xiden-setting XIDEN_TRUST_BAD_SIGNATURE boolean? #f
-  "Trust signatures that don't match public key")
-
-(define-xiden-setting XIDEN_TRUST_UNVERIFIED_HOST boolean? #f
-  "Download from any server without authenticating")
-
-(define-xiden-setting XIDEN_TRUST_BAD_DIGEST boolean? #f
-  "(DANGEROUS) Trust any input.")
-
-(define-xiden-setting XIDEN_TRUST_ANY_PUBLIC_KEY boolean? #f
-  "(DANGEROUS) Trust any public key")
-
-(define-xiden-setting XIDEN_TRUST_ANY_EXECUTABLE boolean? #f
-  "(DANGEROUS) Trust any executable")
-
-(define-xiden-setting XIDEN_TRUSTED_PUBLIC_KEYS (listof well-formed-integrity-info/c) null
-  "Trust a given public key, by 160-bit SHA-384 fingerprint")
-
-(define-xiden-setting XIDEN_TRUSTED_EXECUTABLES (listof well-formed-integrity-info/c) null
-  "Trust an executable using integrity information")
-
-(define-xiden-setting XIDEN_FASL_OUTPUT boolean? #f
-  "Use FASL program output")
-
-(define-xiden-setting XIDEN_FETCH_TOTAL_SIZE_MB (or/c +inf.0 real?) 100
-  "Maximum size, in mebibytes, to read from a source. +inf.0 = no limit")
-
-(define-xiden-setting XIDEN_FETCH_BUFFER_SIZE_MB (real-in 0.1 20) 10
-  "Buffer size, in mebibytes, used when reading bytes")
-
-(define-xiden-setting XIDEN_FETCH_PKGDEF_SIZE_MB (real-in 0.1 20) 0.1
-  "The maximum expected size, in mebibytes, of a package definition when scoping out work")
-
-(define-xiden-setting XIDEN_FETCH_TIMEOUT_MS (real-in 100 (* 1000 10)) 3000
-  "The maximum time, in milliseconds, to wait for a distinct read of bytes from a source")
-
-(define-xiden-setting XIDEN_READER_FRIENDLY_OUTPUT boolean? #f
-  "Use (read)able program output")
-
-(define-xiden-setting XIDEN_VERBOSE boolean? #f
-  "Show more information in program output")
-
-(define-xiden-setting XIDEN_PRIVATE_KEY_PATH (or/c #f path-string?) #f
-  "The location of a private key")
-
-(define-xiden-setting XIDEN_CATALOGS (listof url-string?) '("https://zcpkg.com/$QUERY")
-  "Services to contact when searching for package definitions")
-
-(define-xiden-setting XIDEN_DOWNLOAD_MAX_REDIRECTS exact-nonnegative-integer? 2
-  "Maximum redirects to follow when downloading an artifact")
-
-(define-xiden-setting XIDEN_ALLOW_UNDECLARED_RACKET_VERSIONS boolean? #f
-  "Install packages even if they do not declare supported Racket versions")
-
-(define-xiden-setting XIDEN_ALLOW_UNSUPPORTED_RACKET boolean? #f
-  "Install packages even if they declare that they do not support the running version of Racket.")
-
-(define-xiden-setting XIDEN_ALLOW_ENV (listof (or/c bytes? string?)) null
-  "Names of environment variables to expose to packages and subprocesses")
-
-(define-xiden-setting XIDEN_SUBPROCESS_TIMEOUT_S (>=/c 0) (* 30 60)
-  "Maximum number of seconds a subprocess may run")
+(define-xiden-setting XIDEN_ALLOW_ENV (listof (or/c bytes? string?)) null)
+(define-xiden-setting XIDEN_ALLOW_UNDECLARED_RACKET_VERSIONS boolean? #f)
+(define-xiden-setting XIDEN_ALLOW_UNSUPPORTED_RACKET boolean? #f)
+(define-xiden-setting XIDEN_CATALOGS (listof url-string?) '("https://zcpkg.com/$QUERY"))
+(define-xiden-setting XIDEN_DOWNLOAD_MAX_REDIRECTS exact-nonnegative-integer? 2)
+(define-xiden-setting XIDEN_FASL_OUTPUT boolean? #f)
+(define-xiden-setting XIDEN_FETCH_BUFFER_SIZE_MB (real-in 0.1 20) 10)
+(define-xiden-setting XIDEN_FETCH_PKGDEF_SIZE_MB (real-in 0.1 20) 0.1)
+(define-xiden-setting XIDEN_FETCH_TIMEOUT_MS (real-in 100 (* 1000 10)) 3000)
+(define-xiden-setting XIDEN_FETCH_TOTAL_SIZE_MB (or/c +inf.0 real?) 100)
+(define-xiden-setting XIDEN_INSTALL_ABBREVIATED_SOURCES (listof string?) null)
+(define-xiden-setting XIDEN_INSTALL_DEFAULT_SOURCES (listof (list/c string? string?)) null)
+(define-xiden-setting XIDEN_INSTALL_SOURCES (listof (list/c string? string? string?)) null)
+(define-xiden-setting XIDEN_PLUGIN_MODULE (or/c #f path-string?) #f)
+(define-xiden-setting XIDEN_PRIVATE_KEY_PATH (or/c #f path-string?) #f)
+(define-xiden-setting XIDEN_READER_FRIENDLY_OUTPUT boolean? #f)
+(define-xiden-setting XIDEN_SANDBOX_EVAL_MEMORY_LIMIT_MB (>=/c 0) 200)
+(define-xiden-setting XIDEN_SANDBOX_EVAL_TIME_LIMIT_SECONDS (>=/c 0) (* 5 60))
+(define-xiden-setting XIDEN_SANDBOX_MEMORY_LIMIT_MB (>=/c 0) 200)
+(define-xiden-setting XIDEN_SUBPROCESS_TIMEOUT_S (>=/c 0) (* 30 60))
+(define-xiden-setting XIDEN_TRUSTED_EXECUTABLES (listof well-formed-integrity-info/c) null)
+(define-xiden-setting XIDEN_TRUSTED_PUBLIC_KEYS (listof well-formed-integrity-info/c) null)
+(define-xiden-setting XIDEN_TRUST_ANY_EXECUTABLE boolean? #f)
+(define-xiden-setting XIDEN_TRUST_ANY_PUBLIC_KEY boolean? #f)
+(define-xiden-setting XIDEN_TRUST_BAD_DIGEST boolean? #f)
+(define-xiden-setting XIDEN_TRUST_BAD_SIGNATURE boolean? #f)
+(define-xiden-setting XIDEN_TRUST_UNSIGNED boolean? #f)
+(define-xiden-setting XIDEN_TRUST_UNVERIFIED_HOST boolean? #f)
+(define-xiden-setting XIDEN_VERBOSE boolean? #f)
 
 (module+ test
   (require rackunit

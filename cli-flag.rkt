@@ -38,6 +38,7 @@
                any)]))
 
 (require racket/cmdline
+         "l10n.rkt"
          "rc.rkt"
          "sandbox.rkt"
          "setting.rkt"
@@ -104,7 +105,7 @@
                                 (apply (cli-flag-convert c) formals)
                                 expects-applied-setting)))))
          (add1 (cli-flag-arity c)))
-        (cons (format "~n    ~a" (setting-description (cli-flag-setting c)))
+        (cons (format "~n    ~a" ((get-localized-string-lookup) (setting-id (cli-flag-setting c))))
               (cli-flag-help-strings c))))
 
 
@@ -279,7 +280,7 @@
 
   (check-true (andmap cli-flag? all-flags))
 
-  (define-setting TEST_SETTING real? 10 "Test")
+  (define-setting TEST_SETTING real? 10)
 
   (define TEST_SETTING/flag (cli-flag TEST_SETTING
                                       'once-each
@@ -304,7 +305,7 @@
     (match-define (list flag-strings handler help-strings) (cli-flag->flag-spec TEST_SETTING/flag))
     (check-equal? (sort #:key string-length (cli-flag-strings TEST_SETTING/flag) <) flag-strings)
     (check-equal? (procedure-arity handler) (add1 (cli-flag-arity TEST_SETTING/flag)))
-    (check-equal? help-strings '("\n    Test" "value"))
+    (check-equal? help-strings '("\n    #<void>" "value"))
 
     (match-define (cli-flag-state flag-string cli-flag-inst args-bound) (handler "-t" "+inf.0"))
     (check-equal? flag-string "-t")
@@ -332,9 +333,9 @@
                           'multi (list m3 m2 m1))))
 
   (test-case "Ease use of parse-command-line"
-    (define-setting TEST_MULTI     list? null "Accepts the numbers 1, 2, or 3.")
-    (define-setting TEST_ONCE_EACH (or/c #f string?) #f "Accepts two arguments")
-    (define-setting TEST_ONCE_ANY  string? "" "Accepts a string")
+    (define-setting TEST_MULTI     list? null)
+    (define-setting TEST_ONCE_EACH (or/c #f string?) #f)
+    (define-setting TEST_ONCE_ANY  string? "")
 
     (define (get-current-values)
       (list (TEST_MULTI)

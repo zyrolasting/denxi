@@ -152,6 +152,12 @@ Returns a @tech{message formatter} for translating @tech{messages}
 to strings in the user's locale.
 }
 
+@defproc[(get-localized-string-lookup) (-> symbol? string?)]{
+Returns a procedure for looking up fixed strings for the user's locale
+by symbol.
+}
+
+
 @defproc[(run+print-log [l logged?]) any/c]{
 Returns the first value from @racket[(run-log l)].
 
