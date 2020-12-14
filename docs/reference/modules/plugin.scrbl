@@ -49,3 +49,21 @@ Return a procedure used to extract files from the archive located at
 Used by @racketmodname[xiden/archiving] when it cannot extract files
 from @racket[path] on its own.
 }
+
+
+@defproc[(before-new-package [original syntax?]) (or/c syntax? list?)]{
+Return a @tech{package definition} used to create a @tech{package}.
+Called before creating any package using a @tech{source}.
+
+This procedure defaults to the identity function.
+
+@racket[original] is bound to a package definition read from a
+@tech{source}.  To use @racket[original] as-is, simply return
+it. Otherwise, you may return an alternative definition to override
+@racket[original].
+
+This procedure is useful for standardizing definitions or
+autocompleting inputs. Note that this procedure hooks into every
+build, so an error in this procedure may render a @project-name
+process inoperable or unsafe. Define with care.
+}

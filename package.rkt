@@ -13,7 +13,9 @@
          "logged.rkt"
          "message.rkt"
          "monad.rkt"
+         "package-definition.rkt"
          "path.rkt"
+         "plugin.rkt"
          "port.rkt"
          "query.rkt"
          "racket-version.rkt"
@@ -215,10 +217,17 @@
 (define (make-package-evaluator source)
   (do sourced-eval <- (if (string? source)
                           (fetch-package-definition source)
-                          (logged-unit (load-xiden-module source)))
+                          (logged-unit (load-xiden-module (override-package-definition source))))
       (validate-evaluator sourced-eval)
       (return sourced-eval)))
 
+
+(define (override-package-definition variant)
+  (define plugin-override
+    (load-from-plugin 'before-new-package
+                      (λ () values)
+                      (λ (e) values)))
+  (plugin-override (read-package-definition variant)))
 
 
 ; This is the inflection point between restricted and unrestricted
@@ -305,10 +314,11 @@
                 (call-with-build-sandbox-parameterization
                  (λ ()
                    (load-xiden-module
-                    (make-limited-input-port from-source
-                                             (min (mebibytes->bytes (XIDEN_FETCH_PKGDEF_SIZE_MB))
-                                                  est-size)
-                                             #t)))))))
+                    (override-package-definition
+                     (make-limited-input-port from-source
+                                              (min (mebibytes->bytes (XIDEN_FETCH_PKGDEF_SIZE_MB))
+                                                   est-size)
+                                              #t))))))))
 
      (define-values (fetch-st messages) (run-log logged/fetch-st m))
 
