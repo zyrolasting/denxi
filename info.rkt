@@ -4,9 +4,15 @@
 
 (define version "0.0") ; Don't use. This project defines its own scheme.
 
-(define deps '("base" "compatibility-lib" "db-lib" "rackunit-lib" "sandbox-lib"))
+(define deps
+  '("base"
+    "compatibility-lib"
+    "db-lib"
+    "rackunit-lib"
+    "sandbox-lib"
+    "scribble-lib"))
 
-(define build-deps '("scribble-lib" "net-doc" "racket-doc"))
+(define build-deps '("net-doc" "racket-doc"))
 
 (define racket-launcher-names '("xiden"))
 (define racket-launcher-libraries '("cli.rkt"))
