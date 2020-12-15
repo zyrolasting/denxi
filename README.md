@@ -10,13 +10,3 @@ A functional dependency manager for Racket. See the [RacketCon 2020 talk](https:
 * Organize source files however you want.
 * Use your own catalogs and package namespaces.
 * Define deliverables and distribution rules with full creative freedom.
-
-
-## Release Status
-
-| Milestone   | Status                                                                |
-| ----------- | --------------------------------------------------------------------- |
-| Alpha       | [Released](https://github.com/zyrolasting/xiden/releases/tag/alpha)   |
-| Closed Beta | [Ongoing](https://github.com/zyrolasting/xiden/milestone/1)           |
-| Open Beta   | [Not started](https://github.com/zyrolasting/xiden/milestone/2)       |
-| Production  | [Not started](https://github.com/zyrolasting/xiden/milestone/3)       |
