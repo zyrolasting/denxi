@@ -7,6 +7,7 @@
                     racket/pretty
                     racket/serialize
                     xiden/l10n
+                    xiden/logged
                     xiden/format
                     xiden/message
                     xiden/rc
@@ -152,9 +153,19 @@ Returns a @tech{message formatter} for translating @tech{messages}
 to strings in the user's locale.
 }
 
-@defproc[(get-localized-string-lookup) (-> symbol? string?)]{
-Returns a procedure for looking up fixed strings for the user's locale
-by symbol.
+
+@(define-syntax-rule (defn sym str ...)
+   (item (racket 'sym) ": " str ...))
+
+@defproc[(get-localized-string [sym symbol?]) string?]{
+Returns a string for the user's locale.
+
+@itemlist[
+@defn[top-level-cli-help]{A list of available @litchar{xiden} subcommands}
+@defn[show-command-help]{A list of available @litchar{xiden show} subcommands}
+@item{@italic{<setting id>}: A short description of the named setting.}
+]
+
 }
 
 
