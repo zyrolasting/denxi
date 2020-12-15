@@ -186,10 +186,18 @@
 
 (define (read-xiden-module in)
   (port-count-lines! in)
-  (parameterize ([sandbox-path-permissions
-                  (let ([pp (sandbox-path-permissions)])
-                    (cons '(exists "/") pp))])
+  (parameterize ([sandbox-path-permissions (derive-path-permissions)])
     (make-xiden-sandbox in)))
+
+; Use cache because filesystem-root-list may take a while on Windows.
+(define derive-path-permissions
+  (let ([cache #f])
+    (λ ()
+      (unless cache
+        (set! cache
+              (append (map (λ (p) `(exists ,p)) (filesystem-root-list))
+                      (sandbox-path-permissions))))
+      cache)))
 
 (define (load-local-xiden-module path)
   (parameterize ([sandbox-path-permissions
