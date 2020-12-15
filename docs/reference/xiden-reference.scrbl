@@ -19,7 +19,6 @@ For a high-level overview, see @other-doc['(lib "xiden/docs/guide/xiden-guide.sc
 @include-section{modules/workspace.scrbl}
 @include-section{settings.scrbl}
 @include-section{modules/message.scrbl}
-@include-section{modules/l10n.scrbl}
 @include-section{modules/logged.scrbl}
 @include-section{modules/codec.scrbl}
 @include-section{cli.scrbl}
@@ -31,4 +30,6 @@ For a high-level overview, see @other-doc['(lib "xiden/docs/guide/xiden-guide.sc
 @include-section{modules/exn.scrbl}
 @include-section{modules/url.scrbl}
 @include-section{modules/string.scrbl}
+@include-section{modules/l10n.scrbl}
+@include-section{modules/printer.scrbl}
 @include-section{modules/archiving.scrbl}
