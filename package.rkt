@@ -286,9 +286,7 @@
   (λ (sym hostname-or-#f port-or-#f client-or-server)
     (unless hostname-or-#f
       (raise-user-error 'security
-                        "Unauthorized attempt to listen for connections"))
-    ; TODO: Certificate checks, etc.
-    ))
+                        "Unauthorized attempt to listen for connections"))))
 
 
 (define (make-pkgeval-link-guard workspace)
