@@ -8,7 +8,7 @@ install:
 	raco pkg install -i --skip-installed
 
 setup: install
-	raco setup --doc-index --fail-fast -j 8 xiden
+	raco setup --check-pkg-deps --doc-index --fail-fast -j 8 xiden
 
 setup-doc:
 	raco scribble +m --markdown --dest-name INSTALL docs/guide/setup.scrbl
