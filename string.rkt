@@ -6,7 +6,12 @@
          (all-from-out racket/string))
 
 (require racket/function
-         racket/string)
+         racket/string
+         syntax/parse)
+
+(define-syntax-class non-empty-string
+  (pattern (~var str string)
+           #:when (non-empty-string? (syntax-e #'str))))
 
 (define (whole/pattstr s) (string-append "^" s "$"))
 (define (group/pattstr s)

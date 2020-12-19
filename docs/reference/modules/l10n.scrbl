@@ -31,6 +31,7 @@ Returns a string for the user's locale.
 
 @itemlist[
 @defn[top-level-cli-help]{A list of available @litchar{xiden} subcommands}
+@defn[backwards-racket-version-interval]{An error message for when a user expresses a backwards Racket version interval in a syntax class. Mimic this phrasing: “minimum Racket version cannot exceed maximum Racket version”.}
 @defn[show-command-help]{A list of available @litchar{xiden show} subcommands}
 @item{@italic{<setting id>}: A short description of the named setting.}
 ]}

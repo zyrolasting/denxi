@@ -22,6 +22,9 @@
         "  links      Show a list of issued links"
         "  workspace  Show the path to the target workspace directory")]
 
+    [(backwards-racket-version-interval)
+     "minimum Racket version cannot exceed maximum Racket version"]
+
     [(XIDEN_SANDBOX_MEMORY_LIMIT_MB)
      "Total memory quota for a sandbox"]
 
