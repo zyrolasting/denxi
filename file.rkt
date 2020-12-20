@@ -14,6 +14,7 @@
          racket/port
          racket/set
          racket/sequence
+         file/glob
          "codec.rkt"
          "message.rkt"
          "path.rkt"
@@ -24,6 +25,17 @@
          "url.rkt"
          "workspace.rkt")
 
+(define (in-paths variant [wrt (current-directory)])
+  (sequence-filter (cond [(or (regexp? variant)
+                              (pregexp? variant)
+                              (byte-pregexp? variant)
+                              (byte-regexp? variant))
+                          (curry regexp-match? variant)]
+                         [(string? variant)
+                          (λ (p)
+                            (parameterize ([current-directory wrt])
+                              (glob-match? variant p)))])
+                   (in-directory wrt)))
 
 (define (delete-file* path)
   (when (or (file-exists? path) (link-exists? path))
