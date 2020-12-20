@@ -91,6 +91,6 @@ Convert user-provided runtime configuration values to Racket values.
 
 }
 
-@defform[non-empty-string #:kind "syntax-class"]{
+@defidform[#:kind "syntax-class" non-empty-string]{
 A syntax class for matching non-empty strings in macros.
 }
