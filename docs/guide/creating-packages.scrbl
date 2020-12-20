@@ -4,9 +4,12 @@
 
 @title[#:tag "new-pkg"]{Defining Packages}
 
-@project-name builds software using @tech{package definitions}. In
-this section we will write our own step by step. Alternatively, you
-can skip to @secref{finished-definition}.
+@project-name creates unique directories using @tech{package
+definitions}. In this section we will write our own package
+definition. If you are already familiar with how package definitions
+work and just want an example to copy, then skip to
+@secref{finished-definition}.
+
 
 @section{Create a New Definition File}
 
@@ -15,37 +18,34 @@ use @tt{definition.rkt}. We will use the @racketmodname[xiden] language.
 
 @racketmod[#:file "definition.rkt" xiden]
 
-Being a Racket programmer, you probably used the @racketmodname[info] language
-to define your Racket packages. Good news: You already know most of the
-@racketmodname[xiden] language too. Every valid @racketmodname[info] module is
-also a valid @racketmodname[xiden] module.
-
-
 @section{The Usual Stuff}
 
-Every dependency management tool has you write the same things, so let's start
-with them. You can define the name of your package, your identity as a provider,
-a short description of your package, tags, and so on. Everything in this example
-should not need much explanation.
+Every dependency management tool has you write the same things, so
+let's start there. Since I'm hosting some files for this guide on my
+site, I'll use related information.
 
-Since I'm hosting the files for this guide on my site, I'll use my information
-here.
+You can define the name of your package, your identity as a provider,
+a short description of your package, tags, and so on. Everything in
+this example should not need much explanation.
 
 @racketmod[#:file "definition.rkt"
 xiden
 
-(define package "my-first-package")
-(define provider "sagegerard.com")
-(define description "Fun playtime in a tutorial")
-(define tags '("fun" "tutorial" "example"))
-(define home-page "https://sagegerard.com")
+(package "my-first-package")
+(provider "sagegerard.com")
+(description "Fun playtime in a tutorial")
+(tags "fun" "tutorial" "example")
+(home-page "https://sagegerard.com")
 ]
 
-@racket[provider] is a little less obvious. A provider is not necessarily the
-author of the package, but rather the name of the party responsible for
-distributing the software defined in this file. In this case, they are the same
-party. There's no restriction on how you name yourself as a provider, but a
-domain name is useful as an identifier across hosts.
+The @racket[provider] definition is less obvious. A provider is not
+necessarily the author of the package, but rather a name of the party
+responsible for distribution. In this case, they are the same
+party.
+
+There's no restriction on how you name a provider, but a domain name
+is useful as a verifiable identifier when data is split across
+different networks.
 
 
 @section[#:tag "versioning"]{Declare the Version}
@@ -55,23 +55,26 @@ Next, let's declare the version of our package.
 @racketmod[#:file "definition.rkt"
 xiden
 
-(define package "my-first-package")
-(define provider "sagegerard.com")
-(define description "Fun playtime in a tutorial")
-(define tags '("fun" "tutorial" "example"))
-(define home-page "https://sagegerard.com")
+(package "my-first-package")
+(provider "sagegerard.com")
+(description "Fun playtime in a tutorial")
+(tags '("fun" "tutorial" "example"))
+(home-page "https://sagegerard.com")
 
-(define edition "default")
-(define revision-number 0)
-(define revision-names '("alpha"))
+(edition "default")
+(revision-number 0)
+(revision-names "alpha" "2020-10-01")
 ]
 
-But wait, nothing there looks like a version number. @project-name versions
-@tech{package definitions} using @tech{editions} and @tech{revisions}, not
-major or minor version numbers. This means users can find software like they
-would a book. When defining a package, you may specify an @tech{edition}, a
-@tech{revision number}, and any @tech{revision names} to act as aliases for
-that number.
+But wait, nothing there looks like a version number. @project-name
+versions @tech{package definitions} using @tech{editions} and
+@tech{revisions}, not major or minor version numbers. This means users
+can find software like they would a book. When defining a package, you
+may specify an @tech{edition}, a @tech{revision number}, and any
+@tech{revision names} to act as aliases for that number. The revision
+names are freeform, but should relate to meaningful, unique stages in
+your project's life.
+
 
 
 @subsection{Editions}
@@ -81,15 +84,14 @@ of it as a semantic alternative to a major version number. When you
 wish to adapt your software to a different audience without disrupting
 existing users, change the edition.
 
-The default name of an edition is @racket{default}.
-
-Editions address technical and social concerns. They allow you to segment your
-user base without changing the (branded) name of your software or the general
-value it offers. This may be preferable to forcing one implementation to
-accomodate everyone. You can use this as an excuse to refactor, rewrite, or
-delete swaths of code that are irrelevant to an audience.  It also helps one
-avoid nonsensical numerical schemes that try to track breaking changes across
-all possible audiences.
+Editions address technical and social concerns. They allow you to
+divide up your user base without changing the (branded) name of your
+software or the general value it offers. This may be preferable to
+forcing one implementation to accomodate everyone. You can use this as
+an excuse to refactor, rewrite, or delete swaths of code that are
+irrelevant to an audience.  It also helps one avoid nonsensical
+numerical schemes that try to track breaking changes across all
+possible audiences.
 
 Define editions sparingly and thoughtfully to keep maintenance costs
 manageable.
@@ -104,13 +106,12 @@ an edition, a user can select a @tech{package definition} using a
 
 @subsubsection{Revision Numbers}
 
-A @deftech{revision number} is a non-negative integer.
+A @deftech{revision number} is an exact non-negative integer.
 
-A @tech{package definition} @italic{must} include a @tech{revision number}.  If
-you are releasing a new package with the same @tech{edition}, then increment
-the @tech{revision number}. If you are starting a new edition, then the
-@tech{revision number} must start at @racket[0] as it does in the examples on
-this page.
+If you are releasing a new @tech{package definition} with the same
+@tech{edition}, then increment the @tech{revision number}. If you are
+starting a new edition, then the @tech{revision number} must start at
+@racket[0] as it does in the examples on this page.
 
 
 @subsubsection{Revision Names}
@@ -119,34 +120,37 @@ A @deftech{revision name} is an alias for a @tech{revision number}. A
 @tech{revision name} can be any string that contains at least one non-digit.
 
 A @tech{package definition} may include a list of at least zero @tech{revision
-names} for the @tech{revision number}. A @tech{revision name} should be unique
-within an @tech{edition}.  If a user searches for a package definition using a
-@tech{revision name}, and that name refers to more than one @tech{revision
-number} in an @tech{edition}, then this should be seen as a mistake on the
-provider's part.
+names} for the @tech{revision number}.
+
+@bold{A @tech{revision name} should be unique within an
+@tech{edition}}.  If a user searches for a package definition using a
+@tech{revision name}, and that name refers to more than one
+@tech{revision number} in an @tech{edition}, then the provider is
+responsible for correcting the ambiguity.
 
 
-@subsection{Opinion: What About Semantic Versioning?}
+@subsection{Optional Reading: What About Semantic Versioning?}
 
 @hyperlink["https://semver.org/"]{Semantic Versioning} (“SemVer”)
 allows you to infer what happened to software depending on which of
 three version numbers changed. Any assumptions about the change hold
 so long as the relevant package author follows SemVer rules closely
 and voluntarily. Since SemVer depends on ideal human compliance like
-every other scheme, I don't trust it unconditionally.
+every other scheme, I don't think it contributes much in the end.
 
 In my mind, a version is a form of identification. Jeff Atwood used
 the term “dog tag,” since we often ask a user what version they are
-using when our program fails out in the field. This makes sense, but
-versions can also help users find what they want. Not even technical
-users will know off-hand if version 3.49.111 is a good fit for them,
-but most of them @italic{do} understand the latest revision of a
-teacher's edition. Anyone knowledgeable enough to use software is
-likely able to discriminate between two editions or revisions of the
-same book. I don't see why software should be any harder to
-evaluate. If I later extended this idea to a versioning scheme that
+using when our program fails out in the field. This came before the
+simple advice to just use a date or timestamp for each version.
+
+This makes sense, but neither scheme helps users with discovery. No
+one knows if version 3.49.111 or Oct-10-2017 is a good fit for them
+without additional context. But even non-technical users would
+understand that they probably want a specific revision of a teacher's
+edition. I don't see why software should be any harder to evaluate
+than a book. If I later extended this idea to a versioning scheme that
 not only identified software, but captured the nature of all related
-changes, then I would only tell you long after consulting a patent
+changes, then I @italic{might} tell you after consulting a patent
 attorney.
 
 We can do without the bureaucracy and social pressure of rules like
@@ -154,9 +158,9 @@ those defined in SemVer. The scheme defined on this page offers no
 pretense that you can look at two versions and know if the most recent
 one is backwards-compatible. All this scheme does is give you room to
 divide up your userbase into audiences and your product into designs.
-Then, you can chronicle releases in terms of your relationship with
-each audience. This is messy, but that's life. At least with this
-scheme you can decide what changes to make in terms of the people
+Then, you can chronicle releases in terms of @italic{your relationship
+with each audience}. This can be messy, but that's life. At least with
+this scheme you can decide what changes to make in terms of the people
 affected by those changes. That's as good as it gets.
 
 If you still prefer Semantic Versioning after reading all that, then
@@ -168,107 +172,121 @@ Semantic Version queries. See @secref["Plugins" #:doc '(lib
 
 @section{Declare Supported Racket Versions}
 
-Next, we should decide what versions of Racket we want to support when building
-@italic{and running} our software. For that, we define @racket[racket-versions]
-as a list of pairs, where each pair is an inclusive interval of Racket versions
-you support for this package.
+Next, we can decide what versions of Racket we want to support if our
+package includes a Racket program. For that, we use
+@racket[racket-versions]. When you run a package, @project-name will
+check if the running version of Racket is an element of the set
+defined by @racket[racket-versions]. If it isn't, that halts use
+of a package.
 
-This example, defines software that can run from Racket v6.0 to Racket
-v7.7.0.5.
+This example defines software that can run from Racket v6.0 to Racket
+v7.7.0.5. Each list of two versions is an inclusive interval, so
+support includes the shown versions.
 
 @racketblock[
-(define racket-versions '(("6.0" . "7.7.0.5")))
+(racket-versions ("6.0" "7.7.0.5"))
 ]
-
-
-If @racket[(version)] is not an element of the set defined by
-@racket[racket-versions], @project-name will raise an error.
 
 Gaps in versions are not expected due to Racket's commitment to
-backwards-compatibility, but you can express them in the event one version
-behaves strangely for you.
+backward compatibility, but you can express them in the event one
+Racket version does not interact well with your release.
 
-You can also declare version support as unbounded on one side of an interval
-using @racket[#f]. This definition of @racket[racket-versions] matches every
-version of Racket except those strictly between 7.2 and 7.4.
+You can also declare version support as unbounded on one side of an
+interval using @racket{*}. This definition of @racket[racket-versions]
+matches every version of Racket except those strictly between
+@racket{7.2} and @racket{7.4}.
 
 @racketblock[
-(define racket-versions '((#f . "7.2") ("7.4" . #f)))
+(racket-versions ("*" "7.2") ("7.4" "*"))
+]
+
+If you have particular behavior that depends on exact Racket
+versions, then you may call out those individual versions. This
+example adds such a version that would otherwise be excluded.
+
+@racketblock[
+(racket-versions ("*" "7.2") ("7.4" "*") "7.0.1.2")
 ]
 
 
-All that being said, we want to handle the common case where we assume that we
-will support as many Racket versions as we can and stay backwards compatible.
-Here we'll define support for v5.0 and up.
+All that being said, we probably want to support as many Racket
+versions as we can and stay backward compatible.  To get back on
+track, we'll define support for v5.0 and up.
 
 @racketmod[#:file "definition.rkt"
 xiden
 
-(define package "my-first-package")
-(define provider "sagegerard.com")
-(define description "Fun playtime in a tutorial")
-(define tags '("fun" "tutorial" "example"))
-(define home-page "https://sagegerard.com")
+(package "my-first-package")
+(provider "sagegerard.com")
+(description "Fun playtime in a tutorial")
+(tags "fun" "tutorial" "example")
+(home-page "https://sagegerard.com")
 
-(define edition "default")
-(define revision-number 0)
-(define revision-names '("alpha"))
+(edition "default")
+(revision-number 0)
+(revision-names "alpha")
 
-(define racket-versions '(("5.0" . #f)))
+(racket-versions ("5.0" "*"))
 ]
 
 
 @section{Declare Supported Operating Systems}
 
-Racket is cross-platform, but your package might not be.
+Racket is cross-platform, but your package might not be.  Maybe you
+need PowerShell. I won't judge. Limiting OS support allows you to make
+reasonable assumptions about available binaries (e.g. GNU coreutils),
+and for offering tailored experiences to users.
 
-You can declare the operating systems you support by defining
-@racketid[os-support]. The value must be a list of possible values
-returned from @racket[(system-type 'os)].
+You can declare the operating systems you support by writing
+@racketid[os-support] with a list of acceptable values of
+@racket[(system-type 'os)].
 
-By default, @project-name assumes that you support each operating
-system. This is the same as writing @racket[(define os-support
-'(unix windows macosx))]. This is fine for the purposes of this
-section, so we won't include that line in the final version.
+This example is a statement of support for UNIX-like systems,
+Windows, and MacOSX.
 
-Limiting OS support is helpful for making reasonable assumptions about
-available binaries, and for offering tailored experiences to users.
+@racketblock[
+(os-support unix windows macosx)
+]
+
+By default, @project-name assumes each package definition will work on
+every operating system. While this means we don't have to include the
+above line in the final version of our package definition, I'll put it
+in just to be explicit.
 
 
 @section{Package Inputs}
 
-Now we're getting into the interesting stuff. In @|project-name|, a package is
-a program. Programs have inputs, so your dependencies are viewed as inputs to a
-package. Specifically, a @deftech{package input} is a deferred request for
+Now for the interesting stuff. In @|project-name|, a package
+definition is a program. An actively running version of that program
+is a package. A @deftech{package input} is a deferred request for
 exact bytes. I'll just define one for now.
 
 
 @racketmod[#:file "definition.rkt"
 xiden
 
-(define package "my-first-package")
-(define provider "sagegerard.com")
-(define description "Fun playtime in a tutorial")
-(define tags '("fun" "tutorial" "example"))
-(define home-page "https://sagegerard.com")
+(package "my-first-package")
+(provider "sagegerard.com")
+(description "Fun playtime in a tutorial")
+(tags "fun" "tutorial" "example")
+(home-page "https://sagegerard.com")
 
-(define edition "default")
-(define revision-number 0)
-(define revision-names '("alpha"))
+(edition "default")
+(revision-number 0)
+(revision-names "alpha")
 
-(define racket-versions '(("5.0" . #f)))
+(racket-versions ("5.0" "*"))
+(os-support unix windows macosx)
 
-(define inputs
-  (list (input "default.tgz"
-               (sources "https://sagegerard.com/xiden-tutorial/default.tgz"))))]
-
+(input "default.tgz"
+       (sources "https://sagegerard.com/xiden-tutorial/default.tgz"))]
 
 This input defines an archive of source code we'll need to build our project.
 It contains a throwaway Racket module and Scribble document.
 @racket{default.tgz} is the name of the file that we use locally in our
 build. The @racket[sources] list tells @project-name where it can find the
 actual bytes for that file. I'm only using one source here, but you can add
-mirrors or relative paths to check.
+mirrors or relative paths in case other sources aren't available.
 
 
 @subsection{Everything is an Input}
@@ -288,19 +306,18 @@ Okay, so we named a file that we want. But how do we know we got the right file?
 For that, we need to declare integrity information with our input.
 
 @racketblock[
-(define inputs
-  (list (input "default.tgz"
-               (sources "https://sagegerard.com/xiden-tutorial/default.tgz"))
-               (integrity 'sha384 (hex "299e3eb744725387e0355937727cf6e3c938eda2355cda82d58596fd535188fa624217f52f8c6e7d5ee7cb1d458a7f75"))))]
+(input "default.tgz"
+       (sources "https://sagegerard.com/xiden-tutorial/default.tgz")
+       (integrity 'sha384 (hex "299e3eb744725387e0355937727cf6e3c938eda2355cda82d58596fd535188fa624217f52f8c6e7d5ee7cb1d458a7f75")))]
 
 
 @subsubsection{What Integrity Means}
 
-The integrity information tells @project-name if it got the @italic{right}
-bytes. If @project-name cannot get the @italic{exact bytes} this input demands,
-then the build will fail. This is a good thing! It makes builds reproducible,
-so long as the build produces the same output from the same input. An input
-might only be available during a build, or may persist after a build for
+Integrity information tells @project-name if it got the @italic{exact
+bytes} the input requires. If it did not, then the build will
+fail. This is a good thing! It makes builds reproducible, so long as
+the build produces the same output from the same input. An input might
+only be available during a build, or may persist after a build for
 run-time use. More on that later.
 
 If you are not familiar with integrity checking, just know that there are
@@ -310,12 +327,13 @@ files are the same. That is, unless the function itself has a
 @italic{collision}, where two different files produce the same digest. This is
 a sign to use a different function!
 
-The function we're using in this case is SHA-384, which we represent here as
-@racket['sha384]. Since it's hard to type the exact bytes of a digest, we can
-give @project-name the expected digest as a string we copy and paste from
-elsewhere.  Here we tell @project-name that the SHA-384 digest of
-@racket{default.tgz} comes from a hex string. That tells @project-name how to
-translate the digest as a string back to bytes for comparison.
+The function we're using in this case is SHA-384, which we represent
+here as @racket[sha384]. Since it's hard to type the exact bytes of a
+digest, we can give @project-name the expected digest as a string we
+copy and paste from elsewhere.  Here we tell @project-name that the
+SHA-384 digest of @racket{default.tgz} comes from a hex string. That
+tells @project-name how to translate the digest as a string back to
+bytes for comparison.
 
 
 @subsubsection{Creating an Integrity Expression}
@@ -389,12 +407,11 @@ signature from the same host that provides an artifact. Here I use a public key
 that is only used for this tutorial.
 
 @racketblock[
-(define inputs
-  (list (input "default.tgz"
-               (sources "https://sagegerard.com/xiden-tutorial/default.tgz"))
-               (integrity 'sha384 (hex "299e3eb744725387e0355937727cf6e3c938eda2355cda82d58596fd535188fa624217f52f8c6e7d5ee7cb1d458a7f75"))
-               (signature "https://sagegerard.com/xiden-tutorial/public.pem"
-                          "https://sagegerard.com/xiden-tutorial/default.tgz.sign")))]
+(input "default.tgz"
+       (sources "https://sagegerard.com/xiden-tutorial/default.tgz")
+       (integrity 'sha384 (hex "299e3eb744725387e0355937727cf6e3c938eda2355cda82d58596fd535188fa624217f52f8c6e7d5ee7cb1d458a7f75"))
+       (signature "https://sagegerard.com/xiden-tutorial/public.pem"
+                  "https://sagegerard.com/xiden-tutorial/default.tgz.sign"))]
 
 The @racket[signature] form accepts a string that locates a public key, and a
 string that locates a signature, in that order. @binary uses the signature and
@@ -414,7 +431,7 @@ to learn how to affirm trust for individual public keys.
 An @deftech{abstract package input} (or just “abstract input”) is a
 @tech{package input} with only a name.
 
-@racketblock[(define inputs (list (input "server.rkt")))]
+@racketblock[(input "server.rkt")]
 
 Such inputs cannot be used to fetch exact bytes. Abstract inputs are
 useful as placeholders in package definitions that require the end
@@ -425,101 +442,164 @@ that also defines at least one source that @project-name can use to
 fetch bytes. A concrete package input does not have to include
 integrity information or a signature.
 
+Question is, why would you want a user to define where inputs come
+from? Sometimes you only care about the presence of a particular
+interface, or you want to get around issues related to a Racket
+program using two different copies of what appears to be the same
+module (Racket won't see them as the same, and that can cause scary
+bugs).
+
 
 @section{Package Outputs}
 
-The processing step occurs in the @deftech{package build procedure}, which
-creates files to fulfill a requested @deftech{package output}. A @tech{package
-output} is a human-readable name for a possible deliverable from the package,
+A @deftech{package output} is a named deliverable from the package,
 such as documentation, libraries, or tests.
 
+Every package definition should define a default output, because if a
+user does not request a particular output from a package, then
+@project-name will use output named @racket{default}.  If you do not
+define a default output, then @project-name will tell the user about
+the outputs available in the definition.
+
+Recall in the last section that we defined inputs named
+@racket{default.tgz}.  This means that the build will fetch and
+extract that archive.
+}
 @racketblock[
-(define (build target)
-  (call-with-input (input-ref inputs (string-append target ".tgz")) unpack))]
+(output "default"
+        archive <- (input-ref "default.tgz")
+	(unpack #:delete? #t archive))
+]
 
-In this example, @racket[target] is bound to the requested @tech{package output}.
-But, we haven't defined any outputs in our @tech{package definition}.  That's
-okay. Every package definition has an implicit @racket{default} output, even if
-@racket[outputs] is not defined. If a user does not request a particular output
-from a package, then @project-name will use the @racket{default} output.
-
-Recall in the last section that we defined an input named @racket{default.tgz}.
-This means that the build will fetch and extract that archive.
-
-The @tech{package build procedure} runs in a sandbox (as in
-@racketmodname[racket/sandbox]) to mitigate the damage caused by malicious
-code. For added safety, @|project-name|'s own OS-level permissions should be
-limited.  When building, @racket[current-directory] is bound to a unique
-directory based on the definition itself. This makes it such that two packages
-can only conflict if evidence overwhelmingly points to those packages being
-identical.  This means that you can assume the directory is empty, and yours to
-populate.
+Notice that we manually delete the archive. This is because when you
+reference an input, @project-name lazily writes it to disk and makes
+it available with the given name. @project-name cannot predict what
+inputs to keep around, so it leaves that to you. We don't need our
+archive once the contents are on disk.
 
 
-@subsection{Adding a New Output}
+@subsection{Imperative-looking Functions}
 
-Assume @racket{default.tgz} has everything a user would need. Some users might
-only want the libraries, not the documentation. Storage is cheap, but hundreds
-of dependencies add up, you know?
+@litchar|{#lang xiden}| is a functional language. The instructions
+listed under the output look imperative, but are actually set up as a
+function composition. Haskell users might notice this resembles their
+@tt{do} notation. If you are not familiar with Haskell, then you can
+still read package output instructions as if they were imperative
+code.
+
+If you @italic{are} familiar with Haskell, then you should note that
+monadic type casting is completely hidden because there is only one
+such type at play here. This allows simplifications like
+@racket[(unpack (input-ref "default.tgz"))] since the coercion rules
+are trivial.
+
+
+@subsection{Where Does This Happen on Disk?}
+
+When building, @racket[current-directory] is bound to a unique
+directory, such that two packages only conflict if evidence shows
+those packages will produce identical output.  You can assume the
+directory is empty, and yours to populate.
+
+
+@subsection{Add an Output}
+
+Assume @racket{default.tgz} has everything a user would need. Some
+users might only want the libraries, not the documentation. Storage is
+cheap, but hundreds of dependencies add up.
 
 We can define a new output for our budget-conscious users:
 
 @racketblock[
-(define outputs '("minimal"))
+(output "default" (unpack #:delete? #t (input-ref "default.tgz")))
+(output "minimal" (unpack #:delete? #t (input-ref "minimal.tgz")))
 ]
 
-This says that we have a minimal output available, but notice that I did not
-define @racket{default}. I could, but it would be redundant. @racket{default}
-is always defined.
-
-By doing this, we actually changed what arguments can be passed to a
-@tech{package build procedure}. Previously, @project-name would only ever bind
-@racket[target] to @racket{default}. Now it can bind it to @racket{default}, or
-@racket{minimal}.
-
-Since the build extracts an archive with the same name as the output, We'll
-need a new @tech{package input} to go with this output.
+To reduce repetition, we can introduce an @deftech{action}.  An action
+is a reusable part of an output's instructions. They are unique in
+that they can accept arguments.  The syntax is similar to defining a
+Racket procedure, except the body follows the same notation as
+outputs.
 
 @racketblock[
-(define inputs
-  (list (input "default.tgz"
-               (sources "https://sagegerard.com/xiden-tutorial/default.tgz")
-               (integrity 'sha384 (hex "299e3eb744725387e0355937727cf6e3c938eda2355cda82d58596fd535188fa624217f52f8c6e7d5ee7cb1d458a7f75"))
-               (signature "https://sagegerard.com/xiden-tutorial/public.pem"
-                          "https://sagegerard.com/xiden-tutorial/default.tgz.sign"))
-        (input "minimal.tgz"
-               (sources "https://sagegerard.com/xiden-tutorial/minimal.tgz")
-               (integrity 'sha384 (hex "6cc38a7e2513fa9abd2ac079e9c8efbab9385458275c927e77527a189ed9ac393d734a4cf306787425bf722a5ac025c6"))
-               (signature "https://sagegerard.com/xiden-tutorial/public.pem"
-                          "https://sagegerard.com/xiden-tutorial/minimal.tgz.sign"))))]
+(action (consume-archive name)
+  (unpack #:delete? #t (input-ref name)))
+
+(output "default" (consume-archive "default.tgz"))
+(output "minimal" (consume-archive "minimal.tgz"))
+]
+
+
+By adding an output, we changed what the user can request from a
+package.  Since the build extracts an archive with the same name as
+the output, We'll need a new @tech{package input} to go with this
+output.
+
+@racketblock[
+(input "default.tgz"
+       (sources "https://sagegerard.com/xiden-tutorial/default.tgz")
+       (integrity 'sha384 (hex "299e3eb744725387e0355937727cf6e3c938eda2355cda82d58596fd535188fa624217f52f8c6e7d5ee7cb1d458a7f75"))
+       (signature "https://sagegerard.com/xiden-tutorial/public.pem"
+                  "https://sagegerard.com/xiden-tutorial/default.tgz.sign"))
+
+(input "minimal.tgz"
+       (sources "https://sagegerard.com/xiden-tutorial/minimal.tgz")
+       (integrity 'sha384 (hex "6cc38a7e2513fa9abd2ac079e9c8efbab9385458275c927e77527a189ed9ac393d734a4cf306787425bf722a5ac025c6"))
+       (signature "https://sagegerard.com/xiden-tutorial/public.pem"
+                  "https://sagegerard.com/xiden-tutorial/minimal.tgz.sign"))]
 
 Now when our users choose to build @racket{minimal} output, they will only ever
 download and extract the @racket{minimal.tgz} archive.
 
 
-@subsection{Equivalent Outputs Cause Duplicate Data}
+@subsection{Outputs Can Create Duplicate Data}
 
-@project-name assumes that different outputs produce different content, which
-makes a human error possible. Assume we changed @racket[build] such that
-@racket{default} was used as an alias of another output.
+@project-name assumes that different outputs produce different
+content, which makes one kind of human error possible.
+
+Assume we add an output to act as an alias of another.
 
 @racketblock[
-(define outputs '("full" "minimal"))
-
-(define (build target)
-  (define archive (input-ref inputs
-                             (string-append (if (equal? target "default") "full" "minimal")
-                                            ".tgz")))
-  (call-with-input archive unpack))]
+(output "default" (consume-archive "default.tgz"))
+(output "full" (consume-archive "default.tgz"))
+(output "minimal" (consume-archive "minimal.tgz"))]
 
 This works, but if a user requests the @racket{full} output and then the
 @racket{default} output, then the same archive would be extracted twice into
 different directories.  This pollutes the disk with redundant data, which is
 probably not what you want.
 
-Again, different @tech{package outputs} are expected to produce different
-things. If you believe that two outputs are equivalent, then combine them into
-one output.
+Different @tech{package outputs} are expected to produce different
+things. If you believe that two outputs are equivalent, then combine
+them into one output. If multiple outputs end up creating too much
+duplicate data, then you might want to consider defining the common
+data in another package definition.
+
+
+@section{User-defined Metadata}
+
+A lot of what we've added to our code counts as metadata, such as
+@tt{home-page}, @tt{tags}, and @tt{description}. All of the entries
+we've defined so far are metadata that @project-name readily
+recognizes due to their widespread use.
+
+If you want to store other information in your definition,
+then you can use the @tt{metadatum} form.
+
+@racketblock[
+(metadatum support-email "support@example.com")
+]
+
+A metadatum works like @tt{define}, in that you can bind one
+identifier to one value. When someone uses @racket[require] or one of
+its variants on a package definition, they can inspect an expanded
+@tt{metadata} binding to see all user-defined metadata.
+
+@racketinput[(module anon xiden/pkgdef2 (metadatum support-email "support@example.com"))]
+@racketinput[(require 'anon)]
+@racketinput[metadata]
+@racketresult['#hasheq((support-email . "support@example.com"))]
+
 
 @section[#:tag "finished-definition"]{The Finished Definition}
 
@@ -530,32 +610,48 @@ definition further in @secref{cli}.
 @racketmod[#:file "definition.rkt"
 xiden
 
-(define package "my-first-package")
-(define provider "example.com")
-(define description "Fun playtime in a tutorial")
-(define tags '("fun" "tutorial" "example"))
-(define home-page "https://sagegerard.com")
+(package "my-first-package")
+(provider "example.com")
+(description "Fun playtime in a tutorial")
+(tags "fun" "tutorial" "example")
+(home-page "https://sagegerard.com")
 
-(define edition "default")
-(define revision-number 0)
-(define revision-names '("alpha"))
+(edition "default")
+(revision-number 0)
+(revision-names "alpha")
 
-(define racket-versions '(("5.0" . #f)))
+(code:comment "-----------------------------------------------")
+(code:comment "Platform support")
+(racket-versions ("5.0" "*"))
+(os-support unix windows macosx)
 
-(define inputs
-  (list (input "default.tgz"
-               (sources "https://sagegerard.com/xiden-tutorial/default.tgz")
-               (integrity 'sha384 (hex "299e3eb744725387e0355937727cf6e3c938eda2355cda82d58596fd535188fa624217f52f8c6e7d5ee7cb1d458a7f75"))
-               (signature "https://sagegerard.com/xiden-tutorial/public.pem"
-                          "https://sagegerard.com/xiden-tutorial/default.tgz.sign"))
-        (input "minimal.tgz"
-               (sources "https://sagegerard.com/xiden-tutorial/minimal.tgz")
-               (integrity 'sha384 (hex "6cc38a7e2513fa9abd2ac079e9c8efbab9385458275c927e77527a189ed9ac393d734a4cf306787425bf722a5ac025c6"))
-               (signature "https://sagegerard.com/xiden-tutorial/public.pem"
-                          "https://sagegerard.com/xiden-tutorial/minimal.tgz.sign"))))
+(code:comment "-----------------------------------------------")
+(code:comment "User Metadata")
+(metadatum support-email "support@example.com")
 
-(define outputs '("default" "minimal"))
 
-(define (build target)
-  (call-with-input (input-ref inputs (string-append target ".tgz")) unpack))
+(code:comment "-----------------------------------------------")
+(code:comment "Inputs")
+(input "default.tgz"
+       (sources "https://sagegerard.com/xiden-tutorial/default.tgz")
+       (integrity 'sha384 (hex "299e3eb744725387e0355937727cf6e3c938eda2355cda82d58596fd535188fa624217f52f8c6e7d5ee7cb1d458a7f75"))
+       (signature "https://sagegerard.com/xiden-tutorial/public.pem"
+                  "https://sagegerard.com/xiden-tutorial/default.tgz.sign"))
+
+(input "minimal.tgz"
+       (sources "https://sagegerard.com/xiden-tutorial/minimal.tgz")
+       (integrity 'sha384 (hex "6cc38a7e2513fa9abd2ac079e9c8efbab9385458275c927e77527a189ed9ac393d734a4cf306787425bf722a5ac025c6"))
+       (signature "https://sagegerard.com/xiden-tutorial/public.pem"
+       		  "https://sagegerard.com/xiden-tutorial/minimal.tgz.sign"))
+
+(code:comment "-----------------------------------------------")
+(code:comment "Outputs")
+
+(action (consume-archive name)
+  archive <- (input-ref name)
+  (unpack archive)
+  (delete archive))
+
+(output "default" (consume-archive "default.tgz"))
+(output "minimal" (consume-archive "minimal.tgz"))
 ]
