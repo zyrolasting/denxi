@@ -14,3 +14,7 @@ with the following bindings.
 Returns @racket[#t] if @racket[s] is a string that can be parsed as an
 URL using @racket[string->url].
 }
+
+@defidform[#:kind "syntax class" url-string]{
+A syntax class for @racket[url-string?] string literals.
+}
