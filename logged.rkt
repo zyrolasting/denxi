@@ -29,7 +29,8 @@
          "exn.rkt"
          "format.rkt"
          "message.rkt"
-         "monad.rkt")
+         "monad.rkt"
+         (for-syntax racket/base))
 
 (define SUCCESS (string->uninterned-symbol "SUCCESS"))
 (define FAILURE (string->uninterned-symbol "FAILURE"))
@@ -53,7 +54,31 @@
              (cons (cond [(exn? e) ($show-string (exn->string e))]
                          [($message? e) e]
                          [else ($show-datum e)])
-                       m)))))
+                   m)))))
+
+(define (call-with-logged-continuation p)
+  (logged
+   (λ (messages)
+     (call/cc
+      (λ (return)
+        (define (use v [m messages]) (return v m))
+        (define (pass [m #f]) (return SUCCESS (if m (cons m messages) messages)))
+        (define (fail [m #f]) (return FAILURE (if m (cons m messages) messages)))
+        (define (run! l)  (run-log l messages))
+        (p use pass fail run!))))))
+
+
+(define-syntax (define-logged stx)
+  (syntax-case stx ()
+    [(_ (id formals ...) body ...)
+     (datum->syntax stx
+                    (syntax->datum
+                     #'(define (id formals ...)
+                         (call-with-logged-continuation
+                          (λ ($use $pass $fail $run!)
+                            body ...))))
+                    stx)]))
+
 
 ; Like State, except execution can be halted and the state is always a
 ; list of $message instances.
@@ -103,6 +128,27 @@
 
 (module+ test
   (require rackunit)
+
+  (test-case "Inject logged program control into lexical context of new procedures"
+    (define-logged (try branch)
+      (case branch
+        [(use-1arg) ($use branch)]
+        [(use-2arg) ($use branch branch)]
+        [(pass)     ($pass branch)]
+        [(fail)     ($fail branch)]
+        [(run)      ($run! (logged (λ (m) (values branch (cons branch m)))))]))
+
+    (define (check p #:with [base-messages null] expected-val expected-messages)
+      (call-with-values (λ () (run-log p base-messages))
+                        (λ (actual-value actual-messages)
+                          (check-equal? actual-value expected-val)
+                          (check-equal? actual-messages expected-messages))))
+
+    (check (try 'use-1arg) #:with '(1) 'use-1arg '(1))
+    (check (try 'use-2arg) 'use-2arg 'use-2arg)
+    (check (try 'pass) SUCCESS '(pass))
+    (check (try 'fail) FAILURE '(fail))
+    (check (try 'run) #:with '(1) 'run '(run 1)))
 
   (test-case "Wrap a selection of logged messages"
     (define-message $wrapper     (v))

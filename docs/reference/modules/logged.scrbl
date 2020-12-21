@@ -75,6 +75,7 @@ moment one of these @tech/reference{uninterned}
 and values that control @racket[logged] evaluation.
 }
 
+
 @section{Alternative Constructors}
 
 @defproc[(logged-unit [v any/c]) logged?]{
@@ -115,6 +116,52 @@ Use this to “scope” messages.
 ]
 
 }
+
+@section{Logged Program Control}
+
+@defform[(define-logged (id formals ...) body ...)]{
+Like @racket[(define (id formals ...) body ...)], except the procedure
+runs in a continuation with the following injected procedure bindings:
+
+@itemlist[
+@item{@racket[($use v [messages])]: Aborts the program with @racket[v] as the result and the given message log.
+@racketid[messages] defaults to the current program log.}
+
+@item{@racket[($pass [msg])]: Abort the program with a @racket[SUCCESS] result and an optional new message. If no message is passed, then the program log is unaffected.}
+
+@item{@racket[($fail [msg])]: Abort the program with a @racket[FAILURE] result and an optional new message. If no message is passed, then the program log is unaffected.}
+
+@item{@racket[($run! l)]: Equivalent to @racket[(run-log l m)], where @racket[m] is bound to current program log.}
+]
+
+The following example defines two equivalent procedures that clarify
+how @racket[define-logged] reduces code volume.
+
+@racketblock[
+(define-logged (interpret variant)
+  (cond [(eq? 'ok variant)
+         ($pass ($show-string "Result is okay"))]
+        [(eq? 'no variant)
+         ($fail ($show-string "Result is not okay"))]
+        [(logged? variant)
+         (call-with-values ($run! variant) $use)]))
+
+(define (interpret result)
+  (logged
+   (lambda (messages)
+     (call/cc
+       (lambda (return)
+         (cond [(eq? 'ok variant)
+                (return SUCCESS ($show-string "Result is okay"))]
+               [(eq? 'no variant)
+                (return FAILURE ($show-string "Result is not okay"))]
+               [(logged? variant)
+                (call-with-values (run-log variant messages) return)]))))))
+]
+
+
+}
+
 
 @section{Entry Points for Logged Programs}
 
