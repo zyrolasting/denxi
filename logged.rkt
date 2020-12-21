@@ -72,11 +72,11 @@
 
 (define-syntax (define-logged stx)
   (syntax-case stx ()
-    [(_ (id formals ...) body ...)
+    [(_ (id . formals) body ...)
      (syntax-protect
       (datum->syntax stx
                      (syntax->datum
-                      #'(define (id formals ...)
+                      #'(define (id . formals)
                           (call-with-logged-continuation
                            (λ ($use $pass $fail $run!)
                              body ...))))
