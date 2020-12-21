@@ -196,7 +196,6 @@
 (flag-out [-F --fasl-output] (cli-flag/boolean XIDEN_FASL_OUTPUT))
 (flag-out [-R --reader-friendly-output] (cli-flag/boolean XIDEN_READER_FRIENDLY_OUTPUT))
 (flag-out [-v --verbose] (cli-flag/boolean XIDEN_VERBOSE))
-(flag-out [-A --allow-undeclared-racket] (cli-flag/boolean XIDEN_ALLOW_UNDECLARED_RACKET_VERSIONS))
 (flag-out [-G --assume-support] (cli-flag/boolean XIDEN_ALLOW_UNSUPPORTED_RACKET))
 (flag-out [--trust-any-pubkey] (cli-flag/boolean XIDEN_TRUST_ANY_PUBLIC_KEY))
 (flag-out [--trust-any-exe] (cli-flag/boolean XIDEN_TRUST_ANY_EXECUTABLE))

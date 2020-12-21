@@ -100,7 +100,6 @@
 ;; =================================
 
 (define-xiden-setting XIDEN_ALLOW_ENV (listof (or/c bytes? string?)) null)
-(define-xiden-setting XIDEN_ALLOW_UNDECLARED_RACKET_VERSIONS boolean? #f)
 (define-xiden-setting XIDEN_ALLOW_UNSUPPORTED_RACKET boolean? #f)
 (define-xiden-setting XIDEN_CATALOGS (listof url-string?) '("https://zcpkg.com/$QUERY"))
 (define-xiden-setting XIDEN_DOWNLOAD_MAX_REDIRECTS exact-nonnegative-integer? 2)

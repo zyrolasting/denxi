@@ -99,7 +99,6 @@
                             --trust-any-pubkey
                             --trust-bad-signature
                             --trust-unsigned
-                            --allow-undeclared-racket
                             --assume-support
                             --sandbox-memory-limit
                             --sandbox-eval-memory-limit

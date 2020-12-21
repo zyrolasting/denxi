@@ -266,11 +266,6 @@ This setting affects the output of @racket[from-catalogs].
 The maximum number of HTTP redirects to follow when resolving a GET request.
 }
 
-@defsetting*[XIDEN_ALLOW_UNDECLARED_RACKET_VERSIONS]{
-When true, continue installing when a @tech{package definition}
-does not declare supported versions of Racket.
-}
-
 @defsetting*[XIDEN_ALLOW_UNSUPPORTED_RACKET]{
 When true, continue installing when a @tech{package definition}
 declares that it does not support the running Racket version.
