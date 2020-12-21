@@ -14,6 +14,8 @@
          messy-log/c
          run-log
          get-log
+         define-logged
+         call-with-logged-continuation
          (contract-out
           [logged-combine
            (-> logged?
@@ -71,13 +73,14 @@
 (define-syntax (define-logged stx)
   (syntax-case stx ()
     [(_ (id formals ...) body ...)
-     (datum->syntax stx
-                    (syntax->datum
-                     #'(define (id formals ...)
-                         (call-with-logged-continuation
-                          (λ ($use $pass $fail $run!)
-                            body ...))))
-                    stx)]))
+     (syntax-protect
+      (datum->syntax stx
+                     (syntax->datum
+                      #'(define (id formals ...)
+                          (call-with-logged-continuation
+                           (λ ($use $pass $fail $run!)
+                             body ...))))
+                     stx))]))
 
 
 ; Like State, except execution can be halted and the state is always a
