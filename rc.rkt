@@ -13,9 +13,10 @@
    (-> (hash/c symbol? any/c))]))
 
 
-(require racket/function
+(require racket/file
+         racket/function
          racket/match
-         racket/pretty
+         racket/path
          (only-in racket/tcp listen-port-number?)
          "exn.rkt"
          "integrity.rkt"
@@ -53,7 +54,7 @@
 ; Checks environment variable, then rcfile, then hard-coded value.
 (define (in-xiden-setting-value-sources id default-value)
   (in-list (list (λ () (maybe-get-setting-value-from-envvar (symbol->string id)))
-                 (λ () ((current-xiden-rcfile-cache) `(#%info-lookup ',id void)))
+                 (λ () (with-handlers ([values void]) ((current-xiden-rcfile-cache) id)))
                  (const default-value))))
 
 
@@ -72,7 +73,8 @@
 (define (load-xiden-rcfile)
   (let ([path (get-xiden-settings-path)])
     (if (file-exists? path)
-        (load-xiden-module path)
+        (parameterize ([sandbox-path-permissions (derive-path-permissions)])
+          (make-module-evaluator #:language 'xiden/rcfile path))
         void)))
 
 
@@ -84,15 +86,6 @@
 (define (dump-xiden-settings)
   (for/hash ([(k v) (in-hash XIDEN_SETTINGS)])
     (values k (v))))
-
-
-; This implementation preserves the reading order of
-; any rcfile on disk, as a courtesy to the user.
-(define (save-xiden-settings!)
-  (define domain-or-void ((load-xiden-rcfile) '(#%info-domain)))
-  (save-xiden-module!
-   (hash+list->xiden-evaluator (dump-xiden-settings) (if (void? domain-or-void) null domain-or-void))
-   (get-xiden-settings-path)))
 
 
 
@@ -176,7 +169,10 @@
                 (XIDEN_PRIVATE_KEY_PATH))
 
     (test-case "Override hard-coded value with rcfile"
-      (XIDEN_PRIVATE_KEY_PATH "foo" save-xiden-settings!)
+      (make-directory* (path-only (get-xiden-settings-path)))
+      (write-to-file
+       `(module rc xiden/rcfile (define XIDEN_PRIVATE_KEY_PATH "foo"))
+       (get-xiden-settings-path))
       (call-with-rcfile
        (λ () (check-equal? (XIDEN_PRIVATE_KEY_PATH) "foo"))))
 

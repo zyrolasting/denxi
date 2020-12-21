@@ -39,18 +39,7 @@ the method before it.
 
 ]
 
-@section{Runtime Configuration File}
-
-A @deftech{runtime configuration file}, or @deftech{rcfile}, is a
-@racketmodname[xiden/pkgdef] Racket module. It defines values for a
-@tech{runtime configuration} using identifiers that match the
-@racket[setting-id] of each defined @tech{setting}. e.g.
-@racket[(define XIDEN_VERBOSE #t)].
-
-The @deftech{target runtime configuration file}, or @deftech{target
-rcfile}, is located at @litchar{etc/xiden.rkt} with respect to the
-@tech{target workspace}.
-
+@include-section{rcfile.scrbl}
 
 @section{Runtime Configuration API}
 

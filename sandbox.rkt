@@ -8,6 +8,8 @@
 (require "contract.rkt")
 (provide (all-from-out racket/sandbox)
          (contract-out
+          [derive-path-permissions
+           (-> list?)]
           [dict->package-definition-datum
            (-> dict? list?)]
           [make-xiden-sandbox
