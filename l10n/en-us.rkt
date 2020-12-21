@@ -149,10 +149,6 @@
   [($cli:undefined-command m)
    (format "Unrecognized command: ~s. Run with -h for usage information.~n" m)]
 
-  [($output-not-found query output-name)
-   (format "Cannot find output ~s output for ~s"
-           output-name query)]
-
   [($invalid-workspace-envvar)
    (format "Ignoring envvar value for XIDEN_WORKSPACE: ~a~n  falling back to ~a"
            (getenv "XIDEN_WORKSPACE")
@@ -198,37 +194,11 @@
   [($package:output:undefined)
    "requested output is not defined"]
 
-  [($package:definition:value:missing id)
-   (format "~a is not defined" (format-symbol-for-display id))]
-
-  [($package:definition:value:invalid id value)
-   (format "expected ~a for ~a, but got ~e"
-           (case id
-             [(provider package edition)
-              "a non-empty string"]
-             [(racket-versions)
-              "a list of Racket version range pairs, e.g. '((\"7.0\" . \"7.8\") ...) (Use #f to remove bound)."]
-             [(revision-names)
-              "a list of non-empty strings, where each string has at least one non-digit."]
-             [(outputs)
-              "a list of non-empty strings"]
-             [(inputs)
-              "a list of well-formed input-info instances"]
-             [(revision-number)
-              "an exact nonnegative integer"])
-           (format-symbol-for-display id)
-           value)]
-
-  [($package:definition:undeclared-racket-version)
-   (join-lines
-    (list (format "does not declare supported Racket versions (bypass: ~a)"
-                  (shortest-cli-flag --allow-undeclared-racket))))]
-
-  [($package:definition:unsupported-os supported)
+  [($package:unsupported-os supported)
    (format "OS unsupported. Expected ~a"
            (localized-comma-list supported "or"))]
 
-  [($package:definition:unsupported-racket-version versions)
+  [($package:unsupported-racket-version versions)
    (join-lines
     (list (format "does not support Racket ~a (bypass: ~a)"
                   (version)
