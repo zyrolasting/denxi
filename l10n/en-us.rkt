@@ -283,4 +283,22 @@
                                                  (format-cli-flags --trust-any-digest))))]
 
              [else (format "Unknown integrity status: ~s Please inform the maintainers!"
-                           stage)]))])
+                           stage)]))]
+
+  [($subprocess-report cmd args wd max-runtime actual-runtime expected-exit-codes actual-exit-code stderr?)
+   (L (format "subprocess `~a`" (string-join (cons cmd args) "` `"))
+      (format "  working dir: ~a" wd)
+      (format "  seconds left: ~a" (- max-runtime actual-runtime))
+      (format "  stderr: ~a"
+              (if stderr?
+                  "populated"
+                  "empty"))
+      (format "  exit code: ~a~a"
+              actual-exit-code
+              (if (member actual-exit-code expected-exit-codes)
+                  ""
+                  (case (length expected-exit-codes)
+                    [(0) ""]
+                    [(1) (format " [expected ~a]" (car expected-exit-codes))]
+                    [else (format " [expected one of ~s]"
+                                  expected-exit-codes)]))))])
