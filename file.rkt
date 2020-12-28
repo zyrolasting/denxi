@@ -19,7 +19,6 @@
          "message.rkt"
          "path.rkt"
          "query.rkt"
-         "sandbox.rkt"
          "setting.rkt"
          "string.rkt"
          "url.rkt"
