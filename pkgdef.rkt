@@ -7,6 +7,7 @@
          "integrity.rkt"
          (rename-in "monad.rkt" [do do*])
          "signature.rkt"
+         "source.rkt"
          "system.rkt")
 
 (provide base64
@@ -17,10 +18,10 @@
          signature
          in-paths
          run
+         sources
          <-
          (except-out (all-from-out racket/base) do #%module-begin)
          (rename-out [#%module-begin* #%module-begin]
-                     [list sources]
                      [do* do]))
 
 (define-syntax (#%module-begin* stx)
