@@ -141,6 +141,9 @@
          (input-info-sources info)
          (λ (in est-size)
            (make-addressable-file
+            #:max-size (mebibytes->bytes (XIDEN_FETCH_TOTAL_SIZE_MB))
+            #:buffer-size (mebibytes->bytes (XIDEN_FETCH_BUFFER_SIZE_MB))
+            #:timeout-ms (XIDEN_FETCH_TIMEOUT_MS)
             #:on-status (let ([formatter (get-message-formatter)])
                           (λ (m)
                             (if ($transfer:progress? ($transfer:scope-message m))
