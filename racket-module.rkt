@@ -159,14 +159,14 @@
     (check-false (racket-module-code? 'something `(module something)))
     (check-false (racket-module-code? 'something '(module anon other 1 2 3))))
 
-  (test-case "Extract body from package definition module forms"
-    (check-equal?  (get-racket-module-body
+  (test-case "Extract body from module forms"
+    (check-equal?  (get-racket-module-body  'something
                    `(module anon something a b c))
                   '(a b c))
-    (check-equal? (get-racket-module-body
+    (check-equal? (get-racket-module-body 'something
                    `(module anon something (#%module-begin a b c)))
                   '(a b c))
-    (check-equal? (get-racket-module-body
+    (check-equal? (get-racket-module-body 'something
                    (make-racket-module-datum 'something '(a b c)))
                   '(a b c)))
   
