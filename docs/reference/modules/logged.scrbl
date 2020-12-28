@@ -1,6 +1,12 @@
 #lang scribble/manual
 
-@require["../../shared.rkt" @for-label[racket/base racket/contract racket/function xiden/logged xiden/message]]
+@require["../../shared.rkt"
+         @for-label[racket/base
+                    racket/contract
+                    racket/function
+                    xiden/logged
+                    xiden/message
+                    rackunit]]
 
 @title{Logged Programs}
 
@@ -186,7 +192,7 @@ Additionally, that list is @racket[flatten]ed, then @racket[reverse]d.
 
 @defmodule[(submod xiden/logged test)]
 
-@defproc[(test-logged-procedure #:with [initial null] msg l p) void?]{
+@defproc[(test-logged-procedure [#:with initial (listof $message?) null] [msg string?] [l logged?] [p procedure?]) void?]{
 
 Equivalent to
 
