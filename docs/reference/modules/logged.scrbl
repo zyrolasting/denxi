@@ -5,8 +5,7 @@
                     racket/contract
                     racket/function
                     xiden/logged
-                    xiden/message
-                    rackunit]]
+                    xiden/message]]
 
 @title{Logged Programs}
 
@@ -192,11 +191,11 @@ Additionally, that list is @racket[flatten]ed, then @racket[reverse]d.
 
 @defmodule[(submod xiden/logged test)]
 
-@defproc[(test-logged-procedure [#:with initial (listof $message?) null] [msg string?] [l logged?] [p procedure?]) void?]{
-
-Equivalent to
-
-@racketblock[
-(test-case msg (call-with-values (λ () (run-log l initial)) p))
-]
+@defproc[(test-logged-procedure [#:with initial (listof $message?) null]
+                                [test-message string?]
+                                [logged-procedure logged?]
+                                [continue procedure?])
+                                void?]{
+Equivalent to a unit test case with the given @racket[test-message], where the
+test evaluates @racketblock[(call-with-values (λ () (run-log logged-procedure initial)) continue)].
 }
