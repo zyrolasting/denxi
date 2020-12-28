@@ -3,7 +3,7 @@
 @require[@for-label[racket/base
                     racket/contract
                     xiden/codec
-                    @except-in[xiden/pkgdef #%module-begin]]
+                    @except-in[xiden/pkgdef do #%module-begin]]
          xiden/codec
          racket/pretty
          "../../shared.rkt"]
