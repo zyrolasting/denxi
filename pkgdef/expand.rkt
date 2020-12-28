@@ -10,13 +10,13 @@
                   version<=?)
          syntax/parse
          syntax/strip-context
-         (only-in "racket-version.rkt"
+         (only-in "../racket-version.rkt"
                   racket-version-selection)
-         (only-in "string.rkt"
+         (only-in "../string.rkt"
                   non-empty-string
                   non-empty-string?
                   string-join)
-         (only-in "url.rkt"
+         (only-in "../url.rkt"
                   url-string))
 
 ;-------------------------------------------------------------------------------

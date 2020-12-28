@@ -41,7 +41,7 @@
 (define PACKAGE_DEFINITION_READER_LANG 'xiden)
 
 (define (package-definition-datum? v)
-  (racket-module-datum? PACKAGE_DEFINITION_MODULE_LANG v))
+  (racket-module-code? PACKAGE_DEFINITION_MODULE_LANG v))
 
 (define (read-package-definition variant)
   (read-racket-module PACKAGE_DEFINITION_READER_LANG PACKAGE_DEFINITION_MODULE_LANG variant))
