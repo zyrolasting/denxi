@@ -54,38 +54,3 @@ Standard output and standard error are both redirected to
   (run "ls" "-l"))
 ]
 
-@section{Additional Bindings}
-
-@itemlist[
-@item{@racket[λ]}
-@item{@racket[#%app]}
-@item{@racket[#%top-interaction]}
-@item{@racket[base32]}
-@item{@racket[base64]}
-@item{@racket[build-path]}
-@item{@racket[build-workspace-path]}
-@item{@racket[call-with-input]}
-@item{@racket[car]}
-@item{@racket[case]}
-@item{@racket[cdr]}
-@item{@racket[current-directory]}
-@item{@racket[define-values]}
-@item{@racket[error]}
-@item{@racket[from-catalogs]}
-@item{@racket[from-file]}
-@item{@racket[hex]}
-@item{@racket[input]}
-@item{@racket[input-ref]}
-@item{@racket[integrity]}
-@item{@racket[keep-input!]}
-@item{@racket[lambda]}
-@item{@racket[let]}
-@item{@racket[let-values]}
-@item{@racket[signature]}
-@item{@racket[run]}
-@item{@racket[sources]}
-@item{@racket[unless]}
-@item{@racket[unpack]}
-@item{@racket[void]}
-@item{@racket[when]}
-]
