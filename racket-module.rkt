@@ -7,13 +7,13 @@
 (provide
  (contract-out [racket-module-input-variant/c flat-contract?]
                [racket-module-variant/c flat-contract?]
-               [racket-module-code? (-> symbol? racket-module-variant/c syntax?)]
+               [racket-module-code? (-> symbol? racket-module-variant/c boolean?)]
                [get-racket-module-body
                 (-> (or/c #f symbol?) syntax? (or/c #f syntax?))]
                [make-racket-module-datum
                 (->* (symbol? list?)
                      (#:id symbol?)
-                     syntax?)]
+                     list?)]
                [read-racket-module
                 (->* (symbol? symbol? racket-module-input-variant/c)
                      (logged/c syntax?))]))
