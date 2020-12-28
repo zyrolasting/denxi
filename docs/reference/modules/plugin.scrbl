@@ -46,7 +46,7 @@ if it cannot function as expected.
 Return a procedure used to extract files from the archive located at
 @racket[path], or @racket[#f] if no such procedure is available.
 
-Used by @racketmodname[xiden/archiving] when it cannot extract files
+Used by @racketmodname[xiden/archive] when it cannot extract files
 from @racket[path] on its own.
 }
 

@@ -188,6 +188,6 @@ Available @tech{package inputs}.
 @item{@racket[run]}
 @item{@racket[install]}
 @item{@racket[sources]}
-@item{@racket[unpack]}
+@item{@racket[extract]}
 ]
 

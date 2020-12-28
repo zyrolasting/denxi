@@ -3,6 +3,7 @@
 ; Module language for package definitions
 
 (require (for-syntax "pkgdef/expand.rkt" racket/base)
+         "archive.rkt"
          "codec.rkt"
          "file.rkt"
          "input-info.rkt"
@@ -23,6 +24,7 @@
          sources
          from-catalogs
          from-file
+         extract
          <-
          (except-out (all-from-out racket/base) do #%module-begin)
          (rename-out [#%module-begin* #%module-begin]

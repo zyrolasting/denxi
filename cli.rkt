@@ -17,7 +17,6 @@
          racket/vector
          (only-in net/url-connect current-https-protocol)
          (for-syntax racket/base)
-         "archiving.rkt"
          "cli-flag.rkt"
          "cmdline.rkt"
          "codec.rkt"

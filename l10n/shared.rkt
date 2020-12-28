@@ -4,7 +4,8 @@
   (begin (begin (provide (all-from-out s))
                 (require s)) ...))
 
-(r "../cli-flag.rkt"
+(r "../archive.rkt"
+   "../cli-flag.rkt"
    "../cmdline.rkt"
    "../codec.rkt"
    "../exn.rkt"

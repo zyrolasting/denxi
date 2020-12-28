@@ -301,4 +301,14 @@
                     [(0) ""]
                     [(1) (format " [expected ~a]" (car expected-exit-codes))]
                     [else (format " [expected one of ~s]"
-                                  expected-exit-codes)]))))])
+                                  expected-exit-codes)]))))]
+
+  [($extract-report status target)
+   (case status
+     [(done)
+      (format "Cannot infer archive format for ~a" target)]
+     [(unsupported)
+      (format "Extracted ~a" target)]
+     [else
+      (format "Malformed extraction report: ~s"
+              ($extract-report status target))])])

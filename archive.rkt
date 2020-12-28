@@ -1,11 +1,12 @@
 #lang racket/base
 
-; Create and extract archives. Hide algorithms from the user.
+; Extract archives with minimal user involvement.
 
 (require racket/contract)
 
-(provide (contract-out [pack   (-> (listof path-string?) output-port? any)]
-                       [unpack (-> (or/c path-string? input-port?) void?)]))
+(provide
+ (contract-out
+  [extract (-> (or/c path-string? input-port?) (logged/c void?))]))
 
 (require racket/format
          racket/match
@@ -16,15 +17,29 @@
          file/untgz
          file/unzip
          "file.rkt"
+         "logged.rkt"
+         "message.rkt"
          "plugin.rkt")
 
-(define (pack paths out)
-  (tar->output paths out #:follow-links? #f))
+(define+provide-message $extract-report (status target))
 
-(define (unpack in)
-  (if (path-string? in)
-      (call-with-input-file in unpack)
-      (void ((get-extract-procedure (object-name in)) in))))
+
+(define (extract variant)
+  (logged
+   (λ (messages)
+     (let start ([in variant])
+       (if (path-string? in)
+           (call-with-input-file in start)
+           (let* ([path (object-name in)]
+                  [proc (get-extract-procedure path)])
+             (if proc
+                 (values (void (proc in))
+                         (cons ($extract-report 'done path)
+                               messages))
+                 (values FAILURE
+                         (cons ($extract-report 'unsupported path)
+                               messages)))))))))
+
 
 (define (get-extract-procedure name)
   (match (reverse (string-split (~a (file-name-from-path name)) "."))
@@ -35,20 +50,10 @@
     [(list "zip" _ ...)
      unzip]
     [else
-     (define (on-failure . _)
-       (error 'unpack "Cannot infer archive format: ~a" name))
-
-     (define ext
-       (load-from-plugin 'get-extract-procedure on-failure on-failure))
-
-     (define get-extract-procedure/plugin
-       (invariant-assertion (or/c #f (-> input-port? void?))
-                            (if (procedure? ext)
-                                (ext name)
-                                (on-failure))))
-
-     (or get-extract-procedure/plugin
-         (on-failure))]))
+     (define ext (let ([fail (λ _ #f)]) (load-from-plugin 'get-extract-procedure fail fail)))
+     (invariant-assertion (or/c #f (-> input-port? void?))
+                          (and (procedure? ext)
+                               (ext name)))]))
 
 
 (module+ test
@@ -71,6 +76,7 @@
     (check-equal? (get-extract-procedure "a.tgz") untgz)
     (check-equal? (get-extract-procedure "a.zip") unzip)
     (check-equal? (get-extract-procedure "a.extra....tar.gz") untgz)
+    (check-equal? (get-extract-procedure "a.blah") #f)
 
     (define plugin-path (make-temporary-file))
     (dynamic-wind void
@@ -103,6 +109,7 @@
                   (λ ()
                     (delete-file plugin-path))))
 
+  
   (test-case "Can pack and unpack an archive"
     (define working-dir (make-temporary-file "tmp~a" 'directory))
 
@@ -117,14 +124,16 @@
                       (define .tar "a.tar")
 
                       (call-with-output-file .tar
-                        (λ (o) (pack (list input-a input-b input-c) o)))
+                        (λ (o)
+                          (tar->output #:follow-links? #f
+                                       (list input-a input-b input-c)
+                                       o)))
 
                       (test-pred "Archive exists" file-exists? .tar)
 
                       (delete-directory/files dir/)
 
-                      (call-with-input-file .tar
-                        (λ (i) (unpack i)))
+                      (run-log (extract .tar))
 
                       (test-file input-a)
                       (test-file input-b)
