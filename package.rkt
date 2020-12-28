@@ -1,6 +1,9 @@
 #lang racket/base
 
-(provide (all-defined-out))
+; Define packages as active instantiations of package definitions.
+; Interact with packages using sandboxed evaluators.
+
+(provide run-package)
 
 (require racket/function
          racket/format
@@ -13,7 +16,7 @@
          "logged.rkt"
          "message.rkt"
          "monad.rkt"
-         "package-definition.rkt"
+         "pkgdef/static.rkt"
          "path.rkt"
          "plugin.rkt"
          "port.rkt"
@@ -28,22 +31,15 @@
          "version.rkt"
          "workspace.rkt")
 
-(define+provide-message $no-package-info (source))
-(define+provide-message $output-not-found (query output-name))
-
 (define+provide-message $package ())
 (define+provide-message $package:log (query output-name messages))
 (define+provide-message $package:output $package ())
 (define+provide-message $package:output:built $package:output ())
 (define+provide-message $package:output:reused $package:output ())
 (define+provide-message $package:output:undefined $package:output ())
-(define+provide-message $package:definition $package ())
-(define+provide-message $package:definition:value $package:definition (id))
-(define+provide-message $package:definition:value:missing $package:definition:value ())
-(define+provide-message $package:definition:value:invalid $package:definition:value (value))
-(define+provide-message $package:definition:undeclared-racket-version $package:definition ())
-(define+provide-message $package:definition:unsupported-racket-version $package:definition (versions))
-(define+provide-message $package:definition:unsupported-os $package:definition (supported))
+(define+provide-message $package:abstract-input $package (versions))
+(define+provide-message $package:unsupported-racket-version $package (versions))
+(define+provide-message $package:unsupported-os $package (supported))
 
 (define DEFAULT_OUTPUT "default")
 
@@ -54,128 +50,91 @@
 (define (run-package pkg-definition-variant
                      #:output-name [output-name DEFAULT_OUTPUT]
                      #:link-path [link-path #f])
-  (do pkgeval <- (make-package-evaluator pkg-definition-variant)
-      (install-package-output (or link-path (pkgeval 'package))
-                              output-name
-                              pkgeval)))
-
-
-
-
-;----------------------------------------------------------------------------
-; The validation procedures make sure a user can get the output they
-; want from a definition.
-
-(define (validate-requested-output pkgeval output-name)
-  (if (member output-name (cons DEFAULT_OUTPUT (xiden-evaluator-ref pkgeval 'outputs null)))
-      (logged-unit output-name)
-      (logged-failure ($package:output:undefined))))
-
-
-(define (validate-evaluator-binding #:optional optional pkgeval id-sym valid?)
-  (logged
-   (λ (errors)
-     (call/cc
-      (λ (return)
-        (let* ([fail (λ (m) (return FAILURE (cons m errors)))]
-               [okay (λ () (return pkgeval errors))]
-               [get (pkgeval '#%info-lookup)]
-               [on-missing (λ () (if optional (okay) (fail ($package:definition:value:missing id-sym))))]
-               [value (get id-sym on-missing)])
-          (if (valid? value)
-              (okay)
-              (fail ($package:definition:value:invalid id-sym value)))))))))
-
-
-(define (validate-evaluator pkgeval)
-  (let ([assert (λ (#:optional [optional? #f] id-sym valid?)
-                  (validate-evaluator-binding #:optional optional? pkgeval id-sym valid?))])
-    (do (assert 'provider non-empty-string?)
-        (assert 'package non-empty-string?)
-        (assert 'edition non-empty-string?)
-        (assert 'revision-number revision-number?)
-        (assert 'inputs (listof concrete-input-info/c))
-        (assert 'build (λ (p) (and (procedure? p) (= 1 (procedure-arity p)))))
-        (assert #:optional #t 'outputs (listof non-empty-string?))
-        (assert #:optional #t 'revision-names (listof non-empty-string?))
-        (validate-os-support pkgeval)
-        (if (XIDEN_ALLOW_UNDECLARED_RACKET_VERSIONS)
-            (assert #:optional #t 'racket-versions racket-version-ranges/c)
-            (do (assert 'racket-versions racket-version-ranges/c)
-                (validate-racket-support pkgeval))))))
-
-
-(define (validate-os-support pkgeval)
-  (logged
-   (λ (messages)
-     (let ([supported (xiden-evaluator-ref pkgeval 'os-support '(unix windows macosx))])
-       (if (member (system-type 'os) supported)
-           (values pkgeval messages)
-           (values FAILURE
-                   (cons ($package:definition:unsupported-os supported)
-                         messages)))))))
-
-
-(define (validate-racket-support pkgeval)
-  (logged
-   (λ (errors)
-     (call/cc
-      (λ (return)
-        (define (okay) (values pkgeval errors))
-        (define (fail m) (values FAILURE (cons m errors)))
-        (let ([racket-support
-               (check-racket-version-ranges
-                (version)
-                ((pkgeval '#%info-lookup) 'racket-versions (λ () null)))])
-          (case racket-support
-            [(supported) (okay)]
-            [(unsupported)
-             (if (XIDEN_ALLOW_UNSUPPORTED_RACKET)
-                 (okay)
-                 (fail ($package:definition:unsupported-racket-version racket-support)))]
-            [(undeclared)
-             (if (or (XIDEN_ALLOW_UNSUPPORTED_RACKET)
-                     (XIDEN_ALLOW_UNDECLARED_RACKET_VERSIONS))
-                 (okay)
-                 (fail ($package:definition:undeclared-racket-version)))]
-            [else (error)])))))))
+  (do pkgeval <- (make-package pkg-definition-variant)
+      (let ([package-name (abbreviate-exact-xiden-query (package-evaluator->xiden-query pkgeval))])
+        (logged-combine (do (install-output! pkgeval output-name (or link-path (pkgeval 'package))
+                                             (return (logged-unit (kill-evaluator pkgeval))))
+                            (λ (to-wrap messages)
+                              (cons ($package:log package-name output-name to-wrap)
+                                    messages)))))))
 
 
 
 ;----------------------------------------------------------------------------
-; Output processing
+; Validation is about making sure the package and its deliverables can
+; run in the current environment.
 
-(define (install-package-output link-path output-name pkgeval)
-  (let ([package-name (abbreviate-exact-xiden-query (package-evaluator->xiden-query pkgeval))])
-    (logged-combine (do (validate-requested-output pkgeval output-name)
-                        (install-output! pkgeval output-name link-path)
-                        (return (logged-unit (kill-evaluator pkgeval))))
-                    (λ (to-wrap messages)
-                      (cons ($package:log package-name output-name to-wrap)
-                            messages)))))
+(define-logged (validate-inputs pkgeval)
+  (for ([input (in-list (pkgeval 'inputs))])
+    (when (abstract-input-info/c input)
+      ($fail ($package:abstract-input (input-info-name input)))))
+  ($use pkgeval))
 
+
+(define-logged (validate-os-support pkgeval)
+  (let ([supported (pkgeval 'os-support)])
+    (if (member (system-type 'os) supported)
+        ($use pkgeval)
+        ($fail ($package:unsupported-os supported)))))
+
+
+(define-logged (validate-racket-support pkgeval)
+  (let ([racket-support (check-racket-version-ranges (version) (pkgeval 'racket-versions))])
+    (case racket-support
+      [(supported) ($use pkgeval)]
+      [(unsupported)
+       (if (XIDEN_ALLOW_UNSUPPORTED_RACKET)
+           ($use pkgeval)
+           ($fail ($package:unsupported-racket-version racket-support)))])))
+
+
+;----------------------------------------------------------------------------
+; Output installation
+;
+; When installing a package output, we can either reuse existing
+; output files or build a new distribution of output files.
 
 (define (install-output! pkgeval output-name link-path)
   (call-with-reused-output
    (package-evaluator->xiden-query pkgeval)
    output-name
    (λ (variant)
-     (cond [(output-record? variant)
-            (reuse-package-output! pkgeval output-name variant link-path)]
-           [(exn? variant)
+     (cond [(exn? variant)
             (raise variant)]
+           [(output-record? variant)
+            (reuse-package-output pkgeval output-name variant link-path)]
            [else
-            (build-package-output! pkgeval output-name link-path)]))))
+            (do directory-record <- (build-package-output pkgeval output-name link-path)
+                (record-package-output pkgeval output-name directory-record link-path))]))))
 
 
-(define (reuse-package-output! pkgeval output-name output-record-inst link-path)
-  (logged
-   (λ (messages)
-     (define directory-record (find-path-record (output-record-path-id output-record-inst)))
-     (make-addressable-link directory-record link-path)
-     (values SUCCESS
-             (cons ($package:output:reused)
-                   messages)))))
+(define-logged (reuse-package-output pkgeval output-name output-record-inst link-path)
+  (make-addressable-link (find-path-record (output-record-path-id output-record-inst))
+                         link-path)
+  ($pass ($package:output:reused)))
+
+(define-logged (build-package-output pkgeval output-name output-record-inst link-path)
+  (make-addressable-directory
+   (cons (open-input-string output-name)
+         (map open-input-info-as-bytes
+              (xiden-evaluator-ref pkgeval 'inputs null)))
+   (λ (build-directory)
+     (define variant (pkgeval `(build ,output-name)))
+     (define program (if (logged? variant) variant (logged-unit variant)))
+     (if variant
+         (parameterize ([current-directory build-directory]) ($run! program))
+         ($fail ($package:output:undefined))))))
+
+(define-logged (record-package-output pkgeval output-name directory-record link-path)
+  (declare-output (pkgeval 'provider)
+                  (pkgeval 'package)
+                  (pkgeval 'edition)
+                  (pkgeval 'revision-number)
+                  (pkgeval 'revision-names)
+                  output-name
+                  directory-record)
+  (make-addressable-link directory-record link-path)
+  ($pass ($package:output:built)))
 
 
 (define (open-input-info-as-bytes info)
@@ -184,58 +143,30 @@
       (integrity-info-digest (input-info-integrity info)))))
 
 
-(define (build-package-output! pkgeval output-name link-path)
-  (logged
-   (λ (messages)
-     (define directory-record
-       (make-addressable-directory
-        (cons (open-input-string output-name)
-              (map open-input-info-as-bytes
-                   (xiden-evaluator-ref pkgeval 'inputs null)))
-        (λ (build-dir)
-          (pkgeval `(current-directory ,build-dir))
-          (pkgeval `(build ,output-name)))))
-
-     (declare-output (xiden-evaluator-ref pkgeval 'provider)
-                     (xiden-evaluator-ref pkgeval 'package)
-                     (xiden-evaluator-ref pkgeval 'edition "default")
-                     (xiden-evaluator-ref pkgeval 'revision-number)
-                     (xiden-evaluator-ref pkgeval 'revision-names null)
-                     output-name
-                     directory-record)
-
-     (make-addressable-link directory-record link-path)
-
-     (values SUCCESS
-             (cons ($package:output:built)
-                   messages)))))
-
-
 (define (package-evaluator->xiden-query pkgeval)
-  (xiden-query (xiden-evaluator-ref pkgeval 'provider "")
-               (xiden-evaluator-ref pkgeval 'package "")
-               (xiden-evaluator-ref pkgeval 'edition "")
-               (~a (xiden-evaluator-ref pkgeval 'revision-number ""))
-               (~a (xiden-evaluator-ref pkgeval 'revision-number ""))
+  (xiden-query (pkgeval 'provider)
+               (pkgeval 'package)
+               (pkgeval 'edition)
+               (~a (pkgeval 'revision-number))
+               (~a (pkgeval 'revision-number))
                "ii"))
 
 
 ;----------------------------------------------------------------------------
-; Operations on package definitions, as evaluators
+; Package operations
 
-(define (make-package-evaluator source)
+(define (make-package source)
   (do sourced-eval <- (if (string? source)
                           (fetch-package-definition source)
                           (logged-unit (load-xiden-module (override-package-definition source))))
-      (validate-evaluator sourced-eval)
+      (validate-inputs sourced-eval)
+      (validate-os-support sourced-eval)
+      (validate-racket-support sourced-eval)
       (return sourced-eval)))
 
 
 (define (override-package-definition variant)
-  (define plugin-override
-    (load-from-plugin 'before-new-package
-                      (λ () values)
-                      (λ (e) values)))
+  (define plugin-override (load-from-plugin 'before-new-package (λ () values) (λ (e) values)))
   (plugin-override (read-package-definition variant)))
 
 
@@ -311,29 +242,24 @@
                         target-path))))
 
 
-(define (fetch-package-definition source)
-  (logged
-   (λ (m)
-     (define logged/fetch-st
-       (fetch source
-              (list source)
-              (λ (from-source est-size)
-                (call-with-build-sandbox-parameterization
-                 (λ ()
-                   (load-xiden-module
-                    (override-package-definition
-                     (make-limited-input-port from-source
-                                              (min (mebibytes->bytes (XIDEN_FETCH_PKGDEF_SIZE_MB))
-                                                   est-size)
-                                              #t))))))))
+(define-logged (fetch-package-definition source)
+  (define logged/fetch-st
+    (fetch source
+           (list source)
+           (λ (from-source est-size)
+             (call-with-build-sandbox-parameterization
+              (λ ()
+                (load-xiden-module
+                 (override-package-definition
+                  (make-limited-input-port from-source
+                                           (min (mebibytes->bytes (XIDEN_FETCH_PKGDEF_SIZE_MB))
+                                                est-size)
+                                           #t))))))))
 
-     (define-values (fetch-st messages) (run-log logged/fetch-st m))
-
-     (values (if (fetch-state? fetch-st)
-                 (or (fetch-state-result fetch-st)
-		     FAILURE)
-                 FAILURE)
-             (cons messages m)))))
+  (define-values (fetch-st messages) ($run! logged/fetch-st))
+  (if (and (fetch-state? fetch-st) (fetch-state-result fetch-st))
+      ($use (fetch-state-result fetch-st) messages)
+      ($use FAILURE messages)))
 
 
 (module+ test
@@ -344,9 +270,8 @@
 
   (test-case "Check Racket version support"
     (define (make-dummy-pkginfo versions)
-      (hash+list->xiden-evaluator
-       (hash 'racket-versions versions
-             'package-name "whatever")))
+      `(module anon ,PACKAGE_DEFINITION_MODULE_LANG
+         (racket-versions . ,versions)))
 
     (define (test-case/racket-version msg versions instance?)
       (test-case "Detect packages that do not declare a supported Racket version"
@@ -355,11 +280,6 @@
         (check-pred instance? (car messages))))
 
     (test-case/racket-version
-     "Detect packages that do not declare a supported Racket version"
-     null
-     $package:definition:undeclared-racket-version?)
-
-    (test-case/racket-version
      "Detect packages that declare an unsupported Racket version"
      '("0.0")
-     $package:definition:unsupported-racket-version?)))
+     $package:unsupported-racket-version?)))
