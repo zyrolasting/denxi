@@ -1,5 +1,7 @@
 #lang racket/base
 
+; Module language for package definitions
+
 (require (for-syntax "altdef.rkt" racket/base)
          "codec.rkt"
          "file.rkt"
