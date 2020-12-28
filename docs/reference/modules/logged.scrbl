@@ -61,6 +61,11 @@ list. This creates a @tech{messy log}.
 ]
 }
 
+@defform[(logged/c contract-expr)]{
+Produces a contract for a logged procedure. The procedure must return
+a value matching @racket[contract-expr] as the first value.
+}
+
 @section{Terminal Values}
 
 @deftogether[(

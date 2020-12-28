@@ -11,6 +11,7 @@
          logged-unit
          logged-failure
          logged-attachment
+         logged/c
          messy-log/c
          run-log
          get-log
@@ -128,6 +129,8 @@
                       (f to-wrap
                          messages))))))
 
+(define-syntax-rule (logged/c cnt)
+  (struct/c logged (-> list? (values cnt list?))))
 
 (module+ test
   (provide test-logged-procedure)
@@ -136,6 +139,13 @@
   (define (test-logged-procedure #:with [initial null] msg l p)
     (test-case msg
       (call-with-values (λ () (run-log l initial)) p)))
+
+  (test-logged-procedure "Check contract on logged procedures"
+                         (invariant-assertion (logged/c (>=/c 0)) (logged-unit -7))
+                         (λ (p msg)
+                           (check-eq? p FAILURE)
+                           (check-match msg
+                                        (list ($show-string (regexp "assertion violation"))))))
 
   (test-case "Inject logged program control into lexical context of new procedures"
     (define-logged (try branch)
