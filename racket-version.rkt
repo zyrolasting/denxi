@@ -21,7 +21,7 @@
 
 (define racket-version-range/c
   (or/c valid-version?
-        (cons/c maybe-racket-version/c
+        (list/c maybe-racket-version/c
                 maybe-racket-version/c)))
 
 (define racket-version-ranges/c
@@ -91,10 +91,10 @@
       'undeclared
       (if (for/or ([variant (in-list ranges)])
             (define pair
-              (if (pair? variant)
+              (if (list? variant)
                   variant
-                  (cons variant variant)))
-            (racket-version-in-range? v (car pair) (cdr pair)))
+                  (list variant variant)))
+            (racket-version-in-range? v (car pair) (cadr pair)))
           'supported
           'unsupported)))
 
@@ -134,16 +134,16 @@
               (racket-version-in-range? "0.0" min-v max-v))))
 
   (for ([v (in-list (list null
-                          `((,UNBOUNDED_RACKET_VERSION . ,UNBOUNDED_RACKET_VERSION))
-                          `((,UNBOUNDED_RACKET_VERSION . "9.9") "6.3")
-                          '(("0.0" . "7.7.0.5"))))])
+                          `((,UNBOUNDED_RACKET_VERSION ,UNBOUNDED_RACKET_VERSION))
+                          `((,UNBOUNDED_RACKET_VERSION "9.9") "6.3")
+                          '(("0.0" "7.7.0.5"))))])
     (test-true (format "Allow ~s as racket-version-ranges/c" v)
                (racket-version-ranges/c v)))
 
-  (for ([v (in-list (list `(,UNBOUNDED_RACKET_VERSION . ,UNBOUNDED_RACKET_VERSION)
+  (for ([v (in-list (list `(,UNBOUNDED_RACKET_VERSION ,UNBOUNDED_RACKET_VERSION)
                           "0.0"
                           '(())
-                          '(("999.999" . "0.0"))))])
+                          '(("999.999" "0.0"))))])
     (test-false (format "Forbid ~s as racket-version-ranges/c" v)
                 (racket-version-ranges/c v)))
 
@@ -176,30 +176,30 @@
 
   (test-eq? "Match a version against any one range"
             (check-racket-version-ranges "1.2"
-                                         '(("0.5" . "0.8")
-                                           ("1.0" . "2.0")))
+                                         '(("0.5" "0.8")
+                                           ("1.0" "2.0")))
             'supported)
 
   (test-eq? "Match a version against any one range"
             (check-racket-version-ranges "1.2"
-                                         '(("0.5" . "0.8")
-                                           ("1.0" . "2.0")))
+                                         '(("0.5" "0.8")
+                                           ("1.0" "2.0")))
             'supported)
 
   (test-eq? "Match an exact version among ranges"
             (check-racket-version-ranges "1.2"
-                                         '(("0.5" . "0.8") "1.2"))
+                                         '(("0.5" "0.8") "1.2"))
             'supported)
 
   (test-eq? "An unbounded range anywhere is equivalent to matching every version"
             (check-racket-version-ranges "1.2"
-                                         `(("0.1" . "0.2")
-                                           (,UNBOUNDED_RACKET_VERSION . ,UNBOUNDED_RACKET_VERSION)))
+                                         `(("0.1" "0.2")
+                                           (,UNBOUNDED_RACKET_VERSION ,UNBOUNDED_RACKET_VERSION)))
             'supported)
 
   (test-eq? "Flag any version matching no range as unsupported"
             (check-racket-version-ranges "1.2"
-                                         '(("0.1" . "0.2")))
+                                         '(("0.1" "0.2")))
             'unsupported)
 
   (test-true "Detect valid Racket versions in a macro"
