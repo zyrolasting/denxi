@@ -38,9 +38,10 @@
                any)]))
 
 (require racket/cmdline
+         racket/sandbox
          "l10n.rkt"
+         "pkgdef/static.rkt"
          "rc.rkt"
-         "sandbox.rkt"
          "setting.rkt"
          "string.rkt")
 
@@ -126,7 +127,7 @@
       (unless e
         (set! e
               (call-with-trusted-sandbox-configuration
-               (λ () (make-evaluator 'xiden/pkgdef)))))
+               (λ () (make-evaluator PACKAGE_DEFINITION_MODULE_LANG)))))
         e)))
 
 

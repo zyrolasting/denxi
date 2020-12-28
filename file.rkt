@@ -24,6 +24,18 @@
          "url.rkt"
          "workspace.rkt")
 
+
+
+; Use module-level cache because filesystem-root-list may take a while
+; on Windows.
+(define filesystem-root-list/cached
+  (let ([cache #f])
+    (λ ()
+      (unless cache
+        (set! cache (filesystem-root-list)))
+      cache)))
+
+
 (define (in-paths variant [wrt (current-directory)])
   (sequence-filter (cond [(or (regexp? variant)
                               (pregexp? variant)

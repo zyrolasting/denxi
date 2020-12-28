@@ -17,11 +17,12 @@
          racket/function
          racket/match
          racket/path
+         racket/sandbox
          (only-in racket/tcp listen-port-number?)
          "exn.rkt"
+         "file.rkt"
          "integrity.rkt"
          "message.rkt"
-         "sandbox.rkt"
          "setting.rkt"
          "url.rkt"
          "workspace.rkt")
@@ -73,7 +74,9 @@
 (define (load-xiden-rcfile)
   (let ([path (get-xiden-settings-path)])
     (if (file-exists? path)
-        (parameterize ([sandbox-path-permissions (derive-path-permissions)])
+        (parameterize ([sandbox-path-permissions
+                        (append (map (λ (p) `(exists ,p)) (filesystem-root-list/cached))
+                                (sandbox-path-permissions))])
           (make-module-evaluator #:language 'xiden/rcfile path))
         void)))
 

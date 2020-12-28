@@ -253,9 +253,9 @@
               (if ok?
                   "basing trust in input on trust in public key"
                   (format (~a "public key not trusted. To trust this key, add this to ~a:~n"
-                              "(integrity 'sha384 (hex ~s))")
+                              "(integrity 'sha384 (base64 ~s))")
                           (setting-id XIDEN_TRUSTED_PUBLIC_KEYS)
-                          (~a (encode 'hex (make-digest public-key-path 'sha384)))))]
+                          (~a (encode 'base64 (make-digest public-key-path 'sha384)))))]
 
              [(consider-signature)
               (if ok?
@@ -311,4 +311,28 @@
       (format "Extracted ~a" target)]
      [else
       (format "Malformed extraction report: ~s"
-              ($extract-report status target))])])
+              ($extract-report status target))])]
+
+  [($package:security 'network 'blocked-listen _)
+   "Unauthorized attempt to listen for connections"]
+
+  [($package:security 'file 'blocked-delete (list _ path _))
+   (format "Blocked unauthorized delete on ~a" path)]
+
+  [($package:security 'file 'blocked-write (list _ path _))
+   (format "Blocked unauthorized write to ~a" path)]
+
+  [($package:security 'link 'blocked-link (list _ link-path target-path))
+   (format (~a "Blocked link creation at ~a (target: ~a)~n"
+               "Packages can only create links in their workspace.")
+           link-path target-path)]
+
+  [($package:security 'file 'blocked-execute (list _ path _))
+   (if (file-exists? path)
+       (format (~a "Unauthorized attempt to execute ~a.~n"
+                   "To trust this executable, add this to ~a:~n"
+                   "(integrity 'sha384 (base64 ~s))")
+               path
+               (setting-id XIDEN_TRUSTED_EXECUTABLES)
+               (~a (encode 'base64 (make-digest path 'sha384))))
+       (~a "Unauthorized attempt to execute non-existant " path))])

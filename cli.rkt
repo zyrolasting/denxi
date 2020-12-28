@@ -35,7 +35,6 @@
          "query.rkt"
          "racket-version.rkt"
          "rc.rkt"
-         "sandbox.rkt"
          "setting.rkt"
          "signature.rkt"
          "source.rkt"
@@ -110,17 +109,13 @@
                       flags
                       (hasheq XIDEN_INSTALL_ABBREVIATED_SOURCES
                               (match-lambda [source
-                                             (run-package source)])
+                                             (install #f #f source)])
                               XIDEN_INSTALL_DEFAULT_SOURCES
                               (match-lambda [(list link-path source)
-                                             (run-package source
-                                                          #:link-path link-path)])
+                                             (install link-path #f source)])
                               XIDEN_INSTALL_SOURCES
                               (match-lambda [(list link-path output-name source)
-                                             (run-package source
-                                                          #:output-name output-name
-                                                          #:link-path link-path)]))))
-
+                                             (install link-path output-name source)]))))
                    (if (null? actions)
                        (halt 0 null)
                        (let-values ([(commit rollback) (start-transaction!)])
