@@ -35,7 +35,7 @@ xiden
 (provider "sagegerard.com")
 (description "Fun playtime in a tutorial")
 (tags "fun" "tutorial" "example")
-(home-page "https://sagegerard.com")
+(url "https://sagegerard.com")
 ]
 
 The @racket[provider] definition is less obvious. A provider is not
@@ -59,7 +59,7 @@ xiden
 (provider "sagegerard.com")
 (description "Fun playtime in a tutorial")
 (tags '("fun" "tutorial" "example"))
-(home-page "https://sagegerard.com")
+(url "https://sagegerard.com")
 
 (edition "default")
 (revision-number 0)
@@ -220,7 +220,7 @@ xiden
 (provider "sagegerard.com")
 (description "Fun playtime in a tutorial")
 (tags "fun" "tutorial" "example")
-(home-page "https://sagegerard.com")
+(url "https://sagegerard.com")
 
 (edition "default")
 (revision-number 0)
@@ -269,7 +269,7 @@ xiden
 (provider "sagegerard.com")
 (description "Fun playtime in a tutorial")
 (tags "fun" "tutorial" "example")
-(home-page "https://sagegerard.com")
+(url "https://sagegerard.com")
 
 (edition "default")
 (revision-number 0)
@@ -457,14 +457,14 @@ such as documentation, libraries, or tests.
 
 Every package definition should define a default output, because if a
 user does not request a particular output from a package, then
-@project-name will use output named @racket{default}.  If you do not
-define a default output, then @project-name will tell the user about
-the outputs available in the definition.
+@project-name will use the output named @racket{default}.  If you do
+not define a default output, then @project-name will tell the user
+about the outputs available in the definition.
 
 Recall in the last section that we defined inputs named
 @racket{default.tgz}.  This means that the build will fetch and
 extract that archive.
-}
+
 @racketblock[
 (output "default"
         archive <- (input-ref "default.tgz")
@@ -488,10 +488,9 @@ still read package output instructions as if they were imperative
 code.
 
 If you @italic{are} familiar with Haskell, then you should note that
-monadic type casting is completely hidden because there is only one
-such type at play here. This allows simplifications like
-@racket[(unpack (input-ref "default.tgz"))] since the coercion rules
-are trivial.
+there is no visible monadic type coercion. That's because there is
+only one monadic type at play here. This makes it easier to support
+abbreviations like @racket[(unpack (input-ref "default.tgz"))].
 
 
 @subsection{Where Does This Happen on Disk?}
@@ -579,7 +578,7 @@ data in another package definition.
 @section{User-defined Metadata}
 
 A lot of what we've added to our code counts as metadata, such as
-@tt{home-page}, @tt{tags}, and @tt{description}. All of the entries
+@tt{url}, @tt{tags}, and @tt{description}. All of the entries
 we've defined so far are metadata that @project-name readily
 recognizes due to their widespread use.
 
@@ -614,7 +613,7 @@ xiden
 (provider "example.com")
 (description "Fun playtime in a tutorial")
 (tags "fun" "tutorial" "example")
-(home-page "https://sagegerard.com")
+(url "https://sagegerard.com")
 
 (edition "default")
 (revision-number 0)

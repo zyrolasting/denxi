@@ -134,7 +134,9 @@
                 [package/patt (pkgdef-state-package state)]
                 [edition/patt (pkgdef-state-edition state)]
                 [url/patt (pkgdef-state-url state)]
+                [description/patt (pkgdef-state-description state)]
                 [revision-number/patt (pkgdef-state-revision-number state)]
+                [(racket-version/patt ...) (pkgdef-state-racket-versions state)]
                 [(revision-names/patt ...) (pkgdef-state-revision-names state)]
                 [(os ...) (pkgdef-state-os-support state)]
                 [(tag ...) (pkgdef-state-tags state)]
@@ -147,14 +149,18 @@
              (define provider provider/patt)
              (define package package/patt)
              (define edition edition/patt)
+             (define description description/patt)
              (define revision-number revision-number/patt)
              (define revision-names '(revision-names/patt ...))
+             (define racket-versions '(racket-version/patt ...))
              (define inputs (list input-expr ...))
              (define url url/patt)
              (define tags '(tag ...))
              (define os-support '(os ...))
              (define output-names '(output-name ...))
              (begin (define (action-sig ...) (do action-steps ...)) ...)
+             (define (input-ref k)
+               (logged-unit (find-input inputs k)))
              (define (build target)
                (case target
                  [(output-name) (do . output-steps)]

@@ -40,14 +40,9 @@
                  (or/c #f integrity-info?)
                  (or/c #f signature-info?))
                 input-info?)]
-          [call-with-input
-           (-> input-info?
-               (-> path-string? any)
-               any)]
-          [keep-input!
-           (-> input-info?
-               path-string?)]
-          [input-ref
+          [release-input
+           (-> input-info? void?)]
+          [find-input
            (-> (listof input-info?)
                path-string?
                input-info?)]))
@@ -83,30 +78,12 @@
 (define (input name [sources null] [integrity #f] [signature #f])
   (input-info name sources integrity signature))
 
-
-(define (input-ref inputs str)
+(define (find-input inputs str)
   (or (findf (λ (info) (equal? str (input-info-name info))) inputs)
-      (raise-user-error 'input-ref
-                        "~s does not match a declared input"
-                        str)))
+      (raise-user-error (format "Input ~s not found" str))))
 
-
-(define (call-with-input input proc)
-  (define path (keep-input! input))
-  (dynamic-wind void
-                (λ () (proc path))
-                (λ () (delete-file path))))
-
-
-(define (keep-input! input)
-  (define path (run+print-log (resolve-input input)))
-  (if (eq? path FAILURE)
-      (raise-user-error 'input-ref
-                        "Could not resolve input ~a~nSources:~n~a~n"
-                        (input-info-name input)
-                        (join-lines (map ~a (input-info-sources input))))
-      path))
-
+(define (release-input input)
+  (delete-file (input-info-name input)))
 
 (define (resolve-input info)
   (do pathrec-or-#f  <- (logged-unit (find-existing-path-record info))

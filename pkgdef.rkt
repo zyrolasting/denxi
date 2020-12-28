@@ -8,6 +8,7 @@
          "file.rkt"
          "input-info.rkt"
          "integrity.rkt"
+         "logged.rkt"
          (rename-in "monad.rkt" [do do*])
          "signature.rkt"
          "source.rkt"
@@ -20,11 +21,15 @@
          integrity
          signature
          in-paths
+         logged-unit
          run
          sources
          from-catalogs
          from-file
          extract
+         resolve-input
+         release-input
+         find-input
          <-
          (except-out (all-from-out racket/base) do #%module-begin)
          (rename-out [#%module-begin* #%module-begin]
