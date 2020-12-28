@@ -69,7 +69,11 @@
                            path-string?))]
           [make-addressable-file
            (-> non-empty-string? input-port? (or/c +inf.0 exact-positive-integer?)
-               #:on-status (-> $message? any) path-record?)]
+               #:on-status (-> $message? any)
+               #:max-size (or/c +inf.0 exact-positive-integer?)
+               #:buffer-size exact-positive-integer?
+               #:timeout-ms (>=/c 0)
+               path-record?)]
           [make-addressable-directory
            (-> (non-empty-listof input-port?)
                (-> complete-path? any)
@@ -97,7 +101,6 @@
          "file.rkt"
          "format.rkt"
          "integrity.rkt"
-         "rc.rkt"
          "message.rkt"
          "path.rkt"
          "port.rkt"
@@ -548,7 +551,13 @@
 ;    * P does not exist, or digest does not match: FS is corrupt. Delete P to recover.
 
 
-(define (make-addressable-file #:on-status on-status name in est-size)
+(define (make-addressable-file #:on-status on-status
+                               #:max-size max-size
+                               #:buffer-size buffer-size
+                               #:timeout-ms timeout-ms
+                               name
+                               in
+                               est-size)
   (define tmp (build-addressable-path #"tmp"))
   (dynamic-wind
     void
@@ -560,9 +569,9 @@
             (transfer in to-file
                       #:on-status on-status
                       #:transfer-name name
-                      #:max-size (mebibytes->bytes (XIDEN_FETCH_TOTAL_SIZE_MB))
-                      #:buffer-size (mebibytes->bytes (XIDEN_FETCH_BUFFER_SIZE_MB))
-                      #:timeout-ms (XIDEN_FETCH_TIMEOUT_MS)
+                      #:max-size max-size
+                      #:buffer-size buffer-size
+                      #:timeout-ms timeout-ms
                       #:est-size est-size))))
         (define digest (make-digest tmp 'sha384))
         (define path (build-addressable-path digest))
