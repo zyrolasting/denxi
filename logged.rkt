@@ -130,7 +130,12 @@
 
 
 (module+ test
+  (provide test-logged-procedure)
   (require rackunit)
+
+  (define (test-logged-procedure #:with [initial null] msg l p)
+    (test-case msg
+      (call-with-values (λ () (run-log l initial)) p)))
 
   (test-case "Inject logged program control into lexical context of new procedures"
     (define-logged (try branch)
@@ -141,11 +146,13 @@
         [(fail)     ($fail branch)]
         [(run)      ($run! (logged (λ (m) (values branch (cons branch m)))))]))
 
-    (define (check p #:with [base-messages null] expected-val expected-messages)
-      (call-with-values (λ () (run-log p base-messages))
-                        (λ (actual-value actual-messages)
-                          (check-equal? actual-value expected-val)
-                          (check-equal? actual-messages expected-messages))))
+    (define (check #:with [base-messages null] logged-proc expected-val expected-messages)
+      (test-logged-procedure #:with base-messages
+                             (format "Expecting ~s ~s" expected-val expected-messages)
+                             logged-proc
+                             (λ (actual-value actual-messages)
+                               (check-equal? actual-value expected-val)
+                               (check-equal? actual-messages expected-messages))))
 
     (check (try 'use-1arg) #:with '(1) 'use-1arg '(1))
     (check (try 'use-2arg) 'use-2arg 'use-2arg)

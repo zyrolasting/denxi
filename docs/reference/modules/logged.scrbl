@@ -176,3 +176,16 @@ Like @racket[run-log], but returns only the list of messages attached to the com
 
 Additionally, that list is @racket[flatten]ed, then @racket[reverse]d.
 }
+
+@section{Testing Logged Procedures}
+
+@defmodule[(submod xiden/logged test)]
+
+@defproc[(test-logged-procedure #:with [initial null] msg l p) void?]{
+
+Equivalent to
+
+@racketblock[
+(test-case msg (call-with-values (λ () (run-log l initial)) p))
+]
+}
