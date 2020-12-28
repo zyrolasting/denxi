@@ -7,9 +7,9 @@
 (provide
  (contract-out [racket-module-input-variant/c flat-contract?]
                [racket-module-variant/c flat-contract?]
-               [racket-module-datum? (-> symbol? racket-module-variant/c syntax?)]
+               [racket-module-code? (-> symbol? racket-module-variant/c syntax?)]
                [get-racket-module-body
-                (-> syntax? syntax?)]
+                (-> (or/c #f symbol?) syntax? (or/c #f syntax?))]
                [make-racket-module-datum
                 (->* (symbol? list?)
                      (#:id symbol?)
@@ -40,7 +40,7 @@
 ;------------------------------------------------------------------------
 ; Definitions
 
-(define (racket-module-datum? expected-lang v)
+(define (racket-module-code? expected-lang v)
   (syntax-case v (module)
     [(module name lang . body)
      (equal? (syntax-e #'lang) expected-lang)
@@ -48,7 +48,7 @@
     [_ #f]))
 
 (define racket-module-input-variant/c
-  (or/c path? syntax? list? string? bytes? input-port?))
+  (or/c path? list? string? bytes? input-port?))
 
 (define racket-module-variant/c
   (or/c syntax? list?))
@@ -65,8 +65,6 @@
          (call-with-input-file variant (λ (i) (read-racket-module expected-reader-lang expected-module-lang i)))]
         [(list? variant)
          (read-racket-module expected-reader-lang expected-module-lang (~s variant))]
-        [(syntax? variant)
-         (read-racket-module expected-reader-lang expected-module-lang (syntax->datum variant))]
         [(string? variant)
          (read-racket-module expected-reader-lang expected-module-lang (open-input-string variant))]
         [(bytes? variant)
@@ -124,17 +122,21 @@
   `(module ,id ,lang . ,body))
 
 
-(define (get-racket-module-body variant)
+(define (get-racket-module-body expected-lang variant)
   (define stx
     (syntax-case variant (module)
       [(module _ lang . xs)
+       (or (not expected-lang)
+           (equal? (syntax-e #'lang) expected-lang))
        (syntax-case #'xs (#%module-begin #%plain-module-begin)
          [((#%module-begin . body)) #'body]
          [((#%plain-module-begin . body)) #'body]
-         [_ #'xs])]))
-  (if (syntax? variant)
-      stx
-      (syntax->datum stx)))
+         [_ #'xs])]
+      [_ #f]))
+  (and stx
+       (if (syntax? variant)
+           stx
+           (syntax->datum stx))))
 
 
 
@@ -151,11 +153,11 @@
                  ($racket-module-read-error _ 'bad-module-form _)))
   
   (test-case "Detect Racket module data"
-    (check-true (racket-module-datum? 'something (make-racket-module-datum 'something '(a b c))))
-    (check-true (racket-module-datum? 'something (make-racket-module-datum 'something null)))
-    (check-false (racket-module-datum? 'something '(module anon other)))
-    (check-false (racket-module-datum? 'something `(module something)))
-    (check-false (racket-module-datum? 'something '(module anon other 1 2 3))))
+    (check-true (racket-module-code? 'something (make-racket-module-datum 'something '(a b c))))
+    (check-true (racket-module-code? 'something (make-racket-module-datum 'something null)))
+    (check-false (racket-module-code? 'something '(module anon other)))
+    (check-false (racket-module-code? 'something `(module something)))
+    (check-false (racket-module-code? 'something '(module anon other 1 2 3))))
 
   (test-case "Extract body from package definition module forms"
     (check-equal?  (get-racket-module-body

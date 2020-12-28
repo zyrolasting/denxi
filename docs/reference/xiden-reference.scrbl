@@ -23,6 +23,7 @@ For a high-level overview, see @other-doc['(lib "xiden/docs/guide/xiden-guide.sc
 @include-section{modules/codec.scrbl}
 @include-section{cli.scrbl}
 @include-section{verification.scrbl}
+@include-section{modules/racket-module.scrbl}
 @include-section{modules/source.scrbl}
 @include-section{modules/input-info.scrbl}
 @include-section{modules/plugin.scrbl}
