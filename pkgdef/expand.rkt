@@ -153,7 +153,7 @@
              (define url url/patt)
              (define tags '(tag ...))
              (define os-support '(os ...))
-             (define outputs-names '(output-name ...))
+             (define output-names '(output-name ...))
              (begin (define (action-sig ...) (do action-steps ...)) ...)
              (define (build target)
                (case target
