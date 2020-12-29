@@ -41,7 +41,7 @@
                  (or/c #f signature-info?))
                 input-info?)]
           [release-input
-           (-> input-info? void?)]
+           (-> input-info? (logged/c void?))]
           [find-input
            (-> (listof input-info?)
                path-string?
@@ -82,8 +82,8 @@
   (or (findf (λ (info) (equal? str (input-info-name info))) inputs)
       (raise-user-error (format "Input ~s not found" str))))
 
-(define (release-input input)
-  (delete-file (input-info-name input)))
+(define-logged (release-input input)
+  ($use (delete-file (input-info-name input))))
 
 (define (resolve-input info)
   (do pathrec-or-#f  <- (logged-unit (find-existing-path-record info))
