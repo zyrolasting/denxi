@@ -5,8 +5,14 @@
 @title[#:tag "new-pkg"]{Defining Packages}
 
 @project-name creates unique directories using @tech{package
-definitions}. In this section we will write our own package
-definition. If you are already familiar with how package definitions
+definitions}. In this section we will write a package definition that,
+when installed, extracts one of two available archives.
+
+We will cover why we can feel confident in the build due to the
+integrity checking and authentication steps that happen before we use
+the archives.
+
+If you are already familiar with how package definitions
 work and just want an example to copy, then skip to
 @secref{finished-definition}.
 
@@ -58,7 +64,7 @@ xiden
 (package "my-first-package")
 (provider "sagegerard.com")
 (description "Fun playtime in a tutorial")
-(tags '("fun" "tutorial" "example"))
+(tags "fun" "tutorial" "example")
 (url "https://sagegerard.com")
 
 (edition "default")
@@ -193,7 +199,7 @@ Racket version does not interact well with your release.
 
 You can also declare version support as unbounded on one side of an
 interval using @racket{*}. This definition of @racket[racket-versions]
-matches every version of Racket except those strictly between
+matches every version of Racket except those @italic{strictly between}
 @racket{7.2} and @racket{7.4}.
 
 @racketblock[
@@ -209,9 +215,9 @@ example adds such a version that would otherwise be excluded.
 ]
 
 
-All that being said, we probably want to support as many Racket
-versions as we can and stay backward compatible.  To get back on
-track, we'll define support for v5.0 and up.
+We likely want to support as many Racket versions as we can while
+staying backward compatible.  Let's just define support for v5.0 and
+up.
 
 @racketmod[#:file "definition.rkt"
 xiden
@@ -258,9 +264,12 @@ in just to be explicit.
 
 Now for the interesting stuff. In @|project-name|, a package
 definition is a program. An actively running version of that program
-is a package. A @deftech{package input} is a deferred request for
-exact bytes. I'll just define one for now.
+is a package. Like any other running program, packages use inputs to
+function.
 
+
+A @deftech{package input} is a deferred request for exact bytes. I'll
+define one for now.
 
 @racketmod[#:file "definition.rkt"
 xiden
@@ -295,9 +304,10 @@ A @tech{package input} can be any file, not just Racket packages or code.
 You can use a Python source archive as an input, or a critical security patch.
 This means that you can use @project-name to coordinate cross-ecosystem builds.
 
-While we won't cover it here, another benefit of package inputs is that you can
-substitute them. If a build is taking too long because compiles a huge project
-from source, you can adjust the definition to use pre-built binaries instead.
+While we won't cover it here, another benefit of package inputs is
+that you can substitute them. If a build is taking too long because it
+compiles a huge project from source, you can adjust the definition to
+use pre-built binaries instead.
 
 
 @subsection{Integrity Information}
@@ -467,30 +477,42 @@ extract that archive.
 
 @racketblock[
 (output "default"
-        archive <- (input-ref "default.tgz")
-	(unpack #:delete? #t archive))
+        archive-path <- (resolve-input "default.tgz")
+        (extract archive-path)
+        (release-input archive-path))
 ]
 
-Notice that we manually delete the archive. This is because when you
-reference an input, @project-name lazily writes it to disk and makes
-it available with the given name. @project-name cannot predict what
-inputs to keep around, so it leaves that to you. We don't need our
-archive once the contents are on disk.
+Notice that we manually free the archive using
+@racket[release-input]. This is because when you reference an input,
+@project-name lazily writes it to disk and issues a symbolic link to
+the file with the given name. @project-name cannot predict what inputs
+to keep around, so it leaves that to you. We don't need our archive
+once the contents are on disk, so we delete the @italic{link} using
+@racket[release-input].
+
+Why not delete the file? Because if something goes wrong with a
+package, you might not want to fetch every input again.  If there are
+no incoming links for a file in @|project-name|, then it is eligible
+for garbage collection in a separate process.
 
 
 @subsection{Imperative-looking Functions}
 
-@litchar|{#lang xiden}| is a functional language. The instructions
-listed under the output look imperative, but are actually set up as a
-function composition. Haskell users might notice this resembles their
-@tt{do} notation. If you are not familiar with Haskell, then you can
-still read package output instructions as if they were imperative
-code.
+We now have two endpoints to our program, and some processing in
+between. So what's the @racket[<-] for in the package output?
 
-If you @italic{are} familiar with Haskell, then you should note that
-there is no visible monadic type coercion. That's because there is
-only one monadic type at play here. This makes it easier to support
-abbreviations like @racket[(unpack (input-ref "default.tgz"))].
+The instructions for our output look imperative, but are actually set
+up as a function composition. Haskell users might notice package
+outputs mimic their @tt{do} notation. If you are not familiar with
+Haskell, then you can still read package output instructions as if
+they were imperative code. @racket[<-] is special in that it is a
+binding form that understands special logic in between steps of that
+functional composition. If you don't know what that means, just think
+of @racket[<-] as a special way of saying @racket[let] for now.
+
+If you @italic{are} familiar with Haskell (and monads!), then you
+should know that there is no visible monadic type coercion. That's
+because there is only one monadic type at play here.
 
 
 @subsection{Where Does This Happen on Disk?}
@@ -501,7 +523,7 @@ those packages will produce identical output.  You can assume the
 directory is empty, and yours to populate.
 
 
-@subsection{Add an Output}
+@subsection{Adding a Second Output}
 
 Assume @racket{default.tgz} has everything a user would need. Some
 users might only want the libraries, not the documentation. Storage is
@@ -510,22 +532,30 @@ cheap, but hundreds of dependencies add up.
 We can define a new output for our budget-conscious users:
 
 @racketblock[
-(output "default" (unpack #:delete? #t (input-ref "default.tgz")))
-(output "minimal" (unpack #:delete? #t (input-ref "minimal.tgz")))
+(output "default"
+        archive-path <- (resolve-input "default.tgz")
+        (extract archive-path)
+        (release-input archive-path))
+
+(output "minimal"
+        archive-path <- (resolve-input "minimal.tgz")
+        (extract archive-path)
+        (release-input archive-path))
 ]
 
-To reduce repetition, we can introduce an @deftech{action}.  An action
-is a reusable part of an output's instructions. They are unique in
-that they can accept arguments.  The syntax is similar to defining a
-Racket procedure, except the body follows the same notation as
-outputs.
+This version works, but we don't want to repeat ourselves every time
+we want a new output. To reduce repetition, we can introduce an
+@deftech{action}.  An action is like a procedure, except the body
+follows the same notation as outputs.
 
 @racketblock[
-(action (consume-archive name)
-  (unpack #:delete? #t (input-ref name)))
+(action (unpack name)
+  archive-path <- (resolve-input name)
+  (extract archive-path)
+  (release-input archive-path))
 
-(output "default" (consume-archive "default.tgz"))
-(output "minimal" (consume-archive "minimal.tgz"))
+(output "default" (unpack "default.tgz"))
+(output "minimal" (unpack "minimal.tgz"))
 ]
 
 
@@ -559,9 +589,9 @@ content, which makes one kind of human error possible.
 Assume we add an output to act as an alias of another.
 
 @racketblock[
-(output "default" (consume-archive "default.tgz"))
-(output "full" (consume-archive "default.tgz"))
-(output "minimal" (consume-archive "minimal.tgz"))]
+(output "default" (unpack "default.tgz"))
+(output "full" (unpack "default.tgz"))
+(output "minimal" (unpack "minimal.tgz"))]
 
 This works, but if a user requests the @racket{full} output and then the
 @racket{default} output, then the same archive would be extracted twice into
@@ -590,7 +620,7 @@ then you can use the @tt{metadatum} form.
 ]
 
 A metadatum works like @tt{define}, in that you can bind one
-identifier to one value. When someone uses @racket[require] or one of
+identifier to a value. When someone uses @racket[require] or one of
 its variants on a package definition, they can inspect an expanded
 @tt{metadata} binding to see all user-defined metadata.
 
@@ -598,6 +628,8 @@ its variants on a package definition, they can inspect an expanded
 @racketinput[(require 'anon)]
 @racketinput[metadata]
 @racketresult['#hasheq((support-email . "support@example.com"))]
+
+Metadata can only be literal data, and are strictly for readers.
 
 
 @section[#:tag "finished-definition"]{The Finished Definition}
@@ -646,11 +678,11 @@ xiden
 (code:comment "-----------------------------------------------")
 (code:comment "Outputs")
 
-(action (consume-archive name)
+(action (unpack name)
   archive <- (input-ref name)
   (unpack archive)
   (delete archive))
 
-(output "default" (consume-archive "default.tgz"))
-(output "minimal" (consume-archive "minimal.tgz"))
+(output "default" (unpack "default.tgz"))
+(output "minimal" (unpack "minimal.tgz"))
 ]

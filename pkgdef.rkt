@@ -33,7 +33,6 @@
          resolve-input
          release-input
          find-input
-         dump
          <-
          void
          (except-out (all-from-out racket/base) do #%module-begin)
@@ -45,4 +44,3 @@
     [(_ . body)
      (with-syntax ([expanded (expand-pkgdef-module #'body stx)])
        #'(#%module-begin expanded))]))
-

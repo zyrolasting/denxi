@@ -105,7 +105,7 @@
     [(revision-number num:exact-nonnegative-integer)
      (set-field state revision-number (syntax-e #'num))]
 
-    [(metadatum name:id v:expr)
+    [(metadatum name:id v:string)
      (set-field state metadata (cons (cons #'name #'v) (pkgdef-state-metadata state)))]
 
     [(input name:non-empty-string _ ...)
