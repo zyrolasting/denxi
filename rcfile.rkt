@@ -15,4 +15,4 @@
          #%top-interaction
          (all-from-out setup/infotab))
 
-(module reader syntax/module-reader xiden/rctab)
+(module reader syntax/module-reader xiden/rcfile)
