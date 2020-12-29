@@ -67,8 +67,9 @@
         (define (use v [m messages]) (return v m))
         (define (pass [m #f]) (return SUCCESS (if m (cons m messages) messages)))
         (define (fail [m #f]) (return FAILURE (if m (cons m messages) messages)))
+        (define (attach v [m #f]) (return v (if m (cons m messages) messages)))
         (define (run! l)  (run-log l messages))
-        (p use pass fail run!))))))
+        (p use attach pass fail run! messages))))))
 
 
 (define-syntax (define-logged stx)
@@ -79,7 +80,7 @@
                      (syntax->datum
                       #'(define (id . formals)
                           (call-with-logged-continuation
-                           (λ ($use $pass $fail $run!)
+                           (λ ($use $attach $pass $fail $run! $messages)
                              body ...))))
                      stx))]))
 
@@ -130,7 +131,7 @@
                          messages))))))
 
 (define-syntax-rule (logged/c cnt)
-  (struct/c logged (-> list? (values cnt list?))))
+  (struct/c logged (-> list? (values (or/c SUCCESS FAILURE cnt) list?))))
 
 (module+ test
   (provide test-logged-procedure)
