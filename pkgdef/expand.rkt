@@ -10,6 +10,7 @@
                   version<=?)
          syntax/parse
          syntax/strip-context
+         syntax/parse/lib/function-header
          (only-in "../racket-version.rkt"
                   racket-version-selection)
          (only-in "../string.rkt"
@@ -125,8 +126,8 @@
     [(url u:url-string)
      (set-field state url (syntax-e #'u))]
     
-    [(action (id:id sig:id ...+) body:expr ...+)
-     (set-field state actions (cons stx (pkgdef-state-actions state)))]))
+    [(action fmls:formals body:expr ...+)
+     (set-field state actions (cons (cons #'fmls #'(body ...)) (pkgdef-state-actions state)))]))
 
 
 (define (expand-pkgdef-module-body state)
@@ -141,9 +142,8 @@
                 [(os ...) (pkgdef-state-os-support state)]
                 [(tag ...) (pkgdef-state-tags state)]
                 [([metadata-key . metadata-val] ...) (pkgdef-state-metadata state)]
-                [([output-name . output-steps] ...) (pkgdef-state-outputs state)]
-                [([_ (action-sig ...) action-steps ...] ...) (pkgdef-state-actions state)]
-                [([_ (action-id _ ...) _ ...] ...) (pkgdef-state-actions state)]
+                [([output-name output-steps ...] ...) (pkgdef-state-outputs state)]
+                [{([action-id . action-sig] . [action-steps ...]) ...} (pkgdef-state-actions state)]
                 [(input-expr ...) (pkgdef-state-inputs state)])
     #'(begin (provide (except-out (all-defined-out) action-id ...))
              (define provider provider/patt)
@@ -158,12 +158,14 @@
              (define tags '(tag ...))
              (define os-support '(os ...))
              (define output-names '(output-name ...))
-             (begin (define (action-sig ...) (do action-steps ...)) ...)
+             (begin (define (action-id . action-sig)
+                      (do action-steps ...
+                        (logged-unit (void)))) ...)
              (define (input-ref k)
                (logged-unit (find-input inputs k)))
              (define (build target)
                (case target
-                 [(output-name) (do . output-steps)]
+                 [(output-name) (do output-steps ... (logged-unit (void)))]
                  ...
                  [else #f]))
              (define metadata (make-immutable-hasheq '((metadata-key . metadata-val) ...))))))
