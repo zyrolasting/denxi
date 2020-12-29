@@ -4,9 +4,9 @@
 
 @title[#:tag "new-pkg"]{Defining Packages}
 
-@project-name creates unique directories using @tech{package
-definitions}. In this section we will write a package definition that,
-when installed, extracts one of two available archives.
+@project-name builds software using @tech{package definitions}. In
+this section we will write a package definition that, when installed,
+extracts one of two available archives.
 
 We will cover why we can feel confident in the build due to the
 integrity checking and authentication steps that happen before we use
@@ -214,7 +214,6 @@ example adds such a version that would otherwise be excluded.
 (racket-versions ("*" "7.2") ("7.4" "*") "7.0.1.2")
 ]
 
-
 We likely want to support as many Racket versions as we can while
 staying backward compatible.  Let's just define support for v5.0 and
 up.
@@ -290,19 +289,21 @@ xiden
 (input "default.tgz"
        (sources "https://sagegerard.com/xiden-tutorial/default.tgz"))]
 
-This input defines an archive of source code we'll need to build our project.
-It contains a throwaway Racket module and Scribble document.
-@racket{default.tgz} is the name of the file that we use locally in our
-build. The @racket[sources] list tells @project-name where it can find the
-actual bytes for that file. I'm only using one source here, but you can add
-mirrors or relative paths in case other sources aren't available.
+This input defines an archive of source code we'll need to build our
+project.  The archive contains a throwaway Racket module and Scribble
+document.  @racket{default.tgz} is the name of the file that we use
+locally in our build. The @racket[sources] list tells @project-name
+where it can find the actual bytes for that file. I'm only using one
+source here, but you can add other sources in case one isn't
+available.
 
 
 @subsection{Everything is an Input}
 
-A @tech{package input} can be any file, not just Racket packages or code.
-You can use a Python source archive as an input, or a critical security patch.
-This means that you can use @project-name to coordinate cross-ecosystem builds.
+A @tech{package input} can be any file, not just Racket packages or
+code.  You can use a Python distribution as an input, or a critical
+security patch.  This means that you can use @project-name to build
+any software.
 
 While we won't cover it here, another benefit of package inputs is
 that you can substitute them. If a build is taking too long because it
@@ -312,30 +313,27 @@ use pre-built binaries instead.
 
 @subsection{Integrity Information}
 
-Okay, so we named a file that we want. But how do we know we got the right file?
-For that, we need to declare integrity information with our input.
+We named a file that we want, but how do we know we got the right
+file?  For that, we need to declare integrity information with our
+input.
 
 @racketblock[
 (input "default.tgz"
        (sources "https://sagegerard.com/xiden-tutorial/default.tgz")
        (integrity 'sha384 (hex "299e3eb744725387e0355937727cf6e3c938eda2355cda82d58596fd535188fa624217f52f8c6e7d5ee7cb1d458a7f75")))]
 
-
-@subsubsection{What Integrity Means}
-
 Integrity information tells @project-name if it got the @italic{exact
 bytes} the input requires. If it did not, then the build will
-fail. This is a good thing! It makes builds reproducible, so long as
-the build produces the same output from the same input. An input might
-only be available during a build, or may persist after a build for
-run-time use. More on that later.
+fail. This is a good thing because it helps make builds
+reproducible. An input might only be available during a build, or may
+persist after a build for run-time use. More on that later.
 
-If you are not familiar with integrity checking, just know that there are
-functions to take a file and turn it into a fixed-length byte string called a
-@italic{digest}.  If two files produce the same digest, then we can assume the
-files are the same. That is, unless the function itself has a
-@italic{collision}, where two different files produce the same digest. This is
-a sign to use a different function!
+If you are not familiar with integrity checking, just know that there
+are functions to take a file and turn it into a fixed-length byte
+string called a @italic{digest}.  If two files produce the same
+digest, then we can assume the files are the same. That is, unless the
+function itself has a @italic{collision}, where two different files
+produce the same digest. This is a sign to use a different function!
 
 The function we're using in this case is SHA-384, which we represent
 here as @racket[sha384]. Since it's hard to type the exact bytes of a
@@ -366,20 +364,21 @@ SHA384(default.tgz)= 299e3eb744725387e...
 There's a tricky part here. Yes, the digests match our code, but that
 doesn't mean you should paste it right into new definitions. Typically
 you want to write a definition using a @italic{trusted copy} of a
-file, such as one you keep on your drive or from a repository you
-maintain.
+file.
 
-From here you can write an integrity expression by hand. Just paste it
-in this example where you see @racketfont{DIGEST}.
+We'll assume trust in this file because it is not used to run code on
+your system. From here you can write an integrity expression by
+hand. Just paste it in this example where you see @racketfont{DIGEST}.
 
 @racketblock[(integrity 'sha384 (hex DIGEST))]
 
-An external tool gives you a digest with whatever encoding options it
-supports. You also have to know what encoding and algorithm are being
-used for a given digest.  If you want the entire integrity expression
-with options supported by @|project-name|, then use the @litchar{xiden
-mkint} command. This example does the same thing, except you'll get an
-entire integrity expression as output.
+Knowing how to produce your own digest is a valuable skill if you want
+to verify data that arrived on your system.  But an external tool
+might use a different encoding and algorithm than what @project-name
+supports.  If you want the entire integrity expression with options
+supported by @|project-name|, then use the @litchar{xiden mkint}
+command. This example does the same thing, except you'll get an entire
+integrity expression as output.
 
 @verbatim|{
 $ xiden mkint sha384 hex default.tgz
@@ -443,21 +442,15 @@ An @deftech{abstract package input} (or just “abstract input”) is a
 
 @racketblock[(input "server.rkt")]
 
-Such inputs cannot be used to fetch exact bytes. Abstract inputs are
-useful as placeholders in package definitions that require the end
-user to define inputs.
+Such inputs cannot be used to fetch exact bytes, so we won't use them
+in our final definition. They are still important to discuss, because
+you'll eventually need them.
 
-By contrast, a @deftech{concrete package input} is a package input
-that also defines at least one source that @project-name can use to
-fetch bytes. A concrete package input does not have to include
-integrity information or a signature.
-
-Question is, why would you want a user to define where inputs come
-from? Sometimes you only care about the presence of a particular
-interface, or you want to get around issues related to a Racket
-program using two different copies of what appears to be the same
-module (Racket won't see them as the same, and that can cause scary
-bugs).
+Abstract inputs are useful as placeholders in package definitions that
+require the end user to define inputs. By contrast, we've been writing
+@deftech{concrete package inputs}, which are package inputs that
+include least one source of bytes. A concrete package input does not
+have to include integrity information or a signature.
 
 
 @section{Package Outputs}
@@ -472,15 +465,21 @@ not define a default output, then @project-name will tell the user
 about the outputs available in the definition.
 
 Recall in the last section that we defined inputs named
-@racket{default.tgz}.  This means that the build will fetch and
-extract that archive.
+@racket{default.tgz}.  We want to fetch and extract that
+archive.
 
 @racketblock[
 (output "default"
-        archive-path <- (resolve-input "default.tgz")
+        archive-input <- (input-ref "default.tgz")
+        archive-path <- (resolve-input archive-input)
         (extract archive-path)
-        (release-input archive-path))
+        (release-input archive-input))
 ]
+
+When building, @racket[current-directory] is bound to a unique
+directory, such that two packages only conflict if evidence shows
+those packages will produce identical output.  You can assume the
+directory is empty, and yours to populate.
 
 Notice that we manually free the archive using
 @racket[release-input]. This is because when you reference an input,
@@ -490,37 +489,96 @@ to keep around, so it leaves that to you. We don't need our archive
 once the contents are on disk, so we delete the @italic{link} using
 @racket[release-input].
 
-Why not delete the file? Because if something goes wrong with a
-package, you might not want to fetch every input again.  If there are
-no incoming links for a file in @|project-name|, then it is eligible
-for garbage collection in a separate process.
+We do not delete the actual file because if something goes wrong with
+a package, you might not want to fetch every input again.  If there
+are no incoming links for a file in @|project-name|, then it is
+eligible for garbage collection in a separate process.
 
 
-@subsection{Imperative-looking Functions}
+@subsection{Monadic Types}
 
 We now have two endpoints to our program, and some processing in
-between. So what's the @racket[<-] for in the package output?
+between. So what's the @racket[<-] for in the package output?  If you
+are familiar with Haskell and monads, just know that outputs use a
+notation similar to @tt{do} and skip this section.
 
-The instructions for our output look imperative, but are actually set
-up as a function composition. Haskell users might notice package
-outputs mimic their @tt{do} notation. If you are not familiar with
-Haskell, then you can still read package output instructions as if
-they were imperative code. @racket[<-] is special in that it is a
-binding form that understands special logic in between steps of that
-functional composition. If you don't know what that means, just think
-of @racket[<-] as a special way of saying @racket[let] for now.
+@racket[<-] kind of like @racket[let], but it isn't @italic{exactly}
+the same because this abbreviated program does not work.
 
-If you @italic{are} familiar with Haskell (and monads!), then you
-should know that there is no visible monadic type coercion. That's
-because there is only one monadic type at play here.
+@racketblock[
+(output "default"
+        archive-input <- (input-ref "default.tgz")
+        (extract (resolve-input archive-input))
+        (release-input archive-input))
+]
 
+@racket[<-] does bind a value to an identifier, but it also discovers
+the value to bind from special context called @deftech{monads}.  There
+are many tutorials that explain monads poorly, and this would likely
+be one of them. So we'll just focus on an abbreviated introduction
+that keeps us moving.
 
-@subsection{Where Does This Happen on Disk?}
+Here are two functions.
 
-When building, @racket[current-directory] is bound to a unique
-directory, such that two packages only conflict if evidence shows
-those packages will produce identical output.  You can assume the
-directory is empty, and yours to populate.
+@racketblock[
+(define (add5 v) (+ v 5))
+(define (sub2 v) (- v 2))
+]
+
+You can compose them.
+
+@racketblock[
+(sub2 (add5 4))
+]
+
+Happy days.
+
+One day someone changes the functions so that they return information
+to store in a program log.
+
+@racketblock[
+(define (add5 v) (values (+ v 5) (format "Adding 5 to ~s" v)))
+(define (sub2 v) (values (- v 2) (format "Subtracting 2 from ~s" v)))
+]
+
+This is preferable than using @racket[displayln] and the like in
+functional programs because this way, calling the function has no
+side-effects. Everything returned from each function is expressed
+purely in terms of arguments.
+
+Problem is, @racket[(sub2 (add5 4))] no longer works. @tech{Monads}
+are just the @italic{stuff} that makes function composition work again
+without changing the definition of @racketid[add5] and
+@racketid[sub2]. That means something is sitting around that knows
+the first value from this kind of function is a number, and the
+second value is a string. It knows that composing two such functions
+means doing something like this:
+
+@racketblock[
+(define (compose-extra f g)
+  (define-values (fv fs) (f v))
+  (define-values (gv gs) (g fv))
+  (values gv (string-append fs "\n" gs)))]
+
+This brings us back to our package output. These instructions work
+because @racket[<-] understands how to find the value you want from
+all the extra @italic{stuff}.
+
+@racketblock[
+archive-path <- (resolve-input "default.tgz")
+(extract archive-path)
+]
+
+But @racket[(extract (resolve-input archive-input))] doesn't work
+because you passed the value you want @italic{plus} the extra
+@italic{stuff} to @racket[extract].
+
+In other words, the value returned from @racket[(resolve-input
+archive-input)] is @italic{not the same} as the value bound to
+@racketid[archive-path] when using @racket[<-].
+
+How you deal with the values depends on the type, which is
+normal. You'll pick up on the different types as you go.
 
 
 @subsection{Adding a Second Output}
@@ -550,9 +608,10 @@ follows the same notation as outputs.
 
 @racketblock[
 (action (unpack name)
-  archive-path <- (resolve-input name)
-  (extract archive-path)
-  (release-input archive-path))
+  archive-input <- (input-ref name)
+  archive-path <- (resolve-input archive-input)
+  (unpack archive-path)
+  (release-input archive-input))
 
 (output "default" (unpack "default.tgz"))
 (output "minimal" (unpack "minimal.tgz"))
@@ -561,7 +620,7 @@ follows the same notation as outputs.
 
 By adding an output, we changed what the user can request from a
 package.  Since the build extracts an archive with the same name as
-the output, We'll need a new @tech{package input} to go with this
+the output, we'll need a new @tech{package input} to go with this
 output.
 
 @racketblock[
@@ -577,8 +636,8 @@ output.
        (signature "https://sagegerard.com/xiden-tutorial/public.pem"
                   "https://sagegerard.com/xiden-tutorial/minimal.tgz.sign"))]
 
-Now when our users choose to build @racket{minimal} output, they will only ever
-download and extract the @racket{minimal.tgz} archive.
+Now when our users choose to build @racket{minimal} output, they will
+only ever download and extract the @racket{minimal.tgz} archive.
 
 
 @subsection{Outputs Can Create Duplicate Data}
@@ -629,7 +688,8 @@ its variants on a package definition, they can inspect an expanded
 @racketinput[metadata]
 @racketresult['#hasheq((support-email . "support@example.com"))]
 
-Metadata can only be literal data, and are strictly for readers.
+Metadata can only be literal strings, and are not meant for use in
+program logic.
 
 
 @section[#:tag "finished-definition"]{The Finished Definition}
@@ -637,6 +697,7 @@ Metadata can only be literal data, and are strictly for readers.
 Here is the file we've authored. To recap, it defines a build that simply
 extracts an archive depending on the requested output. We'll discuss this
 definition further in @secref{cli}.
+
 
 @racketmod[#:file "definition.rkt"
 xiden
@@ -679,9 +740,10 @@ xiden
 (code:comment "Outputs")
 
 (action (unpack name)
-  archive <- (input-ref name)
-  (unpack archive)
-  (delete archive))
+  archive-input <- (input-ref name)
+  archive-path  <- (resolve-input archive-input)
+  (unpack archive-path)
+  (release-input archive-input))
 
 (output "default" (unpack "default.tgz"))
 (output "minimal" (unpack "minimal.tgz"))
