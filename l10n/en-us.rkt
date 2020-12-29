@@ -286,7 +286,7 @@
                            stage)]))]
 
   [($subprocess-report cmd args wd max-runtime actual-runtime expected-exit-codes actual-exit-code stderr?)
-   (L (format "subprocess `~a`" (string-join (cons cmd args) "` `"))
+   (L (format "subprocess `~a`" (string-join (cons (~a cmd) args) "` `"))
       (format "  working dir: ~a" wd)
       (format "  seconds left: ~a" (- max-runtime actual-runtime))
       (format "  stderr: ~a"
