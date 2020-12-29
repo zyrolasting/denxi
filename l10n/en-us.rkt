@@ -306,9 +306,9 @@
   [($extract-report status target)
    (case status
      [(done)
-      (format "Cannot infer archive format for ~a" target)]
-     [(unsupported)
       (format "Extracted ~a" target)]
+     [(unsupported)
+      (format "Cannot infer archive format for ~a" target)]
      [else
       (format "Malformed extraction report: ~s"
               ($extract-report status target))])]
