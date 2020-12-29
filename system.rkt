@@ -39,7 +39,7 @@
      (subprocess-kill handle)
      (or (sync/timeout 3 handle)
          (subprocess-kill handle #t)))
-   
+
    (define (start s stdout stdin stderr group cmd args)
      (apply subprocess stdout stdin stderr group cmd args))])
 
@@ -53,7 +53,7 @@
 
    (define (stop s handle)
      (kill-thread handle))
-    
+
    (define (start s stdout stdin stderr group cmd args)
      (define-values (stdout< stdin> stderr<)
        ((subprocess-controller/mock-proc s) stdout stdin stderr group cmd args))
@@ -81,7 +81,7 @@
      (when user-stdin
        (copy-port user-stdin stdin)
        (flush-output stdin))
-     
+
      (define stderr? #f)
 
      (define stderr-pump
@@ -102,7 +102,7 @@
      (thread-wait stderr-pump)
 
      (define exit-code (get-status controller handle))
-     
+
      (values (if (and (or (null? expected-exit-codes)
                           (list? (member exit-code expected-exit-codes)))
                       (or (not fail-on-stderr?)
@@ -117,10 +117,10 @@
 (module+ test
   (require rackunit
            "file.rkt")
-  
+
   (define from-nothing (open-input-bytes #""))
   (define to-nowhere (open-output-nowhere))
-  
+
   (define-syntax-rule (test-subprocess msg #:should-fail? should-fail? l expected-report-pattern)
     (call-with-values (λ ()
                         (parameterize ([current-output-port to-nowhere]
@@ -132,13 +132,13 @@
                               (check-eq? FAILURE v)
                               (check-pred void? v))
                           (check-match (car messages) expected-report-pattern)))))
-  
+
   (define (noop . _)
     (values from-nothing to-nowhere from-nothing))
-  
+
   (define (include-stderr . _)
     (values from-nothing to-nowhere (open-input-bytes #"uh oh")))
-  
+
   (define (exited-quickly? v)
     (< v 1))
 
@@ -160,7 +160,7 @@
                         #:controller (subprocess-controller/mock 0 3 noop)
                         "mismatch")
                    ($subprocess-report _ _ _ _ _ '() 3 _))
-  
+
   (test-subprocess "Stop runaway processes"
                    #:should-fail? #t
                    (run #:timeout 0.5
