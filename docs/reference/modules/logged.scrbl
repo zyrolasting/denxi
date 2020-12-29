@@ -141,7 +141,12 @@ runs in a continuation with the following injected procedure bindings:
 
 @item{@racket[($fail [msg])]: Abort the program with a @racket[FAILURE] result and an optional new message. If no message is passed, then the program log is unaffected.}
 
+@item{@racket[($attach v [msg])]: Abort the program with @racket[v] as the result and an optional new message. If no message is passed, then the program log is unaffected.}
+
 @item{@racket[($run! l)]: Equivalent to @racket[(run-log l m)], where @racket[m] is bound to current program log.}
+
+@item{@racket[$messages]: A reference to the current program log.}
+
 ]
 
 The following example defines two equivalent procedures that clarify

@@ -24,21 +24,15 @@
 (define+provide-message $extract-report (status target))
 
 
-(define (extract variant)
-  (logged
-   (λ (messages)
-     (let start ([in variant])
-       (if (path-string? in)
-           (call-with-input-file in start)
-           (let* ([path (object-name in)]
-                  [proc (get-extract-procedure path)])
-             (if proc
-                 (values (void (proc in))
-                         (cons ($extract-report 'done path)
-                               messages))
-                 (values FAILURE
-                         (cons ($extract-report 'unsupported path)
-                               messages)))))))))
+(define-logged (extract variant)
+  (let start ([in variant])
+    (if (path-string? in)
+        (call-with-input-file in start)
+        (let* ([path (object-name in)]
+               [proc (get-extract-procedure path)])
+          (if proc
+              ($attach (void (proc in)) ($extract-report 'done path))
+              ($fail ($extract-report 'unsupported path)))))))
 
 
 (define (get-extract-procedure name)
