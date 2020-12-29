@@ -76,7 +76,6 @@
                path-record?)]
           [make-addressable-directory
            (-> (non-empty-listof input-port?)
-               (-> complete-path? any)
                path-record?)]
           [delete-record
            (-> record? void?)]
@@ -582,14 +581,12 @@
 
 
 
-(define (make-addressable-directory digest-ports proc)
+(define (make-addressable-directory digest-ports)
   (define digest (make-digest (apply input-port-append #t digest-ports) 'sha384))
   (define path (build-addressable-path digest))
   (make-directory* path)
-  (parameterize ([current-directory path])
-    (proc path)
-    (declare-path (find-relative-path (workspace-directory) path)
-                  digest)))
+  (declare-path (find-relative-path (workspace-directory) path)
+                digest))
 
 
 (define (make-addressable-link target-path-record user-link-path)
