@@ -30,13 +30,23 @@ Returns a @tech{logged procedure} @racketid[P] called for its effect.
 @racketid[P] will ensure the subprocess finishes before returning
 control.
 
-The result is @racket[FAILURE] if the subprocess takes longer than
-@racket[timeout] seconds, if the exit code of the subprocess is not a
-member of @racket[expected-exit-codes] (when
-@racket[expected-exit-codes] is not null), or if standard error holds
-at least one byte when @racket[fail-on-stderr?]  is
-@racket[#t]. Otherwise, the result is @racket[(void)], but the program
-log will gain a @racket[$subprocess-report].
+@margin-note{@|program-name|'s security guard prohibits execution of
+any file that the user does not trust.}
+@racketid[P] will search for an executable with the name bound to
+@racket[command]. It starts by checking @racket[(file-exists?
+command)]. If a file does not exist, then @racketid[P] will use
+@racket[find-executable-path].
+
+The result is @racket[FAILURE] if the @racket[command] is not found,
+the subprocess takes longer than @racket[timeout] seconds, if the exit
+code of the subprocess is not a member of @racket[expected-exit-codes]
+(when @racket[expected-exit-codes] is not null), or if standard error
+holds at least one byte when @racket[fail-on-stderr?]  is
+@racket[#t]. Otherwise, the result is @racket[(void)].
+
+The program log will gain either a @racket[$subprocess:report] if the
+subprocess ran, or a @racket[$subprocess:command-not-found] if
+@racket[command] was not found.
 
 Standard input is drawn from @racket[stdin]. If @racket[stdin] is
 @racket[#f], then no standard input will be available to the
@@ -54,7 +64,16 @@ default value tells @racket[run] not to mock any operations.
 }
 
 
-@defstruct*[($subprocess-report $message)
+@defstruct*[($subprocess $message) ()]{
+A @tech{message} pertaining to a subprocess.
+}
+
+@defstruct*[($subprocess:command-not-found $message) ([cmd string?])]{
+A subprocess could not start because the @racket[cmd] was not found on
+the system.
+}
+
+@defstruct*[($subprocess:report $message)
             ([cmd path-string?]
              [args (listof (or/c path-string? string-no-nuls? bytes-no-nuls?))]
              [max-runtime exact-positive-integer?]

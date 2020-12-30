@@ -3,7 +3,6 @@
 (require "contract.rkt")
 
 (provide (all-from-out racket/system)
-         (struct-out $subprocess-report)
          (contract-out
           [run (->* (path-string?)
                     (#:expected-exit-codes (listof (integer-in 0 255))
@@ -24,16 +23,23 @@
 
 (define-generics subprocess-controller
   [get-status subprocess-controller handle]
+  [find-exe subprocess-controller cmd]
   [start subprocess-controller stdout stdin stderr group cmd args]
   [stop subprocess-controller handle])
 
-(define+provide-message $subprocess-report
-  (cmd args wd max-runtime actual-runtime expected-exit-codes actual-exit-code stderr?))
+(define+provide-message $subprocess ())
+(define+provide-message $subprocess:report $subprocess (cmd args wd max-runtime actual-runtime expected-exit-codes actual-exit-code stderr?))
+(define+provide-message $subprocess:command-not-found $subprocess (cmd))
 
 (struct subprocess-controller/production ()
   #:methods gen:subprocess-controller
   [(define (get-status s handle)
      (subprocess-status handle))
+
+   (define (find-exe s cmd)
+    (if (file-exists? cmd)
+        cmd
+        (find-executable-path cmd)))
 
    (define (stop s handle)
      (subprocess-kill handle)
@@ -51,6 +57,9 @@
          'running
          (subprocess-controller/mock-code s)))
 
+   (define (find-exe s cmd)
+     cmd)
+
    (define (stop s handle)
      (kill-thread handle))
 
@@ -65,53 +74,56 @@
              stderr<))])
 
 
-(define (run #:expected-exit-codes [expected-exit-codes '(0)]
-             #:timeout [timeout (* 60 60)]
-             #:stdin [user-stdin #f]
-             #:cwd [wd (current-directory)]
-             #:fail-on-stderr? [fail-on-stderr? #t]
-             #:controller [controller (subprocess-controller/production)]
-             cmd . args)
-  (logged
-   (λ (messages)
-     (define-values (handle stdout stdin stderr)
-       (parameterize ([current-directory wd])
-         (start controller (current-output-port) #f #f #f cmd args)))
+(define-logged (run #:expected-exit-codes [expected-exit-codes '(0)]
+                    #:timeout [timeout (* 60 60)]
+                    #:stdin [user-stdin #f]
+                    #:cwd [wd (current-directory)]
+                    #:fail-on-stderr? [fail-on-stderr? #t]
+                    #:controller [controller (subprocess-controller/production)]
+                    cmd . args)
+  (define cmd-actual (find-exe controller cmd))
 
-     (when user-stdin
-       (copy-port user-stdin stdin)
-       (flush-output stdin))
+  (unless cmd-actual
+    ($fail ($subprocess:command-not-found cmd)))
 
-     (define stderr? #f)
+  (define-values (handle stdout stdin stderr)
+    (parameterize ([current-directory wd])
+      (start controller (current-output-port) #f #f #f cmd args)))
 
-     (define stderr-pump
-       (thread
-        (λ ()
-          (unless (eof-object? (peek-byte stderr))
-            (set! stderr? #t)
-            (copy-port stderr (current-error-port))))))
+  (when user-stdin
+    (copy-port user-stdin stdin)
+    (flush-output stdin))
 
-     (define start-s (current-seconds))
+  (define stderr? #f)
 
-     (define runtime
-       (if (sync/timeout timeout handle)
-           (- (current-seconds) start-s)
-           (begin (stop controller handle)
-                  timeout)))
+  (define stderr-pump
+    (thread
+     (λ ()
+       (unless (eof-object? (peek-byte stderr))
+         (set! stderr? #t)
+         (copy-port stderr (current-error-port))))))
 
-     (thread-wait stderr-pump)
+  (define start-s (current-seconds))
 
-     (define exit-code (get-status controller handle))
+  (define runtime
+    (if (sync/timeout timeout handle)
+        (- (current-seconds) start-s)
+        (begin (stop controller handle)
+               timeout)))
 
-     (values (if (and (or (null? expected-exit-codes)
-                          (list? (member exit-code expected-exit-codes)))
-                      (or (not fail-on-stderr?)
-                          (not stderr?))
-                      (< runtime timeout))
-                 (void)
-                 FAILURE)
-             (cons ($subprocess-report cmd args wd timeout runtime expected-exit-codes exit-code stderr?)
-                   messages)))))
+  (thread-wait stderr-pump)
+
+  (define exit-code (get-status controller handle))
+
+  (values (if (and (or (null? expected-exit-codes)
+                       (list? (member exit-code expected-exit-codes)))
+                   (or (not fail-on-stderr?)
+                       (not stderr?))
+                   (< runtime timeout))
+              (void)
+              FAILURE)
+          (cons ($subprocess:report cmd args wd timeout runtime expected-exit-codes exit-code stderr?)
+                $messages)))
 
 
 (module+ test
@@ -145,28 +157,28 @@
   (test-subprocess "Run subprocess without error in default case"
                    #:should-fail? #f
                    (run #:controller (subprocess-controller/mock 0 0 noop) "abc" "1" "2" "3")
-                   ($subprocess-report "abc" '("1" "2" "3") _ 3600 (? exited-quickly? _) '(0) 0 #f))
+                   ($subprocess:report "abc" '("1" "2" "3") _ 3600 (? exited-quickly? _) '(0) 0 #f))
 
   (test-subprocess "Detect unexpected exit codes"
                    #:should-fail? #t
                    (run #:expected-exit-codes '(2)
                         #:controller (subprocess-controller/mock 0 3 noop)
                         "mismatch")
-                   ($subprocess-report _ _ _ _ _ '(2) 3 _))
+                   ($subprocess:report _ _ _ _ _ '(2) 3 _))
 
   (test-subprocess "Allow any exit code"
                    #:should-fail? #f
                    (run #:expected-exit-codes null
                         #:controller (subprocess-controller/mock 0 3 noop)
                         "mismatch")
-                   ($subprocess-report _ _ _ _ _ '() 3 _))
+                   ($subprocess:report _ _ _ _ _ '() 3 _))
 
   (test-subprocess "Stop runaway processes"
                    #:should-fail? #t
                    (run #:timeout 0.5
                         #:controller (subprocess-controller/mock 2000 0 noop)
                         "forever")
-                   ($subprocess-report _ _ _ 0.5 0.5 _ _ _))
+                   ($subprocess:report _ _ _ 0.5 0.5 _ _ _))
 
   (test-subprocess "Fail on non-empty STDERR"
                    #:should-fail? #t
@@ -174,7 +186,7 @@
                         #:fail-on-stderr? #t
                         #:controller (subprocess-controller/mock 0 1 include-stderr)
                         "stderr")
-                   ($subprocess-report _ _ _ _ _ _ _ #t))
+                   ($subprocess:report _ _ _ _ _ _ _ #t))
 
   (test-subprocess "Allow non-empty STDERR when asked"
                    #:should-fail? #f
@@ -182,8 +194,13 @@
                         #:fail-on-stderr? #f
                         #:controller (subprocess-controller/mock 0 0 include-stderr)
                         "stderr")
-                   ($subprocess-report _ _ _ _ _ _ _ #t))
+                   ($subprocess:report _ _ _ _ _ _ _ #t))
 
+  (test-subprocess "Fail if command was not found"
+                   #:should-fail? #t
+                   (run #:controller (subprocess-controller/mock 0 0 noop) #f)
+                   ($subprocess:command-not-found #f))
+  
   ; This test case forwards user-defined STDIN to STDERR in a mock
   ; process.  That way, checking if STDERR is non-empty confirms that
   ; standard input was routed correctly.
@@ -207,4 +224,4 @@
                                                               to-nowhere
                                                               i)))
                         "stdin")
-                   ($subprocess-report _ _ _ _ _ _ _ #t)))
+                   ($subprocess:report _ _ _ _ _ _ _ #t)))

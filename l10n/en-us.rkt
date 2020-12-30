@@ -285,7 +285,7 @@
              [else (format "Unknown integrity status: ~s Please inform the maintainers!"
                            stage)]))]
 
-  [($subprocess-report cmd args wd max-runtime actual-runtime expected-exit-codes actual-exit-code stderr?)
+  [($subprocess:report cmd args wd max-runtime actual-runtime expected-exit-codes actual-exit-code stderr?)
    (L (format "subprocess `~a`" (string-join (cons (~a cmd) args) "` `"))
       (format "  working dir: ~a" wd)
       (format "  seconds left: ~a" (- max-runtime actual-runtime))
@@ -302,6 +302,9 @@
                     [(1) (format " [expected ~a]" (car expected-exit-codes))]
                     [else (format " [expected one of ~s]"
                                   expected-exit-codes)]))))]
+
+  [($subprocess:command-not-found cmd)
+   (format "Cannot start subprocess `~a`: command not found" cmd)]
 
   [($extract-report status target)
    (case status
