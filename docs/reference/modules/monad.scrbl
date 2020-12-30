@@ -31,8 +31,8 @@ Use to compose two functions that each deal with a monadic type.
 @defform[(mdo step ...)
          #:grammar [(step expr
                           (code:line id := expr))]]{
-A monadic @racket[do] form that composes a sequence of steps using
-bind operations.
+A “monadic do” form for composing a sequence of steps using bind
+operations.
 
 In the simplest case, @racket[(eq? (mdo V) V)]. Once more than one
 term is available, each term must be of the same monadic type.  In
