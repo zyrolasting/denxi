@@ -22,12 +22,21 @@
                (-> list? list? list?)
                logged?)]
 
+          [dump-log
+           (->* ()
+                (#:dump-message (-> $message? any)
+                 #:force-value any/c)
+                #:rest list?
+                (logged/c any/c))]
+
           [logged-map
            (-> logged?
                (-> $message? $message?)
                logged?)]))
 
 (require racket/list
+         racket/generator
+         racket/sequence
          "exn.rkt"
          "format.rkt"
          "message.rkt"
@@ -69,6 +78,27 @@
                          [($message? e) e]
                          [else ($show-datum e)])
                    m)))))
+
+(define (dump-log #:dump-message [dump-message writeln] #:force-value [v (void)] . preamble)
+  (logged
+   (λ (messages)
+     (sequence-for-each dump-message
+                        (sequence-append (in-log-messages preamble)
+                                         (in-log-messages messages)))
+     (values v messages))))
+
+
+(define (in-log-messages messages)
+  (in-generator
+   (let loop ([avail messages])
+     (if (null? avail)
+         (void)
+         (begin (let ([next (car messages)])
+                  (if (list? next)
+                      (loop next)
+                      (yield next)))
+                (loop (cdr messages)))))))
+
 
 (define (call-with-logged-continuation p)
   (logged

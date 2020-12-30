@@ -174,8 +174,17 @@ how @racket[define-logged] reduces code volume.
                [(logged? variant)
                 (call-with-values (run-log variant messages) return)]))))))
 ]
+}
 
 
+@defproc[(dump-log [#:dump-message dump-message (-> $message? any) writeln]
+                   [#:force-value value any/c (void)]
+                   [preamble $message?] ...)
+                   (logged/c any/c)]{
+Returns a @tech{logged procedure} that applies @racket[dump-message]
+to every argument in the @racket[preamble], then every argument in the
+current program log. The logged procedure will use @racket[value] as
+the result.
 }
 
 
