@@ -16,6 +16,7 @@
          racket/sequence
          file/glob
          "codec.rkt"
+         "logged.rkt"
          "message.rkt"
          "path.rkt"
          "query.rkt"
@@ -25,6 +26,7 @@
          "workspace.rkt")
 
 
+(define+provide-message $path-not-found (pattern wrt))
 
 ; Use module-level cache because filesystem-root-list may take a while
 ; on Windows.
@@ -35,6 +37,10 @@
         (set! cache (filesystem-root-list)))
       cache)))
 
+
+(define-logged (path-matching variant [wrt (current-directory)])
+  (with-handlers ([exn? (λ (e) ($fail ($path-not-found variant wrt)))])
+    (sequence-ref (in-paths variant wrt) 0)))
 
 (define (in-paths variant [wrt (current-directory)])
   (sequence-filter (cond [(or (regexp? variant)

@@ -37,9 +37,9 @@
      (subprocess-status handle))
 
    (define (find-exe s cmd)
-    (if (file-exists? cmd)
-        cmd
-        (find-executable-path cmd)))
+     (if (file-exists? cmd)
+         cmd
+         (find-executable-path cmd)))
 
    (define (stop s handle)
      (subprocess-kill handle)
@@ -88,7 +88,7 @@
 
   (define-values (handle stdout stdin stderr)
     (parameterize ([current-directory wd])
-      (start controller (current-output-port) #f #f #f cmd args)))
+      (start controller (current-output-port) #f #f #f cmd-actual args)))
 
   (when user-stdin
     (copy-port user-stdin stdin)
@@ -122,7 +122,7 @@
                    (< runtime timeout))
               (void)
               FAILURE)
-          (cons ($subprocess:report cmd args wd timeout runtime expected-exit-codes exit-code stderr?)
+          (cons ($subprocess:report cmd-actual args wd timeout runtime expected-exit-codes exit-code stderr?)
                 $messages)))
 
 

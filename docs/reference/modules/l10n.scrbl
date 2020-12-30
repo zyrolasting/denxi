@@ -2,6 +2,7 @@
 
 @require[@for-label[racket/base
                     racket/contract
+                    xiden/format
                     xiden/l10n
                     xiden/logged
                     xiden/message

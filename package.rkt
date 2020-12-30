@@ -172,7 +172,7 @@
                  [sandbox-memory-limit memory-limit]
                  [sandbox-eval-limits (list eval-time-limit eval-memory-limit)]
                  [sandbox-namespace-specs (append (sandbox-namespace-specs)
-                                                  '(racket/base xiden/rc xiden/package))]
+                                                  '(xiden/rc xiden/package))]
                  [sandbox-make-environment-variables (λ () (make-envvar-subset allowed-envvars))]
                  [sandbox-security-guard (make-package-security-guard ; 2.2
                                           #:trust-any-executable? trust-any-executable?
@@ -435,7 +435,7 @@
 (define-logged (build-package-output build-directory pkgeval output-name link-path)
   (define program (pkgeval `(build ,output-name)))
   (if program
-      (parameterize ([current-directory build-directory])
+      (begin
         (pkgeval `(current-directory ,build-directory))
         ($run! program))
       ($fail ($package:output:undefined))))

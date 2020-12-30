@@ -30,8 +30,7 @@ Returns a @tech{logged procedure} @racketid[P] called for its effect.
 @racketid[P] will ensure the subprocess finishes before returning
 control.
 
-@margin-note{@|program-name|'s security guard prohibits execution of
-any file that the user does not trust.}
+@margin-note{Xiden prohibits execution of any file that the user does not trust.}
 @racketid[P] will search for an executable with the name bound to
 @racket[command]. It starts by checking @racket[(file-exists?
 command)]. If a file does not exist, then @racketid[P] will use
@@ -82,6 +81,11 @@ the system.
              [actual-exit-code (integer-in 0 255)]
              [stderr? boolean?])]{
 A message about a subprocess started using @racket[cmd] and @racket[args].
+
+Note that @racket[cmd] is bound to the path of the command that
+actually ran, not the path passed to a call to @racket[run]. If
+@racket[cmd] is a relative path, then the path is with respect to the
+directory in which a package was executing.
 
 @racket[max-runtime] is bound to the value passed as the
 @racketid[timeout] argument in @racket[run]. @racket[actual-runtime]

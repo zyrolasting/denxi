@@ -41,11 +41,7 @@
                  (or/c #f signature-info?))
                 input-info?)]
           [release-input
-           (-> input-info? (logged/c void?))]
-          [find-input
-           (-> (listof input-info?)
-               path-string?
-               input-info?)]))
+           (-> input-info? (logged/c void?))]))
 
 
 (struct input-info
@@ -77,10 +73,6 @@
 
 (define (input name [sources null] [integrity #f] [signature #f])
   (input-info name sources integrity signature))
-
-(define (find-input inputs str)
-  (or (findf (λ (info) (equal? str (input-info-name info))) inputs)
-      (raise-user-error (format "Input ~s not found" str))))
 
 (define-logged (release-input input)
   ($use (delete-file (input-info-name input))))

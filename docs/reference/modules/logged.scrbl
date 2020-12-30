@@ -7,7 +7,7 @@
                     xiden/logged
                     xiden/message]]
 
-@title{Logged Programs}
+@title{Logged Procedures}
 
 @defmodule[xiden/logged]
 
@@ -69,7 +69,8 @@ list. This creates a @tech{messy log}.
 
 @defform[(logged/c contract-expr)]{
 Produces a contract for a logged procedure. The procedure must return
-a value matching @racket[contract-expr] as the first value.
+a value matching @racket[contract-expr] as the first value, unless
+that value is @racket[SUCCESS] or @racket[FAILURE].
 }
 
 @section{Terminal Values}
@@ -182,7 +183,7 @@ how @racket[define-logged] reduces code volume.
                    [preamble $message?] ...)
                    (logged/c any/c)]{
 Returns a @tech{logged procedure} that applies @racket[dump-message]
-to every argument in the @racket[preamble], then every argument in the
+to every element of the @racket[preamble], then every element in the
 current program log. The logged procedure will use @racket[value] as
 the result.
 }

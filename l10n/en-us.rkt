@@ -342,4 +342,9 @@
                path
                (setting-id XIDEN_TRUSTED_EXECUTABLES)
                (~a (encode 'base64 (make-digest path 'sha384))))
-       (~a "Unauthorized attempt to execute non-existant " path))])
+       (~a "Unauthorized attempt to execute non-existant " path))]
+
+  [($path-not-found pattern wrt)
+   (format "Could not find path matching ~s~n  w.r.t. ~a"
+           pattern
+           wrt)])

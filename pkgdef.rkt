@@ -14,8 +14,7 @@
          "source.rkt"
          "system.rkt")
 
-(provide apply
-         base64
+(provide base64
          base32
          current-directory
          hex
@@ -29,14 +28,11 @@
          sources
          from-catalogs
          from-file
-         find-executable-path
          extract
          resolve-input
          release-input
-         find-input
          :=
          void
-         (except-out (all-from-out racket/base) do #%module-begin)
          (rename-out [#%module-begin* #%module-begin]))
 
 (define-syntax (#%module-begin* stx)

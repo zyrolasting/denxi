@@ -24,22 +24,27 @@ that module.
 The name of an output implicitly defined in all @tech{package definitions}.
 }
 
-@defproc[(run-package [package-definition-variant any/c]
-                      [#:output-name output string? DEFAULT_OUTPUT]
-                      [#:link-path link-path (or/c #f path-string?) #f])
-                      logged?]{
+@defproc[(install [link-path (or/c #f path-string?)]
+                  [output-name (or/c #f string?)]
+                  [package-definition-variant any/c])
+                  logged?]{
 Returns a @tech{logged procedure} called for its effect.  The effect
 being that a symbolic link gets created at @racket[link-path],
 pointing to a directory. That directory contains the files
-corresponding to the @racket[output] defined in
+corresponding to the @racket[output-name] defined in
 @racket[pkgdef-variant]).
+
+If @racket[link-path] is @racket[#f], then the name of the symbolic
+link will match the name of the package.
+
+If @racket[output-name] is @racket[#f], then @racket[install] will use
+the @racket{default} output.
 
 The @tech{logged procedure} is not atomic, so failure may result in
 a broken intermediate state on disk. This procedure should be used
-in the context of a transaction.
+in the context of a transaction to avoid this problem.
 
-All @racket[run-package] @tech{messages} are instances of
-@racket[$package].
+All @racket[install] @tech{messages} are instances of @racket[$package].
 }
 
 

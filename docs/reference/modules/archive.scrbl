@@ -21,7 +21,7 @@
 @defproc[(extract [in (or/c path-string? input-port?)]) (logged/c (or/c FAILURE void?))]{
 
 @margin-note{@racket[extract] offers no control over the destination
-paths of extracted files. Use @racket[in-paths] or @racket[find-path]
+paths of extracted files. Use @racket[in-paths] or @racket[path-matching]
 to select extracted items.}
 
 Returns a @tech{logged procedure} @racketid[P] that extracts files
