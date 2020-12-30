@@ -6,9 +6,7 @@
 
 (provide (contract-out
           [write-message
-           (->* ($message?) (#:newline? any/c message-formatter/c output-port?) void?)]
-          [mwrite-message
-           (->* ($message?) (#:newline? any/c message-formatter/c output-port?) io-return?)]))
+           (->* ($message?) (#:newline? any/c message-formatter/c output-port?) void?)]))
 
 (require racket/date
          racket/fasl
@@ -17,7 +15,6 @@
          racket/serialize
          "format.rkt"
          "message.rkt"
-         "monad.rkt"
          "rc.rkt")
 
 (define+provide-message $verbose (message))
@@ -27,10 +24,6 @@
       (and (XIDEN_VERBOSE)
            ($verbose-message m))
       m))
-
-
-(define (mwrite-message v #:newline? [newline? #t] [formatter (current-message-formatter)] [out (current-output-port)])
-  (io-return (λ () (write-message #:newline? newline? v formatter out))))
 
 
 (define (write-message v
