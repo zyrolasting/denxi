@@ -12,8 +12,9 @@
 @defmodule[xiden/logged]
 
 A @deftech{logged procedure} is an instance of the monadic value type
-@racket[logged]. A @tech{logged procedure} is a procedure that returns
-some value and related @tech{messages}. A program composed of
+@racket[logged]. An instance of @racket[logged] contains a normal
+Racket procedure that returns some value along with some
+@tech{messages} representing a program log. A program composed of
 @tech{logged procedures} eventually terminates with a complete
 @tech{message} log along with a @racket[SUCCESS] or @racket[FAILURE]
 value.
