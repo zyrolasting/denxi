@@ -47,7 +47,7 @@ of @tech{logged procedures}:
 
 @defidform[:=]{
 Binds an expression on the right hand side to an identifier on the
-right hand side in the context of @racket[mdo].
+left hand side in the context of @racket[mdo].
 
 Raises an error when used outside of @racket[mdo]. Since @tech{package
 outputs} and @tech{actions} use implicit @racket[mdo] forms,
