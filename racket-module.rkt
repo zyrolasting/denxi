@@ -7,9 +7,13 @@
 (provide
  (contract-out [racket-module-input-variant/c flat-contract?]
                [racket-module-variant/c flat-contract?]
-               [racket-module-code? (-> symbol? racket-module-variant/c boolean?)]
+               [code/c flat-contract?]
+               [coerce-datum (-> code/c list?)]
+               [list/syntax? predicate/c]
+               [any-racket-module-code? predicate/c]
+               [racket-module-code? (-> symbol? any/c boolean?)]
                [get-racket-module-body
-                (-> (or/c #f symbol?) syntax? (or/c #f syntax?))]
+                (-> (or/c #f symbol?) racket-module-variant/c (or/c #f code/c))]
                [make-racket-module-datum
                 (->* (symbol? list?)
                      (#:id symbol?)
@@ -41,18 +45,34 @@
 ; Definitions
 
 (define (racket-module-code? expected-lang v)
-  (syntax-case v (module)
-    [(module name lang . body)
-     (equal? (syntax-e #'lang) expected-lang)
-     #t]
-    [_ #f]))
+  (and (code/c v)
+       (syntax-case v (module)
+         [(module name lang . body)
+          (equal? (syntax-e #'lang) expected-lang)
+          #t]
+         [_ #f])))
+
+
+(define (list/syntax? stx)
+  (and (syntax? stx)
+       (list? (syntax-e stx))))
+
+(define (any-racket-module-code? v)
+  (racket-module-code? #f v))
 
 (define racket-module-input-variant/c
   (or/c path? list? string? bytes? input-port?))
 
-(define racket-module-variant/c
-  (or/c syntax? list?))
+(define code/c
+  (or/c list/syntax? list?))
 
+(define racket-module-variant/c
+  (and/c code/c any-racket-module-code?))
+
+(define (coerce-datum code)
+  (if (syntax? code)
+      (syntax->datum code)
+      code))
 
 
 ;------------------------------------------------------------------------
@@ -62,7 +82,7 @@
   (cond [(input-port? variant)
          (read-racket-module/port expected-reader-lang expected-module-lang variant)]
         [(path? variant)
-         (call-with-input-file variant (λ (i) (read-racket-module expected-reader-lang expected-module-lang i)))]
+         (read-racket-module/path expected-reader-lang expected-module-lang variant)]
         [(list? variant)
          (read-racket-module expected-reader-lang expected-module-lang (~s variant))]
         [(string? variant)
@@ -71,6 +91,12 @@
          (read-racket-module expected-reader-lang expected-module-lang (open-input-bytes variant))]))
 
 
+(define-logged (read-racket-module/path expected-reader-lang expected-module-lang variant)
+  (call-with-input-file variant
+    (λ (i)
+      ($run! (read-racket-module/port expected-reader-lang expected-module-lang i)))))
+
+  
 (define-logged (read-racket-module/port expected-reader-lang expected-module-lang in)
   (define source-v (get-source-v in))
   (with-handlers ([procedure? (λ (p) ($fail (p source-v)))]
@@ -125,13 +151,14 @@
 (define (get-racket-module-body expected-lang variant)
   (define stx
     (syntax-case variant (module)
-      [(module _ lang . xs)
+      [(module _ lang (_ . body))
        (or (not expected-lang)
            (equal? (syntax-e #'lang) expected-lang))
-       (syntax-case #'xs (#%module-begin #%plain-module-begin)
-         [((#%module-begin . body)) #'body]
-         [((#%plain-module-begin . body)) #'body]
-         [_ #'xs])]
+       #'body]
+      [(module _ lang . body)
+       (or (not expected-lang)
+           (equal? (syntax-e #'lang) expected-lang))
+       #'body]
       [_ #f]))
   (and stx
        (if (syntax? variant)
@@ -147,6 +174,14 @@
            rackunit
            (submod "logged.rkt" test))
 
+  (test-case "Detect code types"
+    (check-true (code/c '()))
+    (check-true (code/c #'()))
+    (check-true (code/c '(1 2 3)))
+    (check-true (code/c #'(1 2 3)))
+    (check-false (code/c 1))
+    (check-false (code/c #'"1")))
+  
   (define (expect-bad-module-form val messages)
     (check-equal? val FAILURE)
     (check-match (car messages)
