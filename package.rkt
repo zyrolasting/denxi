@@ -62,6 +62,7 @@
 
 (define DEFAULT_OUTPUT "default")
 
+
 ;===============================================================================
 ; Take care not to use XIDEN_* settings anywhere else in this
 ; module. The more they spread out, the harder it gets to predict how
@@ -69,42 +70,34 @@
 ;
 
 (define (install link-path-or-#f output-name-or-#f package-definition-source)
-  (do ; Sec. 1
-      pkgdef <- (get-package-definition package-definition-source
+  (mdo ; Sec. 1
+       pkgdef := (get-package-definition package-definition-source
                                         (mebibytes->bytes (XIDEN_FETCH_PKGDEF_SIZE_MB)))
 
-      ; Sec. 2
-      pkgeval <- (logged-unit
-                  (make-package #:memory-limit (XIDEN_SANDBOX_MEMORY_LIMIT_MB)
-                                #:eval-memory-limit (XIDEN_SANDBOX_EVAL_MEMORY_LIMIT_MB)
-                                #:eval-time-limit (XIDEN_SANDBOX_EVAL_TIME_LIMIT_SECONDS)
-                                #:trusted-executables (XIDEN_TRUSTED_EXECUTABLES)
-                                #:allowed-envvars (XIDEN_ALLOW_ENV)
-                                #:trust-any-executable? (XIDEN_TRUST_ANY_EXECUTABLE)
-                                #:workspace (workspace-directory)
-                                #:attach-stdin? #f
-                                pkgdef))
+       ; Sec. 2
+       pkgeval := (logged-unit
+                   (make-package #:memory-limit (XIDEN_SANDBOX_MEMORY_LIMIT_MB)
+                                 #:eval-memory-limit (XIDEN_SANDBOX_EVAL_MEMORY_LIMIT_MB)
+                                 #:eval-time-limit (XIDEN_SANDBOX_EVAL_TIME_LIMIT_SECONDS)
+                                 #:trusted-executables (XIDEN_TRUSTED_EXECUTABLES)
+                                 #:allowed-envvars (XIDEN_ALLOW_ENV)
+                                 #:trust-any-executable? (XIDEN_TRUST_ANY_EXECUTABLE)
+                                 #:workspace (workspace-directory)
+                                 #:attach-stdin? #f
+                                 pkgdef))
 
-      ; Sec. 3
-      (fulfil-package-output #:allow-unsupported-racket? (XIDEN_ALLOW_UNSUPPORTED_RACKET)
-                             (abbreviate-exact-xiden-query (package-evaluator->xiden-query pkgeval))
-                             (or output-name-or-#f DEFAULT_OUTPUT)
-                             (or link-path-or-#f (pkgeval 'package))
-                             pkgeval)
+       ; Sec. 3
+       (fulfil-package-output #:allow-unsupported-racket? (XIDEN_ALLOW_UNSUPPORTED_RACKET)
+                              (abbreviate-exact-xiden-query (package-evaluator->xiden-query pkgeval))
+                              (or output-name-or-#f DEFAULT_OUTPUT)
+                              (or link-path-or-#f (pkgeval 'package))
+                              pkgeval)
 
-      ; Sec. 4
-      (clean-up pkgeval)
+       ; Sec. 4
+       (clean-up pkgeval)
 
-      (return (logged-unit SUCCESS))))
+       (logged-unit SUCCESS)))
 
-
-(define (package-evaluator->xiden-query pkgeval)
-  (xiden-query (pkgeval 'provider)
-               (pkgeval 'package)
-               (pkgeval 'edition)
-               (~a (pkgeval 'revision-number))
-               (~a (pkgeval 'revision-number))
-               "ii"))
 
 
 
@@ -120,17 +113,16 @@
 ;
 
 (define (get-package-definition source max-size)
-  (do pkgdef <- (find-original-package-definition source max-size)
-      pkgdef/override <- (override-package-definition pkgdef)
-      (return pkgdef/override)))
+  (mdo pkgdef := (find-original-package-definition source max-size)
+       (logged-unit (override-package-definition pkgdef))))
 
 
 (define (find-original-package-definition source max-size)
   (if (string? source)
-      (do variant <- (fetch-package-definition source max-size)
-          (if (and (fetch-state? variant) (fetch-state-result variant))
-              (logged-unit (read-package-definition (fetch-state-result variant)))
-              (logged-failure)))
+      (mdo variant := (fetch-package-definition source max-size)
+           (if (and (fetch-state? variant) (fetch-state-result variant))
+               (logged-unit (read-package-definition (fetch-state-result variant)))
+               (logged-failure)))
       (logged-unit (read-package-definition source))))
 
 
@@ -180,7 +172,7 @@
                  [sandbox-eval-limits (list eval-time-limit eval-memory-limit)]
                  [sandbox-namespace-specs (append (sandbox-namespace-specs)
                                                   '(racket/base xiden/rc xiden/package))]
-                 [sandbox-make-environment-variables (bind-envvar-subset (cons "PATH" allowed-envvars))]
+                 [sandbox-make-environment-variables (λ () (make-envvar-subset allowed-envvars))]
                  [sandbox-security-guard (make-package-security-guard ; 2.2
                                           #:trust-any-executable? trust-any-executable?
                                           #:trust-executables trusted-executables
@@ -206,18 +198,17 @@
 ;
 ; Extract a selection of envvars for exposure to sandboxed evaluator
 
-(define (bind-envvar-subset allowed)
-  (λ ()
-    (apply make-environment-variables
-           (for/fold ([mappings null])
-                     ([unnormalized-name (in-list allowed)])
-             (define name
-               (if (string? unnormalized-name)
-                   (string->bytes/utf-8 unnormalized-name)
-                   unnormalized-name))
-             (cons name
-                   (cons (environment-variables-ref (current-environment-variables) name)
-                         mappings))))))
+(define (make-envvar-subset allowed [input-set (current-environment-variables)])
+  (define subset-names (remove-duplicates (map coerce-bytes (cons "PATH" allowed))))
+  (apply make-environment-variables
+         (for/fold ([mappings null])
+                   ([name (in-list subset-names)])
+           (define value (environment-variables-ref input-set name))
+           (if value
+               (cons name
+                     (cons (environment-variables-ref input-set name)
+                           mappings))
+               mappings))))
 
 
 (define (derive-path-permissions)
@@ -229,6 +220,24 @@
   (list (build-path wd "var/xiden")
         (build-path wd "tmp")))
 
+
+(module+ test
+  (test-case "Make envvar subset"
+    (define subset
+      (make-envvar-subset
+       '(#"bar")
+       (make-environment-variables #"foo" #"1"
+                                   #"bar" #"2"
+                                   #"baz" #"3")))
+
+    (check-false (environment-variables-ref subset #"foo"))
+    (check-false (environment-variables-ref subset #"baz"))
+    (check-equal? (environment-variables-ref subset #"bar") #"2"))
+
+  (test-not-exn "Compute acceptable path permissions"
+                (λ ()
+                  (parameterize ([sandbox-path-permissions (derive-path-permissions)])
+                    (void)))))
 
 
 ;-------------------------------------------------------------------------------
@@ -310,13 +319,13 @@
                                output-name
                                link-path
                                pkgeval)
-  (logged-combine (do ; 3.1
-                      (validate-inputs pkgeval)
-                      (validate-os-support pkgeval)
-                      (validate-racket-support #:allow-unsupported? allow-unsupported-racket?
-                                               pkgeval)
-                      ; 3.2
-                      (reuse-or-build-package-output pkgeval output-name link-path))
+  (logged-combine (mdo ; 3.1
+                   (validate-inputs pkgeval)
+                   (validate-os-support pkgeval)
+                   (validate-racket-support #:allow-unsupported? allow-unsupported-racket?
+                                            pkgeval)
+                   ; 3.2
+                   (reuse-or-build-package-output pkgeval output-name link-path))
                   (λ (to-wrap messages)
                     (cons ($package:log package-name output-name (reverse (flatten to-wrap)))
                           messages))))
@@ -391,17 +400,17 @@
            [(output-record? variant)
             (reuse-package-output pkgeval output-name variant link-path)]
            [else
-            (do directory-record <- (build-package-output-directory pkgeval output-name)
+            (mdo directory-record := (build-package-output-directory pkgeval output-name)
 
-                (build-package-output (build-workspace-path (path-record-path directory-record))
-                                      pkgeval
-                                      output-name
-                                      link-path)
-
-                (record-package-output pkgeval
+                 (build-package-output (build-workspace-path (path-record-path directory-record))
+                                       pkgeval
                                        output-name
-                                       directory-record
-                                       link-path))]))))
+                                       link-path)
+
+                 (record-package-output pkgeval
+                                        output-name
+                                        directory-record
+                                        link-path))]))))
 
 
 (define-logged (reuse-package-output pkgeval output-name output-record-inst link-path)
@@ -414,6 +423,12 @@
    (make-addressable-directory
     (cons (open-input-string output-name)
           (map open-input-info-as-bytes (pkgeval 'inputs))))))
+
+
+(define (open-input-info-as-bytes info)
+  (open-input-bytes
+    (with-handlers ([values (λ (e) (string->bytes/utf-8 (input-info-name info)))])
+      (integrity-info-digest (input-info-integrity info)))))
 
 
 (define-logged (build-package-output build-directory pkgeval output-name link-path)
@@ -437,12 +452,6 @@
   ($use (void)))
 
 
-(define (open-input-info-as-bytes info)
-  (open-input-bytes
-    (with-handlers ([values (λ (e) (string->bytes/utf-8 (input-info-name info)))])
-      (integrity-info-digest (input-info-integrity info)))))
-
-
 
 ;===============================================================================
 ; 4: CLEAN UP
@@ -451,3 +460,28 @@
   (kill-evaluator pkgeval)
   (collect-garbage)
   (logged-unit (void)))
+
+
+;===============================================================================
+; A: Supporting procedures
+
+; Used to identify a package when reusing output, or when
+; communicating status to the user.
+(define (package-evaluator->xiden-query pkgeval)
+  (xiden-query (pkgeval 'provider)
+               (pkgeval 'package)
+               (pkgeval 'edition)
+               (~a (pkgeval 'revision-number))
+               (~a (pkgeval 'revision-number))
+               "ii"))
+
+(module+ test
+  (test-equal? "Compute package name"
+               (package-evaluator->xiden-query
+                (make-trusted-package
+                   (make-package-definition-datum
+                    `((provider "acme")
+                      (package "anvil")
+                      (edition "draft")
+                      (revision-number 1)))))
+               (xiden-query "acme" "anvil" "draft" "1" "1" "ii")))

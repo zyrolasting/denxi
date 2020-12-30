@@ -159,13 +159,13 @@
              (define os-support '(os ...))
              (define output-names '(output-name ...))
              (begin (define (action-id . action-sig)
-                      (do action-steps ...
-                        (logged-unit (void)))) ...)
+                      (mdo action-steps ...
+                           (logged-unit (void)))) ...)
              (define (input-ref k)
                (logged-unit (find-input inputs k)))
              (define (build target)
                (case target
-                 [(output-name) (do output-steps ... (logged-unit (void)))]
+                 [(output-name) (mdo output-steps ... (logged-unit (void)))]
                  ...
                  [else #f]))
              (define metadata (make-immutable-hasheq '((metadata-key . metadata-val) ...))))))

@@ -7,7 +7,6 @@
 (provide (struct-out logged)
          SUCCESS
          FAILURE
-         Logged
          logged-unit
          logged-failure
          logged-attachment
@@ -45,7 +44,19 @@
 (struct logged (thnk)
   #:transparent
   #:property prop:procedure (λ (self [m null]) (run-log self m))
-  #:methods gen:monad [(define (monad->monad-class m) Logged)])
+  #:methods gen:monad
+  [(define (bind a b) (logged-bind a b))
+   (define (return M v) (logged-unit v))])
+
+(define (logged-bind st f)
+  (logged
+   (λ (messages)
+     (define-values (next-value new-messages) (run-log st messages))
+     (if (or (eq? next-value SUCCESS)
+             (eq? next-value FAILURE))
+         (values next-value new-messages)
+         (run-log (f next-value)
+                  new-messages)))))
 
 (define (logged-unit v)
   (logged (λ (m) (values v m))))
@@ -85,25 +96,9 @@
                      stx))]))
 
 
-; Like State, except execution can be halted and the state is always a
-; list of $message instances.
-(define-monad-class Logged
-  (λ (st f)
-    (logged
-     (λ (messages)
-       (define-values (next-value new-messages) (run-log st messages))
-       (if (or (eq? next-value SUCCESS)
-               (eq? next-value FAILURE))
-           (values next-value new-messages)
-           (run-log (f next-value)
-                    new-messages)))))
-  logged-unit
-  #:fail logged-failure)
-
-
 (define (run-log m [messages null])
   (with-handlers ([exn? (λ (e) (run-log (logged-failure e) messages))])
-    ((logged-thnk (Logged m)) messages)))
+    ((logged-thnk m) messages)))
 
 (define (logged-attachment v next)
   (logged (λ (m) (values v (cons next m)))))
@@ -219,10 +214,10 @@
                               m)))))
 
     (define action
-      (do initial <- first-step
-          next    <- (second-step initial)
-          final   <- (third-step next)
-          (return final)))
+      (mdo initial := first-step
+           next    := (second-step initial)
+           final   := (third-step next)
+           (logged-unit final)))
 
     (check-equal? (get-log action)
                   (list ($foo 1)
@@ -230,21 +225,16 @@
                         ($zap 3)))
 
     (test-equal? "Stop evaluation on request"
-                 (get-log (do x <- (second-step 2)
-                              y <- (logged (λ (m) (values FAILURE m)))
-                              z <- (logged (λ (m) (fail "Should not get here") (values FAILURE null)))
-                              (return z)))
+                 (get-log (mdo x := (second-step 2)
+                               y := (logged (λ (m) (values FAILURE m)))
+                               (logged (λ (m) (fail "Should not get here") (values FAILURE null)))))
                  (list ($foo 1)))
 
     (test-case "Show exceptions in log"
       (define (try makes-error)
-        (check-match (get-log (do x <- (makes-error ((exc exn:fail:xiden) "blah ~a" 'abc))
-                                  z <- (logged (λ (m) (fail "Should not get here") (values FAILURE null)))
-                                  (return z)))
+        (check-match (get-log (mdo x := (makes-error ((exc exn:fail:xiden) "blah ~a" 'abc))
+                                   (logged (λ (m) (fail "Should not get here") (values FAILURE null)))))
                      (list ($show-string (pregexp "blah abc.+")))))
-
-      (test-case "Show returned exceptions"
-        (try Logged))
 
       (test-case "Show caught exceptions"
         (try (λ (e) (logged (λ (m) (raise e)))))))))

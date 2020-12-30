@@ -9,7 +9,7 @@
          "input-info.rkt"
          "integrity.rkt"
          "logged.rkt"
-         (rename-in "monad.rkt" [do do*])
+         "monad.rkt"
          "signature.rkt"
          "source.rkt"
          "system.rkt")
@@ -24,6 +24,7 @@
          signature
          in-paths
          logged-unit
+         mdo
          run
          sources
          from-catalogs
@@ -33,11 +34,10 @@
          resolve-input
          release-input
          find-input
-         <-
+         :=
          void
          (except-out (all-from-out racket/base) do #%module-begin)
-         (rename-out [#%module-begin* #%module-begin]
-                     [do* do]))
+         (rename-out [#%module-begin* #%module-begin]))
 
 (define-syntax (#%module-begin* stx)
   (syntax-case stx ()

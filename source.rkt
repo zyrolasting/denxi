@@ -114,11 +114,10 @@
 
 ; This terminates on the first source to produce a file with the requested bytes.
 (define (fetch-named-source source request-transfer)
-  (do initial       <- (logged-unit (fetch-state source #f))
-      fs-result     <- ((fetch-method 'filesystem fetch-source/filesystem) initial request-transfer)
-      http-result   <- ((fetch-method 'http fetch-source/http) fs-result request-transfer)
-      plugin-result <- ((fetch-method 'plugin fetch-source/plugin) http-result request-transfer)
-      (return plugin-result)))
+  (mdo initial       := (logged-unit (fetch-state source #f))
+       fs-result     := ((fetch-method 'filesystem fetch-source/filesystem) initial request-transfer)
+       http-result   := ((fetch-method 'http fetch-source/http) fs-result request-transfer)
+       ((fetch-method 'plugin fetch-source/plugin) http-result request-transfer)))
 
 
 ;------------------------------------------------------------------------------

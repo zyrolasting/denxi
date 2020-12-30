@@ -86,11 +86,11 @@
   ($use (delete-file (input-info-name input))))
 
 (define (resolve-input info)
-  (do pathrec-or-#f  <- (logged-unit (find-existing-path-record info))
-      link-name      <- (logged-unit (input-info-name info))
-      file-record    <- (fetch-exact-input info pathrec-or-#f)
-      link-record    <- (logged-unit (make-addressable-link file-record link-name))
-      (return link-name)))
+  (mdo pathrec-or-#f  := (logged-unit (find-existing-path-record info))
+       link-name      := (logged-unit (input-info-name info))
+       file-record    := (fetch-exact-input info pathrec-or-#f)
+       link-record    := (logged-unit (make-addressable-link file-record link-name))
+       (logged-unit link-name)))
 
 
 (define (fetch-exact-input info pathrec-or-#f)

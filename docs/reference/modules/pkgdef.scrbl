@@ -5,7 +5,7 @@
                     xiden/logged
                     xiden/package
                     xiden/rc
-                    @except-in[xiden/pkgdef do #%module-begin]]
+                    @except-in[xiden/pkgdef #%module-begin]]
          "../../shared.rkt"]
 
 @title{Module Language}

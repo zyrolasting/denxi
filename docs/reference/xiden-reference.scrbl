@@ -35,3 +35,4 @@ For a high-level overview, see @other-doc['(lib "xiden/docs/guide/xiden-guide.sc
 @include-section{modules/printer.scrbl}
 @include-section{modules/archive.scrbl}
 @include-section{modules/system.scrbl}
+@include-section{modules/monad.scrbl}
