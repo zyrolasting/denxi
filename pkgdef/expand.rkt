@@ -162,7 +162,7 @@
                       (mdo action-steps ...
                            (logged-unit (void)))) ...)
              (define (input-ref k)
-               (logged-unit (find-input inputs k)))
+               (find-input inputs k))
              (define (build target)
                (case target
                  [(output-name) (mdo output-steps ... (logged-unit (void)))]

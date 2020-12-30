@@ -63,18 +63,11 @@ such element exists.
 }
 
 
-@defproc[(call-with-input [input input-info?] [proc (-> path-string? any)]) any]{
-Returns @racket[(proc P)], where @racket[P] is a path to a symbolic link. That link
-points to the file produced using @racket[(resolve-input input)].
-
-@racket[call-with-input] deletes @racket[P] after @racket[proc]
-finishes, and before returning control to the caller.
-
-Use for creating references to dependencies that only apply during a
-build. This allows an input's target file to remain eligible for
-garbage collection.
+@defproc[(find-input [inputs (listof input-info?)] [name string?]) (logged/c input-info?)]{
+Returns a @tech{logged procedure} @racketid[P] that either
+uses the first input in @racket[inputs] with the given name,
+or fails with @racket[$input-not-found] on the program log.
 }
-
 
 @defproc[(release-input [input input-info?]) (logged/c void?)]{
 Returns a @tech{logged procedure} @racketid[P] that deletes the
@@ -90,4 +83,8 @@ returns a relative path to a symbolic link in
 The process will fail if the bytes do not meet the requirements
 of @racket[input], if no bytes are available, or if the runtime
 configuration does not place trust in the bytes.
+}
+
+@defstruct*[$input-not-found ([name string?])]{
+Represents a failure to find an input using @racket[find-input].
 }

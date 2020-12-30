@@ -14,12 +14,25 @@
          "source.rkt"
          "system.rkt")
 
-(provide base64
+(provide #%app
+         #%datum
+         #%top-interaction
+         all-defined-out
+         base64
          base32
+         begin
+         case
          current-directory
+         define
+         define-values
+         else
+         except-out
+         find-input
          hex
          input
          integrity
+         list
+         make-immutable-hasheq
          signature
          in-paths
          logged-unit
@@ -29,6 +42,8 @@
          from-catalogs
          from-file
          extract
+         quote
+         provide
          resolve-input
          release-input
          :=

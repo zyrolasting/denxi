@@ -41,8 +41,14 @@
                  (or/c #f signature-info?))
                 input-info?)]
           [release-input
-           (-> input-info? (logged/c void?))]))
+           (-> input-info? (logged/c void?))]
+          [find-input
+           (-> (listof input-info?)
+               path-string?
+               input-info?)]))
 
+
+(define+provide-message $input-not-found (name))
 
 (struct input-info
   (name       ; The name to bind to bytes
@@ -73,6 +79,10 @@
 
 (define (input name [sources null] [integrity #f] [signature #f])
   (input-info name sources integrity signature))
+
+(define-logged (find-input inputs name)
+  (or (findf (λ (info) (equal? name (input-info-name info))) inputs)
+      ($fail ($input-not-found name))))
 
 (define-logged (release-input input)
   ($use (delete-file (input-info-name input))))

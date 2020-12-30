@@ -347,4 +347,8 @@
   [($path-not-found pattern wrt)
    (format "Could not find path matching ~s~n  w.r.t. ~a"
            pattern
-           wrt)])
+           wrt)]
+
+  [($input-not-found name)
+   (format "Input not found: ~s"
+           name)])
