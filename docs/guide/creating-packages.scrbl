@@ -12,9 +12,8 @@ We will cover why we can feel confident in the build due to the
 integrity checking and authentication steps that happen before we use
 the archives.
 
-If you are already familiar with how package definitions
-work and just want an example to copy, then skip to
-@secref{finished-definition}.
+If you are already familiar with how package definitions work and just
+want an example to copy, then skip to @secref{finished-definition}.
 
 
 @section{Create a New Definition File}
@@ -470,8 +469,8 @@ archive.
 
 @racketblock[
 (output "default"
-        archive-input <- (input-ref "default.tgz")
-        archive-path <- (resolve-input archive-input)
+        archive-input := (input-ref "default.tgz")
+        archive-path := (resolve-input archive-input)
         (extract archive-path)
         (release-input archive-input))
 ]
@@ -498,21 +497,21 @@ eligible for garbage collection in a separate process.
 @subsection{Monadic Types}
 
 We now have two endpoints to our program, and some processing in
-between. So what's the @racket[<-] for in the package output?  If you
+between. So what's the @racket[:=] for in the package output?  If you
 are familiar with Haskell and monads, just know that outputs use a
 notation similar to @tt{do} and skip this section.
 
-@racket[<-] kind of like @racket[let], but it isn't @italic{exactly}
+@racket[:=] kind of like @racket[let], but it isn't @italic{exactly}
 the same because this abbreviated program does not work.
 
 @racketblock[
 (output "default"
-        archive-input <- (input-ref "default.tgz")
+        archive-input := (input-ref "default.tgz")
         (extract (resolve-input archive-input))
         (release-input archive-input))
 ]
 
-@racket[<-] does bind a value to an identifier, but it also discovers
+@racket[:=] does bind a value to an identifier, but it also discovers
 the value to bind from special context called @deftech{monads}.  There
 are many tutorials that explain monads poorly, and this would likely
 be one of them. So we'll just focus on an abbreviated introduction
@@ -561,11 +560,11 @@ means doing something like this:
   (values gv (string-append fs "\n" gs)))]
 
 This brings us back to our package output. These instructions work
-because @racket[<-] understands how to find the value you want from
+because @racket[:=] understands how to find the value you want from
 all the extra @italic{stuff}.
 
 @racketblock[
-archive-path <- (resolve-input "default.tgz")
+archive-path := (resolve-input "default.tgz")
 (extract archive-path)
 ]
 
@@ -575,7 +574,7 @@ because you passed the value you want @italic{plus} the extra
 
 In other words, the value returned from @racket[(resolve-input
 archive-input)] is @italic{not the same} as the value bound to
-@racketid[archive-path] when using @racket[<-].
+@racketid[archive-path] when using @racket[:=].
 
 How you deal with the values depends on the type, which is
 normal. You'll pick up on the different types as you go.
@@ -591,12 +590,12 @@ We can define a new output for our budget-conscious users:
 
 @racketblock[
 (output "default"
-        archive-path <- (resolve-input "default.tgz")
+        archive-path := (resolve-input "default.tgz")
         (extract archive-path)
         (release-input archive-path))
 
 (output "minimal"
-        archive-path <- (resolve-input "minimal.tgz")
+        archive-path := (resolve-input "minimal.tgz")
         (extract archive-path)
         (release-input archive-path))
 ]
@@ -608,8 +607,8 @@ follows the same notation as outputs.
 
 @racketblock[
 (action (unpack name)
-  archive-input <- (input-ref name)
-  archive-path <- (resolve-input archive-input)
+  archive-input := (input-ref name)
+  archive-path := (resolve-input archive-input)
   (unpack archive-path)
   (release-input archive-input))
 
@@ -740,8 +739,8 @@ xiden
 (code:comment "Outputs")
 
 (action (unpack name)
-  archive-input <- (input-ref name)
-  archive-path  <- (resolve-input archive-input)
+  archive-input := (input-ref name)
+  archive-path  := (resolve-input archive-input)
   (unpack archive-path)
   (release-input archive-input))
 
