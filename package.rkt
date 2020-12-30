@@ -50,7 +50,8 @@
 
 
 (define+provide-message $package ())
-(define+provide-message $package:log (query output-name messages))
+(define+provide-message $package:log $package (query output-name messages))
+(define+provide-message $package:unfetched $package (source))
 (define+provide-message $package:output $package ())
 (define+provide-message $package:output:built $package:output ())
 (define+provide-message $package:output:reused $package:output ())
@@ -72,7 +73,7 @@
 (define (install link-path-or-#f output-name-or-#f package-definition-source)
   (mdo ; Sec. 1
        pkgdef := (get-package-definition package-definition-source
-                                        (mebibytes->bytes (XIDEN_FETCH_PKGDEF_SIZE_MB)))
+                                         (mebibytes->bytes (XIDEN_FETCH_PKGDEF_SIZE_MB)))
 
        ; Sec. 2
        pkgeval := (logged-unit
@@ -121,9 +122,9 @@
   (if (string? source)
       (mdo variant := (fetch-package-definition source max-size)
            (if (and (fetch-state? variant) (fetch-state-result variant))
-               (logged-unit (read-package-definition (fetch-state-result variant)))
-               (logged-failure)))
-      (logged-unit (read-package-definition source))))
+               (read-package-definition (fetch-state-result variant))
+               (logged-failure ($package:unfetched source))))
+      (read-package-definition source)))
 
 
 ; TODO: Allow per-input overrides using RC

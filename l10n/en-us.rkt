@@ -191,6 +191,10 @@
   [($package:output:reused)
    "reused output"]
 
+  [($package:unfetched source)
+   (format "could not fetch package definition from source: ~s"
+           source)]
+
   [($package:output:undefined)
    "requested output is not defined"]
 
