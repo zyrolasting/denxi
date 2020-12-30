@@ -76,20 +76,16 @@ garbage collection.
 }
 
 
-@defproc[(keep-input! [input input-info?]) path-string?]{
-Returns a path to a symbolic link derived from @racket[input].
-The link is created as a side effect, and will not be deleted
-by @racket[keep-input!].
-
-Use for creating references to dependencies that persist after
-a build. Any file referenced in this way will not be eligible
-for garbage collection unless all links are removed.
+@defproc[(release-input [input input-info?]) (logged/c void?)]{
+Returns a @tech{logged procedure} @racketid[P] that deletes the
+symbolic link derived from @racket[input].
 }
 
-
-@defproc[(resolve-input [input input-info?]) logged?]{
-Returns a deferred computation that, when applied, acquires and
-verifies the bytes for @racket[input].
+@defproc[(resolve-input [input input-info?]) (logged/c path-string?)]{
+Returns a @tech{logged procedure} @racketid[P] that, when applied,
+acquires and verifies the bytes for @racket[input]. @racketid[P]
+returns a relative path to a symbolic link in
+@racket[(current-directory)].
 
 The process will fail if the bytes do not meet the requirements
 of @racket[input], if no bytes are available, or if the runtime
