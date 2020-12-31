@@ -10,7 +10,9 @@
                     @except-in[xiden/pkgdef #%module-begin]]
          "../../shared.rkt"]
 
-@title{Module Language}
+@title{Package Definitions}
+
+@section{Module Language}
 
 @defmodule[xiden/pkgdef]
 
@@ -261,3 +263,5 @@ module.
          signature
          sources
          void)
+
+@include-section{pkgdef/static.scrbl}

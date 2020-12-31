@@ -27,6 +27,7 @@ Collection paths for a module language and reader extension used to
 write package definitions.
 }
 
+
 @section{Package Definition Construction and Destructuring}
 
 @defproc[(make-package-definition-datum [#:id id symbol? 'pkgdef] [body list?]) package-definition-datum?]{
@@ -44,6 +45,10 @@ Returns the top-level forms of the module code in @racket[datum].
 A contract that matches a @tech{bare} @tech{package definition}.
 }
 
+
+@defproc[package-definition-datum? predicate/c]{
+Equivalent to @racket[(racket-module-code? PACKAGE_DEFINITION_MODULE_LANG v)].
+}
 
 @section{Package Definition Analysis}
 

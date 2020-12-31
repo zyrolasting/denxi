@@ -15,7 +15,11 @@ For a high-level overview, see @other-doc['(lib "xiden/docs/guide/xiden-guide.sc
 
 @table-of-contents[]
 @include-section{model.scrbl}
-@include-section{xiden.scrbl}
+@include-section{modules/pkgdef.scrbl}
+@include-section{modules/package.scrbl}
+@include-section{modules/main.scrbl}
+@include-section{modules/version.scrbl}
+@include-section{modules/query.scrbl}
 @include-section{modules/workspace.scrbl}
 @include-section{settings.scrbl}
 @include-section{modules/message.scrbl}
