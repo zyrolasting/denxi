@@ -22,3 +22,17 @@
                          key
                          fail-thunk))
       (fail-thunk)))
+
+(module+ test
+  (provide call-with-plugin)
+  (require racket/file
+           rackunit)
+
+  (define (call-with-plugin plugin proc)
+    (define plugin-path (make-temporary-file))
+    (dynamic-wind void
+                  (λ ()
+                    (write-to-file #:exists 'truncate/replace plugin plugin-path)
+                    (XIDEN_PLUGIN_MODULE plugin-path proc))
+                  (λ ()
+                    (delete-file plugin-path)))))

@@ -51,7 +51,9 @@
 
 
 (module+ test
-  (require rackunit "rc.rkt")
+  (require rackunit
+           (submod "plugin.rkt" test)
+           "rc.rkt")
 
   (define (make-file path-string)
     (define path (string->path path-string))
@@ -72,38 +74,29 @@
     (check-equal? (get-extract-procedure "a.extra....tar.gz") untgz)
     (check-equal? (get-extract-procedure "a.blah") #f)
 
-    (define plugin-path (make-temporary-file))
-    (dynamic-wind void
-                  (λ ()
-                    (call-with-output-file #:exists 'truncate/replace plugin-path
-                      (λ (o)
-                        (writeln
-                         '(module anonymous racket/base
-                            (provide get-extract-procedure)
-                            (define (get-extract-procedure name)
-                              (λ (in) (void (read-byte in)))))
-                         o)))
+    (define plugin
+      '(module anonymous racket/base
+         (provide get-extract-procedure)
+         (define (get-extract-procedure name)
+           (λ (in) (void (read-byte in))))))
 
-                    (XIDEN_PLUGIN_MODULE
-                     plugin-path
-                     (λ ()
-                       (test-exn "Plugin procedure is under contract"
-                                 exn:fail:contract?
-                                 (λ () ((get-extract-procedure "a.xz") (void))))
 
-                       ; Confirm that the plugin read the only
-                       ; available byte.
-                       (define-values (i o) (make-pipe))
-                       (write-byte 1 o)
-                       (flush-output o)
-                       (close-output-port o)
-                       ((get-extract-procedure "a.xz") i)
-                       (check-pred eof-object? (read-byte i)))))
+    (call-with-plugin plugin
+                      (λ ()
+                        (test-exn "Plugin procedure is under contract"
+                                  exn:fail:contract?
+                                  (λ () ((get-extract-procedure "a.xz") (void))))
 
-                  (λ ()
-                    (delete-file plugin-path))))
+                        ; Confirm that the plugin read the only
+                        ; available byte.
+                        (define-values (i o) (make-pipe))
+                        (write-byte 1 o)
+                        (flush-output o)
+                        (close-output-port o)
+                        ((get-extract-procedure "a.xz") i)
+                        (check-pred eof-object? (read-byte i)))))
 
-  
+
   (test-case "Can pack and unpack an archive"
     (define working-dir (make-temporary-file "tmp~a" 'directory))
 
