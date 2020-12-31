@@ -5,6 +5,7 @@
 (require "contract.rkt")
 
 (provide
+ (struct-out bare-racket-module)
  (contract-out [racket-module-input-variant/c flat-contract?]
                [racket-module-variant/c flat-contract?]
                [code/c flat-contract?]
@@ -12,6 +13,8 @@
                [list/syntax? predicate/c]
                [any-racket-module-code? predicate/c]
                [racket-module-code? (-> symbol? any/c boolean?)]
+               [strip (-> racket-module-variant/c bare-racket-module?)]
+               [dress (-> bare-racket-module? list?)]
                [get-racket-module-body
                 (-> (or/c #f symbol?) racket-module-variant/c (or/c #f code/c))]
                [make-racket-module-datum
@@ -30,6 +33,7 @@
          (only-in syntax/modread
                   check-module-form
                   with-module-reading-parameterization)
+         syntax/parse
          "codec.rkt"
          "integrity.rkt"
          "logged.rkt"
@@ -48,7 +52,8 @@
   (and (code/c v)
        (syntax-case v (module)
          [(module name lang . body)
-          (equal? (syntax-e #'lang) expected-lang)
+          (or (not expected-lang)
+              (equal? (syntax-e #'lang) expected-lang))
           #t]
          [_ #f])))
 
@@ -74,7 +79,6 @@
       (syntax->datum code)
       code))
 
-
 ;------------------------------------------------------------------------
 ; Module I/O
 
@@ -96,7 +100,7 @@
     (λ (i)
       ($run! (read-racket-module/port expected-reader-lang expected-module-lang i)))))
 
-  
+
 (define-logged (read-racket-module/port expected-reader-lang expected-module-lang in)
   (define source-v (get-source-v in))
   (with-handlers ([procedure? (λ (p) ($fail (p source-v)))]
@@ -107,7 +111,7 @@
       (check-module-form (read-module expected-reader-lang in)
                          'this-symbol-is-ignored
                          source-v))
-    
+
     (syntax-case checked ()
       [(module id ml xs ...)
        (let ([module-lang (syntax-e #'ml)])
@@ -166,6 +170,27 @@
            (syntax->datum stx))))
 
 
+;------------------------------------------------------------------------
+; Strip/Dress
+
+(struct bare-racket-module (name lang code) #:transparent)
+
+(define (dress stripped)
+  (make-racket-module-datum #:id
+                            (bare-racket-module-name stripped)
+                            (bare-racket-module-lang stripped)
+                            (bare-racket-module-code stripped)))
+
+(define (strip module-datum)
+  (define (construct name lang body)
+    (bare-racket-module (syntax-e name) (syntax-e lang) (syntax->datum body)))
+  (syntax-parse module-datum
+    #:datum-literals (module)
+    [(module name:id lang:id (_ . body))
+     (construct #'name #'lang #'body)]
+    [(module name:id lang:id . body)
+     (construct #'name #'lang #'body)]))
+
 
 (module+ test
   (require racket/file
@@ -181,14 +206,14 @@
     (check-true (code/c #'(1 2 3)))
     (check-false (code/c 1))
     (check-false (code/c #'"1")))
-  
+
   (define (expect-bad-module-form val messages)
     (check-equal? val FAILURE)
     (check-match (car messages)
                  ($racket-module-read-error _ 'bad-module-form _)))
-  
+
   (test-case "Detect Racket module data"
-    (check-true (racket-module-code? 'something (make-racket-module-datum 'something '(a b c))))
+    (check-true (any-racket-module-code? (make-racket-module-datum 'something '(a b c))))
     (check-true (racket-module-code? 'something (make-racket-module-datum 'something null)))
     (check-false (racket-module-code? 'something '(module anon other)))
     (check-false (racket-module-code? 'something `(module something)))
@@ -204,7 +229,7 @@
     (check-equal? (get-racket-module-body 'something
                    (make-racket-module-datum 'something '(a b c)))
                   '(a b c)))
-  
+
   (test-logged-procedure "Detect error when reading improper module form"
                          (read-racket-module '_ '_ "(module)")
                          expect-bad-module-form)
@@ -212,7 +237,7 @@
   (test-logged-procedure "Detect if EOF came too soon"
                          (read-racket-module '_ '_ "")
                          expect-bad-module-form)
-  
+
   (test-logged-procedure "Read with reader extension"
                          (read-racket-module 'racket/base
                                              'racket/base
@@ -233,10 +258,14 @@
                                                                    '(submod racket/base reader)))))
 
   (test-logged-procedure "Accept only prescribed expander language"
-                         (read-racket-module 'racket/base 
+                         (read-racket-module 'racket/base
                                              'other
                                              "#lang racket/base (define val 1)")
                          (λ (v msg)
                            (check-eq? v FAILURE)
                            (check-match (car msg)
-                                        ($racket-module-read-error _ 'unexpected-module-lang _)))))
+                                        ($racket-module-read-error _ 'unexpected-module-lang _))))
+
+  (test-equal? "Strip and dress modules"
+               (strip #'(module anon racket/base (#%module-begin (define a 1) (provide a))))
+               (bare-racket-module 'anon 'racket/base '((define a 1) (provide a)))))

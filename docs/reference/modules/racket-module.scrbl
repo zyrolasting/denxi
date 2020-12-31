@@ -14,6 +14,7 @@
 
 @defmodule[xiden/racket-module]
 
+
 @defthing[racket-module-input-variant/c flat-contract? #:value (or/c path? list? string? bytes? input-port?)]{
 A contract matching accepted value types when reading a Racket module.
 }
@@ -85,3 +86,44 @@ applying @racket[read-racket-module] to an input port for @racket[(~s
 variant)].
 }
 
+
+@section{Stripping and Dressing}
+
+To @deftech{strip} a Racket module in @racket[code/c] form is to
+convert it to a @tech{bare} module. To @deftech{dress} the module is
+to do the reverse. Stripping and dressing are not inverse operations,
+because stripping does not preserve lexical and location information.
+
+In the context of Xiden, programs are restricted to a small, fixed
+grammar and are subject to meaningful module-level overrides. This
+makes source location information meaningless in some cases, but
+lexical information remains constant. Xiden uses @tech{bare modules}
+when only the content matters for code transformations.
+
+@defstruct*[bare-racket-module ([name symbol?] [lang symbol?] [code list?]) #:transparent]{
+A @deftech{bare} Racket module (or “@deftech{bare module}”) is an
+instance of @racket[bare-racket-module].
+
+Each instance holds parts of a Racket module code without lexical
+information, source location information, or an implicit form for a
+module body such as @racket[#%plain-module-begin].
+}
+
+
+@defproc[(strip [module-datum code/c]) bare-racket-module?]{
+@tech{Strips} a Racket module.
+
+@racketinput[(equal? (strip #'(module anon racket/base (#%module-begin (define a 1) (provide a))))
+                     (bare-racket-module 'anon 'racket/base '((define a 1) (provide a))))]
+}
+
+@defproc[(dress [stripped bare-racket-module?]) list?]{
+Returns
+
+@racketblock[
+(make-racket-module-datum
+  #:id
+  (bare-racket-module-name stripped)
+  (bare-racket-module-lang stripped)
+  (bare-racket-module-code stripped))]
+}

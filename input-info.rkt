@@ -194,7 +194,6 @@
           (cons ($regarding-input+source input source status)
                 messages)))
 
-
 (module+ test
   (require rackunit)
 

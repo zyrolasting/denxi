@@ -51,19 +51,34 @@ from @racket[path] on its own.
 }
 
 
-@defproc[(before-new-package [original syntax?]) (or/c syntax? list?)]{
-Return a @tech{package definition} used to create a @tech{package}.
-Called before creating any package using a @tech{source}.
+@defproc[(before-new-package [original stripped-pkgdef?]) stripped-pkgdef?]{
+A hook for returning a @tech{bare} @tech{package definition} to use
+for creating a @tech{package}. @racket[original] represents a
+@tech{package definition} fetched from a @tech{source}.
 
-This procedure defaults to the identity function.
+This procedure defaults to the identity function,
+which means no code is replaced. Otherwise, you may return an
+alternative definition to override @racket[original].
 
-@racket[original] is bound to a package definition read from a
-@tech{source}.  To use @racket[original] as-is, simply return
-it. Otherwise, you may return an alternative definition to override
-@racket[original].
+This procedure is useful for standardizing definitions, or for
+analyzing builds in a @tech{workspace}. @bold{Define with care.} This
+procedure can override every package definition, which can render a
+@project-name process inoperable or unsafe.
 
-This procedure is useful for standardizing definitions or
-autocompleting inputs. Note that this procedure hooks into every
-build, so an error in this procedure may render a @project-name
-process inoperable or unsafe. Define with care.
+Take for example a function that returns the same static package
+definition, which has one dependency.
+
+@racketblock[
+(define (before-new-package original)
+  '((input "pkgdef" (sources "https://example.com/other.rkt"))
+    (output "default"
+            pkgdef-input := (input-ref "pkgdef")
+            pkgdef-path := (resolve-input "pkgdef")
+            (install #f #f pkgdef-path))))
+]
+
+This creates builds that will not terminate. Even if Xiden downloads a
+new package definition from @racket{https://example.com/other.rkt}, it
+will only be replaced by another instance of the same data returned
+from @racket[before-new-package].
 }

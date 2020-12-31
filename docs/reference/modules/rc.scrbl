@@ -271,3 +271,17 @@ Names of environment variables visible to @tech{packages}, and
 The maximum number of seconds a subprocess spawned by a @tech{package}
 may live.
 }
+
+@defsetting*[XIDEN_INPUT_OVERRIDES]{
+A list of strings used to define package input overrides.
+
+Each element is in the form @racket[(cons pattern input-expr)]. The
+input of name @racketid[input-name] is replaced with the (evaluated)
+@racketid[input-expr] for all @tech{package queries} matching
+@racket[pattern].
+
+If @racket[pattern] is a string, then it is used as an argument to
+@racket[pregexp] before matching. If @racket[pattern] is a symbol,
+then it is first coerced to a string and then used as an argument to
+@racket[pregexp].
+}

@@ -110,7 +110,10 @@
      "Names of environment variables to expose to packages and subprocesses"]
 
     [(XIDEN_SUBPROCESS_TIMEOUT_S)
-     "Maximum number of seconds a subprocess may run"]))
+     "Maximum number of seconds a subprocess may run"]
+
+    [(XIDEN_INPUT_OVERRIDES)
+     "Package input overrides"]))
 
 
 

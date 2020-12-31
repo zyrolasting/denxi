@@ -245,6 +245,13 @@
                                           (XIDEN_ALLOW_ENV)))
                     '("envvar")))
 
+(flag-out [+o ++input-override]
+          (cli-flag XIDEN_INPUT_OVERRIDES
+                    'multi null 2 (λ (flag pattern input-expr)
+                                    (cons (cons (arg->value pattern)
+                                                (arg->value input-expr))
+                                          (XIDEN_INPUT_OVERRIDES)))
+                    '("pregexp-pattern" "input-expr")))
 
 
 ; For use in REPL and tests. Provides a quick way to preview the effect of command

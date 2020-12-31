@@ -180,6 +180,39 @@ record where the link does not exist at @litchar{L}.
 before factoring in any command line arguments.
 
 
+@section[#:tag "cli-overrides"]{Overriding Inputs}
+
+The beauty of @tech{package inputs} is that they can be overridden.
+One way to do this is to use override flags.
+
+@verbatim|{
+$ xiden do +a definition.rkt +o '^leagues:baseball' '(input "umpire" (integrity ...))'
+}|
+
+An override applies to all packages in the scope of a transaction.
+This override takes two arguments. The first is a readable regular
+expression that matches against a @tech{package query}. The second
+is the code for an input expression.
+
+When Xiden processes packages, it will build a package query using
+only the provider, package name, edition and revision number
+(e.g. @racket{leagues:baseball:pro:89}). If the pattern matches,
+then the input expression provided in the command replaces the
+input expression of the same name in that package.
+
+The override applies to all eligible packages, and all inputs of the
+same name. This allows you to standardize dependencies in the event
+you end up with something like multiple slightly different copies of
+Ruby.
+
+@verbatim|{
+$ PYTHON='(input "ruby" (integrity ...))'
+$ xiden do +a definition.rkt \
+  +o 'syntax-highlighting' "$RUBY" \
+  +o 'images' "$RUBY"
+}|
+
+
 @section[#:tag "gc"]{Collecting Garbage}
 
 We briefly visited the @litchar{gc} command in @secref{do}. We observed that if

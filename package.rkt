@@ -31,6 +31,7 @@
          "plugin.rkt"
          "port.rkt"
          "query.rkt"
+         "racket-module.rkt"
          "racket-version.rkt"
          "rc.rkt"
          "setting.rkt"
@@ -46,6 +47,7 @@
   (require rackunit
            (submod "file.rkt" test)
            (submod "logged.rkt" test)
+           (submod "plugin.rkt" test)
            "setting.rkt"))
 
 
@@ -72,7 +74,9 @@
 
 (define (install link-path-or-#f output-name-or-#f package-definition-source)
   (mdo ; Sec. 1
-       pkgdef := (get-package-definition package-definition-source
+       pkgdef := (get-package-definition #:override-specs (XIDEN_INPUT_OVERRIDES)
+                                         #:before-new-package (load-plugin-override)
+                                         package-definition-source
                                          (mebibytes->bytes (XIDEN_FETCH_PKGDEF_SIZE_MB)))
 
        ; Sec. 2
@@ -113,9 +117,12 @@
 ; standardize dependencies, etc.
 ;
 
-(define (get-package-definition source max-size)
+(define (get-package-definition #:before-new-package before-new-package
+                                #:override-specs override-specs
+                                source
+                                max-size)
   (mdo pkgdef := (find-original-package-definition source max-size)
-       (logged-unit (override-package-definition pkgdef))))
+       (logged-unit (override-package-definition pkgdef before-new-package override-specs))))
 
 
 (define (find-original-package-definition source max-size)
@@ -127,9 +134,29 @@
       (read-package-definition source)))
 
 
-; TODO: Allow per-input overrides using RC
-(define (override-package-definition datum)
-  ((load-plugin-override) datum))
+(define (find-per-input-overrides package-name override-specs)
+  (filter-map (λ (spec)
+                (define pattern-variant
+                  (car spec))
+
+                (define pattern
+                  (cond [(string? pattern-variant)
+                         (pregexp pattern-variant)]
+                        [(symbol? pattern-variant)
+                         (pregexp (~a pattern-variant))]
+                        [else pattern-variant]))
+
+                (and (regexp-match? pattern package-name)
+                     (cdr spec)))
+              override-specs))
+
+
+(define (override-package-definition datum before-new-package override-specs)
+  (define stripped (strip datum))
+  (define plugin-override (before-new-package stripped))
+  (define package-name (get-static-abbreviated-query plugin-override))
+  (define input-overrides (find-per-input-overrides package-name override-specs))
+  (dress (override-inputs plugin-override input-overrides)))
 
 
 (define (fetch-package-definition source max-size)
@@ -143,8 +170,34 @@
 (define (load-plugin-override)
   (load-from-plugin 'before-new-package
                     (λ () values)
-                    (λ (e) values)))
+                    raise))
 
+
+(module+ test
+  (test-case "Override package definitions"
+    (define (before-new-package orig)
+      (struct-copy bare-racket-module orig
+                   [code (list-set (bare-racket-module-code orig)
+                                   1
+                                   '(package "tweedledum"))]))
+
+    (define overridden
+      (override-package-definition
+       (make-package-definition-datum
+        '((provider "wonderland")
+          (package "tweedledee")
+          (input "logic")
+          (input "nonsense")))
+       before-new-package
+       '((#px"dum" . (input "logic" (integrity 'sha1 (hex "abc"))))
+         (#px"zooks" . (input "nonsense" (integrity 'sha1 (hex "abc")))))))
+
+    (check-equal? overridden
+                  (make-package-definition-datum
+                   '((provider "wonderland")
+                     (package "tweedledum")
+                     (input "logic" (integrity 'sha1 (hex "abc")))
+                     (input "nonsense"))))))
 
 
 ;===============================================================================
