@@ -601,16 +601,16 @@ We can define a new output for our budget-conscious users:
 ]
 
 This version works, but we don't want to repeat ourselves every time
-we want a new output. To reduce repetition, we can introduce an
-@deftech{action}.  An action is like a procedure, except the body
-follows the same notation as outputs.
+we want a new output. To reduce repetition, we can write a procedure.
+But if we want to use the same notation and logic as outputs, we'll
+need to return an @racket[mdo] form.
 
 @racketblock[
-(action (unpack name)
-  archive-input := (input-ref name)
-  archive-path := (resolve-input archive-input)
-  (unpack archive-path)
-  (release-input archive-input))
+(define (unpack name)
+  (mdo archive-input := (input-ref name)
+       archive-path := (resolve-input archive-input)
+       (unpack archive-path)
+       (release-input archive-input)))
 
 (output "default" (unpack "default.tgz"))
 (output "minimal" (unpack "minimal.tgz"))
@@ -738,11 +738,11 @@ xiden
 (code:comment "-----------------------------------------------")
 (code:comment "Outputs")
 
-(action (unpack name)
-  archive-input := (input-ref name)
-  archive-path  := (resolve-input archive-input)
-  (unpack archive-path)
-  (release-input archive-input))
+(define (unpack name)
+  (mdo archive-input := (input-ref name)
+       archive-path  := (resolve-input archive-input)
+       (unpack archive-path)
+       (release-input archive-input)))
 
 (output "default" (unpack "default.tgz"))
 (output "minimal" (unpack "minimal.tgz"))

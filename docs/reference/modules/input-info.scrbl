@@ -22,13 +22,12 @@ A structure representing a request for exact bytes.
 }
 
 
-@defproc[(input [name string?]
-                [sources (listof path-string?) null]
-                [integrity (or/c #f well-formed-integrity-info/c) #f]
-                [signature (or/c #f well-formed-signature-info/c) #f])
+@defproc[(make-input-info [name string?]
+                          [sources (listof path-string?) null]
+                          [integrity (or/c #f well-formed-integrity-info/c) #f]
+                          [signature (or/c #f well-formed-signature-info/c) #f])
          well-formed-input-info/c]{
-An abbreviated @racket[input-info] constructor that performs stronger
-validation on its arguments.
+A contracted @racket[input-info] constructor.
 }
 
 

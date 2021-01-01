@@ -34,7 +34,7 @@
            flat-contract?]
           [concrete-input-info/c
            flat-contract?]
-          [input
+          [make-input-info
            (->* (non-empty-string?)
                 ((listof path-string?)
                  (or/c #f integrity-info?)
@@ -45,7 +45,11 @@
           [find-input
            (-> (listof input-info?)
                path-string?
-               input-info?)]))
+               (logged/c input-info?))]
+          [input-ref
+           (-> string? (logged/c input-info?))]
+          [current-inputs
+           (parameter/c (listof input-info?))]))
 
 
 (define+provide-message $input-not-found (name))
@@ -77,7 +81,12 @@
   (and/c well-formed-input-info/c
          (not/c abstract-input-info/c)))
 
-(define (input name [sources null] [integrity #f] [signature #f])
+(define current-inputs (make-parameter null))
+
+(define (input-ref name)
+  (find-input (current-inputs) name))
+
+(define (make-input-info name [sources null] [integrity #f] [signature #f])
   (input-info name sources integrity signature))
 
 (define-logged (find-input inputs name)
@@ -93,7 +102,6 @@
        file-record    := (fetch-exact-input info pathrec-or-#f)
        link-record    := (logged-unit (make-addressable-link file-record link-name))
        (logged-unit link-name)))
-
 
 (define (fetch-exact-input info pathrec-or-#f)
   (if (path-record? pathrec-or-#f)
@@ -114,7 +122,6 @@
                                     messages*)
              (values FAILURE messages*))))))
 
-
 (define (fetch-input info)
   (fetch (input-info-name info)
          (input-info-sources info)
@@ -134,12 +141,10 @@
             (input-info-name info)
             in est-size))))
 
-
 (define (find-existing-path-record info)
   (and (input-info-integrity info)
        (integrity-info-digest (input-info-integrity info))
        (find-path-record (integrity-info-digest (input-info-integrity info)))))
-
 
 (define ($regarding-input+source input source m)
   ($regarding ($show-string (input-info-name input))
@@ -206,13 +211,13 @@
     '(("x" ("x") #f #f)))
 
   (for ([aargs (in-list abstract-input-args)])
-    (let ([i (apply input aargs)])
+    (let ([i (apply make-input-info aargs)])
       (test-case (format "~s is abstract" i)
         (check-true (abstract-input-info/c i))
         (check-false (concrete-input-info/c i)))))
 
   (for ([cargs (in-list concrete-input-args)])
-    (let ([i (apply input cargs)])
+    (let ([i (apply make-input-info cargs)])
       (test-case (format "~s is concrete" i)
         (check-false (abstract-input-info/c i))
         (check-true (concrete-input-info/c i))))))

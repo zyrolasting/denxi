@@ -456,10 +456,9 @@
            [else
             (mdo directory-record := (build-package-output-directory pkgeval output-name)
 
-                 (build-package-output (build-workspace-path (path-record-path directory-record))
-                                       pkgeval
+                 (build-package-output pkgeval
                                        output-name
-                                       link-path)
+                                       (build-workspace-path (path-record-path directory-record)))
 
                  (record-package-output pkgeval
                                         output-name
@@ -471,6 +470,12 @@
   ($attach (make-addressable-link (find-path-record (output-record-path-id output-record-inst)) link-path)
            ($package:output:reused)))
 
+(define-logged (build-package-output pkgeval output-name build-directory)
+  (pkgeval `(build ,output-name
+                   ,build-directory
+                   ,(pkgeval 'inputs)
+                   ,(dump-xiden-settings)
+                   ,$messages)))
 
 (define-logged (build-package-output-directory pkgeval output-name)
   ($attach
@@ -483,15 +488,6 @@
   (open-input-bytes
     (with-handlers ([values (λ (e) (string->bytes/utf-8 (input-info-name info)))])
       (integrity-info-digest (input-info-integrity info)))))
-
-
-(define-logged (build-package-output build-directory pkgeval output-name link-path)
-  (define program (pkgeval `(build ,output-name)))
-  (if program
-      (begin
-        (pkgeval `(current-directory ,build-directory))
-        ($run! program))
-      ($fail ($package:output:undefined))))
 
 
 (define-logged (record-package-output pkgeval output-name directory-record link-path)
