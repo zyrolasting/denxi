@@ -90,6 +90,13 @@ distributions. If @racket[build] is not surjective, then a
 The @tech{package} with no inputs, no outputs, and all default values. 
 }
 
+@defthing[output-not-found (-> non-empty-string? logged?)]{
+The build procedure for the empty package.
+
+Returns a @tech{logged procedure} that always fails and adds
+@racket[$package:output:undefined] to the program log.
+}
+
 @defthing[DEFAULT_STRING string? #:value "default"]{
 The conventional default for every string.
 }
