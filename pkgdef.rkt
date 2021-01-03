@@ -105,10 +105,12 @@
              (syntax-parser [(_ args) #'body]))
            (define-syntax m (modifier #'new-id))))]))
 
+
 (begin-for-syntax
   (define-syntax-class mod
     (pattern (~var m (static modifier? "package definition modifier"))
              #:with f (modifier-f (attribute m.value)))))
+
 
 (define-syntax (collect-terms stx)
   (syntax-parse stx
@@ -117,19 +119,19 @@
                        (provide pkg)
                        (define pkg (expand-instance . pd)))]
     [(_ (x . xs) pd ml)
-     (let loop ([target #'x])
-       (syntax-parse #'x
-         #:literals (#%expression)
-         ; Handle an artifact of partial expansion in single-form modules.
-         ; e.g. (module foo xiden/pkgdef (name "what"))
-         ;      (module foo xiden/pkgdef (#%expression (λ (st) ...)))
-         [(#%expression sub)
-          #'(collect-terms xs (sub . pd) ml)]
-         [(m:mod . args)
-          #'(collect-terms xs (x . pd) ml)]
-         ; Add any other non-collectable Racket terms to the below clause
-         [(define . args)
-          #'(collect-terms xs pd (x . ml))]))]))
+     (syntax-parse #'x
+       #:literals (#%expression)
+       [(m:mod . args)
+        #'(collect-terms xs (x . pd) ml)]
+       [(define . args)
+        #'(collect-terms xs pd (x . ml))]
+       ; The below are artifacts of partial expansion in single-form modules.
+       [(#%expression sub)
+        #'(collect-terms xs (sub . pd) ml)]
+       [(define-values . args)
+        #'(collect-terms xs pd (x . ml))])]))
+
+
 
 (define-syntax (expand-instance stx)
   (syntax-parse stx
