@@ -76,10 +76,8 @@
 ;-------------------------------------------------------------------------------
 ; The module language collects terms to build an instance of package.
 
-(define-syntax (#%module-begin* stx)
-  (syntax-case stx ()
-    [(_ . body)
-     #'(collect-terms body () ())]))
+(define-syntax-rule (#%module-begin* . body)
+  (collect-terms body () ()))
 
 (define-simple-macro (set-field st:expr f:id v:expr)
   (struct-copy package st [f v]))
