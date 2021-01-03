@@ -98,7 +98,7 @@ Returns a @tech{logged procedure} that always fails and adds
 }
 
 @defthing[DEFAULT_STRING string? #:value "default"]{
-The conventional default for every string.
+The conventional default for any string expected to not be empty.
 }
 
 @defproc[(install [link-path (or/c #f path-string?)]
