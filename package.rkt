@@ -11,6 +11,7 @@
 
 (provide install
          empty-package
+         output-not-found
          (struct-out package))
 
 
@@ -85,6 +86,9 @@
    output-names
    build))
 
+(define (output-not-found name)
+  (logged-failure ($package:output:undefined)))
+
 (define empty-package
   (package ""
            null
@@ -99,8 +103,7 @@
            (hasheq)
            null
            null
-           void))
-
+           output-not-found))
 
 ;===============================================================================
 ; Take care not to use XIDEN_* settings anywhere else in this
