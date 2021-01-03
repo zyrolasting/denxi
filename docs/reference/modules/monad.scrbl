@@ -50,6 +50,6 @@ Binds an expression on the right hand side to an identifier on the
 left hand side in the context of @racket[mdo].
 
 Raises an error when used outside of @racket[mdo]. Since @tech{package
-outputs} and @tech{actions} use implicit @racket[mdo] forms,
-@racket[:=] may also appear within them.
+outputs} use implicit @racket[mdo] forms, @racket[:=] may also appear
+within them.
 }
