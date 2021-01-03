@@ -120,7 +120,7 @@
                        (define pkg (expand-instance . pd)))]
     [(_ (x . xs) pd ml)
      (syntax-parse #'x
-       #:literals (#%expression)
+       #:literals (define define-values #%expression)
        [(m:mod . args)
         #'(collect-terms xs (x . pd) ml)]
        [(define . args)
