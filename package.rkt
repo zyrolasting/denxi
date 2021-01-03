@@ -307,7 +307,7 @@
                 _) pkg)
      (define (build-output rc build-dir output-name)
        (call-with-applied-settings rc
-        (λ ()                          
+        (λ ()
           (parameterize ([current-directory build-dir]
                          [current-inputs (package-inputs pkg)])
             (define variant ((package-build pkg) output-name))
@@ -467,6 +467,7 @@
   ($use pkgeval))
 
 
+
 (define-logged (validate-os-support pkgeval)
   (let ([supported (pkgeval 'os-support)])
     (if (member (system-type 'os) supported)
@@ -486,6 +487,43 @@
 
 
 (module+ test
+  (let ([ev (make-trusted-evaluator '((input "c1" (sources "s")) (input "c2" (sources "s2"))))])
+    (test-logged-procedure
+     "Allow all concrete inputs"
+     (validate-inputs ev)
+     (λ (val messages)
+       (check-eq? val ev)
+       (check-pred null? messages))))
+
+  (test-logged-procedure
+   "Disallow abstract inputs"
+   (validate-inputs (make-trusted-evaluator '((input "concrete" (sources "s") (integrity 'sha1 #""))
+                                              (input "a"))))
+   (λ (val messages)
+     (check-eq? val FAILURE)
+     (check-match messages
+                  (list ($package:abstract-input "a")))))
+
+
+  (let ([other-os (filter (λ (v) (not (eq? v (system-type 'os)))) ALL_OS_SYMS)])
+    (test-logged-procedure
+     "Disallow packages that don't list current os support"
+     (validate-os-support
+      (make-trusted-evaluator
+       `((os-support . ,other-os))))
+     (λ (val messages)
+       (check-eq? val FAILURE)
+       (check-match messages
+                    (list ($package:unsupported-os (? (λ (v) (equal? v other-os)) _)))))))
+
+  (let ([ev (make-trusted-evaluator `((os-support ,(system-type 'os))))])
+    (test-logged-procedure
+     "Allow packages that support the current os"
+     (validate-inputs ev)
+     (λ (val messages)
+       (check-eq? val ev)
+       (check-pred null? messages))))
+
   (test-case "Check Racket version support"
     (define with-unsupported-version
       (make-trusted-evaluator
@@ -581,19 +619,18 @@
 ; communicating status to the user.
 (define (package-evaluator->xiden-query pkgeval)
   (xiden-query (pkgeval 'provider)
-               (pkgeval 'package)
+               (pkgeval 'name)
                (pkgeval 'edition)
                (~a (pkgeval 'revision-number))
                (~a (pkgeval 'revision-number))
                "ii"))
 
-#;(module+ test
+(module+ test
   (test-equal? "Compute package name"
                (package-evaluator->xiden-query
-                (make-trusted-package
-                   (make-package-definition-datum
-                    `((provider "acme")
-                      (package "anvil")
-                      (edition "draft")
-                      (revision-number 1)))))
+                (make-trusted-evaluator
+                 `((provider "acme")
+                   (name "anvil")
+                   (edition "draft")
+                   (revision-number 1))))
                (xiden-query "acme" "anvil" "draft" "1" "1" "ii")))
