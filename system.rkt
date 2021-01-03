@@ -3,7 +3,9 @@
 (require "contract.rkt")
 
 (provide (all-from-out racket/system)
+         os-sym
          (contract-out
+          [ALL_OS_SYMS (listof symbol?)]
           [run (->* (path-string?)
                     (#:expected-exit-codes (listof (integer-in 0 255))
                      #:fail-on-stderr? any/c
@@ -18,8 +20,14 @@
 (require racket/generic
          racket/port
          racket/system
+         syntax/parse
          "logged.rkt"
          "message.rkt")
+
+(define ALL_OS_SYMS '(unix windows macosx))
+
+(define-syntax-class os-sym
+  (pattern (~var s id) #:when (member (syntax-e #'s) ALL_OS_SYMS)))
 
 (define-generics subprocess-controller
   [get-status subprocess-controller handle]

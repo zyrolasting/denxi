@@ -14,6 +14,14 @@
 @racketmodname[racket/system]. It specializes process management in
 the context of packages.
 
+@defthing[ALL_OS_SYMS (listof symbol?)]{
+A manually maintained list of every known value returned from @racket[(system-type 'os)].
+}
+
+@defidform[#:kind "syntax-class" os-sym]{
+A syntax class that matches members of @racket[ALL_OS_SYMS].
+}
+
 @defproc[(run [#:expected-exit-codes expected-exit-codes (listof (integer-in 0 255)) '(0)]
               [#:timeout timeout exact-positive-integer? (* 60 60)]
               [#:stdin stdin (or/c #f input-port?) #f]
