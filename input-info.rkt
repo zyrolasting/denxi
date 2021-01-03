@@ -90,7 +90,9 @@
   (input-info name sources integrity signature))
 
 (define-logged (find-input inputs name)
-  (or (findf (λ (info) (equal? name (input-info-name info))) inputs)
+  (define result (findf (λ (info) (equal? name (input-info-name info))) inputs))
+  (if result
+      ($use result)
       ($fail ($input-not-found name))))
 
 (define-logged (release-input input)

@@ -54,13 +54,14 @@ A contract that recognizes @tech{package inputs} with only a name defined.
 A contract that recognizes @tech{package inputs} with a name and at least one source.
 }
 
-
-@defproc[(input-ref [inputs (listof input-info?)] [name string?]) (or/c #f input-info?)]{
-Returns the first element of @racket[inputs] @racket[I] where
-@racket[(input-info-name I)] is @racket[name], or @racket[#f] if no
-such element exists.
+@defthing[current-inputs (parameter/c (listof input-info?))]{
+A @tech/reference{parameter} bound to inputs to use with @racket[input-ref].
 }
 
+@defproc[(input-ref [name string?]) (logged/c input-info?)]{
+Returns the first element of @racket[(current-inputs)] with an
+@racket[input-info-name] @racket[equal?] to @racket[name].
+}
 
 @defproc[(find-input [inputs (listof input-info?)] [name string?]) (logged/c input-info?)]{
 Returns a @tech{logged procedure} @racketid[P] that either
