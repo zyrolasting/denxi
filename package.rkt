@@ -9,14 +9,17 @@
 ; - Multiple test submodules are allowed.
 ;
 
+(provide install
+         empty-package
+         (struct-out package))
 
-(provide install)
 
 (require racket/function
          racket/format
          racket/list
          racket/sandbox
          version/utils
+         syntax/parse/define
          "codec.rkt"
          "contract.rkt"
          "file.rkt"
@@ -38,6 +41,7 @@
          "signature.rkt"
          "source.rkt"
          "string.rkt"
+         "system.rkt"
          "url.rkt"
          "version.rkt"
          "workspace.rkt")
@@ -63,7 +67,39 @@
 (define+provide-message $package:unsupported-os $package (supported))
 (define+provide-message $package:security $package (reporting-guard summary args))
 
-(define DEFAULT_OUTPUT "default")
+(define DEFAULT_STRING "default")
+
+(struct package
+  (description
+   tags
+   url
+   provider
+   name
+   edition
+   revision-number
+   revision-names
+   os-support
+   racket-versions
+   metadata
+   inputs
+   output-names
+   build))
+
+(define empty-package
+  (package ""
+           null
+           ""
+           DEFAULT_STRING
+           DEFAULT_STRING
+           DEFAULT_STRING
+           0
+           null
+           ALL_OS_SYMS
+           null
+           (hasheq)
+           null
+           null
+           void))
 
 
 ;===============================================================================
@@ -94,7 +130,7 @@
        ; Sec. 3
        (fulfil-package-output #:allow-unsupported-racket? (XIDEN_ALLOW_UNSUPPORTED_RACKET)
                               (abbreviate-exact-xiden-query (package-evaluator->xiden-query pkgeval))
-                              (or output-name-or-#f DEFAULT_OUTPUT)
+                              (or output-name-or-#f DEFAULT_STRING)
                               (or link-path-or-#f (pkgeval 'package))
                               pkgeval)
 
