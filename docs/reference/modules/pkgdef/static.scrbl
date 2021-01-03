@@ -46,7 +46,7 @@ A contract that matches a @tech{bare} @tech{package definition}.
 }
 
 
-@defproc[package-definition-datum? predicate/c]{
+@defthing[package-definition-datum? predicate/c]{
 Equivalent to @racket[(racket-module-code? PACKAGE_DEFINITION_MODULE_LANG v)].
 }
 
