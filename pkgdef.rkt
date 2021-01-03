@@ -85,13 +85,25 @@
 (define-simple-macro (set-field* f:id v:expr)
   (λ (st) (set-field st f v)))
 
-(begin-for-syntax (define-struct modifier (f)))
+(begin-for-syntax
+  (define-struct modifier (f)
+    #:property prop:procedure
+    (λ (m stx)
+      (syntax-parse stx
+        [(_ . args)
+         (with-syntax ([f (modifier-f m)])
+           #'(f args))]))))
 
-(define-simple-macro (define-modifier (m . args) body)
-  (begin
-    (define-syntax m-f
-      (syntax-parser [(_ args) #'body]))
-  (define-syntax m (modifier #'m-f))))
+
+(define-syntax (define-modifier stx)
+  (syntax-parse stx
+    #:track-literals
+    [((~var macro-id id) (m . args) body)
+     (with-syntax ([new-id (format-id #'m "~a-parser" #'m)])
+       #'(begin
+           (define-syntax new-id
+             (syntax-parser [(_ args) #'body]))
+           (define-syntax m (modifier #'new-id))))]))
 
 (begin-for-syntax
   (define-syntax-class mod
@@ -105,19 +117,27 @@
                        (provide pkg)
                        (define pkg (expand-instance . pd)))]
     [(_ (x . xs) pd ml)
-     (syntax-parse #'x
-       #:literals (define)
-       [(m:mod . args)
-        #'(collect-terms xs (x . pd) ml)]
-       ; Add any other non-collectable Racket terms to the below clause
-       [(define . args)
-        #'(collect-terms xs pd (x . ml))])]))
+     (let loop ([target #'x])
+       (syntax-parse #'x
+         #:literals (#%expression)
+         ; Handle an artifact of partial expansion in single-form modules.
+         ; e.g. (module foo xiden/pkgdef (name "what"))
+         ;      (module foo xiden/pkgdef (#%expression (λ (st) ...)))
+         [(#%expression sub)
+          #'(collect-terms xs (sub . pd) ml)]
+         [(m:mod . args)
+          #'(collect-terms xs (x . pd) ml)]
+         ; Add any other non-collectable Racket terms to the below clause
+         [(define . args)
+          #'(collect-terms xs pd (x . ml))]))]))
 
 (define-syntax (expand-instance stx)
   (syntax-parse stx
     [(_) #'empty-package]
     [(_ (m:mod . args) . more)
-     #'((m.f args) (expand-instance . more))]))
+     #'((m.f args) (expand-instance . more))]
+    [(_ partial . more)
+     #'(partial (expand-instance . more))]))
 
 
 
