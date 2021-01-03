@@ -70,7 +70,7 @@
          (build-runtime-configuration flags)
          (λ ()
            (define-values (exit-code program-output) (call/cc run!))
-           (print-program-output! program-output format-message)
+           (write-message-log program-output format-message)
            (use-exit-code exit-code))))))))
 
 
@@ -86,16 +86,6 @@
           (values (hash-ref XIDEN_SETTINGS sym)
                   val)))))))
 
-
-; Program output can be a messy log so that users don't always have to
-; construct an organized list of messages.
-(define (print-program-output! program-output format-message)
-  (define messages
-    (if (list? program-output)
-        (reverse (flatten program-output))
-        (in-value program-output)))
-  (for ([m messages])
-    (write-message m format-message)))
 
 
 

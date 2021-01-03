@@ -28,6 +28,12 @@ A wrapper for a message that only appears to a user if
 @racket[(XIDEN_VERBOSE)] is @racket[#t].
 }
 
+@defproc[(write-message-log [messages messy-log/c] [format-message message-formatter/c]) void?]{
+Writes every message @racket[m] in @racket[messages] using
+@racket[(write-message m format-message (current-output-port))].
+}
+
+
 @defproc[(write-message [m $message?] [#:newline? newline? any/c #t] [format-message message-formatter/c] [out output-port? (current-output-port)]) void?]{
 Writes a @tech{message} to @racket[out] according to the values of
 @racket[(XIDEN_READER_FRIENDLY_OUTPUT)], @racket[(XIDEN_FASL_OUTPUT)],

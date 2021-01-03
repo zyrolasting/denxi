@@ -5,15 +5,19 @@
 (require "contract.rkt")
 
 (provide (contract-out
+          [write-message-log
+           (-> messy-log/c message-formatter/c void?)]
           [write-message
            (->* ($message?) (#:newline? any/c message-formatter/c output-port?) void?)]))
 
 (require racket/date
          racket/fasl
+         racket/list
          racket/match
          racket/pretty
          racket/serialize
          "format.rkt"
+         "logged.rkt"
          "message.rkt"
          "rc.rkt")
 
@@ -24,6 +28,17 @@
       (and (XIDEN_VERBOSE)
            ($verbose-message m))
       m))
+
+
+; Program output can be a messy log so that users don't always have to
+; construct an organized list of messages.
+(define (write-message-log program-output format-message)
+  (define messages
+    (if (list? program-output)
+        (reverse (flatten program-output))
+        (in-value program-output)))
+  (for ([m messages])
+    (write-message m format-message)))
 
 
 (define (write-message v
