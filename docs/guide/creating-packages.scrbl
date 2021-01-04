@@ -36,7 +36,7 @@ this example should not need much explanation.
 @racketmod[#:file "definition.rkt"
 xiden
 
-(package "my-first-package")
+(name "my-first-package")
 (provider "sagegerard.com")
 (description "Fun playtime in a tutorial")
 (tags "fun" "tutorial" "example")
@@ -60,7 +60,7 @@ Next, let's declare the version of our package.
 @racketmod[#:file "definition.rkt"
 xiden
 
-(package "my-first-package")
+(name "my-first-package")
 (provider "sagegerard.com")
 (description "Fun playtime in a tutorial")
 (tags "fun" "tutorial" "example")
@@ -220,7 +220,7 @@ up.
 @racketmod[#:file "definition.rkt"
 xiden
 
-(package "my-first-package")
+(name "my-first-package")
 (provider "sagegerard.com")
 (description "Fun playtime in a tutorial")
 (tags "fun" "tutorial" "example")
@@ -272,7 +272,7 @@ define one for now.
 @racketmod[#:file "definition.rkt"
 xiden
 
-(package "my-first-package")
+(name "my-first-package")
 (provider "sagegerard.com")
 (description "Fun playtime in a tutorial")
 (tags "fun" "tutorial" "example")
@@ -701,7 +701,7 @@ definition further in @secref{cli}.
 @racketmod[#:file "definition.rkt"
 xiden
 
-(package "my-first-package")
+(name "my-first-package")
 (provider "example.com")
 (description "Fun playtime in a tutorial")
 (tags "fun" "tutorial" "example")
