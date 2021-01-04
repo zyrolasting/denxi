@@ -66,6 +66,7 @@
 (define+provide-message $package:abstract-input $package (versions))
 (define+provide-message $package:unsupported-racket-version $package (versions))
 (define+provide-message $package:unsupported-os $package (supported))
+(define+provide-message $package:unavailable-output $package (name requested available))
 (define+provide-message $package:security $package (reporting-guard summary args))
 
 (define DEFAULT_STRING "default")
@@ -457,7 +458,8 @@
                                output-name
                                link-path
                                pkgeval)
-  (mdo (validate-inputs pkgeval) ; 3.1
+  (mdo (validate-requested-output pkgeval output-name) ; 3.1
+       (validate-inputs pkgeval)
        (validate-os-support pkgeval)
        (validate-racket-support #:allow-unsupported? allow-unsupported-racket? pkgeval)
        (reuse-or-build-package-output pkgeval output-name link-path))) ; 3.2
@@ -493,9 +495,33 @@
            ($use pkgeval)
            ($fail ($package:unsupported-racket-version racket-support)))])))
 
+(define-logged (validate-requested-output pkgeval requested)
+  (let ([available (pkgeval 'output-names)])
+    (if (member requested available)
+        ($use pkgeval)
+        ($fail ($package:unavailable-output (abbreviate-exact-xiden-query (evaluator->xiden-query pkgeval))
+                                            requested
+                                            available)))))
 
 
 (module+ test
+  (let ([ev (make-trusted-evaluator '((output "default" "")))])
+    (test-logged-procedure
+     "Allow only defined outputs"
+     (validate-requested-output ev "default")
+     (λ (val messages)
+       (check-eq? val ev)
+       (check-pred null? messages)))
+    (test-logged-procedure
+     "Reject unavailable outputs"
+     (validate-requested-output ev "other")
+     (λ (val messages)
+       (check-eq? val FAILURE)
+       (check-match messages
+                    (list ($package:unavailable-output "default:default:default:0"
+                                                       "other"
+                                                       '("default")))))))
+
   (let ([ev (make-trusted-evaluator '((input "c1" (sources "s")) (input "c2" (sources "s2"))))])
     (test-logged-procedure
      "Allow all concrete inputs"

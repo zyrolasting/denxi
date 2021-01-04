@@ -223,6 +223,12 @@
                                       variant)))
                         versions)))))]
 
+  [($package:unavailable-output name requested available)
+   (format "~a does not define output ~s. Available outputs: ~s"
+           name
+           requested
+           available)]
+
   [($fetch:scope name source message)
    (format "~a: ~a"
            (if (or (equal? name source)
