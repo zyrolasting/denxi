@@ -21,7 +21,7 @@ When @project-name selects a @tech{workspace} directory, it will load
 example of what that file might look like:
 
 @racketmod[
-xiden
+xiden/rcfile
 
 (define XIDEN_SANDBOX_EVAL_MEMORY_LIMIT_MB 200)
 (define XIDEN_VERBOSE #f)
