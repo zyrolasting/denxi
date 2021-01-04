@@ -49,7 +49,7 @@ any/c)] procedure, or a non-procedure. The procedure form must accept
 default value.
 
 @racketblock[
-(define-setting PICKED_NUMBER (integer-in 0 100))
+(define-setting PICKED_NUMBER (integer-in 0 100) 0)
 ]
 }
 
