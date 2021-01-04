@@ -20,6 +20,7 @@
    "../port.rkt"
    "../racket-version.rkt"
    "../rc.rkt"
+   "../security.rkt"
    "../setting.rkt"
    "../signature.rkt"
    "../source.rkt"

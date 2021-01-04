@@ -113,6 +113,12 @@
      "Package input overrides"]))
 
 
+(define (restrict-preamble name)
+  (format "~a halted because"
+          (let ([str (~a name)])
+            (if (equal? str "")
+                "Process"
+                (~a " " str " ")))))
 
 
 (define (localized-comma-list l conjunction)
@@ -326,25 +332,42 @@
       (format "Malformed extraction report: ~s"
               ($extract-report status target))])]
 
-  [($package:security 'network 'blocked-listen _)
-   "Unauthorized attempt to listen for connections"]
+  [($restrict:budget name 'time amount)
+   (format "~a it took longer than ~a seconds"
+           (restrict-preamble name)
+           amount)]
 
-  [($package:security 'file 'blocked-delete (list _ path _))
-   (format "Blocked unauthorized delete on ~a" path)]
+  [($restrict:budget name 'space amount)
+   (format "~a its custodian held more than ~a mebibytes"
+           (restrict-preamble name)
+           amount)]
 
-  [($package:security 'file 'blocked-write (list _ path _))
-   (format "Blocked unauthorized write to ~a" path)]
+  [($restrict:operation name 'network 'blocked-listen _)
+   (format "~a it tried to listen for connections"
+           (restrict-preamble name))]
 
-  [($package:security 'link 'blocked-link (list _ link-path target-path))
-   (format (~a "Blocked link creation at ~a (target: ~a)~n"
+  [($restrict:operation name 'file 'blocked-delete (list _ path _))
+   (format "~a it tried to delete ~a"
+           (restrict-preamble name))]
+
+  [($restrict:operation name 'file 'blocked-write (list _ path _))
+   (format "~a it tried to write to ~a"
+           (restrict-preamble name)
+           path)]
+
+  [($restrict:operation name 'link 'blocked-link (list _ link-path target-path))
+   (format (~a "~a it tried to create a link at ~a (target: ~a)~n"
                "Packages can only create links in their workspace.")
-           link-path target-path)]
+           (restrict-preamble name)
+           link-path
+           target-path)]
 
-  [($package:security 'file 'blocked-execute (list _ path _))
+  [($restrict:operation name 'file 'blocked-execute (list _ path _))
    (if (file-exists? path)
-       (format (~a "Unauthorized attempt to execute ~a.~n"
+       (format (~a "~a it tried to execute ~a.~n"
                    "To trust this executable, add this to ~a:~n"
                    "(integrity 'sha384 (base64 ~s))")
+               (restrict-preamble name)
                path
                (setting-id XIDEN_TRUSTED_EXECUTABLES)
                (~a (encode 'base64 (make-digest path 'sha384))))
