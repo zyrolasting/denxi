@@ -108,7 +108,7 @@ Returns a @tech{logged procedure} called for its effect.  The effect
 being that a symbolic link gets created at @racket[link-path],
 pointing to a directory. That directory contains the files
 corresponding to the @racket[output-name] defined in
-@racket[pkgdef-variant]).
+@racket[package-definition-variant]).
 
 If @racket[link-path] is @racket[#f], then the name of the symbolic
 link will match the name of the package.
