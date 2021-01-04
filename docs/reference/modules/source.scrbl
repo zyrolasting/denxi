@@ -8,6 +8,7 @@
                     xiden/rc
                     xiden/source
                     xiden/message
+                    @except-in[xiden/pkgdef #%module-begin url]
                     xiden/printer
                     xiden/url]
                     "../../shared.rkt"]
