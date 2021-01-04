@@ -18,7 +18,7 @@ First, make sure the following programs are available in your @tt{PATH}.
 ]
 
 
-@section{The Easy Way: Use Racket's Default Package Catalog}
+@section{Install from Racket's Default Package Catalog}
 
 @project-name is available as a vanilla Racket package on the default
 catalog. Run @litchar|{raco pkg install xiden}| to install it, and
@@ -44,10 +44,8 @@ log}.}
 
 ]
 
-Use the next method to avoid all of these risks.
 
-
-@section{The Stable Way: Install from Source}
+@section{Install from Source}
 
 This method builds @project-name from your desired version of its
 source code.
