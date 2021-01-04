@@ -18,7 +18,6 @@
 (require racket/function
          racket/format
          racket/list
-         racket/sandbox
          version/utils
          syntax/parse/define
          "codec.rkt"
@@ -66,8 +65,7 @@
 (define+provide-message $package:abstract-input $package (versions))
 (define+provide-message $package:unsupported-racket-version $package (versions))
 (define+provide-message $package:unsupported-os $package (supported))
-(define+provide-message $package:unavailable-output $package (name requested available))
-(define+provide-message $package:security $package (reporting-guard summary args))
+(define+provide-message $package:unavailable-output $package (available))
 
 (struct package
   (description
@@ -104,50 +102,25 @@
            null
            output-not-found))
 
-;===============================================================================
-; Take care not to use XIDEN_* settings anywhere else in this
-; module. The more they spread out, the harder it gets to predict how
-; a process will behave.
-;
+(define-syntax-rule (build-package fields ...)
+  (struct-copy package empty-package fields ...))
 
 (define (install link-path-or-#f output-name-or-#f package-definition-source)
-  (mdo ; Sec. 1
-       pkgdef := (get-package-definition #:override-specs (XIDEN_INPUT_OVERRIDES)
-                                         #:before-new-package (load-plugin-override)
-                                         package-definition-source
-                                         (mebibytes->bytes (XIDEN_FETCH_PKGDEF_SIZE_MB)))
+  (mdo pkg := (get-package #:override-specs (XIDEN_INPUT_OVERRIDES)
+                           #:before-new-package (load-plugin-override)
+                           package-definition-source
+                           (mebibytes->bytes (XIDEN_FETCH_PKGDEF_SIZE_MB)))
 
-       ; Sec. 2
-       pkgeval := (logged-unit
-                   (make-untrusted-evaluator
-                    #:memory-limit (XIDEN_SANDBOX_MEMORY_LIMIT_MB)
-                    #:eval-memory-limit (XIDEN_SANDBOX_EVAL_MEMORY_LIMIT_MB)
-                    #:eval-time-limit (XIDEN_SANDBOX_EVAL_TIME_LIMIT_SECONDS)
-                    #:trusted-executables (XIDEN_TRUSTED_EXECUTABLES)
-                    #:allowed-envvars (XIDEN_ALLOW_ENV)
-                    #:trust-any-executable? (XIDEN_TRUST_ANY_EXECUTABLE)
-                    #:workspace (workspace-directory)
-                    #:attach-stdin? #f
-                    pkgdef))
-
-       ; Sec. 3
        (fulfil-package-output #:allow-unsupported-racket? (XIDEN_ALLOW_UNSUPPORTED_RACKET)
-                              (abbreviate-exact-package-query
-                               (evaluator->package-query pkgeval))
                               (or output-name-or-#f DEFAULT_STRING)
-                              (or link-path-or-#f (pkgeval 'name))
-                              pkgeval)
-
-       ; Sec. 4
-       (clean-up pkgeval)
+                              (or link-path-or-#f (package-name pkg))
+                              pkg)
 
        (logged-unit SUCCESS)))
 
 
-
-
 ;===============================================================================
-; 1: MAKE PACKAGE DEFINITION
+; 1: MAKE PACKAGE
 ;
 ; The user provides a package definition source. If it's a string,
 ; treat it like a source for a package input. Otherwise, try to use
@@ -157,14 +130,22 @@
 ; standardize dependencies, etc.
 ;
 
-(define (get-package-definition #:before-new-package before-new-package
-                                #:override-specs override-specs
-                                source
-                                max-size)
-  (mdo pkgdef := (find-original-package-definition source max-size)
-       (logged-unit
-        (bare-racket-module-code
-         (override-package-definition pkgdef before-new-package override-specs)))))
+
+; Use the module namespace to dynamically extend registered modules.
+(define-namespace-anchor anchor)
+(define module-namespace (namespace-anchor->namespace anchor))
+
+(define (get-package #:before-new-package before-new-package
+                     #:override-specs override-specs
+                     source
+                     max-size)
+  (mdo original := (find-original-package-definition source max-size)
+       (let ([overridden (override-package-definition original)])
+         ; The safety of eval depends on the reader/expander guards
+         ; in read-package-definition. That prevents arbitrary code
+         ; from reaching here.
+         (eval overridden module-namespace)
+         (logged-unit (dynamic-require `',(cadr overridden) 'pkg)))))
 
 
 (define (find-original-package-definition source max-size)
@@ -198,8 +179,9 @@
   (define plugin-override (before-new-package stripped))
   (define package-name (get-static-abbreviated-query plugin-override))
   (define input-overrides (find-per-input-overrides package-name override-specs))
-  (override-inputs plugin-override input-overrides))
-
+  (make-package-definition-datum
+   (bare-racket-module-code
+    (override-inputs plugin-override input-overrides))))
 
 (define (fetch-package-definition source max-size)
   (fetch source
@@ -234,221 +216,12 @@
        '((#px"dum" . (input "logic" (integrity 'sha1 (hex "abc"))))
          (#px"zooks" . (input "nonsense" (integrity 'sha1 (hex "abc")))))))
 
-    (check-equal? (bare-racket-module-code overridden)
-                  '((provider "wonderland")
-                    (package "tweedledum")
-                    (input "logic" (integrity 'sha1 (hex "abc")))
-                    (input "nonsense")))))
-
-
-;===============================================================================
-; 2: MAKE EVALUATOR
-;
-; This acts as inflection point between a privileged runtime and a
-; less-privileged runtime.  This is not a substitute for OS-level
-; security. All of the code in this section deals with restricting a
-; evaluator for running package code.
-
-(define (make-untrusted-evaluator #:memory-limit memory-limit
-                                  #:eval-memory-limit eval-memory-limit
-                                  #:eval-time-limit eval-time-limit
-                                  #:trusted-executables trusted-executables
-                                  #:allowed-envvars allowed-envvars
-                                  #:trust-any-executable? trust-any-executable?
-                                  #:workspace workspace
-                                  #:attach-stdin? attach-stdin?
-                                  pkgdef)
-  (parameterize ([sandbox-input (and attach-stdin? (current-input-port))]
-                 [sandbox-output (current-output-port)]
-                 [sandbox-error-output (current-error-port)]
-                 [sandbox-path-permissions (derive-path-permissions)]
-                 [sandbox-memory-limit memory-limit]
-                 [sandbox-eval-limits (list eval-time-limit eval-memory-limit)]
-                 [sandbox-namespace-specs (append (sandbox-namespace-specs)
-                                                  '(xiden/rc xiden/package))]
-                 [sandbox-make-environment-variables (λ () (make-envvar-subset allowed-envvars))]
-                 [sandbox-security-guard (make-package-security-guard ; 2.2
-                                          #:trust-any-executable? trust-any-executable?
-                                          #:trust-executables trusted-executables
-                                          #:workspace workspace)])
-    (make-module-evaluator #:language 'racket/base
-                           (make-package-installation-module pkgdef))))
-
-
-(define (make-trusted-evaluator pkgdef)
-  (call-with-trusted-sandbox-configuration
-   (λ ()
-     (make-module-evaluator #:language 'racket/base
-                            (make-package-installation-module pkgdef)))))
-
-
-(define (make-package-installation-module pkgdef)
-  `(module anon racket/base
-     (module def xiden/pkgdef . ,pkgdef)
-     (require racket/match
-              xiden/input-info
-              xiden/l10n
-              xiden/logged
-              xiden/package
-              xiden/printer
-              xiden/query
-              xiden/rc
-              xiden/setting
-              'def)
-     (match-define
-       (package description
-                tags
-                url
-                provider
-                name
-                edition
-                revision-number
-                revision-names
-                os-support
-                racket-versions
-                metadata
-                inputs
-                output-names
-                _) pkg)
-     (define (build-output rc build-dir output-name)
-       (call-with-applied-settings
-        (for/hash ([(sym val) rc])
-          (values (hash-ref XIDEN_SETTINGS sym) val))
-        (λ ()
-          (parameterize ([current-directory build-dir]
-                         [current-inputs (package-inputs pkg)])
-            (define variant ((package-build pkg) output-name))
-            (define program (if (logged? variant) variant (logged-unit variant)))
-            (define-values (value messages) (run-log program))
-
-            (write-message ($package:log (abbreviate-exact-package-query
-                                          (make-exact-package-query provider
-                                                                    name
-                                                                    edition
-                                                                    revision-number))
-                                         output-name
-                                         messages)
-                           (get-message-formatter))
-
-            (not (eq? value FAILURE))))))))
-
-
-
-;-------------------------------------------------------------------------------
-; 2.1: Sandbox permissions (sans-security guard)
-;
-; Extract a selection of envvars for exposure to sandboxed evaluator
-
-(define (make-envvar-subset allowed [input-set (current-environment-variables)])
-  (define subset-names (remove-duplicates (map coerce-bytes (cons "PATH" allowed))))
-  (apply make-environment-variables
-         (for/fold ([mappings null])
-                   ([name (in-list subset-names)])
-           (define value (environment-variables-ref input-set name))
-           (if value
-               (cons name
-                     (cons (environment-variables-ref input-set name)
-                           mappings))
-               mappings))))
-
-
-(define (derive-path-permissions)
-  (append (map (λ (p) `(exists ,p)) (filesystem-root-list/cached))
-          (sandbox-path-permissions)))
-
-
-(define (get-writable-workspace-directories [wd (workspace-directory)])
-  (list (build-path wd "var/xiden")
-        (build-path wd "tmp")))
-
-
-(module+ test
-  (test-case "Make envvar subset"
-    (define subset
-      (make-envvar-subset
-       '(#"bar")
-       (make-environment-variables #"foo" #"1"
-                                   #"bar" #"2"
-                                   #"baz" #"3")))
-
-    (check-false (environment-variables-ref subset #"foo"))
-    (check-false (environment-variables-ref subset #"baz"))
-    (check-equal? (environment-variables-ref subset #"bar") #"2"))
-
-  (test-not-exn "Compute acceptable path permissions"
-                (λ ()
-                  (parameterize ([sandbox-path-permissions (derive-path-permissions)])
-                    (void)))))
-
-
-;-------------------------------------------------------------------------------
-; 2.2: Security guard
-;
-; Packages in the Racket runtime should only concern themselves with
-; writing files in designated workspace directories, running
-; subprocesses that the user trusts, and downloading data under safety
-; limits.
-;
-; The only way to block an unwanted operation is to raise a value.
-; Note that I raise a message type to avoid breaking localization.
-; Raising exceptions means imposing a language on the reader.
-
-(define (make-package-security-guard #:trust-any-executable? trust-any-executable?
-                                     #:trust-executables trust-executables
-                                     #:workspace [ws (workspace-directory)])
-  (make-security-guard
-   (current-security-guard)
-   (make-file-guard #:trust-any-executable? trust-any-executable?
-                    #:trust-executables trust-executables
-                    #:writeable-directories (get-writable-workspace-directories ws))
-   (make-network-guard)
-   (make-link-guard ws)))
-
-
-(define (make-file-guard #:trust-any-executable? trust-any-executable?
-                         #:trust-executables trust-executables
-                         #:writeable-directories write-dirs)
-  (let ([trust-executable? (bind-trust-list trust-executables)])
-    (λ (sym path-or-#f ops)
-      (define (check-destructive-op op path)
-        (define test (curry path-prefix? (normalize-path path)))
-        (unless (ormap test write-dirs)
-          (raise ($package:security 'file op (list sym path-or-#f ops)))))
-
-      (when path-or-#f
-        (cond [(member 'execute ops)
-               (unless (or (equal? "openssl" (path->string (file-name-from-path path-or-#f)))
-                           trust-any-executable?
-                           (trust-executable? path-or-#f))
-                 (raise ($package:security 'file
-                                           'blocked-execute
-                                           (list sym path-or-#f ops))))]
-
-              [(member 'write ops)
-               (check-destructive-op 'blocked-write path-or-#f)]
-
-              [(member 'delete ops)
-               (check-destructive-op 'blocked-delete path-or-#f)])))))
-
-
-(define (make-network-guard)
-  (λ (sym hostname-or-#f port-or-#f client-or-server)
-    (unless hostname-or-#f
-      (raise ($package:security 'network 'blocked-listen
-                                (list sym hostname-or-#f port-or-#f client-or-server))))))
-
-
-(define (make-link-guard workspace)
-  (define (path-ok? p)
-    (path-prefix? (simplify-path (if (complete-path? p) p (build-path workspace p)))
-                  workspace))
-
-  (λ (op link-path target-path)
-    (unless (path-ok? (normalize-path target-path))
-      (raise ($package:security 'link
-                                'blocked-link
-                                (list op link-path target-path))))))
-
+    (check-equal? overridden
+                  (make-package-definition-datum
+                   '((provider "wonderland")
+                     (package "tweedledum")
+                     (input "logic" (integrity 'sha1 (hex "abc")))
+                     (input "nonsense"))))))
 
 
 
@@ -456,16 +229,19 @@
 ; 3: OUTPUT FULFILMENT
 
 (define (fulfil-package-output #:allow-unsupported-racket? allow-unsupported-racket?
-                               package-name
                                output-name
                                link-path
-                               pkgeval)
-  (mdo (validate-requested-output pkgeval output-name) ; 3.1
-       (validate-inputs pkgeval)
-       (validate-os-support pkgeval)
-       (validate-racket-support #:allow-unsupported? allow-unsupported-racket? pkgeval)
-       (reuse-or-build-package-output pkgeval output-name link-path))) ; 3.2
-
+                               pkg)
+  (logged-combine (mdo (validate-requested-output pkg output-name) ; 3.1
+                       (validate-inputs pkg)
+                       (validate-os-support pkg)
+                       (validate-racket-support #:allow-unsupported? allow-unsupported-racket? pkg)
+                       (reuse-or-build-package-output pkg output-name link-path)) ; 3.2
+                  (λ (to-wrap messages)
+                    (cons ($package:log (abbreviate-exact-package-query (package->package-query pkg))
+                                        output-name
+                                        to-wrap)
+                          messages))))
 
 ;-------------------------------------------------------------------------------
 ; 3.1: Validation
@@ -473,41 +249,38 @@
 ; Makes sure that the package agrees with the environment and runtime
 ; configuration.
 
-(define-logged (validate-inputs pkgeval)
-  (for ([input (in-list (pkgeval 'inputs))])
+(define-logged (validate-inputs pkg)
+  (for ([input (in-list (package-inputs pkg))])
     (when (abstract-input-info/c input)
       ($fail ($package:abstract-input (input-info-name input)))))
-  ($use pkgeval))
+  ($use pkg))
 
 
-
-(define-logged (validate-os-support pkgeval)
-  (let ([supported (pkgeval 'os-support)])
+(define-logged (validate-os-support pkg)
+  (let ([supported (package-os-support pkg)])
     (if (member (system-type 'os) supported)
-        ($use pkgeval)
+        ($use pkg)
         ($fail ($package:unsupported-os supported)))))
 
 
-(define-logged (validate-racket-support #:allow-unsupported? allow-unsupported? pkgeval)
-  (let ([racket-support (check-racket-version-ranges (version) (pkgeval 'racket-versions))])
+(define-logged (validate-racket-support #:allow-unsupported? allow-unsupported? pkg)
+  (let ([racket-support (check-racket-version-ranges (version) (package-racket-versions pkg))])
     (case racket-support
-      [(supported) ($use pkgeval)]
+      [(supported) ($use pkg)]
       [(unsupported)
        (if allow-unsupported?
-           ($use pkgeval)
+           ($use pkg)
            ($fail ($package:unsupported-racket-version racket-support)))])))
 
-(define-logged (validate-requested-output pkgeval requested)
-  (let ([available (pkgeval 'output-names)])
+(define-logged (validate-requested-output pkg requested)
+  (let ([available (package-output-names pkg)])
     (if (member requested available)
-        ($use pkgeval)
-        ($fail ($package:unavailable-output (abbreviate-exact-package-query (evaluator->package-query pkgeval))
-                                            requested
-                                            available)))))
+        ($use pkg)
+        ($fail ($package:unavailable-output available)))))
 
 
 (module+ test
-  (let ([ev (make-trusted-evaluator '((output "default" "")))])
+  (let ([ev (build-package [output-names '("default")])])
     (test-logged-procedure
      "Allow only defined outputs"
      (validate-requested-output ev "default")
@@ -520,11 +293,10 @@
      (λ (val messages)
        (check-eq? val FAILURE)
        (check-match messages
-                    (list ($package:unavailable-output "default:default:default:0"
-                                                       "other"
-                                                       '("default")))))))
+                    (list ($package:unavailable-output '("default")))))))
 
-  (let ([ev (make-trusted-evaluator '((input "c1" (sources "s")) (input "c2" (sources "s2"))))])
+  (let ([ev (build-package [inputs (list (make-input-info "c1" (sources "s"))
+                                         (make-input-info "c2" (sources "s2")))])])
     (test-logged-procedure
      "Allow all concrete inputs"
      (validate-inputs ev)
@@ -534,8 +306,9 @@
 
   (test-logged-procedure
    "Disallow abstract inputs"
-   (validate-inputs (make-trusted-evaluator '((input "concrete" (sources "s") (integrity 'sha1 #""))
-                                              (input "a"))))
+   (validate-inputs
+    (build-package [inputs (list (make-input-info "concrete" (sources "s") (integrity 'sha1 #""))
+                                 (make-input-info "a"))]))
    (λ (val messages)
      (check-eq? val FAILURE)
      (check-match messages
@@ -545,15 +318,13 @@
   (let ([other-os (filter (λ (v) (not (eq? v (system-type 'os)))) ALL_OS_SYMS)])
     (test-logged-procedure
      "Disallow packages that don't list current os support"
-     (validate-os-support
-      (make-trusted-evaluator
-       `((os-support . ,other-os))))
+     (validate-os-support (build-package [os-support other-os]))
      (λ (val messages)
        (check-eq? val FAILURE)
        (check-match messages
                     (list ($package:unsupported-os (? (λ (v) (equal? v other-os)) _)))))))
 
-  (let ([ev (make-trusted-evaluator `((os-support ,(system-type 'os))))])
+  (let ([ev (build-package [os-support (list (system-type 'os))])])
     (test-logged-procedure
      "Allow packages that support the current os"
      (validate-inputs ev)
@@ -563,8 +334,7 @@
 
   (test-case "Check Racket version support"
     (define with-unsupported-version
-      (make-trusted-evaluator
-       `((racket-versions "0.0"))))
+      (build-package [racket-versions '("0.0")]))
 
     (test-logged-procedure
      "Detect packages that declare an unsupported Racket version"
@@ -586,54 +356,53 @@
 ; When installing a package output, we can either reuse existing
 ; output files or build a new distribution of output files.
 
-(define (reuse-or-build-package-output pkgeval output-name link-path)
+(define (reuse-or-build-package-output pkg output-name link-path)
   (call-with-reused-output
-   (evaluator->package-query pkgeval)
+   (package->package-query pkg)
    output-name
    (λ (variant)
      (cond [(exn? variant)
             (raise variant)]
            [(output-record? variant)
-            (reuse-package-output pkgeval output-name variant link-path)]
+            (reuse-package-output pkg output-name variant link-path)]
            [else
-            (mdo directory-record := (build-package-output-directory pkgeval output-name)
+            (mdo directory-record := (build-package-output-directory pkg output-name)
 
-                 (build-package-output pkgeval
+                 (build-package-output pkg
                                        output-name
                                        (build-workspace-path (path-record-path directory-record)))
 
-                 (record-package-output pkgeval
+                 (record-package-output pkg
                                         output-name
                                         directory-record
                                         link-path))]))))
 
-
-(define-logged (reuse-package-output pkgeval output-name output-record-inst link-path)
+(define-logged (reuse-package-output pkg output-name output-record-inst link-path)
   ($attach (make-addressable-link (find-path-record (output-record-path-id output-record-inst)) link-path)
            ($package:output:reused)))
 
-(define-logged (build-package-output pkgeval output-name build-directory)
-  (if (pkgeval `(build-output ,(dump-xiden-settings) ,build-directory ,output-name))
-      ($use (void))
-      ($fail)))
+(define-logged (build-package-output pkg output-name build-directory)
+  (parameterize ([current-directory build-directory]
+                 [current-inputs (package-inputs pkg)])
+    ($run! ((package-build pkg) output-name))))
 
-(define-logged (build-package-output-directory pkgeval output-name)
+(define-logged (build-package-output-directory pkg output-name)
   ($attach
    (make-addressable-directory
     (cons (open-input-string output-name)
-          (map open-input-info-as-bytes (pkgeval 'inputs))))))
+          (map open-input-info-as-bytes (package-inputs pkg))))))
 
 (define (open-input-info-as-bytes info)
   (open-input-bytes
     (with-handlers ([values (λ (e) (string->bytes/utf-8 (input-info-name info)))])
       (integrity-info-digest (input-info-integrity info)))))
 
-(define-logged (record-package-output pkgeval output-name directory-record link-path)
-  (declare-output (pkgeval 'provider)
-                  (pkgeval 'name)
-                  (pkgeval 'edition)
-                  (pkgeval 'revision-number)
-                  (pkgeval 'revision-names)
+(define-logged (record-package-output pkg output-name directory-record link-path)
+  (declare-output (package-provider pkg)
+                  (package-name pkg)
+                  (package-edition pkg)
+                  (package-revision-number pkg)
+                  (package-revision-names pkg)
                   output-name
                   directory-record)
   (make-addressable-link directory-record link-path)
@@ -642,20 +411,11 @@
 
 
 ;===============================================================================
-; 4: CLEAN UP
-
-(define (clean-up pkgeval)
-  (kill-evaluator pkgeval)
-  (collect-garbage)
-  (logged-unit (void)))
-
-
-;===============================================================================
 ; A: Supporting procedures
 
-(define (evaluator->package-query pkgeval)
+(define (package->package-query pkg)
   (make-exact-package-query
-   (pkgeval 'provider)
-   (pkgeval 'name)
-   (pkgeval 'edition)
-   (pkgeval 'revision-number)))
+   (package-provider pkg)
+   (package-name pkg)
+   (package-edition pkg)
+   (package-revision-number pkg)))
