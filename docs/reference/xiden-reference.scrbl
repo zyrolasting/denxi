@@ -8,7 +8,6 @@
 
 This is the API reference for @|project-name|.
 
-For maintenance information, see @other-doc['(lib "xiden/docs/maintenance/xiden-maintenance.scrbl")].
 For a high-level overview, see @other-doc['(lib "xiden/docs/guide/xiden-guide.scrbl")].
 
 @bold{Warning}: The API is currently unstable.
@@ -41,3 +40,4 @@ For a high-level overview, see @other-doc['(lib "xiden/docs/guide/xiden-guide.sc
 @include-section{modules/system.scrbl}
 @include-section{modules/monad.scrbl}
 @include-section{modules/file.scrbl}
+@include-section{maintenance/maintenance.scrbl}

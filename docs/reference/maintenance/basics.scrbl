@@ -1,6 +1,6 @@
 #lang scribble/manual
 
-@require["../shared.rkt"]
+@require["../../shared.rkt"]
 
 @title{Basic Information}
 

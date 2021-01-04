@@ -1,6 +1,6 @@
 #lang scribble/manual
 
-@require[@for-label[racket/base] "../shared.rkt"]
+@require[@for-label[racket/base] "../../shared.rkt"]
 
 @title{Affirmations}
 

@@ -19,7 +19,6 @@
 
 (define scribblings
   '(("docs/reference/xiden-reference.scrbl" (multi-page) (tool-library))
-    ("docs/maintenance/xiden-maintenance.scrbl" (multi-page))
     ("docs/guide/xiden-guide.scrbl" (multi-page) (tool))))
 
 (define raco-commands
