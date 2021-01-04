@@ -31,17 +31,56 @@
           [get-static-inputs
            (-> bare-pkgdef? list?)]
           [get-static-simple-value
-            (-> bare-pkgdef? symbol? any/c any/c)]
+           (-> bare-pkgdef? symbol? any/c any/c)]
           [get-static-simple-string
-            (-> bare-pkgdef? symbol? any/c)]
+           (-> bare-pkgdef? symbol? any/c)]
           [override-inputs
            (-> bare-pkgdef?
                list?
-               bare-pkgdef?)]))
+               bare-pkgdef?)]
+          [autocomplete-inputs
+           (->* (bare-racket-module?
+                 #:default-name non-empty-string?
+                 #:default-public-key-source non-empty-string?
+                 #:private-key-path path-string?
+                 #:find-file procedure?)
+                (#:byte-encoding (or/c #f xiden-encoding/c)
+                 #:default-md-algorithm md-algorithm/c
+                 #:override-sources procedure?
+                 #:private-key-password-path (or/c #f xiden-encoding/c))
+                bare-racket-module?)]
+          [autocomplete-input-expression
+           (->* (any/c
+                 #:default-name non-empty-string?
+                 #:default-public-key-source non-empty-string?
+                 #:private-key-path path-string?
+                 #:find-file procedure?)
+                (#:byte-encoding (or/c #f xiden-encoding/c)
+                 #:default-md-algorithm md-algorithm/c
+                 #:override-sources procedure?
+                 #:private-key-password-path (or/c #f xiden-encoding/c))
+                any/c)]
+          [analyze-input-expression
+           (-> any/c
+               (-> (or/c #f non-empty-string?)
+                   (or/c #f (listof non-empty-string?))
+                   (or/c #f md-algorithm/c)
+                   (or/c #f (or/c bytes?
+                                  (list/c (or/c 'hex 'base32 'base64)
+                                          (or/c bytes? string?))))
+                   (or/c #f string?)
+                   (or/c #f (or/c bytes?
+                                  (list/c (or/c 'hex 'base32 'base64)
+                                          (or/c bytes? string?))))
+                   any)
+               any)]))
 
 
 (require (only-in racket/format ~s)
          racket/list
+         racket/match
+         (for-syntax racket/base
+                     racket/match)
          "../codec.rkt"
          "../exn.rkt"
          "../integrity.rkt"
@@ -172,8 +211,163 @@
          (cdr input-exprs)))))
 
 
+;------------------------------------------------------------------------
+; Input autocompletion
+
+(define (autocomplete-inputs stripped
+                             #:byte-encoding [byte-encoding 'base64]
+                             #:default-md-algorithm [md-algorithm 'sha384]
+                             #:override-sources [override-sources (λ (d p s) s)]
+                             #:private-key-password-path [private-key-password-path #f]
+                             #:default-name default-name
+                             #:default-public-key-source public-key-source
+                             #:find-file find-file
+                             #:private-key-path private-key-path)
+  (map (λ (form)
+         (if (eq? 'input (car form))
+             (autocomplete-input-expression form
+                                            #:byte-encoding byte-encoding
+                                            #:default-md-algorithm md-algorithm
+                                            #:default-name default-name
+                                            #:find-file find-file
+                                            #:override-sources override-sources
+                                            #:default-public-key-source public-key-source
+                                            #:private-key-path private-key-path
+                                            #:private-key-password-path private-key-password-path)
+             form))
+       (bare-racket-module-code stripped)))
+
+
+(define (analyze-input-expression expr continue)
+  ; The use of two character long pattern variables makes it easier
+  ; to visually line up arguments to continue and see if something
+  ; is missing.
+  (match expr
+    [`(input)
+     (continue #f #f #f #f #f #f)]
+
+    [`(input ,(nexpr nm))
+     (continue nm #f #f #f #f #f)]
+
+    [`(input ,(nexpr nm) ,(srcexpr sr))
+     (continue nm sr #f #f #f #f)]
+
+    [`(input ,(nexpr nm) ,(srcexpr sr) (integrity))
+     (continue nm sr #f #f #f #f)]
+
+    [`(input ,(nexpr nm) ,(srcexpr sr) (integrity ',(mdexpr md)))
+     (continue nm sr `',md #f #f #f)]
+
+    [`(input ,(nexpr nm) ,(srcexpr sr) (integrity ',(mdexpr md) ,(bexpr ib)))
+     (continue nm sr `',md ib #f #f)]
+
+    [`(input ,(nexpr nm) ,(srcexpr sr) (integrity ',(mdexpr md) ,(bexpr ib)) (signature))
+     (continue nm sr `',md ib #f #f)]
+
+    [`(input ,(nexpr nm) ,(srcexpr sr) (integrity ',(mdexpr md) ,(bexpr ib)) (signature ,(pkexpr pk)))
+     (continue nm sr `',md ib pk #f)]
+
+    [`(input ,(nexpr nm) ,(srcexpr sr) (integrity ',(mdexpr md) ,(bexpr ib)) (signature ,(pkexpr pk) ,(bexpr sb)))
+     (continue nm sr `',md ib pk sb)]
+
+    [_ expr]))
+
+
+(define (autocomplete-input-expression #:byte-encoding [byte-encoding 'base64]
+                                       #:default-md-algorithm [default-md-algorithm 'sha384]
+                                       #:override-sources [override-sources (λ (d p s) s)]
+                                       #:private-key-password-path [private-key-password-path #f]
+                                       #:default-name default-name
+                                       #:find-file find-file
+                                       #:private-key-path private-key-path
+                                       #:default-public-key-source default-public-key-source
+                                       expr)
+  (analyze-input-expression expr
+                            default-public-key-source
+                            default-md-algorithm
+                            (λ (n s md ib pk sb)
+                              (make-input-expression-from-files
+                               (find-file n s md ib pk sb)
+                               #:local-name (or n default-name)
+                               #:byte-encoding byte-encoding
+                               #:md-algorithm (or md default-md-algorithm)
+                               (λ (d p) (override-sources d p s))
+                               default-public-key-source
+                               private-key-path
+                               private-key-password-path))))
+
+(define-match-expander mdexpr
+  (λ (stx)
+    (syntax-case stx ()
+      [(_ id)
+       #'(? md-algorithm/c id)])))
+
+(define-match-expander pkexpr
+  (λ (stx)
+    (syntax-case stx ()
+      [(_ id)
+       #'(? string? id)])))
+
+(define-match-expander bexpr
+  (λ (stx)
+    (syntax-case stx ()
+      [(_ id)
+       #'(or (? bytes? id)
+             (? (λ (v)
+                  (match v
+                    [`(,(or 'hex 'base64 'base32)
+                       ,(? (or/c bytes? string?) _))
+                     #t]
+                    [_ #f])) id))])))
+
+(define-match-expander nexpr
+  (λ (stx)
+    (syntax-case stx ()
+      [(_ id)
+       #'(? non-empty-string? id)])))
+
+(define-match-expander srcexpr
+  (λ (stx)
+    (syntax-case stx ()
+      [(_ id)
+       #'(or (? (listof non-empty-string?) id)
+             `(sources ,(? non-empty-string? id) ___))])))
+
 (module+ test
   (require rackunit)
+
+  (test-case "Analyze input expressions"
+    (define (check e v)
+      (check-equal? (analyze-input-expression e list) v))
+    (check '(input) '(#f #f #f #f #f #f))
+    (check '(input "a") '("a" #f #f #f #f #f))
+    (check '(input "a" (sources)) '("a" () #f #f #f #f))
+    (check '(input "a" ()) '("a" () #f #f #f #f))
+    (check '(input "a" (sources "foo")) '("a" ("foo") #f #f #f #f))
+    (check '(input "a" ("foo")) '("a" ("foo") #f #f #f #f))
+    (check '(input "a" ("b" "c") (integrity 'sha1)) '("a" ("b" "c") 'sha1 #f #f #f))
+    (check '(input "a" ("b" "c") (integrity 'sha1 #"")) '("a" ("b" "c") 'sha1 #"" #f #f))
+    (check '(input "a" ("b" "c") (integrity 'sha1 (hex ""))) '("a" ("b" "c") 'sha1 (hex "") #f #f))
+    (check '(input "a" ("b" "c") (integrity 'sha1 #"") (signature "pk")) '("a" ("b" "c") 'sha1 #"" "pk" #f))
+    (check '(input "a" ("b" "c") (integrity 'sha1 #"") (signature "pk" #"")) '("a" ("b" "c") 'sha1 #"" "pk" #""))
+    (check '(input "a" ("b" "c") (integrity 'sha1 #"") (signature "pk" (base32 #""))) '("a" ("b" "c") 'sha1 #"" "pk" (base32 #""))))
+
+  (test-case "Do not analyze input expressions when terms look incorrect"
+    (define (check e)
+      (check-eq? (analyze-input-expression e list) e))
+    ; The number 1 is a dummy incorrect datum I just use because it's convenient.
+    (check '(input 1))
+    (check '(input ""))
+    (check '(input "n" 1))
+    (check '(input "n" () 1))
+    (check '(input "n" () (integrity 1)))
+    (check '(input "n" () (integrity sha1)))
+    (check '(input "n" () (integrity ''sha1)))
+    (check '(input "n" () (integrity 'sha1 1)))
+    (check '(input "n" () (integrity 'sha1 #"" 1)))
+    (check '(input "n" () (integrity 'sha1 #"") (signature 1)))
+    (check '(input "n" () (integrity 'sha1 #"") (signature "pk" 1)))
+    (check '(input "n" () (integrity 'sha1 #"") (signature "pk" #"" 1))))
 
   (test-case "Extract input name"
     (define (check . forms)

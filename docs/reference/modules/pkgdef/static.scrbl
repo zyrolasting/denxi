@@ -4,8 +4,12 @@
                     racket/contract
                     racket/path
                     racket/pretty
+                    racket/string
                     syntax/modread
-                    xiden/pkgdef/static]
+                    xiden/codec
+                    xiden/integrity
+                    xiden/pkgdef/static
+                    xiden/racket-module]
          "../../../shared.rkt"]
 
 @title{Static Operations for Package Definitions}
@@ -75,6 +79,51 @@ Returns a list of all input expressions in @racket[pkgdef].
 Searches the top-level code of @racket[pkgdef] for a S-expression of
 form @racket[(id val)]. Returns the datum in @racket[val]'s position,
 or @racket[default] if no such expression exists.
+}
+
+
+@defproc[(analyze-input-expression [expr any/c]
+                                   [continue (-> (or/c #f non-empty-string?)
+                                                 (or/c #f (listof non-empty-string?))
+                                                 (or/c #f md-algorithm/c)
+                                                 (or/c #f (or/c bytes?
+                                                                (list/c (or/c 'hex 'base32 'base64)
+                                                                        (or/c bytes? string?))))
+                                                 (or/c #f string?)
+                                                 (or/c #f (or/c bytes?
+                                                                (list/c (or/c 'hex 'base32 'base64)
+                                                                        (or/c bytes? string?))))
+                                                 any)])
+         any]{
+Inspects @racket[expr] to see if it has the shape of an S-expression
+for a @tech{package input}, e.g. @racket['(input "name" (sources "a" "b")
+(integrity 'sha384 #"..."))].
+
+If @racket[expr] does not resemble an input expression, then
+@racket[analyze-input-expression] returns @racket[expr]. Otherwise,
+@racket[analyze-input-expression] returns @racket[continue] applied to
+information extracted from @racket[expr].
+
+In this context, "resemble" means that @racket[expr] may omit
+information but not use incorrect information. So, @racket['(input)]
+resembles an input expression, but is missing data. On the other hand,
+@racket[(input (signature ...) 8 (sources ...))] is said to not
+resemble an input expression because the available data appears
+incorrect, or irrelevant. Data is not validated beyond basic matching;
+subexpressions are not evaluated.
+
+Under this definition, @racket[continue] is applied with the following
+arguments.
+
+@itemlist[
+@item{The name of the input, or @racket[#f] if the name of the input is missing.}
+@item{The sources defined for the input, or @racket[#f] if no expression for sources exists in the expected position. This argument will always consist of only the list of strings.}
+@item{The integrity information's message digest algorithm, or @racket[#f] if the expression is omitted.}
+@item{The integrity information's byte expression, or @racket[#f] if the expression is omitted.}
+@item{The signature information's public key expression, or @racket[#f] if the expression is omitted.}
+@item{The signature information's byte expression, or @racket[#f] if the expression is omitted.}
+]
+
 }
 
 
@@ -159,6 +208,59 @@ This allows authors to define several inputs the same way.
       "~/path/to/private-key-password.txt")))]
 
 }
+
+
+@defproc[(autocomplete-input-expression
+           [expr any/c]
+           [#:default-name default-name non-empty-string?]
+           [#:default-public-key-source default-public-key-source non-empty-string?]
+           [#:find-file find-file procedure?]
+           [#:private-key-path private-key-path path-string?]
+           [#:byte-encoding byte-encoding (or/c #f xiden-encoding/c) 'base64]
+           [#:default-md-algorithm default-md-algorithm md-algorithm/c 'sha384]
+           [#:override-sources override-sources procedure? (λ (d p s) s)]
+           [#:private-key-password-path private-key-password-path (or/c path-string? #f) #f])
+         any/c]{
+Equivalent to
+
+@racketblock[
+(analyze-input-expression expr
+                          public-key-source
+                          md-algorithm
+                          (λ (n s md ib pk sb)
+                            (make-input-expression-from-files
+                             (find-file n s md ib pk sb)
+                             #:local-name (or n default-name)
+                             #:byte-encoding byte-encoding
+                             #:md-algorithm (or md default-md-algorithm)
+                             (λ (d p) (override-sources d p s))
+                             default-public-key-source
+                             private-key-path
+                             private-key-password-path)))
+]
+
+Use to programatically finish incomplete single input expressions.
+}
+
+
+@defproc[(autocomplete-inputs [stripped bare-racket-module?]
+                              [#:default-name default-name non-empty-string?]
+                              [#:default-public-key-source default-public-key-source non-empty-string?]
+                              [#:find-file find-file procedure?]
+                              [#:private-key-path private-key-path path-string?]
+                              [#:byte-encoding byte-encoding (or/c #f xiden-encoding/c) 'base64]
+                              [#:default-md-algorithm default-md-algorithm md-algorithm/c 'sha384]
+                              [#:override-sources override-sources procedure? (λ (d p s) s)]
+                              [#:private-key-password-path private-key-password-path (or/c path-string? #f) #f])
+                              bare-racket-module?]{
+Applies @racket[autocomplete-input-expression] to each element of the
+code in @racket[stripped], returning a new @tech{bare} module with
+autocompleted inputs.
+
+Note that all inputs will be signed using the same private key,
+and will generate integrity information in the same way.
+}
+
 
 @section{Package Definition Transformations}
 
