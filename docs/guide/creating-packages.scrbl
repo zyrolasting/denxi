@@ -606,8 +606,8 @@ But if we want to use the same notation and logic as outputs, we'll
 need to return an @racket[mdo] form.
 
 @racketblock[
-(define (unpack name)
-  (mdo archive-input := (input-ref name)
+(define (unpack input-name)
+  (mdo archive-input := (input-ref input-name)
        archive-path := (resolve-input archive-input)
        (extract archive-path)
        (release-input archive-input)))
@@ -738,8 +738,8 @@ xiden
 (code:comment "-----------------------------------------------")
 (code:comment "Outputs")
 
-(define (unpack name)
-  (mdo archive-input := (input-ref name)
+(define (unpack input-name)
+  (mdo archive-input := (input-ref input-name)
        archive-path  := (resolve-input archive-input)
        (extract archive-path)
        (release-input archive-input)))
