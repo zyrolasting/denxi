@@ -152,7 +152,7 @@ are joined into the string as-is.
 }
 
 @defproc[(make-exact-xiden-query [provider string?] [name string?] [revision-number revision-number?]) exact-xiden-query?]{
-Returns an @tech{exact query} build from the arguments.
+Returns an @tech{exact package query} build from the arguments.
 }
 
 @defproc[(resolve-revision-interval [query xiden-query?]
