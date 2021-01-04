@@ -175,12 +175,11 @@ to load extensions.
 }
 
 @defsetting[XIDEN_TRUSTED_PUBLIC_KEYS (listof well-formed-integrity-info/c)]{
-A list of integrity information used to verify public keys. If a public key
-fetched for an input passes the integrity check given an item in
-@racket[XIDEN_TRUSTED_PUBLIC_KEYS], then the public key is considered
-trustworthy.
+A list of integrity information used to verify public keys. If a
+public key fetched for an input passes the integrity check for an
+element of @racket[XIDEN_TRUSTED_PUBLIC_KEYS], then the public key is
+considered trustworthy.
 }
-
 
 @defsetting[XIDEN_TRUSTED_EXECUTABLES (listof well-formed-integrity-info/c)]{
 Like @racket[XIDEN_TRUSTED_PUBLIC_KEYS], but used to verify
