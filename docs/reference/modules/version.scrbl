@@ -5,7 +5,7 @@
 
 @title{Package Definition Versions}
 
-A @tech{package definition} may contain a @tech{version}.
+A @tech{package definition} has a @tech{version}.
 
 A @deftech{version} is a combination of an @tech{edition} and a
 @tech{revision}.
@@ -13,8 +13,6 @@ A @deftech{version} is a combination of an @tech{edition} and a
 @section{Editions}
 
 An @deftech{edition} is a non-empty string.
-
-A @tech{package definition}'s @tech{edition} is bound to the @racket[edition] identifier.
 
 The default name for an edition is @racket{default}.
 
@@ -28,10 +26,6 @@ A @deftech{revision} is either a @tech{revision number} or a @tech{revision name
 A @deftech{revision number} is an exact non-negative integer.
 
 A @deftech{revision name} is a string alias for a @tech{revision number}.
-
-A @tech{package definition} must bind a @tech{revision number} to
-@racketid[revision-number], and (optionally) at least zero
-@tech{revision names} to @racketid[revision-names].
 
 A @tech{revision name} should not repeat within an @tech{edition}, but
 may repeat across editions.
