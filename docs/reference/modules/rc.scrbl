@@ -183,8 +183,7 @@ considered trustworthy.
 
 @defsetting[XIDEN_TRUSTED_EXECUTABLES (listof well-formed-integrity-info/c)]{
 Like @racket[XIDEN_TRUSTED_PUBLIC_KEYS], but used to verify
-executables that @tech{package} attempts to use when creating a
-subprocess.
+executables a @tech{package} tries to use when creating a subprocess.
 
 Beware: Any executable listed here inherits the OS-level permissions
 of the process, and is not subject to the restrictions of a
