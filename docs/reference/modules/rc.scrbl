@@ -94,22 +94,22 @@ values and command-line flags.
     [(_ s pre-content ...)
       #`(defsetting s #,(infer-contract-expr stx (eval #'s)) pre-content ...)]))
 
-@defsetting*[XIDEN_SANDBOX_MEMORY_LIMIT_MB]{
-Defines the memory quota for sandboxed transactions, in mebibytes.
-
-If this is too low, then it is possible for installations to fail
+@defsetting*[XIDEN_MEMORY_LIMIT_MB]{
+Defines a memory limit for a custodian managing process resources, in
+mebibytes.  If this is too low, then it is possible for Xiden to halt
 due to a forced custodian shutdown.
+
+Does not count memory charged when parsing the command line and
+setting up a @tech{runtime configuration}.
+
+Has no effect if the running Racket installation does not support
+per-custodian memory accounting.
 }
 
-
-@defsetting*[XIDEN_SANDBOX_EVAL_MEMORY_LIMIT_MB]{
-Like @racket[XIDEN_SANDBOX_MEMORY_LIMIT_MB], but sets a memory quota for every
-expression under evaluation.
-}
-
-@defsetting*[XIDEN_SANDBOX_EVAL_TIME_LIMIT_SECONDS]{
-Like @racket[XIDEN_SANDBOX_EVAL_MEMORY_LIMIT_MB], but sets a time quota for every
-expression under evaluation, in seconds.
+@defsetting*[XIDEN_TIME_LIMIT_SECONDS]{
+Sets a time limit for a Xiden process. Does not count time spent
+parsing the command line and setting up a @tech{runtime
+configuration}.
 }
 
 @defsetting*[XIDEN_INSTALL_SOURCES]{

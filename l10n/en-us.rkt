@@ -25,14 +25,11 @@
     [(backwards-racket-version-interval)
      "minimum Racket version cannot exceed maximum Racket version"]
 
-    [(XIDEN_SANDBOX_MEMORY_LIMIT_MB)
-     "Total memory quota for a sandbox"]
+    [(XIDEN_MEMORY_LIMIT_MB)
+     "Total memory quota for a package"]
 
-    [(XIDEN_SANDBOX_EVAL_MEMORY_LIMIT_MB)
-     "Memory quota for each sandboxed expression"]
-
-    [(XIDEN_SANDBOX_EVAL_TIME_LIMIT_SECONDS)
-     "Time limit for each sandboxed expression"]
+    [(XIDEN_TIME_LIMIT_SECONDS)
+     "Time limit for a package to finish working"]
 
     [(XIDEN_INSTALL_SOURCES)
      "Add installation to transaction"]
