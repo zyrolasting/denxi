@@ -6,15 +6,15 @@
 @title[#:style '(toc)]{Xiden: A Guide for Functional Dependency Management in Racket}
 @author[(author+email "Sage L. Gerard" "sage@sagegerard.com" #:obfuscate? #t)]
 
-This is a guide for @|project-name|, a functional dependency manager
+This is a guide for Xiden, a functional dependency manager
 for Racket.
 
-@project-name safely and deterministically reproduces your project's
+Xiden safely and deterministically reproduces your project's
 dependencies without any side-effect on the running Racket installation. This
 makes it a powerful and versatile way to share work and continuously integrate
 code.
 
-To track @|project-name|'s progress, see @secref{project}.
+To track Xiden's progress, see @secref{project}.
 
 If you need the reference material, see  @other-doc['(lib "xiden/docs/reference/xiden-reference.scrbl")].
 

@@ -11,7 +11,7 @@
 
 @defmodule[xiden/cli-flag]
 
-When parsing command line flags, @project-name does not store
+When parsing command line flags, Xiden does not store
 user-defined values as a side effect. Instead, it defers binding
 values from a command line to @tech{settings}. Once a process
 is ready to determine a @tech{runtime configuration}, it binds

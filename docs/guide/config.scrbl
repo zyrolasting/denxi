@@ -11,7 +11,7 @@
 @define[change-val @secref["Changing_a_Runtime_Configuration_Value"
          #:doc '(lib "xiden/docs/reference/xiden-reference.scrbl")]]
 
-You can configure @|binary| using environment variables, the command
+You can configure @tt{xiden} using environment variables, the command
 line interface, and/or a runtime configuration file. Every setting has
 only one name, and a contract for accepted Racket values.
 
@@ -20,7 +20,7 @@ The @change-val section covers how to change the value of a setting.
 @section{Runtime Configuration File}
 
 Each @tech{workspace} can have its own runtime configuration file, or rcfile.
-When @project-name selects a @tech{workspace} directory, it will load
+When Xiden selects a @tech{workspace} directory, it will load
 @litchar{etc/xiden.rkt} and use it as a source of setting values. Here's an
 example of what that file might look like:
 
@@ -42,7 +42,7 @@ xiden/rcfile
 
 Notice that the rcfile also uses the @racketmodname[xiden] language, which
 allows you to use it as a @tech{package definition}. This is only really useful
-for self-hosted @project-name installations, or installations that are unique
+for self-hosted Xiden installations, or installations that are unique
 to the configured @tech{workspace}.
 
 This does not imply that any @tech{package definition} can act as an rcfile. An
@@ -111,11 +111,11 @@ known until @racket[XIDEN_WORKSPACE] is set.
 @racket[XIDEN_WORKSPACE] must be a @racket[complete-path?]. If the
 path points to an existing entry on the filesystem, then that entry
 must be a directory. If the path points to no existing entry, then
-@binary will create a directory at that path.
+@tt{xiden} will create a directory at that path.
 
 @section[#:tag "trusting-pubkeys"]{Trusting Public Keys and Executables}
 
-You can use @|project-name|'s integrity checking system to specify
+You can use Xiden's integrity checking system to specify
 public keys and executables that you trust. You specify the integrity
 information the same way that you would for an input in a
 @tech{package definition}.
@@ -137,7 +137,7 @@ algorithm.  If a digest algorithm is subject to a collision attack, you can
 upgrade the algorithm and expected digest.
 
 This example value for @racket[XIDEN_TRUSTED_EXECUTABLES] similarly
-verifies binaries that @project-name may use for a subprocess. This
+verifies binaries that Xiden may use for a subprocess. This
 example shows integrity information for a Python 2.7 binary.
 
 @racketblock[

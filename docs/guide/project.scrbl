@@ -5,13 +5,13 @@
 @title[#:tag "project"]{Project Information}
 
 @hyperlink["https://github.com/zyrolasting/xiden"]{GitHub} hosts the source
-code for @|project-name|. @bold{It is not yet ready for production use.}
+code for Xiden. @bold{It is not yet ready for production use.}
 Dependency management is a hard problem that takes time to handle well.
 
 
 @section{Contributing}
 
-To contribute to @|project-name|, you can do at least one of the following.
+To contribute to Xiden, you can do at least one of the following.
 
 @itemlist[
 @item{@hyperlink["https://www.paypal.com/paypalme/sagegerard"]{Contribute funds to support development}}
@@ -32,7 +32,7 @@ to surrounding code. Please take care to produce lean diffs.
 
 @subsection{High-value Contributions}
 
-@margin-note{@|project-name|'s Racket source would ideally know nothing about the underlying platform.}
+@margin-note{Xiden's Racket source would ideally know nothing about the underlying platform.}
 @itemlist[
 
 @item{
@@ -47,7 +47,7 @@ If you are trained in information security, pointing out vulnerabilities is grea
 
 @item{
 @bold{Translations}.
-@project-name is designed to load user-facing strings lazily given locale information, make it relatively easy to offer a translation to a different human language.
+Xiden is designed to load user-facing strings lazily given locale information, make it relatively easy to offer a translation to a different human language.
 }
 
 ]

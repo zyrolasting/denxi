@@ -9,8 +9,8 @@
 
 @title{Data Verification}
 
-When @project-name reproduces data from a @tech{source}, that data may
-contain dangerous code. Since @project-name cannot detect motives, it
+When Xiden reproduces data from a @tech{source}, that data may
+contain dangerous code. Since Xiden cannot detect motives, it
 concerns itself only with enforcing the user's level of trust in the
 data.  Data verification is addressed using an @tech{integrity check}
 and a @tech{signature check} under a @tech{runtime

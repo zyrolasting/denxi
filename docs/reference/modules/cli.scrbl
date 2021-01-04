@@ -16,7 +16,7 @@
 @defmodule[xiden/cli]
 
 @racketmodname[xiden/cli] implements the command line parsers for
-@|project-name| in terms of @racketmodname[xiden/cmdline]. Each parser
+Xiden in terms of @racketmodname[xiden/cmdline]. Each parser
 prepares a program that uses continuation passing style to return
 output and an exit code.
 
@@ -66,7 +66,7 @@ If @racket{links}, the program halts with exit code 0 and output
 @racket[(list ($show-string L) ...)], where @racket[L] is a string
 containing a path to a symbolic link and a path to another filesystem
 entry referenced by that link. These symbolic links are special in
-that they are tracked by @project-name for garbage collection
+that they are tracked by Xiden for garbage collection
 purposes.
 
 If @racket{workspace}, the program halts with exit code 0

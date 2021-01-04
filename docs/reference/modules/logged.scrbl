@@ -83,7 +83,7 @@ When using an instance of @racket[logged], evaluation stops at the
 moment one of these @tech/reference{uninterned}
 @tech/reference{symbols} are encountered.
 
-@project-name uses these values to distinguish between Racket booleans
+Xiden uses these values to distinguish between Racket booleans
 and values that control @racket[logged] evaluation.
 }
 

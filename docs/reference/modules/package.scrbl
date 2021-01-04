@@ -142,11 +142,11 @@ A @tech{message} pertaining to a package output.
 }
 
 @defstruct*[($package:output:built $package:output) () #:prefab]{
-@project-name successfully built a package output.
+Xiden successfully built a package output.
 }
 
 @defstruct*[($package:output:reused $package:output) () #:prefab]{
-@project-name reused a previously-built package output.
+Xiden reused a previously-built package output.
 }
 
 @defstruct*[($package:output:undefined $package:output) () #:prefab]{

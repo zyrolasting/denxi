@@ -107,7 +107,7 @@ For example, consider the following application:
   "~/path/to/private-key.pem"
   "~/path/to/private-key-password.txt")]
 
-@margin-note{@project-name uses OpenSSL subprocesses to sign digests.
+@margin-note{Xiden uses OpenSSL subprocesses to sign digests.
 To prevent *nix monitoring tools like @tt{top} from seeing your
 private key's password, it sends the password to OpenSSL using a file
 path.  This is why you cannot pass your password directly, but be sure

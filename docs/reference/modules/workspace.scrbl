@@ -11,7 +11,7 @@
 
 @defmodule[xiden/workspace]
 
-A @deftech{workspace} is a directory where @project-name performs all file
+A @deftech{workspace} is a directory where Xiden performs all file
 I/O. That directory's name is either @wsdir, or @racket[(file-name-from-path
 (getenv "XIDEN_WORKSPACE"))] (See @secref{workspace-selection}). The path to a
 workspace is defined in @racket[workspace-directory], and must comply with
@@ -34,9 +34,9 @@ directory, or a location on the filesystem where nothing exists.
 
 
 @defthing[workspace-directory (parameter/c workspace-directory/c)]{
-The directory in which @project-name reads and writes files.
+The directory in which Xiden reads and writes files.
 
-If the directory does not exist, then it will be created when @project-name writes a file.
+If the directory does not exist, then it will be created when Xiden writes a file.
 }
 
 @defthing[CONVENTIONAL_WORKSPACE_NAME string?]{
@@ -56,7 +56,7 @@ Like @racket[build-path], but the base of the returned path is
 
 @section[#:tag "workspace-selection"]{Selecting a Workspace}
 
-When @project-name starts, it selects a value to install in
+When Xiden starts, it selects a value to install in
 @racket[workspace-directory] using the following rules.
 
 @margin-note{The @tt{XIDEN_WORKSPACE} environment variable is the only way to
@@ -65,10 +65,10 @@ Let @racket[W] be @racket[(getenv "XIDEN_WORKSPACE")].  If
 @racket[(workspace-directory/c W)] is @racket[#t], then
 @racket[workspace-directory] is set to @racket[W].
 
-If @racket[(workspace-directory/c W)] is @racket[#f], then @project-name will
+If @racket[(workspace-directory/c W)] is @racket[#f], then Xiden will
 print an error (but not halt) if @racket[W] is set to a non-empty string.
 
-If @racket[W] was not used, then @project-name will walk towards a root
+If @racket[W] was not used, then Xiden will walk towards a root
 directory starting from @racket[current-directory] in search of an existing
 @|wsdir|. If one is found, then @racket[workspace-directory] is set to its
 path.

@@ -27,7 +27,7 @@ interface. It only helps @racketmodname[xiden/cli] do so.
 @defthing[exit-code/c flat-contract? #:value (integer-in 0 255)]{
 An exit code for use in an @tech/reference{exit handler}.
 
-@project-name does not currently lean on the exit code to convey much
+Xiden does not currently lean on the exit code to convey much
 meaning, so expect to see @racket[1] (@tt{E_FAIL}) to represent an
 error state. Lean on the @tech{program log} for specifics.
 }

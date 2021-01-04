@@ -4,8 +4,8 @@
 
 @title{Model}
 
-@project-name creates symbolic links to directories. Those directories
-represent dependencies.  @|project-name| implements a garbage
+Xiden creates symbolic links to directories. Those directories
+represent dependencies.  Xiden implements a garbage
 collector that deletes any directory it created once it has no known
 symbolic links. Users therefore uninstall software by deleting links
 and running a garbage collection pass.

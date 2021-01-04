@@ -7,8 +7,6 @@
          syntax/strip-context)
 
 (define wsdir (tt CONVENTIONAL_WORKSPACE_NAME))
-(define binary (tt "xiden"))
-(define project-name "Xiden")
 
 (define (visible-hyperlink s)
   (hyperlink s s))

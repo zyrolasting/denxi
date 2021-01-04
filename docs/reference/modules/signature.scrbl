@@ -16,7 +16,7 @@ through their digital signatures.
 
 @section{Signature Verification Model}
 
-@|project-name|'s signature checking process is equivalent to the
+Xiden's signature checking process is equivalent to the
 following OpenSSL command:
 
 @verbatim|{$ openssl pkeyutl -verify -sigfile SIGFILE -pubin -inkey PUBKEY <DIGEST}|
@@ -25,14 +25,14 @@ Specifically, it reads @italic{unencoded} bytes for a message digest
 (a.k.a. content hash) and verifies a signature from a signature file
 (@tt{SIGFILE}) and a public key file (@tt{PUBKEY}).
 
-This implies that @project-name accepts any format OpenSSL does for
+This implies that Xiden accepts any format OpenSSL does for
 the signature and public key, but the cipher algorithm used to create
 the signature must support the message digest algorithm used to create
 the digest.
 
 If you create a signature and cannot seem to pass the signature check,
 make sure that you are actually signing the raw bytes for a message
-digest because that's what @|project-name| checks against. If you use
+digest because that's what Xiden checks against. If you use
 a command like @litchar{openssl dgst -sign ...}, then you would be
 signing an ANS.1-encoded digest. Use @litchar{openssl pkeyutl -binary
 ...} instead.

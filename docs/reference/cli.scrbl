@@ -5,10 +5,10 @@
 
 @title{Command Line Interface}
 
-@|project-name|'s command line interface emphasizes full control over
+Xiden's command line interface emphasizes full control over
 the @tech{runtime configuration} at the cost of short commands. All
 commands generate exact program definitions, such that unit tests
-can verify the full behavior of a @project-name process.
+can verify the full behavior of a Xiden process.
 
 @bold{This API is private, and may change.} To understand this
 section, you must understand @racket[parse-command-line].

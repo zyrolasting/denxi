@@ -4,20 +4,20 @@
 
 @title[#:tag "cli"]{Command Line Interface}
 
-@project-name offers two entry points to its command-line interface.  One is a
-launcher named @|binary|, which @tt{raco pkg} (or @|project-name|!) creates
+Xiden offers two entry points to its command-line interface.  One is a
+launcher named @tt{xiden}, which @tt{raco pkg} (or Xiden!) creates
 during setup. You can also use the command line through the @litchar{raco
 zcpkg} (“zero-collection package”) command if only @litchar{raco} is in your
-@tt{PATH}.  While @tt{raco zcpkg} and @binary both launch the same program, I
-will only refer to it as @binary from now on.
+@tt{PATH}.  While @tt{raco zcpkg} and @tt{xiden} both launch the same program, I
+will only refer to it as @tt{xiden} from now on.
 
-@binary is a non-interactive program, although it can allow
+@tt{xiden} is a non-interactive program, although it can allow
 interactions with subprocesses. Its configuration is held constant
 after launch, and every one of its settings can be defined at the
 command line.  This way each command can be expressed as a pure
 function.
 
-@binary commands are explicit and verbose. If typing a command becomes
+@tt{xiden} commands are explicit and verbose. If typing a command becomes
 tedious, then please leverage the features of your shell and review
 the @secref{config} section.
 
@@ -27,7 +27,7 @@ the @secref{config} section.
 If you haven't worked through @secref{new-pkg}, please do so. We'll use the
 @tt{definition.rkt} file from that section here.
 
-@project-name writes files to your disk using transactions. This means when it
+Xiden writes files to your disk using transactions. This means when it
 fails, your system will be left as it was before the transaction started. To
 run a transaction, use the @litchar{do} command.
 
@@ -37,7 +37,7 @@ $ xiden do +a definition.rkt
 
 This command defines a transaction with one step: To install something from a
 definition. If you are using the definition from @secref{finished-definition}
-on a new @project-name installation, then this command will fail with the
+on a new Xiden installation, then this command will fail with the
 following message in the report:
 
 @verbatim|{
@@ -45,7 +45,7 @@ default.tgz: https://sagegerard.com/xiden-tutorial/default.tgz: signature violat
 (integrity 'sha384 (base64 "n2Ac8K56quwznmSJFZZtnZFxL1ck16hUf+Ule2jd1bHGMJy/EiK2Vc2ibCITnyM0"))
 }|
 
-@project-name is paranoid. It will not proceed with any operation that it cannot trace
+Xiden is paranoid. It will not proceed with any operation that it cannot trace
 back to your affirmative consent. This message is telling you that it refused
 to use an input because you never said that you trusted the public key used to
 verify @racket{default.tgz}'s signature.
@@ -63,12 +63,12 @@ You give it a @tech{package definition} and it will build the @racket{default}
 @tech{package output}. It will then issue you a link to the output directory
 named after the package.
 
-This is a key difference between systems like @project-name and traditional
+This is a key difference between systems like Xiden and traditional
 package managers. It doesn't keep a central repository of names. It keeps
 a central repository of unique files and directories, and gives you links
 to the things you need with names that you choose.
 
-The link is also special in that @project-name remembers making it. Think of
+The link is also special in that Xiden remembers making it. Think of
 the link as being @italic{bound} to a directory just like an identifier is
 bound to a value in Racket. When you no longer need the output, remove the
 link.
@@ -123,9 +123,9 @@ state before the command ran.
 $ xiden do ++install-source ... ++install-abbreviated ... ++install-source ...
 }|
 
-Don't worry about installing conflicting versions. @binary installs
+Don't worry about installing conflicting versions. @tt{xiden} installs
 dependencies side-by-side. If you try to install the same package
-twice, then @binary will reuse the existing directory.
+twice, then @tt{xiden} will reuse the existing directory.
 
 
 @subsection{Creating Arbitrary Links}
@@ -139,7 +139,7 @@ $ xiden do +d vendor definition.rkt
 $ ln -s vendor/my-first-package/main.rkt my-first-package.rkt
 }|
 
-The link created using your operating system is not tracked by @|project-name|,
+The link created using your operating system is not tracked by Xiden,
 so a garbage collection pass can break the link. But when you use a relative
 path as shown, then you can repair the link by running the same transaction.
 
@@ -151,7 +151,7 @@ Use the @litchar{show} command to review key information.
 @subsection{View Path to Workspace}
 
 @litchar{xiden show workspace} shows the path to the @tech{target
-workspace}. See @secref{workspace} for more information on how @project-name
+workspace}. See @secref{workspace} for more information on how Xiden
 defines this path.
 
 @subsection{View Installed Outputs}
@@ -164,7 +164,7 @@ output is located in the @tech{target workspace}.
 @subsection{View Issued Links}
 
 @litchar{xiden show links} shows all records of symbolic links issued by
-@|project-name| for the @tech{target workspace}. Each line is formatted as
+Xiden for the @tech{target workspace}. Each line is formatted as
 @litchar{L -> T}, where @litchar{L} is a path to a symbolic link, and
 @litchar{T} is a path to the linked file on disk.
 
@@ -221,7 +221,7 @@ observed that if you delete a link issued by @litchar{xiden do} on
 your disk, then @litchar{xiden gc} may collect the target.
 
 A file or directory is eligible for garbage collection if it has no
-incoming links issued by @|project-name|.
+incoming links issued by Xiden.
 
 The garbage collector follows a three step process:
 
@@ -233,7 +233,7 @@ The garbage collector follows a three step process:
 
 Note that only the immediate contents (as in @racket[directory-list]) of a
 @tech{workspace}'s @litchar{var/xiden/objects} directory are monitored, because
-@project-name @italic{does not issue links to the contents of any
+Xiden @italic{does not issue links to the contents of any
 subdirectory}. This means that if you ever create a symbolic link to a file
 inside of a package's output directory, then that link is dependent on the
 output directory remaining after any garbage collection pass.

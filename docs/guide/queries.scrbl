@@ -96,7 +96,7 @@ beta, then you would have to know the revision number in advance of
 writing the query. With the interval flags, you do not have to know
 any revision numbers.
 
-When resolving @tech{revision names}, @binary will raise an error for
+When resolving @tech{revision names}, @tt{xiden} will raise an error for
 queries like these because they each resolve to a backwards interval:
 
 @verbatim|{
@@ -117,27 +117,27 @@ implied and does not need to be typed.
 example.com:calculator::production
 }|
 
-Provider names and package names are required, but @project-name
+Provider names and package names are required, but Xiden
 interprets other empty strings as unset values in a query. When
 searching for packages, it will use default values according to the
 following rules:
 
 @itemlist[
 
-@item{If no edition is set, @project-name will assume the edition is @racket{default}.}
+@item{If no edition is set, Xiden will assume the edition is @racket{default}.}
 
-@item{If no revision is set, @project-name will use the largest available revision number.}
+@item{If no revision is set, Xiden will use the largest available revision number.}
 
-@item{If a minimum revision is set, but not a maximum, @project-name
+@item{If a minimum revision is set, but not a maximum, Xiden
 will assume the maximum revision is equal to the minimum revision
 (creating a request for an exact revision).}
 
-@item{If no interval boundaries are set, @project-name will assume @racket{ii}.}
+@item{If no interval boundaries are set, Xiden will assume @racket{ii}.}
 
 ]
 
 By these rules, @tt{example.com:calculator:teacher:1} matches only
 revision @racket[1] of a calculator's teacher edition. When searching
-for multiple packages, omitting information will cause @project-name
+for multiple packages, omitting information will cause Xiden
 to match against more packages. In that case, omitting revision
 information will result in matching against all revisions.

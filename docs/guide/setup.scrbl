@@ -4,7 +4,7 @@
 
 @title[#:tag "setup"]{Setup}
 
-This section covers how to install @binary on your system.
+This section covers how to install @tt{xiden} on your system.
 
 
 @section{Required Programs}
@@ -20,7 +20,7 @@ First, make sure the following programs are available in your @tt{PATH}.
 
 @section{Install from Racket's Default Package Catalog}
 
-@project-name is available as a vanilla Racket package on the default
+Xiden is available as a vanilla Racket package on the default
 catalog. Run @litchar|{raco pkg install xiden}| to install it, and
 you're done.
 
@@ -31,10 +31,10 @@ the likely reasons:
 
 @item{Your Racket installation may contain a package that defines a
 conflicting @litchar|{xiden}| collection. That package can either be a
-different edition of @|project-name|, or any package snuck into your
+different edition of Xiden, or any package snuck into your
 installation designed to create that conflict.}
 
-@item{@|project-name|'s package tracks the latest release and is
+@item{Xiden's package tracks the latest release and is
 subject to backwards-incompatible changes as a
 @hyperlink["https://sagegerard.com/new-racket-pkg-releases.html"]{matter
 of policy.} In this case, uninstall the old version of Xiden and
@@ -47,12 +47,12 @@ log}.}
 
 @section{Install from Source}
 
-This method builds @project-name from your desired version of its
+This method builds Xiden from your desired version of its
 source code.
 
 @subsection{Step 1: Get the Code}
 
-The goal of this step is to get a directory named @binary somewhere on
+The goal of this step is to get a directory named @tt{xiden} somewhere on
 your disk.
 
 You can either use Git or download an archive.
@@ -60,7 +60,7 @@ You can either use Git or download an archive.
 
 @subsubsection{Method: Use Git}
 
-If you wish to use Git, you can clone @|project-name|'s repository. If
+If you wish to use Git, you can clone Xiden's repository. If
 you use SSH, then run @litchar|{git clone
 git@github.com:zyrolasting/xiden.git}|.  Or, if you use HTTPS, then
 run @litchar|{git clone https://github.com/zyrolasting/xiden.git}|.
@@ -79,7 +79,7 @@ If you know what you are looking for, replace @litchar{master} with
 the commit reference you want to use. Once the archive is on your
 disk, extract its files.
 
-@bold{You should have a directory named @|binary| with a bunch of
+@bold{You should have a directory named @tt{xiden} with a bunch of
 Racket modules in it}. If you have a different directory name, or if
 the directories are nested, then make sure to reorganize the
 directories accordingly.
@@ -94,7 +94,7 @@ directory, then you are in the right place.
 If you have GNU Make installed, then just run @litchar{make}. Otherwise,
 open @tt{Makefile} and run the commands defined by the @tt{build} target.
 
-If successful, then @|binary| should now work as a command in your shell. If
+If successful, then @tt{xiden} should now work as a command in your shell. If
 not, check your @tt{PATH} to make sure that it includes the directory where
 @tt{raco setup} creates launchers on your disk.
 

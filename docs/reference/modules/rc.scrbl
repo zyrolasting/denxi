@@ -21,7 +21,7 @@
 @defmodule[xiden/rc]
 
 @racketmodname[xiden/rc] provides several @tech{settings} that change
-how @project-name behaves. This section documents each setting with
+how Xiden behaves. This section documents each setting with
 its command-line flags, contract, and default value.
 
 @section{Changing a Runtime Configuration Value}
@@ -64,7 +64,7 @@ Returns a hash table containing the value of every @tech{setting} in
 
 @section{Setting Reference}
 
-These are the defined settings for @|project-name|, along with their default
+These are the defined settings for Xiden, along with their default
 values and command-line flags.
 
 @(define-for-syntax (infer-contract-expr stx s)
@@ -189,12 +189,12 @@ subprocess.
 
 Beware: Any executable listed here inherits the OS-level permissions
 of the process, and is not subject to the restrictions of a
-@project-name @tech{runtime configuration}.  If you include a
-@project-name launcher or a sufficiently flexible Racket launcher, a
-@tech{package} can start a new @project-name process with a full-trust
+Xiden @tech{runtime configuration}.  If you include a
+Xiden launcher or a sufficiently flexible Racket launcher, a
+@tech{package} can start a new Xiden process with a full-trust
 configuration.
 
-@bold{Regardless of this setting, @project-name implicitly trusts the
+@bold{Regardless of this setting, Xiden implicitly trusts the
 binary referenced by @racket{openssl} in your @tt{PATH}.} This will
 not be the case in a future release.
 }
@@ -262,7 +262,7 @@ declares that it does not support the running Racket version.
 
 @defsetting*[XIDEN_ALLOW_ENV]{
 Names of environment variables visible to @tech{packages}, and
-@project-name subprocesses.
+Xiden subprocesses.
 
 @racket{PATH} is included regardless of the value of this setting.
 }

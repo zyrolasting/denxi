@@ -4,7 +4,7 @@
 
 @title[#:tag "new-pkg"]{Defining Packages}
 
-@project-name builds software using @tech{package definitions}. In
+Xiden builds software using @tech{package definitions}. In
 this section we will write a package definition that, when installed,
 extracts one of two available archives.
 
@@ -71,7 +71,7 @@ xiden
 (revision-names "alpha" "2020-10-01")
 ]
 
-But wait, nothing there looks like a version number. @project-name
+But wait, nothing there looks like a version number. Xiden
 versions @tech{package definitions} using @tech{editions} and
 @tech{revisions}, not major or minor version numbers. This means users
 can find software like they would a book. When defining a package, you
@@ -179,7 +179,7 @@ Semantic Version queries. See @secref["Plugins" #:doc '(lib
 
 Next, we can decide what versions of Racket we want to support if our
 package includes a Racket program. For that, we use
-@racket[racket-versions]. When you run a package, @project-name will
+@racket[racket-versions]. When you run a package, Xiden will
 check if the running version of Racket is an element of the set
 defined by @racket[racket-versions]. If it isn't, that halts use
 of a package.
@@ -252,7 +252,7 @@ Windows, and MacOSX.
 (os-support unix windows macosx)
 ]
 
-By default, @project-name assumes each package definition will work on
+By default, Xiden assumes each package definition will work on
 every operating system. While this means we don't have to include the
 above line in the final version of our package definition, I'll put it
 in just to be explicit.
@@ -260,7 +260,7 @@ in just to be explicit.
 
 @section{Package Inputs}
 
-Now for the interesting stuff. In @|project-name|, a package
+Now for the interesting stuff. In Xiden, a package
 definition is a program. An actively running version of that program
 is a package. Like any other running program, packages use inputs to
 function.
@@ -291,7 +291,7 @@ xiden
 This input defines an archive of source code we'll need to build our
 project.  The archive contains a throwaway Racket module and Scribble
 document.  @racket{default.tgz} is the name of the file that we use
-locally in our build. The @racket[sources] list tells @project-name
+locally in our build. The @racket[sources] list tells Xiden
 where it can find the actual bytes for that file. I'm only using one
 source here, but you can add other sources in case one isn't
 available.
@@ -301,7 +301,7 @@ available.
 
 A @tech{package input} can be any file, not just Racket packages or
 code.  You can use a Python distribution as an input, or a critical
-security patch.  This means that you can use @project-name to build
+security patch.  This means that you can use Xiden to build
 any software.
 
 While we won't cover it here, another benefit of package inputs is
@@ -321,7 +321,7 @@ input.
        (sources "https://sagegerard.com/xiden-tutorial/default.tgz")
        (integrity 'sha384 (hex "299e3eb744725387e0355937727cf6e3c938eda2355cda82d58596fd535188fa624217f52f8c6e7d5ee7cb1d458a7f75")))]
 
-Integrity information tells @project-name if it got the @italic{exact
+Integrity information tells Xiden if it got the @italic{exact
 bytes} the input requires. If it did not, then the build will
 fail. This is a good thing because it helps make builds
 reproducible. An input might only be available during a build, or may
@@ -336,10 +336,10 @@ produce the same digest. This is a sign to use a different function!
 
 The function we're using in this case is SHA-384, which we represent
 here as @racket[sha384]. Since it's hard to type the exact bytes of a
-digest, we can give @project-name the expected digest as a string we
-copy and paste from elsewhere.  Here we tell @project-name that the
+digest, we can give Xiden the expected digest as a string we
+copy and paste from elsewhere.  Here we tell Xiden that the
 SHA-384 digest of @racket{default.tgz} comes from a hex string. That
-tells @project-name how to translate the digest as a string back to
+tells Xiden how to translate the digest as a string back to
 bytes for comparison.
 
 
@@ -373,9 +373,9 @@ hand. Just paste it in this example where you see @racketfont{DIGEST}.
 
 Knowing how to produce your own digest is a valuable skill if you want
 to verify data that arrived on your system.  But an external tool
-might use a different encoding and algorithm than what @project-name
+might use a different encoding and algorithm than what Xiden
 supports.  If you want the entire integrity expression with options
-supported by @|project-name|, then use the @litchar{xiden mkint}
+supported by Xiden, then use the @litchar{xiden mkint}
 command. This example does the same thing, except you'll get an entire
 integrity expression as output.
 
@@ -384,7 +384,7 @@ $ xiden mkint sha384 hex default.tgz
 (integrity 'sha384 (hex "299e3eb744725387e...
 }|
 
-Alternatively, you can tell @project-name to read from standard input.
+Alternatively, you can tell Xiden to read from standard input.
 Just use a dash in place of the file.
 
 @verbatim|{
@@ -422,11 +422,11 @@ that is only used for this tutorial.
                   "https://sagegerard.com/xiden-tutorial/default.tgz.sign"))]
 
 The @racket[signature] form accepts a string that locates a public key, and a
-string that locates a signature, in that order. @binary uses the signature and
+string that locates a signature, in that order. @tt{xiden} uses the signature and
 public key to confirm that the @italic{raw bytes of the digest} specified in
 the @racket[integrity] information was signed with a corresponding private key.
 
-While @project-name can fetch public keys from the Internet for you, it will
+While Xiden can fetch public keys from the Internet for you, it will
 refuse to process any input where you do not affirm your trust in the
 corresponding public key.  Vetting public keys is out of scope for this
 guide. Just know that if you do not trust the public key, then a signature
@@ -459,8 +459,8 @@ such as documentation, libraries, or tests.
 
 Every package definition should define a default output, because if a
 user does not request a particular output from a package, then
-@project-name will use the output named @racket{default}.  If you do
-not define a default output, then @project-name will tell the user
+Xiden will use the output named @racket{default}.  If you do
+not define a default output, then Xiden will tell the user
 about the outputs available in the definition.
 
 Recall in the last section that we defined inputs named
@@ -482,15 +482,15 @@ directory is empty, and yours to populate.
 
 Notice that we manually free the archive using
 @racket[release-input]. This is because when you reference an input,
-@project-name lazily writes it to disk and issues a symbolic link to
-the file with the given name. @project-name cannot predict what inputs
+Xiden lazily writes it to disk and issues a symbolic link to
+the file with the given name. Xiden cannot predict what inputs
 to keep around, so it leaves that to you. We don't need our archive
 once the contents are on disk, so we delete the @italic{link} using
 @racket[release-input].
 
 We do not delete the actual file because if something goes wrong with
 a package, you might not want to fetch every input again.  If there
-are no incoming links for a file in @|project-name|, then it is
+are no incoming links for a file in Xiden, then it is
 eligible for garbage collection in a separate process.
 
 
@@ -641,7 +641,7 @@ only ever download and extract the @racket{minimal.tgz} archive.
 
 @subsection{Outputs Can Create Duplicate Data}
 
-@project-name assumes that different outputs produce different
+Xiden assumes that different outputs produce different
 content, which makes one kind of human error possible.
 
 Assume we add an output to act as an alias of another.
@@ -667,7 +667,7 @@ data in another package definition.
 
 A lot of what we've added to our code counts as metadata, such as
 @tt{url}, @tt{tags}, and @tt{description}. All of the entries
-we've defined so far are metadata that @project-name readily
+we've defined so far are metadata that Xiden readily
 recognizes due to their widespread use.
 
 If you want to store other information in your definition,

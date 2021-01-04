@@ -16,9 +16,9 @@
 
 A @deftech{message} is an instance of the @racket[$message]
 @tech/reference{prefab} @tech/reference{structure} used to share
-information in the @project-name runtime, in logs, and between
+information in the Xiden runtime, in logs, and between
 processes.  When the term “@tech{message}” is ambiguous, then
-@deftech{@project-name message} applies the context of this section.
+@deftech{Xiden message} applies the context of this section.
 
 @tech{Message} types may form a heirarchy using colon-separated
 identifiers that start with @racket[$]. The @racket[$message] type
@@ -38,7 +38,7 @@ heirarchy is unhelpful for this purpose, since
 @racket[$transfer:budget:exceeded] could apply to a download in the
 context of a build process or a verification process. It is difficult
 to define a single type to capture this kind of variation, so
-@project-name instead composes messages into machine-readable
+Xiden instead composes messages into machine-readable
 documents.
 
 
