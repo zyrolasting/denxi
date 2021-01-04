@@ -36,7 +36,7 @@ A @deftech{package} is an instance of @racket[package].
 
 @racket[tags] is a list of human-readable topics used for discovery.
 
-@racket[url] is the primary, or canonical URL used to guide a user
+@racketid[url] is the primary, or canonical URL used to guide a user
 towards more information (as opposed to secondary URLs that may appear
 in @racket[metadata]).
 
@@ -72,19 +72,21 @@ fields, prefer the values in the structure fields.
 @margin-note{@racket[build] procedures created using
 @racketmodname[xiden/pkgdef] are always surjective, but might not be
 injective.}
-@racket[build] is a (presumed) bijection of the elements of
-@racket[output-names] onto @tech{logged procedures}. Each logged
-procedure installs software into @racket[current-directory] (assuming
-@racket[(current-inputs)] is bound to @racket[inputs], under the
-current @tech{runtime configuration}.
+@racket[build] is function that maps the elements of
+@racket[output-names] to @tech{logged procedures}. Each logged
+procedure installs software into @racket[current-directory] assuming
+@racket[current-inputs] is bound to @racket[inputs]. The behavior of
+@racket[build] is impacted by the @tech{runtime configuration}.
 
-If @racket[build] is not bijective, then @racket[build]'s relationship
+Xiden will not verify if @racket[build] procedures are bijective.  If
+@racket[build] is not bijective, then @racket[build]'s relationship
 with the host system varies slightly. If @racket[build] is not
 injective, then it may create redundant data on disk because Xiden
 assumes that different output names imply different file
 distributions. If @racket[build] is not surjective, then a
 @tech{logged procedure} might be inaccessible.  This can happen if a
 @racket[package] instance is manually created with faulty data.
+Bijective @racket[build] procedures do not have these problems.
 }
 
 @defthing[empty-package package?]{
