@@ -171,7 +171,10 @@
                build
                (λ (requested-name)
                  (if (equal? requested-name name)
-                     (mdo steps ...)
+                     (let ([variant (mdo steps ...)])
+                       (if (logged? variant)
+                           variant
+                           (logged-unit variant)))
                      ((package-build st) requested-name))))))
 
 (define-modifier (name n:non-empty-string)
