@@ -30,7 +30,11 @@ then @racket[pattern] is used as a glob pattern for use in
                         [start directory-exists? (current-directory)])
          (logged/c path?)]{
 Like @racket[in-paths], except this returns a @tech{logged procedure}
-that fails with @racket[$no-matching-paths] on the program log if no
+that fails with @racket[$path-not-found] on the program log if no
 paths are found.  Otherwise, the procedure uses the first matching
 path.
+}
+
+@defstruct*[($path-not-found $message) ([pattern (or/c regexp? pregexp? byte-regexp? byte-pregexp? string?)] [wrt path-string?])]{
+A @tech{message} reporting if @racket[(path-matching pattern wrt)] found no path.
 }
