@@ -40,16 +40,6 @@ xiden/rcfile
 ]
 
 
-Notice that the rcfile also uses the @racketmodname[xiden] language, which
-allows you to use it as a @tech{package definition}. This is only really useful
-for self-hosted Xiden installations, or installations that are unique
-to the configured @tech{workspace}.
-
-This does not imply that any @tech{package definition} can act as an rcfile. An
-rcfile @italic{must} be located in at @litchar{etc/xiden.rkt} with regards to a
-@tech{workspace} directory.
-
-
 @section{Why Allow Verbose Commands?}
 
 A consequence of the rules in @change-val is that you cannot combine short
