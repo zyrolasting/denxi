@@ -151,12 +151,8 @@ performed on the fields in advance. The fields set in @racket[query]
 are joined into the string as-is.
 }
 
-@defproc[(package-evaluator->xiden-query [pkgeval (-> any/c any)]) xiden-query?]{
-Returns an instance of @racket[xiden-query], such that the fields
-are populated from @racket[pkgeval].
-
-@racket[pkgeval] is an evaluator for a @racketmodname[xiden/pkgdef]
-module, or a procedure that acts like one.
+@defproc[(make-exact-xiden-query [provider string?] [name string?] [revision-number revision-number?]) exact-xiden-query?]{
+Returns an @tech{exact query} build from the arguments.
 }
 
 @defproc[(resolve-revision-interval [query xiden-query?]

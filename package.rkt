@@ -133,7 +133,8 @@
 
        ; Sec. 3
        (fulfil-package-output #:allow-unsupported-racket? (XIDEN_ALLOW_UNSUPPORTED_RACKET)
-                              (abbreviate-exact-xiden-query (package-evaluator->xiden-query pkgeval))
+                              (abbreviate-exact-xiden-query
+                               (evaluator->xiden-query pkgeval))
                               (or output-name-or-#f DEFAULT_STRING)
                               (or link-path-or-#f (pkgeval 'name))
                               pkgeval)
@@ -162,7 +163,9 @@
                                 source
                                 max-size)
   (mdo pkgdef := (find-original-package-definition source max-size)
-       (logged-unit (override-package-definition pkgdef before-new-package override-specs))))
+       (logged-unit
+        (bare-racket-module-code
+         (override-package-definition pkgdef before-new-package override-specs)))))
 
 
 (define (find-original-package-definition source max-size)
@@ -285,8 +288,11 @@
      (module def xiden/pkgdef . ,pkgdef)
      (require racket/match
               xiden/input-info
+              xiden/l10n
               xiden/logged
               xiden/package
+              xiden/printer
+              xiden/query
               xiden/rc
               xiden/setting
               'def)
@@ -306,14 +312,23 @@
                 output-names
                 _) pkg)
      (define (build-output rc build-dir output-name)
-       (call-with-applied-settings rc
+       (call-with-applied-settings
+        (for/hash ([(sym val) rc])
+          (values (hash-ref XIDEN_SETTINGS sym) val))
         (λ ()
           (parameterize ([current-directory build-dir]
                          [current-inputs (package-inputs pkg)])
             (define variant ((package-build pkg) output-name))
-            (get-log (if (logged? variant)
-                         variant
-                         (logged-unit variant)))))))))
+            (define program (if (logged? variant) variant (logged-unit variant)))
+            (write-message ($package:log (abbreviate-exact-xiden-query
+                                          (make-exact-xiden-query provider
+                                                                  name
+                                                                  edition
+                                                                  revision-number))
+                                         output-name
+                                         (get-log program))
+                           (get-message-formatter))))))))
+
 
 
 ;-------------------------------------------------------------------------------
@@ -442,16 +457,10 @@
                                output-name
                                link-path
                                pkgeval)
-  (logged-combine (mdo ; 3.1
-                   (validate-inputs pkgeval)
-                   (validate-os-support pkgeval)
-                   (validate-racket-support #:allow-unsupported? allow-unsupported-racket?
-                                            pkgeval)
-                   ; 3.2
-                   (reuse-or-build-package-output pkgeval output-name link-path))
-                  (λ (to-wrap messages)
-                    (cons ($package:log package-name output-name (reverse (flatten to-wrap)))
-                          messages))))
+  (mdo (validate-inputs pkgeval) ; 3.1
+       (validate-os-support pkgeval)
+       (validate-racket-support #:allow-unsupported? allow-unsupported-racket? pkgeval)
+       (reuse-or-build-package-output pkgeval output-name link-path))) ; 3.2
 
 
 ;-------------------------------------------------------------------------------
@@ -551,7 +560,7 @@
 
 (define (reuse-or-build-package-output pkgeval output-name link-path)
   (call-with-reused-output
-   (package-evaluator->xiden-query pkgeval)
+   (evaluator->xiden-query pkgeval)
    output-name
    (λ (variant)
      (cond [(exn? variant)
@@ -576,8 +585,7 @@
            ($package:output:reused)))
 
 (define-logged (build-package-output pkgeval output-name build-directory)
-  ($use (cons `(build-output ,(dump-xiden-settings) ,build-directory ,output-name)
-              $messages)))
+  ($use (pkgeval `(build-output ,(dump-xiden-settings) ,build-directory ,output-name))))
 
 (define-logged (build-package-output-directory pkgeval output-name)
   ($attach
@@ -592,7 +600,7 @@
 
 (define-logged (record-package-output pkgeval output-name directory-record link-path)
   (declare-output (pkgeval 'provider)
-                  (pkgeval 'package)
+                  (pkgeval 'name)
                   (pkgeval 'edition)
                   (pkgeval 'revision-number)
                   (pkgeval 'revision-names)
@@ -615,22 +623,9 @@
 ;===============================================================================
 ; A: Supporting procedures
 
-; Used to identify a package when reusing output, or when
-; communicating status to the user.
-(define (package-evaluator->xiden-query pkgeval)
-  (xiden-query (pkgeval 'provider)
-               (pkgeval 'name)
-               (pkgeval 'edition)
-               (~a (pkgeval 'revision-number))
-               (~a (pkgeval 'revision-number))
-               "ii"))
-
-(module+ test
-  (test-equal? "Compute package name"
-               (package-evaluator->xiden-query
-                (make-trusted-evaluator
-                 `((provider "acme")
-                   (name "anvil")
-                   (edition "draft")
-                   (revision-number 1))))
-               (xiden-query "acme" "anvil" "draft" "1" "1" "ii")))
+(define (evaluator->xiden-query pkgeval)
+  (make-exact-xiden-query
+   (pkgeval 'provider)
+   (pkgeval 'name)
+   (pkgeval 'edition)
+   (pkgeval 'revision-number)))

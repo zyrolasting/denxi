@@ -16,11 +16,14 @@
           [coerce-xiden-query (-> xiden-query-variant? xiden-query?)]
           [xiden-query->string (-> well-formed-xiden-query? string?)]
           [abbreviate-exact-xiden-query (-> exact-xiden-query? string?)]
+          [make-exact-xiden-query
+           (-> string? string? string? revision-number? exact-xiden-query?)]
+          [string->xiden-query (-> string? xiden-query?)]
           [resolve-revision-interval (->* (xiden-query? (-> boolean? string? revision-number?))
                                           (#:default-bounds boundary-flags-string?)
                                           (values revision-number?
-                                                  revision-number?))]
-          [string->xiden-query (-> string? xiden-query?)]))
+                                                  revision-number?))]))
+
 
 
 (require racket/function
@@ -144,8 +147,22 @@
      #:hi-exclusive (boundary-flag->boolean (string-ref bounds 1)))))
 
 
+(define (make-exact-xiden-query provider name edition revision-number)
+  (let ([rn (~a revision-number)])
+    (xiden-query provider
+                 name
+                 edition
+                 rn
+                 rn
+                 "ii")))
+
+
 (module+ test
   (require rackunit)
+
+  (test-equal? "Make exact query"
+               (make-exact-xiden-query "acme" "anvil" "draft" 1)
+               (xiden-query "acme" "anvil" "draft" "1" "1" "ii"))
 
   (test-case "Detect boundary flag strings"
     (check-true (boundary-flags-string? "ii"))
