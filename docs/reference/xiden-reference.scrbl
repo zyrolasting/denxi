@@ -40,4 +40,5 @@ For a high-level overview, see @other-doc['(lib "xiden/docs/guide/xiden-guide.sc
 @include-section{modules/system.scrbl}
 @include-section{modules/monad.scrbl}
 @include-section{modules/file.scrbl}
+@include-section{modules/security.scrbl}
 @include-section{maintenance/maintenance.scrbl}
