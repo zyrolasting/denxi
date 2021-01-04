@@ -609,7 +609,7 @@ need to return an @racket[mdo] form.
 (define (unpack name)
   (mdo archive-input := (input-ref name)
        archive-path := (resolve-input archive-input)
-       (unpack archive-path)
+       (extract archive-path)
        (release-input archive-input)))
 
 (output "default" (unpack "default.tgz"))
@@ -741,7 +741,7 @@ xiden
 (define (unpack name)
   (mdo archive-input := (input-ref name)
        archive-path  := (resolve-input archive-input)
-       (unpack archive-path)
+       (extract archive-path)
        (release-input archive-input)))
 
 (output "default" (unpack "default.tgz"))
