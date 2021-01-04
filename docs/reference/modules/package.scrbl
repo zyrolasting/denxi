@@ -153,32 +153,20 @@ A requested output is not defined in a corresponding @tech{package
 definition}.
 }
 
-@defstruct*[($package:definition $package) () #:prefab]{
-A @tech{message} pertaining to a @tech{package definition}.
-}
-
-@defstruct*[($package:definition:undeclared-racket-version $package:definition) () #:prefab]{
-A @tech{package definition} did not define supported Racket versions.
-}
-
-@defstruct*[($package:definition:unsupported-racket-version $package:definition)
+@defstruct*[($package:unsupported-racket-version $package)
             ([versions racket-version-ranges/c]) #:prefab]{
-A @tech{package definition} does not claim to support the running version of Racket.
+A @tech{package} claims that the software it builds does not support
+the running version of Racket.
 }
 
-@defstruct*[($package:definition:value $package:definition)
-            ([id symbol?]) #:prefab]{
-A @tech{message} pertaining to a specific value in a @tech{package definition}.
-The value may or may not be bound, but if it is bound, it is expected to be bound
-to @racket[id] in the @tech{package definition}'s namespace.
+@defstruct*[($package:unsupported-os $package)
+            ([supported (listof symbol?)]) #:prefab]{
+A @tech{package} claims that it, or the software it builds, does not support
+the current operating system. Supported systems in @racket[supported]
+are possible values from @racket[(system-type 'os)].
 }
 
-@defstruct*[($package:definition:value:missing $package:definition:value)
-            () #:prefab]{
-A value in a @tech{package definition} is required, but not bound.
-}
-
-@defstruct*[($package:definition:value:invalid $package:definition:value)
-            ([value any/c]) #:prefab]{
-A value in a @tech{package definition} is bound, but it violates a contract.
+@defstruct*[($package:unavailable-output $package)
+            ([available (listof string?)]) #:prefab]{
+The @racket[requested] output for a package is not among the @racket[available] outputs.
 }
