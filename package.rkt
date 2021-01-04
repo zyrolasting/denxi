@@ -321,14 +321,18 @@
                          [current-inputs (package-inputs pkg)])
             (define variant ((package-build pkg) output-name))
             (define program (if (logged? variant) variant (logged-unit variant)))
+            (define-values (value messages) (run-log program))
+
             (write-message ($package:log (abbreviate-exact-xiden-query
                                           (make-exact-xiden-query provider
                                                                   name
                                                                   edition
                                                                   revision-number))
                                          output-name
-                                         (get-log program))
-                           (get-message-formatter))))))))
+                                         messages)
+                           (get-message-formatter))
+
+            (not (eq? value FAILURE))))))))
 
 
 
@@ -611,7 +615,9 @@
            ($package:output:reused)))
 
 (define-logged (build-package-output pkgeval output-name build-directory)
-  ($use (pkgeval `(build-output ,(dump-xiden-settings) ,build-directory ,output-name))))
+  (if (pkgeval `(build-output ,(dump-xiden-settings) ,build-directory ,output-name))
+      ($use (void))
+      ($fail)))
 
 (define-logged (build-package-output-directory pkgeval output-name)
   ($attach
