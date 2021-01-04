@@ -11,13 +11,15 @@ zcpkg} (“zero-collection package”) command if only @litchar{raco} is in your
 @tt{PATH}.  While @tt{raco zcpkg} and @binary both launch the same program, I
 will only refer to it as @binary from now on.
 
-@binary is a non-interactive program. Its configuration is held constant after
-launch, and every one of its settings can be defined at the command line.
-This way each command feels like calling a pure function.
+@binary is a non-interactive program, although it can allow
+interactions with subprocesses. Its configuration is held constant
+after launch, and every one of its settings can be defined at the
+command line.  This way each command can be expressed as a pure
+function.
 
-@binary commands are explicit and possibly verbose. If typing a
-command becomes tedious, then please leverage the features of your
-shell and review the @secref{config} section.
+@binary commands are explicit and verbose. If typing a command becomes
+tedious, then please leverage the features of your shell and review
+the @secref{config} section.
 
 
 @section[#:tag "do"]{Running Our First Transaction}
@@ -206,7 +208,7 @@ you end up with something like multiple slightly different copies of
 Ruby.
 
 @verbatim|{
-$ PYTHON='(input "ruby" (integrity ...))'
+$ RUBY='(input "ruby" (integrity ...))'
 $ xiden do +a definition.rkt \
   +o 'syntax-highlighting' "$RUBY" \
   +o 'images' "$RUBY"
@@ -215,12 +217,12 @@ $ xiden do +a definition.rkt \
 
 @section[#:tag "gc"]{Collecting Garbage}
 
-We briefly visited the @litchar{gc} command in @secref{do}. We observed that if
-you delete a link issued by @litchar{xiden do} on your disk, then
-@litchar{xiden gc} may collect the target.
+We briefly visited the @litchar{gc} command in @secref{do}. We
+observed that if you delete a link issued by @litchar{xiden do} on
+your disk, then @litchar{xiden gc} may collect the target.
 
-A file or directory is eligible for garbage collection if it has no incoming
-links issued by @|project-name|.
+A file or directory is eligible for garbage collection if it has no
+incoming links issued by @|project-name|.
 
 The garbage collector follows a three step process:
 

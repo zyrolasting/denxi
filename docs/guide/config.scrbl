@@ -1,6 +1,10 @@
 #lang scribble/manual
 
-@require["../shared.rkt" @for-label[racket/base xiden/rc]]
+@require["../shared.rkt"
+         @for-label[racket/base
+                    xiden/codec
+                    xiden/integrity
+                    xiden/rc]]
 
 @title[#:tag "config"]{Configuration}
 
