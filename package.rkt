@@ -69,8 +69,6 @@
 (define+provide-message $package:unavailable-output $package (name requested available))
 (define+provide-message $package:security $package (reporting-guard summary args))
 
-(define DEFAULT_STRING "default")
-
 (struct package
   (description
    tags

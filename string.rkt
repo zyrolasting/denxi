@@ -9,6 +9,8 @@
          racket/string
          syntax/parse)
 
+(define DEFAULT_STRING "default")
+
 (define-syntax-class non-empty-string
   (pattern (~var str string)
            #:when (non-empty-string? (syntax-e #'str))))

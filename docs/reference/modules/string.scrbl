@@ -11,6 +11,10 @@
 This module defines useful regular expressions and string operations needed by
 other modules.
 
+@defthing[DEFAULT_STRING non-empty-string? #:value "default"]{
+The conventional default of the non empty strings.
+}
+
 @defproc[(whole/pattstr [s string?]) string?]{
 Returns @racket[(string-append "^" s "$")].
 }
