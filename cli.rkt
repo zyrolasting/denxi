@@ -34,6 +34,7 @@
          "query.rkt"
          "racket-version.rkt"
          "rc.rkt"
+         "security.rkt"
          "setting.rkt"
          "signature.rkt"
          "source.rkt"
@@ -56,23 +57,41 @@
        #:help-suffix-string-key 'top-level-cli-help
        #:args args
        #:flags
-       (make-cli-flag-table --fasl-output
-                            --reader-friendly-output
-                            --verbose)
+       (make-cli-flag-table
+        ++envvar
+        ++trust-executable
+        --fasl-output
+        --memory-limit
+        --reader-friendly-output
+        --time-limit
+        --trust-any-exe
+        --trust-any-host
+        --verbose)
        (λ (flags action . remaining-args)
-         (define proc
+         (define-values (name proc)
            (match action
-             ["do" do-command]
-             ["show" show-command]
-             ["gc" gc-command]
-             ["mkint" mkint-command]
-             [_ (λ _ (values null
-                             (λ (halt)
-                               (halt 1 ($cli:undefined-command action)))))]))
-
+             ["do" (values "do" do-command)]
+             ["show" (values "show" show-command)]
+             ["gc" (values "gc" gc-command)]
+             ["mkint" (values "mkint" mkint-command)]
+             [_ (values ""
+                        (λ _ (values null
+                                     (λ (halt)
+                                       (halt 1 ($cli:undefined-command action))))))]))
          (define-values (subflags planned) (proc remaining-args))
          (values (append flags subflags)
-                 planned))))
+                 (λ (halt)
+                   (restrict halt
+                             planned
+                             #:memory-limit (XIDEN_MEMORY_LIMIT_MB)
+                             #:time-limit (XIDEN_TIME_LIMIT_SECONDS)
+                             #:trusted-executables (XIDEN_TRUSTED_EXECUTABLES)
+                             #:allowed-envvars (XIDEN_ALLOW_ENV)
+                             #:trust-unverified-host? (XIDEN_TRUST_UNVERIFIED_HOST)
+                             #:trust-any-executable? (XIDEN_TRUST_ANY_EXECUTABLE)
+                             #:workspace (workspace-directory)
+                             #:gc-period 30
+                             #:name name))))))
 
 
 (define (do-command args)
@@ -84,22 +103,16 @@
                             ++install-abbreviated
                             ++install-default
                             ++trust-public-key
-                            ++trust-executable
-                            ++envvar
                             ++host
                             --fetch-total-size
                             --fetch-buffer-size
                             --fetch-pkgdef-size
                             --max-redirects
                             --trust-any-digest
-                            --trust-any-exe
                             --trust-any-pubkey
                             --trust-bad-signature
                             --trust-unsigned
-                            --assume-support
-                            --sandbox-memory-limit
-                            --sandbox-eval-memory-limit
-                            --sandbox-eval-time-limit)
+                            --assume-support)
        (λ (flags)
          (values flags
                  (λ (halt)
