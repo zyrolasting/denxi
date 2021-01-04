@@ -17,18 +17,18 @@
          define-logged
          call-with-logged-continuation
          (contract-out
+          [coerce-logged
+           (-> any/c logged?)]
           [logged-combine
            (-> logged?
                (-> list? list? list?)
                logged?)]
-
           [dump-log
            (->* ()
                 (#:dump-message (-> $message? any)
                  #:force-value any/c)
                 #:rest list?
                 (logged/c any/c))]
-
           [logged-map
            (-> logged?
                (-> $message? $message?)
@@ -87,6 +87,10 @@
                                          (in-log-messages messages)))
      (values v messages))))
 
+(define (coerce-logged v)
+  (if (logged? v)
+      v
+      (logged-unit v)))
 
 (define (in-log-messages messages)
   (in-generator
