@@ -41,9 +41,8 @@ on a new @project-name installation, then this command will fail with the
 following message in the report:
 
 @verbatim|{
-Refusing input "default.tgz" from source "https://sagegerard.com/xiden-tutorial/default.tgz" because public key is not trusted.
-If you trust this key, then add the following to XIDEN_TRUSTED_PUBLIC_KEYS:
-(integrity 'sha384 (hex "9f601cf0ae7aaaec339e648915966d9d91712f5724d7a8547fe5257b68ddd5b1c6309cbf1222b655cda26c22139f2334"))
+default.tgz: https://sagegerard.com/xiden-tutorial/default.tgz: signature violation: public key not trusted. To trust this key, add this to XIDEN_TRUSTED_PUBLIC_KEYS:
+(integrity 'sha384 (base64 "n2Ac8K56quwznmSJFZZtnZFxL1ck16hUf+Ule2jd1bHGMJy/EiK2Vc2ibCITnyM0"))
 }|
 
 @project-name is paranoid. It will not proceed with any operation that it cannot trace
