@@ -40,22 +40,22 @@
                bare-pkgdef?)]
           [autocomplete-inputs
            (->* (bare-racket-module?
-                 #:default-name non-empty-string?
-                 #:default-public-key-source non-empty-string?
+                 #:public-key-source non-empty-string?
                  #:private-key-path path-string?
                  #:find-file procedure?)
-                (#:byte-encoding (or/c #f xiden-encoding/c)
+                (#:default-name non-empty-string?
+                 #:byte-encoding (or/c #f xiden-encoding/c)
                  #:default-md-algorithm md-algorithm/c
                  #:override-sources procedure?
                  #:private-key-password-path (or/c #f xiden-encoding/c))
                 bare-racket-module?)]
           [autocomplete-input-expression
            (->* (any/c
-                 #:default-name non-empty-string?
-                 #:default-public-key-source non-empty-string?
+                 #:public-key-source non-empty-string?
                  #:private-key-path path-string?
                  #:find-file procedure?)
-                (#:byte-encoding (or/c #f xiden-encoding/c)
+                (#:default-name non-empty-string?
+                 #:byte-encoding (or/c #f xiden-encoding/c)
                  #:default-md-algorithm md-algorithm/c
                  #:override-sources procedure?
                  #:private-key-password-path (or/c #f xiden-encoding/c))
@@ -219,8 +219,8 @@
                              #:default-md-algorithm [md-algorithm 'sha384]
                              #:override-sources [override-sources (λ (d p s) s)]
                              #:private-key-password-path [private-key-password-path #f]
-                             #:default-name default-name
-                             #:default-public-key-source public-key-source
+                             #:default-name [default-name DEFAULT_STRING]
+                             #:public-key-source public-key-source
                              #:find-file find-file
                              #:private-key-path private-key-path)
   (map (λ (form)
@@ -231,11 +231,35 @@
                                             #:default-name default-name
                                             #:find-file find-file
                                             #:override-sources override-sources
-                                            #:default-public-key-source public-key-source
+                                            #:public-key-source public-key-source
                                             #:private-key-path private-key-path
                                             #:private-key-password-path private-key-password-path)
              form))
        (bare-racket-module-code stripped)))
+
+
+(define (autocomplete-input-expression #:byte-encoding [byte-encoding 'base64]
+                                       #:default-md-algorithm [default-md-algorithm 'sha384]
+                                       #:override-sources [override-sources (λ (d p s) s)]
+                                       #:private-key-password-path [private-key-password-path #f]
+                                       #:default-name [default-name DEFAULT_STRING]
+                                       #:find-file find-file
+                                       #:private-key-path private-key-path
+                                       #:public-key-source public-key-source
+                                       expr)
+  (analyze-input-expression expr
+                            public-key-source
+                            default-md-algorithm
+                            (λ (n s md ib pk sb)
+                              (make-input-expression-from-files
+                               (find-file n s md ib pk sb)
+                               #:local-name (or n default-name)
+                               #:byte-encoding byte-encoding
+                               #:md-algorithm (or md default-md-algorithm)
+                               (λ (d p) (override-sources d p s))
+                               public-key-source
+                               private-key-path
+                               private-key-password-path))))
 
 
 (define (analyze-input-expression expr continue)
@@ -272,29 +296,6 @@
 
     [_ expr]))
 
-
-(define (autocomplete-input-expression #:byte-encoding [byte-encoding 'base64]
-                                       #:default-md-algorithm [default-md-algorithm 'sha384]
-                                       #:override-sources [override-sources (λ (d p s) s)]
-                                       #:private-key-password-path [private-key-password-path #f]
-                                       #:default-name default-name
-                                       #:find-file find-file
-                                       #:private-key-path private-key-path
-                                       #:default-public-key-source default-public-key-source
-                                       expr)
-  (analyze-input-expression expr
-                            default-public-key-source
-                            default-md-algorithm
-                            (λ (n s md ib pk sb)
-                              (make-input-expression-from-files
-                               (find-file n s md ib pk sb)
-                               #:local-name (or n default-name)
-                               #:byte-encoding byte-encoding
-                               #:md-algorithm (or md default-md-algorithm)
-                               (λ (d p) (override-sources d p s))
-                               default-public-key-source
-                               private-key-path
-                               private-key-password-path))))
 
 (define-match-expander mdexpr
   (λ (stx)

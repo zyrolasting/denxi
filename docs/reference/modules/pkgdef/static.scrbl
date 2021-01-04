@@ -9,7 +9,8 @@
                     xiden/codec
                     xiden/integrity
                     xiden/pkgdef/static
-                    xiden/racket-module]
+                    xiden/racket-module
+                    xiden/string]
          "../../../shared.rkt"]
 
 @title{Static Operations for Package Definitions}
@@ -212,8 +213,8 @@ This allows authors to define several inputs the same way.
 
 @defproc[(autocomplete-input-expression
            [expr any/c]
-           [#:default-name default-name non-empty-string?]
-           [#:default-public-key-source default-public-key-source non-empty-string?]
+           [#:default-name default-name non-empty-string? DEFAULT_STRING]
+           [#:public-key-source public-key-source non-empty-string?]
            [#:find-file find-file procedure?]
            [#:private-key-path private-key-path path-string?]
            [#:byte-encoding byte-encoding (or/c #f xiden-encoding/c) 'base64]
@@ -221,6 +222,8 @@ This allows authors to define several inputs the same way.
            [#:override-sources override-sources procedure? (λ (d p s) s)]
            [#:private-key-password-path private-key-password-path (or/c path-string? #f) #f])
          any/c]{
+Programatically finishes incomplete input expressions.
+
 Equivalent to
 
 @racketblock[
@@ -234,18 +237,16 @@ Equivalent to
                              #:byte-encoding byte-encoding
                              #:md-algorithm (or md default-md-algorithm)
                              (λ (d p) (override-sources d p s))
-                             default-public-key-source
+                             public-key-source
                              private-key-path
                              private-key-password-path)))
 ]
-
-Use to programatically finish incomplete single input expressions.
 }
 
 
 @defproc[(autocomplete-inputs [stripped bare-racket-module?]
-                              [#:default-name default-name non-empty-string?]
-                              [#:default-public-key-source default-public-key-source non-empty-string?]
+                              [#:default-name default-name non-empty-string? DEFAULT_STRING]
+                              [#:public-key-source public-key-source non-empty-string?]
                               [#:find-file find-file procedure?]
                               [#:private-key-path private-key-path path-string?]
                               [#:byte-encoding byte-encoding (or/c #f xiden-encoding/c) 'base64]
@@ -254,11 +255,10 @@ Use to programatically finish incomplete single input expressions.
                               [#:private-key-password-path private-key-password-path (or/c path-string? #f) #f])
                               bare-racket-module?]{
 Applies @racket[autocomplete-input-expression] to each element of the
-code in @racket[stripped], returning a new @tech{bare} module with
-autocompleted inputs.
-
-Note that all inputs will be signed using the same private key,
-and will generate integrity information in the same way.
+code in @racket[stripped], returning a new @tech{bare module}.  All
+inputs will be signed using the same private key, all integrity
+information will be generated in the same way, and all byte
+expressions will be encoded the same way.
 }
 
 
