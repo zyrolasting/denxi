@@ -134,8 +134,8 @@
 
        ; Sec. 3
        (fulfil-package-output #:allow-unsupported-racket? (XIDEN_ALLOW_UNSUPPORTED_RACKET)
-                              (abbreviate-exact-xiden-query
-                               (evaluator->xiden-query pkgeval))
+                              (abbreviate-exact-package-query
+                               (evaluator->package-query pkgeval))
                               (or output-name-or-#f DEFAULT_STRING)
                               (or link-path-or-#f (pkgeval 'name))
                               pkgeval)
@@ -323,11 +323,11 @@
             (define program (if (logged? variant) variant (logged-unit variant)))
             (define-values (value messages) (run-log program))
 
-            (write-message ($package:log (abbreviate-exact-xiden-query
-                                          (make-exact-xiden-query provider
-                                                                  name
-                                                                  edition
-                                                                  revision-number))
+            (write-message ($package:log (abbreviate-exact-package-query
+                                          (make-exact-package-query provider
+                                                                    name
+                                                                    edition
+                                                                    revision-number))
                                          output-name
                                          messages)
                            (get-message-formatter))
@@ -503,7 +503,7 @@
   (let ([available (pkgeval 'output-names)])
     (if (member requested available)
         ($use pkgeval)
-        ($fail ($package:unavailable-output (abbreviate-exact-xiden-query (evaluator->xiden-query pkgeval))
+        ($fail ($package:unavailable-output (abbreviate-exact-package-query (evaluator->package-query pkgeval))
                                             requested
                                             available)))))
 
@@ -590,7 +590,7 @@
 
 (define (reuse-or-build-package-output pkgeval output-name link-path)
   (call-with-reused-output
-   (evaluator->xiden-query pkgeval)
+   (evaluator->package-query pkgeval)
    output-name
    (λ (variant)
      (cond [(exn? variant)
@@ -655,8 +655,8 @@
 ;===============================================================================
 ; A: Supporting procedures
 
-(define (evaluator->xiden-query pkgeval)
-  (make-exact-xiden-query
+(define (evaluator->package-query pkgeval)
+  (make-exact-package-query
    (pkgeval 'provider)
    (pkgeval 'name)
    (pkgeval 'edition)

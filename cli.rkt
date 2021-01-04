@@ -154,13 +154,13 @@
                               (match-lambda*
                                 [(list _ provider _ package _ edition _ revision _ output _ path)
                                  ($show-string (format "~a ~a ~a"
-                                                       (xiden-query->string
-                                                        (xiden-query provider
-                                                                     package
-                                                                     edition
-                                                                     (~a revision)
-                                                                     (~a revision)
-                                                                     "ii"))
+                                                       (format-parsed-package-query
+                                                        (parsed-package-query provider
+                                                                              package
+                                                                              edition
+                                                                              (~a revision)
+                                                                              (~a revision)
+                                                                              "ii"))
                                                        output
                                                        (file-name-from-path path)))])
                               (in-all-installed))))]

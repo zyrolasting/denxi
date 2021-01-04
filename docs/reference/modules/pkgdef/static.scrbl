@@ -56,7 +56,7 @@ The following procedures return data found from matching against the
 code of a @tech{bare} @tech{package definition}. They do not run
 package definition code.
 
-@defproc[(get-static-abbreviated-query [pkgdef bare-pkgdef?]) xiden-query-string?]{
+@defproc[(get-static-abbreviated-query [pkgdef bare-pkgdef?]) package-query?]{
 Returns a @tech{package query} containing the provider, package,
 edition, and revision number in @racket[pkgdef].
 }

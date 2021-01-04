@@ -27,7 +27,7 @@
                 list?)]
           [bare-pkgdef? flat-contract?]
           [get-static-abbreviated-query
-           (-> bare-pkgdef? xiden-query-string?)]
+           (-> bare-pkgdef? package-query?)]
           [get-static-inputs
            (-> bare-pkgdef? list?)]
           [get-static-simple-value

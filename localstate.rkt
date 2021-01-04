@@ -34,17 +34,17 @@
                output-record?)]
           [find-path-record
            (-> any/c (or/c path-record? #f))]
-          [find-xiden-query
+          [find-package-query
            (-> exact-positive-integer?
                string?
-               (or/c xiden-query? #f))]
+               (or/c parsed-package-query? #f))]
           [call-with-reused-output
-           (-> xiden-query-variant?
+           (-> package-query-variant?
                string?
                (-> (or/c #f exn? output-record?) any)
                any)]
           [in-xiden-outputs
-           (-> xiden-query-variant?
+           (-> package-query-variant?
                string?
                (sequence/c output-record?))]
           [in-path-links
@@ -60,7 +60,7 @@
           [in-issued-links
            (-> (sequence/c path-string? path-string?))]
           [in-xiden-objects
-           (-> xiden-query-variant?
+           (-> package-query-variant?
                string?
                (sequence/c path-string?
                            exact-positive-integer?
@@ -772,9 +772,9 @@
 
 
 (define (in-xiden-objects query-variant output-name)
-  (define query (coerce-xiden-query query-variant))
+  (define query (coerce-parsed-package-query query-variant))
   (match-define
-    (xiden-query
+    (parsed-package-query
      provider-name
      package-name
      edition-name
@@ -832,7 +832,7 @@
                 (in-xiden-objects query-variant output-name)))
 
 
-(define (find-xiden-query output-name revision-id)
+(define (find-package-query output-name revision-id)
   (match-define (vector provider-name package-name edition-name revision-number)
     (query-row+ (~a "select P.name, K.name, E.name, R.number"
                     " from "       (relation-name providers) " as P"
@@ -841,13 +841,13 @@
                     " inner join " (relation-name revisions) " as R on E.id = R.edition_id"
                     " where R.id = ?")
                 revision-id))
-  (xiden-query provider-name
-               package-name
-               edition-name
-               (~a revision-number)
-               (~a revision-number)
-               "ii"
-               output-name))
+  (parsed-package-query provider-name
+                        package-name
+                        edition-name
+                        (~a revision-number)
+                        (~a revision-number)
+                        "ii"
+                        output-name))
 
 
 (define (call-with-reused-output query output-name continue)
@@ -921,9 +921,9 @@
 
   (test-db "Query installed outputs"
     (define (mock-install query revision-number revision-names)
-      (declare-output (xiden-query-provider-name query)
-                      (xiden-query-package-name query)
-                      (xiden-query-edition-name query)
+      (declare-output (parsed-package-query-provider-name query)
+                      (parsed-package-query-package-name query)
+                      (parsed-package-query-edition-name query)
                       revision-number
                       revision-names
                       (~a "out" revision-number)
@@ -931,7 +931,7 @@
                                     #"abcd")))
 
     (define (mock-install-line qs N)
-      (define query (coerce-xiden-query qs))
+      (define query (coerce-parsed-package-query qs))
       (for ([i (in-range N)])
         (mock-install query i (list (format "rev-~a" i)
                                     (format "alt-~a" i)))))

@@ -4,26 +4,25 @@
 
 (require "contract.rkt")
 
-(provide (struct-out xiden-query)
+(provide (struct-out parsed-package-query)
          (contract-out
           [boundary-flags-string? predicate/c]
-          [well-formed-xiden-query? predicate/c]
-          [resolved-xiden-query? predicate/c]
-          [malformed-xiden-query? predicate/c]
-          [exact-xiden-query? predicate/c]
-          [xiden-query-string? predicate/c]
-          [xiden-query-variant? predicate/c]
-          [coerce-xiden-query (-> xiden-query-variant? xiden-query?)]
-          [xiden-query->string (-> well-formed-xiden-query? string?)]
-          [abbreviate-exact-xiden-query (-> exact-xiden-query? string?)]
-          [make-exact-xiden-query
-           (-> string? string? string? revision-number? exact-xiden-query?)]
-          [string->xiden-query (-> string? xiden-query?)]
-          [resolve-revision-interval (->* (xiden-query? (-> boolean? string? revision-number?))
+          [well-formed-package-query? predicate/c]
+          [resolved-package-query? predicate/c]
+          [malformed-package-query? predicate/c]
+          [exact-package-query? predicate/c]
+          [package-query? predicate/c]
+          [package-query-variant? predicate/c]
+          [coerce-parsed-package-query (-> package-query-variant? parsed-package-query?)]
+          [format-parsed-package-query (-> well-formed-package-query? string?)]
+          [abbreviate-exact-package-query (-> exact-package-query? string?)]
+          [make-exact-package-query
+           (-> string? string? string? revision-number? exact-package-query?)]
+          [parse-package-query (-> package-query? parsed-package-query?)]
+          [resolve-revision-interval (->* (parsed-package-query? (-> boolean? string? revision-number?))
                                           (#:default-bounds boundary-flags-string?)
                                           (values revision-number?
                                                   revision-number?))]))
-
 
 
 (require racket/function
@@ -34,7 +33,7 @@
          "string.rkt"
          "version.rkt")
 
-(struct xiden-query
+(struct parsed-package-query
   (provider-name
    package-name
    edition-name
@@ -51,8 +50,8 @@
     #t))
 
 
-(define well-formed-xiden-query?
-  (struct/c xiden-query
+(define well-formed-package-query?
+  (struct/c parsed-package-query
             non-empty-string?
             non-empty-string?
             string?
@@ -60,31 +59,31 @@
             string?
             (or/c "" boundary-flags-string?)))
 
-(define malformed-xiden-query?
-  (negate well-formed-xiden-query?))
+(define malformed-package-query?
+  (negate well-formed-package-query?))
 
 
-(define (resolved-xiden-query? v)
-  (and (well-formed-xiden-query? v)
-       (revision-number-string? (xiden-query-revision-min v))
-       (revision-number-string? (xiden-query-revision-max v))))
+(define (resolved-package-query? v)
+  (and (well-formed-package-query? v)
+       (revision-number-string? (parsed-package-query-revision-min v))
+       (revision-number-string? (parsed-package-query-revision-max v))))
 
 
-(define (exact-xiden-query? v)
-  (and (resolved-xiden-query? v)
-       (equal? (xiden-query-revision-min v)
-               (xiden-query-revision-max v))
-       (equal? (xiden-query-interval-bounds v)
+(define (exact-package-query? v)
+  (and (resolved-package-query? v)
+       (equal? (parsed-package-query-revision-min v)
+               (parsed-package-query-revision-max v))
+       (equal? (parsed-package-query-interval-bounds v)
                "ii")))
 
 
-(define (xiden-query-variant? v)
-  ((disjoin string? xiden-query?) v))
+(define (package-query-variant? v)
+  ((disjoin package-query? parsed-package-query?) v))
 
 
-(define (coerce-xiden-query v)
-  (cond [(xiden-query? v) v]
-        [(string? v) (string->xiden-query v)]))
+(define (coerce-parsed-package-query v)
+  (cond [(parsed-package-query? v) v]
+        [(package-query? v) (parse-package-query v)]))
 
 
 (define (query-ref s def)
@@ -93,34 +92,34 @@
       def))
 
 
-(define (xiden-query-string? s)
+(define (package-query? s)
   (with-handlers ([values (const #f)])
-    (well-formed-xiden-query? (string->xiden-query s))))
+    (well-formed-package-query? (parse-package-query s))))
 
 
-(define (string->xiden-query s)
+(define (parse-package-query s)
   (define user-defined (string-split s ":"))
   (define num-fields (length user-defined))
-  (apply xiden-query
-         (build-list (procedure-arity xiden-query)
+  (apply parsed-package-query
+         (build-list (procedure-arity parsed-package-query)
                      (λ (i)
                        (if (< i num-fields)
                            (list-ref user-defined i)
                            "")))))
 
 
-(define (xiden-query->string d)
+(define (format-parsed-package-query d)
   (regexp-replace* ":+$"
                    (string-join (cdr (vector->list (struct->vector d)))
                                 ":")
                    ""))
 
-(define (abbreviate-exact-xiden-query q)
+(define (abbreviate-exact-package-query q)
   (string-join (map (λ (acc) (acc q))
-                    (list xiden-query-provider-name
-                          xiden-query-package-name
-                          xiden-query-edition-name
-                          xiden-query-revision-min))
+                    (list parsed-package-query-provider-name
+                          parsed-package-query-package-name
+                          parsed-package-query-edition-name
+                          parsed-package-query-revision-min))
                ":"))
 
 
@@ -137,32 +136,32 @@
 
 
 (define (resolve-revision-interval #:default-bounds [default-bounds "ii"] query revision->revision-number)
-  (let ([bounds (if (boundary-flags-string? (xiden-query-interval-bounds query))
-                    (xiden-query-interval-bounds query)
+  (let ([bounds (if (boundary-flags-string? (parsed-package-query-interval-bounds query))
+                    (parsed-package-query-interval-bounds query)
                     default-bounds)])
     (make-revision-interval
-     (revision->revision-number #f (xiden-query-revision-min query))
-     (revision->revision-number #t (xiden-query-revision-max query))
+     (revision->revision-number #f (parsed-package-query-revision-min query))
+     (revision->revision-number #t (parsed-package-query-revision-max query))
      #:lo-exclusive (boundary-flag->boolean (string-ref bounds 0))
      #:hi-exclusive (boundary-flag->boolean (string-ref bounds 1)))))
 
 
-(define (make-exact-xiden-query provider name edition revision-number)
+(define (make-exact-package-query provider name edition revision-number)
   (let ([rn (~a revision-number)])
-    (xiden-query provider
-                 name
-                 edition
-                 rn
-                 rn
-                 "ii")))
+    (parsed-package-query provider
+                          name
+                          edition
+                          rn
+                          rn
+                          "ii")))
 
 
 (module+ test
   (require rackunit)
 
   (test-equal? "Make exact query"
-               (make-exact-xiden-query "acme" "anvil" "draft" 1)
-               (xiden-query "acme" "anvil" "draft" "1" "1" "ii"))
+               (make-exact-package-query "acme" "anvil" "draft" 1)
+               (parsed-package-query "acme" "anvil" "draft" "1" "1" "ii"))
 
   (test-case "Detect boundary flag strings"
     (check-true (boundary-flags-string? "ii"))
@@ -175,7 +174,7 @@
     (check-false (boundary-flags-string? "ab")))
 
   (test-equal? "Abbreviate queries"
-               (abbreviate-exact-xiden-query (xiden-query "a" "b" "c" "0" "0" "ii"))
+               (abbreviate-exact-package-query (parsed-package-query "a" "b" "c" "0" "0" "ii"))
                "a:b:c:0")
 
   (test-case "Resolve non-numeric revision intervals"
@@ -189,7 +188,7 @@
       (match-define (list expected-lo expected-hi interval-flags) test-datum)
       (call-with-values (λ ()
                           (resolve-revision-interval
-                           (xiden-query #f #f #f #\a #\d interval-flags)
+                           (parsed-package-query #f #f #f #\a #\d interval-flags)
                            (λ (_ r) (char->integer r))))
                         (λ (lo hi)
                           (test-equal? (format "Resolve non-numeric interval: ~a"
@@ -200,7 +199,7 @@
                                        (cons expected-lo expected-hi))))))
 
   (test-case "Convert between queries and strings"
-    (define (verify s expected) (check-equal? (xiden-query->string (string->xiden-query s)) expected))
+    (define (verify s expected) (check-equal? (format-parsed-package-query (parse-package-query s)) expected))
     (verify ""                "")
     (verify "a"               "a")
     (verify "a:b"             "a:b")

@@ -131,7 +131,7 @@ All @racket[install] @tech{messages} are instances of @racket[$package].
 A @tech{message} from a package's runtime.
 }
 
-@defstruct*[($package:log $package) ([query xiden-query-string?]
+@defstruct*[($package:log $package) ([query package-query?]
                                      [output-name string?]
                                      [messages messy-log/c]) #:prefab]{
 A @tech{message} containing other messages relevant to building a particular package output.

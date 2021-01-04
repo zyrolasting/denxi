@@ -60,7 +60,7 @@ The empty string is equivalent to accepting only default values.
 
 @section[#:tag "pkg-query-classifications"]{Package Query Classifications}
 
-A @deftech{parsed package query} is an instance of @racket[xiden-query].
+A @deftech{parsed package query} is an instance of @racket[parsed-package-query].
 
 A @deftech{well-formed package query} is a @tech{parsed package query}
 that uses non-empty strings for package and provider names, and has
@@ -82,18 +82,18 @@ interval that matches exactly one @tech{version}.
 
 Assume that a query @racketid[Q] is bound to a @tech{well-formed
 package query} with no omissions. In that case you can construct an
-instance of @racket[xiden-query] using @racket[(apply xiden-query
-(string-split Q ":"))].
+instance of @racket[parsed-package-query] using @racket[(apply
+parsed-package-query (string-split Q ":"))].
 
 In the general case where fields may be omitted, any missing fields
 should be set to the empty string like so:
 
 @racketblock[
-(define (string->xiden-query s)
+(define (parse-package-query s)
   (define user-defined (string-split s ":"))
   (define num-fields (length user-defined))
-  (apply xiden-query
-         (build-list (procedure-arity xiden-query)
+  (apply parsed-package-query
+         (build-list (procedure-arity parsed-package-query)
                      (λ (i)
                        (if (< i num-fields)
                            (list-ref user-defined i)
@@ -103,59 +103,61 @@ should be set to the empty string like so:
 
 @section{Package Query API}
 
-@defstruct*[xiden-query ([provider-name string?]
-                         [package-name string?]
-                         [edition-name string?]
-                         [revision-min string?]
-                         [revision-max string?]
-                         [interval-bounds string?])]{
+@defstruct*[parsed-package-query ([provider-name string?]
+                                  [package-name string?]
+                                  [edition-name string?]
+                                  [revision-min string?]
+                                  [revision-max string?]
+                                  [interval-bounds string?])]{
 A parsed form of a @tech{package query}.
 }
 
 @deftogether[(
-@defproc[(well-formed-xiden-query? [v any/c]) boolean?]
-@defproc[(malformed-xiden-query? [v any/c]) boolean?]
-@defproc[(resolved-xiden-query? [v any/c]) boolean?]
-@defproc[(exact-xiden-query? [v any/c]) boolean?]
+@defproc[(well-formed-package-query? [v any/c]) boolean?]
+@defproc[(malformed-package-query? [v any/c]) boolean?]
+@defproc[(resolved-package-query? [v any/c]) boolean?]
+@defproc[(exact-package-query? [v any/c]) boolean?]
 )]{
 Each procedure returns @racket[#t] if @racket[v] matches the
 respective rule in @secref{pkg-query-classifications}.
 }
 
-@defthing[xiden-query-string? predicate/c]{
+
+@defthing[package-query? predicate/c]{
 Returns @racket[#t] if the input value is suitable for use as an
-argument to @racket[string->xiden-query].
+argument to @racket[parse-package-query].
 }
 
 
-@defthing[xiden-query-variant? predicate/c]{
+@defthing[package-query-variant? predicate/c]{
 Returns @racket[#t] if the input value is suitable for use as an
-argument to @racket[coerce-xiden-query]. Specifically, the input can
-be a string, an instance of @racket[xiden-query], or a procedure that
-behaves like an evaluator for a @racketmodname[xiden/pkgdef] module.
+argument to @racket[coerce-parsed-package-query]. Specifically, the
+input can be a string, an instance of @racket[parsed-package-query],
+or a procedure that behaves like an evaluator for a
+@racketmodname[xiden/pkgdef] module.
 }
 
 @defthing[boundary-flags-string? predicate/c]{
 Returns @racket[#t] if the argument is a suitable value for
-@racket[xiden-query-interval-bounds].
+@racket[package-query-interval-bounds].
 }
 
 
-@defproc[(coerce-xiden-query [variant xiden-query-variant?]) xiden-query?]{
-Returns a @racket[xiden-query] from a variant value type.
+@defproc[(coerce-parsed-package-query [variant package-query-variant?]) parsed-package-query?]{
+Returns a @racket[parsed-package-query] from a variant value type.
 }
 
-@defproc[(xiden-query->string [query well-formed-xiden-query?]) string?]{
-Converts a @racket[xiden-query] to a string, with no validation
+@defproc[(format-parsed-package-query [query well-formed-package-query?]) string?]{
+Converts a @racket[parsed-package-query] to a string, with no validation
 performed on the fields in advance. The fields set in @racket[query]
 are joined into the string as-is.
 }
 
-@defproc[(make-exact-xiden-query [provider string?] [name string?] [revision-number revision-number?]) exact-xiden-query?]{
+@defproc[(make-exact-package-query [provider string?] [name string?] [revision-number revision-number?]) exact-package-query?]{
 Returns an @tech{exact package query} build from the arguments.
 }
 
-@defproc[(resolve-revision-interval [query xiden-query?]
+@defproc[(resolve-revision-interval [query parsed-package-query?]
                                     [make-revision-number
                                      (-> boolean? string? revision-number?)]
                                     [#:default-bounds default-bounds "ii"])
@@ -169,27 +171,27 @@ first transformed to a @tech{revision number} using
 @racket[make-revision-number] accepts two arguments.
 
 If the first argument is @racket[#f], then the second argument is
-the same value bound to @racket[(xiden-query-revision-min query)].
+the same value bound to @racket[(parsed-package-query-revision-min query)].
 
 If the first argument is @racket[#t], then the second argument is
-the same value bound to @racket[(xiden-query-revision-max query)].
+the same value bound to @racket[(parsed-package-query-revision-max query)].
 
 The first argument is useful for generating mock data for tests, but
 is otherwise unhelpful when normalizing an arbitrary @tech{revision}
 to a @tech{revision number}.
 
 The output integers are adjusted according to
-@racket[(xiden-query-interval-bounds query)], or
+@racket[(parsed-package-query-interval-bounds query)], or
 @racket[default-bounds] if @racket[(boundary-flags-string?
-(xiden-query-interval-bounds query))] is @racket[#f].
+(parsed-package-query-interval-bounds query))] is @racket[#f].
 }
 
-@defproc[(abbreviate-exact-xiden-query [query exact-xiden-query?]) string?]{
-Like @racket[xiden-query->string], except the resulting string omits
+@defproc[(abbreviate-exact-package-query [query exact-package-query?]) string?]{
+Like @racket[format-parsed-package-query], except the resulting string omits
 more fields. Since @racket[query] is exact, this does not result in
 lost information.
 }
 
-@defproc[(string->xiden-query [str string?]) xiden-query?]{
-Converns a string to an instance of @racket[xiden-query].
+@defproc[(parse-package-query [str string?]) parsed-package-query?]{
+Converns a string to an instance of @racket[parsed-package-query].
 }
