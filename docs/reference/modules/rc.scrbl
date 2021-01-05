@@ -30,13 +30,11 @@ Here are the ways one can change a setting. Each method overrides
 the method before it.
 
 @itemlist[
-
 @item{Do nothing. Every setting has a hard-coded default.}
 @item{Set an environment variable, e.g. @litchar{export XIDEN_VERBOSE="#t"}.}
 @item{Open an @tech{rcfile} and add @racket[(define XIDEN_VERBOSE #t)].}
 @item{When applicable, use @litchar{--XIDEN_VERBOSE '#t'} in a command line (or an alternative flag).}
-@item{In a program, use @racket[(parameterize ([(setting-derived-parameter XIDEN_VERBOSE) #t]) ...)].}
-
+@item{In a program, use @racket[(XIDEN_VERBOSE #t (lambda () ...))].}
 ]
 
 @include-section{rcfile.scrbl}
