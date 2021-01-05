@@ -12,7 +12,7 @@
                     xiden/version]
          "../../shared.rkt"]
 
-@title{Package API}
+@title{Packages}
 
 @defmodule[xiden/package]
 
