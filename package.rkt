@@ -240,7 +240,7 @@
                   (λ (to-wrap messages)
                     (cons ($package:log (abbreviate-exact-package-query (package->package-query pkg))
                                         output-name
-                                        to-wrap)
+                                        (reverse to-wrap))
                           messages))))
 
 ;-------------------------------------------------------------------------------

@@ -141,10 +141,10 @@
                                     #:workspace [ws (workspace-directory)])
   (make-security-guard
    (current-security-guard)
-   (make-file-guard name
-                    #:trust-any-executable? trust-any-executable?
+   (make-file-guard #:trust-any-executable? trust-any-executable?
                     #:trust-executables trust-executables
-                    #:writeable-directories (get-writeable-workspace-directories ws))
+                    #:writeable-directories (get-writeable-workspace-directories ws)
+                    name)
    (make-network-guard name)
    (make-link-guard name ws)))
 
@@ -200,7 +200,8 @@
 
 
 (define (get-writeable-workspace-directories [wd (workspace-directory)])
-  (list (build-path wd "var/xiden")
+  (list (current-directory)
+        (build-path wd "var/xiden")
         (build-path wd "tmp")))
 
 

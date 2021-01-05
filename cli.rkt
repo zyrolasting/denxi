@@ -84,7 +84,7 @@
                    (restrict halt
                              planned
                              #:memory-limit (XIDEN_MEMORY_LIMIT_MB)
-                             #:time-limit (XIDEN_TIME_LIMIT_SECONDS)
+                             #:time-limit (XIDEN_TIME_LIMIT_S)
                              #:trusted-executables (XIDEN_TRUSTED_EXECUTABLES)
                              #:allowed-envvars (XIDEN_ALLOW_ENV)
                              #:trust-unverified-host? (XIDEN_TRUST_UNVERIFIED_HOST)

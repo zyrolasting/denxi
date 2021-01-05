@@ -43,7 +43,10 @@
                 ([action (in-list actions)])
         (define-values (result messages)
           (with-handlers
-            ([(λ _ #t)
+            ([$message?
+              (λ (m)
+                (fail (cons m accum-messages)))]
+             [exn?
               (λ (e)
                 (fail (cons ($show-string (exn->string e))
                             accum-messages)))])
