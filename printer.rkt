@@ -43,7 +43,8 @@
 
 (define (write-message v
                        #:newline? [newline? #t]
-                       [formatter (current-message-formatter)] [out (current-output-port)])
+                       [formatter (current-message-formatter)]
+                       [out (current-output-port)])
   (define maybe-message (filter-output v))
   (when maybe-message
     (parameterize ([current-output-port out])
