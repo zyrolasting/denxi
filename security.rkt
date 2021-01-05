@@ -15,11 +15,11 @@
          racket/list
          (only-in net/url-connect current-https-protocol)
          "codec.rkt"
+         "integrity.rkt"
          "logged.rkt"
          "message.rkt"
          "path.rkt"
          "port.rkt"
-         "signature.rkt"
          "workspace.rkt")
 
 (define (restrict halt

@@ -15,9 +15,6 @@
            (-> siginfo-variant/c
                siginfo-variant/c
                signature-info?)]
-          [bind-trust-list
-           (-> (listof well-formed-integrity-info/c)
-               (-> path-string? boolean?))]
           [well-formed-signature-info/c
            flat-contract?]
           [get-public-key-path
@@ -56,11 +53,6 @@
             siginfo-variant/c))
 
 (define ESTIMATED_SIGNATURE_AND_PUBKEY_MAX_SIZE (* 100 1024))
-
-(define (bind-trust-list trusted)
-  (λ (public-key-path)
-    (for/or ([integrity trusted])
-      ($integrity-ok? (check-integrity #:trust-bad-digest #f integrity public-key-path)))))
 
 (define (get-public-key-path variant)
   (get-cached-file* variant ESTIMATED_SIGNATURE_AND_PUBKEY_MAX_SIZE))

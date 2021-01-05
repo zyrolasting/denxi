@@ -44,6 +44,9 @@
            (-> md-bytes-source/c
                md-algorithm/c
                bytes?)]
+          [bind-trust-list
+           (-> (listof well-formed-integrity-info/c)
+               (-> path-string? boolean?))]
           [check-integrity
            (-> #:trust-bad-digest any/c
                any/c
@@ -88,6 +91,12 @@
         [else (raise-argument-error 'make-digest
                                     "A path, bytes, or an input port"
                                     variant)]))
+
+
+(define (bind-trust-list trusted)
+  (λ (public-key-path)
+    (for/or ([integrity trusted])
+      ($integrity-ok? (check-integrity #:trust-bad-digest #f integrity public-key-path)))))
 
 
 ;; -------------------------------------------------------------------------------

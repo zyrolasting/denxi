@@ -86,3 +86,10 @@ Meant for use in @tech{package definitions} when declaring @tech{package inputs}
 @defproc[(make-digest [variant md-bytes-source/c] [algorithm md-algorithm/c]) bytes?]{
 Returns the raw byte content of @racket[algorithm] applied to bytes from @racket[variant].
 }
+
+@defproc[(bind-trust-list [trusted (listof well-formed-integrity-info/c)]) (-> path-string? boolean?)]{
+Returns a procedure @racket[P], such that @racket[(P
+"/path/to/file")] (for example) is @racket[#t] if the given file
+passes an @tech{integrity check} for one of the
+@racket[integrity-info] structures in @racket[trusted].
+}

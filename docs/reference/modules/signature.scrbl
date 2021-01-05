@@ -64,16 +64,6 @@ created using a private key.
 An abbreviated @racket[signature-info] constructor for use in @tech{package definitions}.
 }
 
-@defproc[(bind-trust-list [trusted (listof well-formed-integrity-info/c)]) (-> path-string? boolean?)]{
-Returns a procedure @racket[P], such that @racket[(P
-"/path/to/file")] (for example) is @racket[#t] if the given file
-passes an @tech{integrity check} for one of the
-@racket[integrity-info] structures in @racket[trusted].
-
-This is used internally to determine a user's trust in a public key or
-executable.
-}
-
 @defthing[well-formed-signature-info/c flat-contract?]{
 Recognizes an instance of @racket[signature-info] that is suitable for use in signature checking.
 }
