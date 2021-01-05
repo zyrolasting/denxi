@@ -10,7 +10,7 @@
                     xiden/racket-module]
          "../../shared.rkt"]
 
-@title[#:tag "rktmod"]{Static Operations for Racket Module Syntax and Expressions}
+@title[#:tag "rktmod"]{Racket Module Operations}
 
 @defmodule[xiden/racket-module]
 
