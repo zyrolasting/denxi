@@ -111,7 +111,7 @@
 (define-xiden-setting XIDEN_PLUGIN_MODULE (or/c #f path-string?) #f)
 (define-xiden-setting XIDEN_PRIVATE_KEY_PATH (or/c #f path-string?) #f)
 (define-xiden-setting XIDEN_READER_FRIENDLY_OUTPUT boolean? #f)
-(define-xiden-setting XIDEN_TIME_LIMIT_SECONDS (>=/c 0) (* 5 60))
+(define-xiden-setting XIDEN_TIME_LIMIT_S (>=/c 0) (* 5 60))
 (define-xiden-setting XIDEN_MEMORY_LIMIT_MB (>=/c 0) 200)
 (define-xiden-setting XIDEN_SUBPROCESS_TIMEOUT_S (>=/c 0) (* 30 60))
 (define-xiden-setting XIDEN_TRUSTED_EXECUTABLES (listof well-formed-integrity-info/c) null)
