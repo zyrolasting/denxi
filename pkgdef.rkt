@@ -250,5 +250,11 @@
 
     (define build (package-build pkgdef))
 
-    (check-equal? (build "default") 1)
-    (check-equal? (build "min") 2)))
+    (define (check l e)
+      (call-with-values (λ () (run-log l))
+                        (λ (v m)
+                          (check-equal? v e)
+                          (check-pred null? m))))
+
+    (check (build "default") 1)
+    (check (build "min") 2)))

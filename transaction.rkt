@@ -46,7 +46,7 @@
             ([$message?
               (λ (m)
                 (fail (cons m accum-messages)))]
-             [exn?
+             [(λ _ #t)
               (λ (e)
                 (fail (cons ($show-string (exn->string e))
                             accum-messages)))])
