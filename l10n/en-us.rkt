@@ -26,10 +26,10 @@
      "minimum Racket version cannot exceed maximum Racket version"]
 
     [(XIDEN_MEMORY_LIMIT_MB)
-     "Total memory quota for a package"]
+     "Memory limit for the process"]
 
     [(XIDEN_TIME_LIMIT_SECONDS)
-     "Time limit for a package to finish working"]
+     "Time limit for the process"]
 
     [(XIDEN_INSTALL_SOURCES)
      "Add installation to transaction"]
@@ -62,7 +62,7 @@
      "(DANGEROUS) Trust any executable"]
 
     [(XIDEN_TRUSTED_PUBLIC_KEYS)
-     "Trust a given public key, by 160-bit SHA-384 fingerprint"]
+     "Trust a given public key using integrity information"]
 
     [(XIDEN_TRUSTED_EXECUTABLES)
      "Trust an executable using integrity information"]
@@ -92,19 +92,16 @@
      "The location of a private key"]
 
     [(XIDEN_CATALOGS)
-     "Services to contact when searching for package definitions"]
+     "Sets default URL templates in from-catalogs"]
 
     [(XIDEN_DOWNLOAD_MAX_REDIRECTS)
-     "Maximum redirects to follow when downloading an artifact"]
-
-    [(XIDEN_ALLOW_UNDECLARED_RACKET_VERSIONS)
-     "Install packages even if they do not declare supported Racket versions"]
+     "Maximum redirects to follow before downloading data"]
 
     [(XIDEN_ALLOW_UNSUPPORTED_RACKET)
      "Install packages even if they declare that they do not support the running version of Racket."]
 
     [(XIDEN_ALLOW_ENV)
-     "Names of environment variables to expose to packages and subprocesses"]
+     "Names of environment variables to expose to subprocesses"]
 
     [(XIDEN_SUBPROCESS_TIMEOUT_S)
      "Maximum number of seconds a subprocess may run"]
