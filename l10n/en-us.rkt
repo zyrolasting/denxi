@@ -115,7 +115,7 @@
           (let ([str (~a name)])
             (if (equal? str "")
                 "Process"
-                (~a " " str " ")))))
+                str))))
 
 
 (define (localized-comma-list l conjunction)
