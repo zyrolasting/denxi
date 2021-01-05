@@ -132,9 +132,8 @@ argument to @racket[parse-package-query].
 @defthing[package-query-variant? predicate/c]{
 Returns @racket[#t] if the input value is suitable for use as an
 argument to @racket[coerce-parsed-package-query]. Specifically, the
-input can be a string, an instance of @racket[parsed-package-query],
-or a procedure that behaves like an evaluator for a
-@racketmodname[xiden/pkgdef] module.
+input can be a string, or an instance of
+@racket[parsed-package-query].
 }
 
 @defthing[boundary-flags-string? predicate/c]{
