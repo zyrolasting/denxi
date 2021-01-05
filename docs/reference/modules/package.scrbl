@@ -90,7 +90,9 @@ Bijective @racket[build] procedures do not have these problems.
 }
 
 @defthing[empty-package package?]{
-The @tech{package} with no inputs, no outputs, and all default values. 
+The @tech{package} with no inputs, no outputs, and all default values.
+The empty package claims to support all operating systems and versions
+of Racket.
 }
 
 @defthing[output-not-found (-> non-empty-string? logged?)]{
