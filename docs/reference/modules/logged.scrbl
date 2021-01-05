@@ -73,10 +73,6 @@ a value matching @racket[contract-expr] as the first value, unless
 that value is @racket[SUCCESS] or @racket[FAILURE].
 }
 
-@defproc[(coerce-logged [v any/c]) logged?]{
-Equivalent to @racket[(if (logged? v) v (logged-unit v))]
-}
-
 @section{Terminal Values}
 
 @deftogether[(
@@ -130,7 +126,10 @@ Use this to “scope” messages.
   (logged-map (curry $build-log-entry "my-build")
               (create-build)))
 ]
+}
 
+@defproc[(coerce-logged [v any/c]) logged?]{
+Equivalent to @racket[(if (logged? v) v (logged-unit v))]
 }
 
 @section{Logged Program Control}
