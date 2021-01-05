@@ -4,7 +4,8 @@
                     racket/contract
                     xiden/rc
                     xiden/source
-                    xiden/plugin]
+                    xiden/plugin
+                    xiden/racket-module]
                     "../../shared.rkt"]
 
 @title{Plugins}
@@ -51,7 +52,7 @@ from @racket[path] on its own.
 }
 
 
-@defproc[(before-new-package [original stripped-pkgdef?]) stripped-pkgdef?]{
+@defproc[(before-new-package [original bare-racket-module?]) bare-racket-module?]{
 A hook for returning a @tech{bare} @tech{package definition} to use
 for creating a @tech{package}. @racket[original] represents a
 @tech{package definition} fetched from a @tech{source}.
@@ -70,11 +71,13 @@ definition, which has one dependency.
 
 @racketblock[
 (define (before-new-package original)
-  '((input "pkgdef" (sources "https://example.com/other.rkt"))
-    (output "default"
-            pkgdef-input := (input-ref "pkgdef")
-            pkgdef-path := (resolve-input "pkgdef")
-            (install #f #f pkgdef-path))))
+  (struct-copy bare-racket-module original
+               [code
+                 '((input "pkgdef" (sources "https://example.com/other.rkt"))
+                   (output "default"
+                           pkgdef-input := (input-ref "pkgdef")
+                           pkgdef-path := (resolve-input "pkgdef")
+                           (install #f #f pkgdef-path)))]))
 ]
 
 This creates builds that will not terminate. Even if Xiden downloads a
