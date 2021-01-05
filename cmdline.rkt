@@ -64,7 +64,11 @@
 
       (with-handlers ([exn? (λ (e)
                               (write-message ($show-string (exn-message e)) format-message)
-                              (use-exit-code 1))])
+                              (use-exit-code 1))]
+                      [$message?
+                       (λ (m)
+                         (write-message m format-message)
+                         (use-exit-code 1))])
         (define-values (flags run!) (parse-args args))
         (call-with-applied-settings
          (build-runtime-configuration flags)
