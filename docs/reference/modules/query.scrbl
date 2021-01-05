@@ -38,7 +38,7 @@ Finally, @tt{<interval-bounds>} can be @racket{ee}, @racket{ie},
 inclusive or exclusive interval boundaries. The first character
 controls @tt{<revision-min>}. The second character controls
 @tt{<revision-max>}. If the character is @racket{i}, then the boundary
-is inclusive of the set revision. If @racket{e}, exclusive.
+is inclusive of the defined revision. If @racket{e}, exclusive.
 
 
 @section{Package Query Omissions}
