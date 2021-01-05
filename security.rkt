@@ -10,7 +10,8 @@
 (define+provide-message $restrict:operation $restrict (reporting-guard summary args))
 (define+provide-message $restrict:budget $restrict (kind amount))
 
-(require racket/function
+(require racket/exn
+         racket/function
          racket/list
          (only-in net/url-connect current-https-protocol)
          "codec.rkt"
@@ -32,39 +33,50 @@
                   #:workspace workspace
                   #:gc-period gc-period
                   #:name [name (or (object-name proc) "")])
-  (define out-of-memory? #f)
-  (define val #f)
-  (define messages #f)
-  (define gc (make-gc-thread gc-period))
-  (define cust (make-custom-custodian memory-limit))
-  (define thd
-    (thread (λ ()
-              (with-handlers ([exn:fail:out-of-memory? (λ (e) (set! out-of-memory? #t))])
-                (parameterize ([current-custodian cust]
-                               [current-environment-variables (make-envvar-subset allowed-envvars)]
-                               [current-https-protocol (if trust-unverified-host? 'auto 'secure)]
-                               [current-security-guard (make-custom-security-guard
-                                                        #:name name
-                                                        #:trust-any-executable? trust-any-executable?
-                                                        #:trust-executables trusted-executables
-                                                        #:workspace workspace)])
-                  (call-with-values (λ () (call/cc (λ (nested-halt) (proc nested-halt))))
-                                    (λ (v m)
-                                      (set! val v)
-                                      (set! messages m))))))))
+  (call-with-managed-thread (make-gc-thread gc-period)
+   (λ _
+     ; The `plan' mechanic allows the two threads at play
+     ; to decide how to apply `halt'.
+     (define finish halt)
+     (define (plan c m)
+       (set! finish (λ () (halt c m))))
 
-  (dynamic-wind void
-                (λ ()
-                  (if (sync/timeout time-limit thd)
-                      (if out-of-memory?
-                          (halt 1 ($restrict:budget name 'space memory-limit))
-                          (halt val messages))
-                      (halt 1 ($restrict:budget name 'time time-limit))))
-                (λ ()
-                  (kill-thread thd)
-                  (kill-thread gc)
-                  (custodian-shutdown-all cust))))
+     (define security-guard
+       (make-custom-security-guard
+        #:name name
+        #:trust-any-executable? trust-any-executable?
+        #:trust-executables trusted-executables
+        #:workspace workspace))
 
+     (call-with-managed-thread
+      (make-worker-thread name
+                          memory-limit
+                          security-guard
+                          (make-envvar-subset allowed-envvars)
+                          plan
+                          (if trust-unverified-host? 'auto 'secure)
+                          proc)
+      (λ (worker-thread)
+        (unless (sync/timeout time-limit worker-thread)
+          (plan 1 ($restrict:budget name 'time time-limit)))
+        (finish))))))
+
+
+;-------------------------------------------------------------------------------
+; Control
+
+(define (make-worker-thread name memory-limit security-guard envvars plan https-protocol proc)
+  (thread
+   (λ ()
+     (call-with-custom-custodian memory-limit
+      (λ ()
+        (with-handlers ([exn:fail:out-of-memory?
+                         (λ _ (plan 1 ($restrict:budget name 'space memory-limit)))])
+          (parameterize ([current-environment-variables envvars]
+                         [current-https-protocol https-protocol]
+                         [current-security-guard security-guard])
+            (call-with-values (λ () (call/cc proc))
+                              plan))))))))
 
 
 ;-------------------------------------------------------------------------------
@@ -80,6 +92,15 @@
                                        stop-cust)
                stop-cust))))
 
+(define (call-with-custom-custodian memory-limit-mb proc)
+  (let ([cust (make-custom-custodian memory-limit-mb)])
+    (dynamic-wind void
+                  (λ ()
+                    (parameterize ([current-custodian cust])
+                      (proc)))
+                  (λ ()
+                    (custodian-shutdown-all cust)))))
+
 (define (make-gc-thread period)
   (thread
    (λ ()
@@ -87,6 +108,11 @@
        (sync/timeout period never-evt)
        (collect-garbage)
        (loop)))))
+
+(define (call-with-managed-thread th proc)
+  (dynamic-wind void
+                (λ () (proc th))
+                (λ () (kill-thread th))))
 
 
 ;-------------------------------------------------------------------------------
