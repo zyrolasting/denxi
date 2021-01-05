@@ -135,15 +135,14 @@
 (define-namespace-anchor anchor)
 (define module-namespace (namespace-anchor->namespace anchor))
 
-(define (get-package #:before-new-package before-new-package
-                     #:override-specs override-specs
+(define (get-package #:before-new-package [before-new-package values]
+                     #:override-specs [override-specs null]
                      source
                      max-size)
   (mdo original := (find-original-package-definition source max-size)
-       (let ([overridden (override-package-definition original)])
-         ; The safety of eval depends on the reader/expander guards
-         ; in read-package-definition. That prevents arbitrary code
-         ; from reaching here.
+       (let ([overridden (override-package-definition original before-new-package override-specs)])
+         ; The reader/expander guards in read-package-definition
+         ; prevent arbitrary code from reaching here.
          (eval overridden module-namespace)
          (logged-unit (dynamic-require `',(cadr overridden) 'pkg)))))
 
@@ -182,6 +181,7 @@
   (make-package-definition-datum
    (bare-racket-module-code
     (override-inputs plugin-override input-overrides))))
+
 
 (define (fetch-package-definition source max-size)
   (fetch source
@@ -271,6 +271,7 @@
        (if allow-unsupported?
            ($use pkg)
            ($fail ($package:unsupported-racket-version racket-support)))])))
+
 
 (define-logged (validate-requested-output pkg requested)
   (let ([available (package-output-names pkg)])
