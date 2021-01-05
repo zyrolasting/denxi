@@ -108,8 +108,8 @@ A @tech{message} that reports the results of a signature check.
 
 @racket[ok?] is @racket[#t] if the check passed.
 
-@racket[stage] is a symbol for tracing the source of corresponding
-instance.
+@racket[stage] is a symbol representing the procedure responsible for
+the check result.
 
 @racket[public-key-path] is a path to a cached public key file
 used for a check, or @racket[#f] if a public key is not relevant.
