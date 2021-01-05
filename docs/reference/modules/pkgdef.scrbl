@@ -73,8 +73,6 @@ Sets @racket[package-os-support].
 
 Each @racket[os] must be a possible value of @racket[(system-type
 'os)].
-
-Defaults to a list of every possible value from @racket[(system-type 'os)].
 }
 
 @defform[(output name body ...)
@@ -103,8 +101,6 @@ You may replace any version string with @racket{*} to remove a bound.
 This way, @racket[(racket-versions ("6.0" "*"))] represents all
 versions above and including 6.0. If the version string is not
 @racket{*}, it must be a @racket[valid-version?].
-
-Defaults to @racket["*"], or all versions.
 }
 
 @defform[(revision-names str ...) #:contracts ([str non-empty-string?])]{
