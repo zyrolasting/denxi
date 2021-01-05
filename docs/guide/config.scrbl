@@ -28,7 +28,7 @@ example of what that file might look like:
 xiden/rcfile
 
 (define XIDEN_MEMORY_LIMIT_MB 200)
-(define XIDEN_TIME_LIMIT_SECONDS 300)
+(define XIDEN_TIME_LIMIT_S 300)
 (define XIDEN_VERBOSE #f)
 (define XIDEN_TRUST_UNVERIFIED_HOST #f)
 (define XIDEN_TRUST_UNSIGNED #t)

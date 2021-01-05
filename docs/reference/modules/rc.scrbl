@@ -106,9 +106,9 @@ Has no effect if the running Racket installation does not support
 per-custodian memory accounting.
 }
 
-@defsetting*[XIDEN_TIME_LIMIT_SECONDS]{
-Sets a time limit for a Xiden process. Does not count time spent
-parsing the command line and setting up a @tech{runtime
+@defsetting*[XIDEN_TIME_LIMIT_S]{
+Sets a time limit for a Xiden process, in seconds. Does not count time
+spent parsing the command line and setting up a @tech{runtime
 configuration}.
 }
 

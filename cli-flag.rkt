@@ -178,7 +178,7 @@
 ; Unary flags
 (flag-out [-X --plugin] (cli-flag/unary XIDEN_PLUGIN_MODULE keep "path"))
 (flag-out [-M --memory-limit] (cli-flag/unary XIDEN_MEMORY_LIMIT_MB arg->value "mebibytes"))
-(flag-out [-S --time-limit] (cli-flag/unary XIDEN_TIME_LIMIT_SECONDS arg->value "seconds"))
+(flag-out [-S --time-limit] (cli-flag/unary XIDEN_TIME_LIMIT_S arg->value "seconds"))
 (flag-out [-m --fetch-total-size] (cli-flag/unary XIDEN_FETCH_TOTAL_SIZE_MB arg->value "mebibytes-or-+inf.0"))
 (flag-out [-n --fetch-buffer-size] (cli-flag/unary XIDEN_FETCH_BUFFER_SIZE_MB arg->value "mebibytes"))
 (flag-out [-p --fetch-pkgdef-size] (cli-flag/unary XIDEN_FETCH_PKGDEF_SIZE_MB arg->value "mebibytes"))
