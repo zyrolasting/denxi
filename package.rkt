@@ -96,7 +96,7 @@
            0
            null
            ALL_OS_SYMS
-           null
+           '("*")
            (hasheq)
            null
            null
@@ -266,7 +266,7 @@
 (define-logged (validate-racket-support #:allow-unsupported? allow-unsupported? pkg)
   (let ([racket-support (check-racket-version-ranges (version) (package-racket-versions pkg))])
     (case racket-support
-      [(supported) ($use pkg)]
+      [(supported undeclared) ($use pkg)]
       [(unsupported)
        (if allow-unsupported?
            ($use pkg)
