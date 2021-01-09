@@ -25,7 +25,7 @@
                #:trust-unsigned any/c
                #:trust-bad-digest any/c
                (or/c #f well-formed-signature-info/c)
-               well-formed-integrity-info/c
+               (or/c #f well-formed-integrity-info/c)
                $signature?)]))
 
 

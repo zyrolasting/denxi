@@ -96,7 +96,7 @@
            0
            null
            ALL_OS_SYMS
-           '("*")
+           '(("*" "*"))
            (hasheq)
            null
            null
