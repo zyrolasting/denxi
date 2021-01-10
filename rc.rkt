@@ -19,11 +19,13 @@
          racket/path
          racket/sandbox
          (only-in racket/tcp listen-port-number?)
+         "codec.rkt"
          "exn.rkt"
          "file.rkt"
          "integrity.rkt"
          "message.rkt"
          "setting.rkt"
+         "string.rkt"
          "url.rkt"
          "workspace.rkt")
 
@@ -97,6 +99,7 @@
 
 (define-xiden-setting XIDEN_ALLOW_ENV (listof (or/c bytes-environment-variable-name? string?)) null)
 (define-xiden-setting XIDEN_ALLOW_UNSUPPORTED_RACKET boolean? #f)
+(define-xiden-setting XIDEN_BYTE_ENCODING xiden-encoding/c 'base64)
 (define-xiden-setting XIDEN_CATALOGS (listof url-string?) '("https://zcpkg.com/$QUERY"))
 (define-xiden-setting XIDEN_DOWNLOAD_MAX_REDIRECTS exact-nonnegative-integer? 2)
 (define-xiden-setting XIDEN_FASL_OUTPUT boolean? #f)
@@ -104,16 +107,18 @@
 (define-xiden-setting XIDEN_FETCH_PKGDEF_SIZE_MB (real-in 0.1 20) 0.1)
 (define-xiden-setting XIDEN_FETCH_TIMEOUT_MS (real-in 100 (* 1000 10)) 3000)
 (define-xiden-setting XIDEN_FETCH_TOTAL_SIZE_MB (or/c +inf.0 real?) 100)
+(define-xiden-setting XIDEN_GENERATED_INPUT_NAME string? DEFAULT_STRING)
 (define-xiden-setting XIDEN_INPUT_OVERRIDES (listof (list/c (or/c symbol? string? regexp? pregexp? byte-regexp? byte-pregexp?) list?)) null)
 (define-xiden-setting XIDEN_INSTALL_ABBREVIATED_SOURCES (listof string?) null)
 (define-xiden-setting XIDEN_INSTALL_DEFAULT_SOURCES (listof (list/c string? string?)) null)
 (define-xiden-setting XIDEN_INSTALL_SOURCES (listof (list/c string? string? string?)) null)
-(define-xiden-setting XIDEN_PLUGIN_MODULE (or/c #f path-string?) #f)
-(define-xiden-setting XIDEN_PRIVATE_KEY_PATH (or/c #f path-string?) #f)
-(define-xiden-setting XIDEN_READER_FRIENDLY_OUTPUT boolean? #f)
-(define-xiden-setting XIDEN_TIME_LIMIT_S (>=/c 0) (* 5 60))
 (define-xiden-setting XIDEN_MEMORY_LIMIT_MB (>=/c 0) 200)
+(define-xiden-setting XIDEN_MESSAGE_DIGEST_ALGORITHM md-algorithm/c 'sha384)
+(define-xiden-setting XIDEN_PLUGIN_MODULE (or/c #f path-string?) #f)
+(define-xiden-setting XIDEN_READER_FRIENDLY_OUTPUT boolean? #f)
+(define-xiden-setting XIDEN_SIGNER (list/c (or/c #f string?) (or/c #f path-string?) (or/c #f path-string?)) '(#f #f #f))
 (define-xiden-setting XIDEN_SUBPROCESS_TIMEOUT_S (>=/c 0) (* 30 60))
+(define-xiden-setting XIDEN_TIME_LIMIT_S (>=/c 0) (* 5 60))
 (define-xiden-setting XIDEN_TRUSTED_EXECUTABLES (listof well-formed-integrity-info/c) null)
 (define-xiden-setting XIDEN_TRUSTED_PUBLIC_KEYS (listof well-formed-integrity-info/c) null)
 (define-xiden-setting XIDEN_TRUST_ANY_EXECUTABLE boolean? #f)
@@ -122,6 +127,7 @@
 (define-xiden-setting XIDEN_TRUST_BAD_SIGNATURE boolean? #f)
 (define-xiden-setting XIDEN_TRUST_UNSIGNED boolean? #f)
 (define-xiden-setting XIDEN_TRUST_UNVERIFIED_HOST boolean? #f)
+(define-xiden-setting XIDEN_USER_FACING_SOURCES (listof string?) null)
 (define-xiden-setting XIDEN_VERBOSE boolean? #f)
 
 (module+ test
@@ -134,7 +140,6 @@
                   (invariant-assertion
                    (and/c immutable? (hash/c symbol? setting?))
                    XIDEN_SETTINGS)))
-
 
   (test-case "Define runtime configuration file path in terms of workspace"
     (define rcfile-/a
@@ -156,37 +161,37 @@
         (dump-xiden-settings))))
 
     (define dump (dump-xiden-settings))
-    (check-equal? (hash-ref dump 'XIDEN_PRIVATE_KEY_PATH)
-                  (XIDEN_PRIVATE_KEY_PATH))
+    (check-equal? (hash-ref dump 'XIDEN_PLUGIN_MODULE)
+                  (XIDEN_PLUGIN_MODULE))
 
-    (XIDEN_PRIVATE_KEY_PATH
+    (XIDEN_PLUGIN_MODULE
      "foo"
      (λ ()
-       (check-not-equal? (hash-ref dump 'XIDEN_PRIVATE_KEY_PATH)
-                         (XIDEN_PRIVATE_KEY_PATH))
-       (check-equal? (hash-ref (dump-xiden-settings) 'XIDEN_PRIVATE_KEY_PATH)
-                     (XIDEN_PRIVATE_KEY_PATH)))))
+       (check-not-equal? (hash-ref dump 'XIDEN_PLUGIN_MODULE)
+                         (XIDEN_PLUGIN_MODULE))
+       (check-equal? (hash-ref (dump-xiden-settings) 'XIDEN_PLUGIN_MODULE)
+                     (XIDEN_PLUGIN_MODULE)))))
 
   (test-workspace "Find fallback values from several sources"
     (test-false "First use a hard-coded value"
-                (XIDEN_PRIVATE_KEY_PATH))
+                (XIDEN_PLUGIN_MODULE))
 
     (test-case "Override hard-coded value with rcfile"
       (make-directory* (path-only (get-xiden-settings-path)))
       (write-to-file
-       `(module rc xiden/rcfile (define XIDEN_PRIVATE_KEY_PATH "foo"))
+       `(module rc xiden/rcfile (define XIDEN_PLUGIN_MODULE "foo"))
        (get-xiden-settings-path))
       (call-with-rcfile
-       (λ () (check-equal? (XIDEN_PRIVATE_KEY_PATH) "foo"))))
+       (λ () (check-equal? (XIDEN_PLUGIN_MODULE) "foo"))))
 
     (test-case "Override rcfile value with envvar value"
-      (dynamic-wind (λ () (putenv "XIDEN_PRIVATE_KEY_PATH" "\"bar\""))
-                    (λ () (check-equal? (XIDEN_PRIVATE_KEY_PATH) "bar"))
+      (dynamic-wind (λ () (putenv "XIDEN_PLUGIN_MODULE" "\"bar\""))
+                    (λ () (check-equal? (XIDEN_PLUGIN_MODULE) "bar"))
                     (λ ()
-                      (putenv "XIDEN_PRIVATE_KEY_PATH" "")
+                      (putenv "XIDEN_PLUGIN_MODULE" "")
                       (call-with-rcfile
                         (λ () (test-equal? "Do not use empty envvar strings as a source for settings"
-                                           (XIDEN_PRIVATE_KEY_PATH)
+                                           (XIDEN_PLUGIN_MODULE)
                                            "foo")))))))
 
   (test-workspace "Lazily validate fallback values"
@@ -195,7 +200,7 @@
               (λ ()
                 (dynamic-wind void
                               (λ ()
-                                (putenv "XIDEN_PRIVATE_KEY_PATH" "123")
-                                (XIDEN_PRIVATE_KEY_PATH))
+                                (putenv "XIDEN_PLUGIN_MODULE" "123")
+                                (XIDEN_PLUGIN_MODULE))
                               (λ ()
-                                (putenv "XIDEN_PRIVATE_KEY_PATH" "")))))))
+                                (putenv "XIDEN_PLUGIN_MODULE" "")))))))

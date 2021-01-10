@@ -1,6 +1,6 @@
 #lang scribble/manual
 
-@require["../shared.rkt" @for-label[racket/base]]
+@require["../shared.rkt" @for-label[racket/base xiden/source]]
 
 @title[#:tag "cli"]{Command Line Interface}
 
@@ -142,6 +142,128 @@ $ ln -s vendor/my-first-package/main.rkt my-first-package.rkt
 The link created using your operating system is not tracked by Xiden,
 so a garbage collection pass can break the link. But when you use a relative
 path as shown, then you can repair the link by running the same transaction.
+
+
+@subsection{Generating Input Expressions}
+
+The most tedious part of writing a package definition is writing
+@tech{package inputs}. @litchar{xiden mkinput} generates package input
+code for you to copy to the clipboard or append directly to a package
+definition.
+
+In the simplest case, pass in a path to a file. If you are creating
+input from a file on the Internet, then you need to download it first.
+
+@verbatim|{
+$ xiden mkinput ./file.tgz
+}|
+
+This command will produce an input expression with no
+@tech/xiden-reference{sources} defined. It doesn't make sense to
+assume the local file path as a source because the end-user does not
+have access to your disk. You need to explicitly specify a source for
+the file for consumers.
+
+@verbatim|{
+$ xiden mkinput +u 'https://example.com/file.tgz' ./file.tgz
+}|
+
+@litchar{mkinput} will always generate integrity information for the
+file using reasonable defaults, which are subject to change for
+security reasons. But, you can specify a message digest algorithm to
+control the digest in the output.
+
+@verbatim|{
+$ xiden mkinput +u 'https://example.com/file.tgz' --md sha384 ./file.tgz
+}|
+
+You can also specify the encoding that Xiden uses to express bytes in
+the generated code.
+
+@verbatim|{
+$ xiden mkinput +u 'https://example.com/file.tgz' \
+                --md sha384 \
+                --byte-encoding base64 \
+                ./file.tgz
+}|
+
+The encoding applies to both integrity information and a signature,
+should you choose to add one.
+
+You can add a signature with the @litchar{--signer} flag, which takes
+three arguments. The first is a @tech/xiden-reference{source} for a
+public key used to verify the signature. It's important that it is
+expressed as a source, because that is what other people will use to
+download the public key for verification. It doesn't make sense to
+specify a path on a private system.
+
+@margin-note{Remember that command line arguments in Xiden are string
+expressions of Racket literals, so you express @racket[#f] according
+to your shell conventions. e.g. @litchar{--signer '...' '...' '#f'}.
+In Bash, @racket{#} starts a comment, so it must be quoted.}
+
+The second argument is a path to the private key used to sign the raw
+digest bytes. The third is a path to a file containing the password
+for that private key, or @racket[#f] if there is no password on the
+private key. You must put the password in a file, because Xiden uses
+OpenSSL, and OpenSSL cautions against writing the password in a
+command. If you did, then the password would leak into your shell
+history and into process monitoring tools. You need to take care to
+securely create and delete the password file.
+
+@verbatim|{
+xiden mkinput +u 'https://example.com/file.tgz'
+              --md sha384 \
+              --byte-encoding base64 \
+              --signer 'http://example.com/public-key.pem' ./private-key.pem ./password \
+              ./file.tgz
+}|
+
+The command is long, so don't forget that you can shorten it using the
+@tech/xiden-reference{runtime configuration}.
+
+Let's start by using shell features, assuming a Bash-like shell.
+
+@verbatim|{
+$ mk() {
+> xiden mkinput +u 'https://example.com/file.tgz' \
+>               --md sha384 \
+>               --byte-encoding base64 \
+>               --signer 'http://example.com/public-key.pem' ./private-key.pem ./password \
+>               $@
+> }
+$ mk ./a.tgz
+...
+$ mk ./mod.rkt
+...
+}|
+
+Here's the same example using canonical setting names.
+
+@verbatim|{
+$ mk() {
+> xiden mkinput --XIDEN_USER_FACING_SOURCES 'https://example.com/file.tgz' \
+>               --XIDEN_MESSAGE_DIGEST_ALGORITHM sha384 \
+>               --XIDEN_BYTE_ENCODING base64 \
+>               --XIDEN_SIGNER 'http://example.com/public-key.pem' ./private-key.pem ./password \
+>               $@
+> }
+$ mk ./a.tgz
+...
+$ mk ./mod.rkt
+...
+}|
+
+Due to the way @tech/xiden-reference{runtime configurations} work, you
+just place the same settings in an an rcfile or environment
+variables. That way you can simply omit the command line flags.
+
+@verbatim|{
+$ xiden mkinput ./a.tgz
+...
+$ xiden mkinput ./mod.rkt
+...
+}|
 
 
 @section{Printing Reports}

@@ -10,10 +10,11 @@
   (case key
     [(top-level-cli-help)
      (L "<action> is one of"
-        "  do     Run transaction"
-        "  gc     Collect garbage"
-        "  show   Print report"
-        "  mkint  Make integrity info for bytes")]
+        "  do      Run transaction"
+        "  gc      Collect garbage"
+        "  show    Print report"
+        "  mkint   Make integrity info for bytes"
+        "  mkinput Make input expression")]
 
     [(show-command-help)
      (L "where <what> is one of"
@@ -24,6 +25,9 @@
 
     [(backwards-racket-version-interval)
      "minimum Racket version cannot exceed maximum Racket version"]
+
+    [(no-user-facing-sources)
+     "no useable sources are defined for the end user"]
 
     [(XIDEN_MEMORY_LIMIT_MB)
      "Memory limit for the process"]
@@ -88,8 +92,20 @@
     [(XIDEN_VERBOSE)
      "Show more information in program output"]
 
-    [(XIDEN_PRIVATE_KEY_PATH)
-     "The location of a private key"]
+    [(XIDEN_BYTE_ENCODING)
+     "Byte encoding to use"]
+
+    [(XIDEN_GENERATED_INPUT_NAME)
+     "Name to use for generated input expressions"]
+
+    [(XIDEN_USER_FACING_SOURCES)
+     "Add a source for users to fetch data"]
+
+    [(XIDEN_MESSAGE_DIGEST_ALGORITHM)
+     "Message digest algorithm to use"]
+
+    [(XIDEN_SIGNER)
+     "Information used to sign package inputs"]
 
     [(XIDEN_CATALOGS)
      "Sets default URL templates in from-catalogs"]

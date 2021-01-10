@@ -235,12 +235,6 @@ source.
 When true, emit more detailed program output.
 }
 
-@defsetting*[XIDEN_PRIVATE_KEY_PATH]{
-When set, use the private key at the given path for signing inputs.
-
-Currently not used.
-}
-
 @defsetting*[XIDEN_CATALOGS]{
 A list of strings representing URL templates.
 
@@ -280,4 +274,26 @@ If @racket[pattern] is a string, then it is used as an argument to
 @racket[pregexp] before matching. If @racket[pattern] is a symbol,
 then it is first coerced to a string and then used as an argument to
 @racket[pregexp].
+}
+
+@defsetting*[XIDEN_GENERATED_INPUT_NAME]{
+The name to use for generated @tech{package input} code.
+}
+
+@defsetting*[XIDEN_BYTE_ENCODING]{
+The encoding to use when generating byte expressions.
+}
+
+@defsetting*[XIDEN_MESSAGE_DIGEST_ALGORITHM]{
+The algorithm to use when creating digests on user request.
+}
+
+@defsetting*[XIDEN_SIGNER]{
+A list containing, in order, a @tech{source} for a public key, a path
+to a private key file, and a path to a file containing the password
+for the private key. Any element can be @racket[#f] to indicate
+absense.
+
+Xiden will attempt to sign input expressions when at least a public
+key source and private key is available.
 }

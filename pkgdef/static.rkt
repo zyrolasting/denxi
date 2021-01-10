@@ -40,25 +40,25 @@
                bare-pkgdef?)]
           [autocomplete-inputs
            (->* (bare-racket-module?
-                 #:public-key-source non-empty-string?
-                 #:private-key-path path-string?
+                 #:public-key-source (or/c #f non-empty-string?)
+                 #:private-key-path (or/c #f path-string?)
                  #:find-file procedure?)
                 (#:default-name non-empty-string?
                  #:byte-encoding (or/c #f xiden-encoding/c)
                  #:default-md-algorithm md-algorithm/c
                  #:override-sources procedure?
-                 #:private-key-password-path (or/c #f xiden-encoding/c))
+                 #:private-key-password-path (or/c #f path-string?))
                 bare-racket-module?)]
           [autocomplete-input-expression
            (->* (any/c
-                 #:public-key-source non-empty-string?
-                 #:private-key-path path-string?
+                 #:public-key-source (or/c #f non-empty-string?)
+                 #:private-key-path (or/c #f path-string?)
                  #:find-file procedure?)
                 (#:default-name non-empty-string?
                  #:byte-encoding (or/c #f xiden-encoding/c)
                  #:default-md-algorithm md-algorithm/c
                  #:override-sources procedure?
-                 #:private-key-password-path (or/c #f xiden-encoding/c))
+                 #:private-key-password-path (or/c #f path-string?))
                 any/c)]
           [analyze-input-expression
            (-> any/c
@@ -181,16 +181,21 @@
          (if byte-encoding
              (λ (bstr) `(,byte-encoding ,(coerce-string (encode byte-encoding bstr))))
              values)])
-    `(input ,local-name
-            (sources . ,(make-sources digest path))
-            (integrity ',message-digest-algorithm ,(make-byte-expression digest))
-            (signature ,public-key-source
-                       ,(make-byte-expression
-                         (make-signature-bytes
-                          digest
-                          (expand-user-path private-key-path)
-                          (and private-key-password-path
-                               (expand-user-path private-key-password-path))))))))
+    (if (and public-key-source private-key-path)
+        `(input ,local-name
+                (sources . ,(make-sources digest path))
+                (integrity ',message-digest-algorithm ,(make-byte-expression digest))
+                (signature ,public-key-source
+                           ,(make-byte-expression
+                             (make-signature-bytes
+                              digest
+                              (expand-user-path private-key-path)
+                              (and private-key-password-path
+                                   (expand-user-path private-key-password-path))))))
+        `(input ,local-name
+                (sources . ,(make-sources digest path))
+                (integrity ',message-digest-algorithm ,(make-byte-expression digest))))))
+
 
 
 ;------------------------------------------------------------------------
@@ -248,8 +253,6 @@
                                        #:public-key-source public-key-source
                                        expr)
   (analyze-input-expression expr
-                            public-key-source
-                            default-md-algorithm
                             (λ (n s md ib pk sb)
                               (make-input-expression-from-files
                                (find-file n s md ib pk sb)

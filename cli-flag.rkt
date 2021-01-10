@@ -38,6 +38,7 @@
                any)]))
 
 (require racket/cmdline
+         racket/format
          racket/sandbox
          "l10n.rkt"
          "pkgdef/static.rkt"
@@ -183,10 +184,22 @@
 (flag-out [-n --fetch-buffer-size] (cli-flag/unary XIDEN_FETCH_BUFFER_SIZE_MB arg->value "mebibytes"))
 (flag-out [-p --fetch-pkgdef-size] (cli-flag/unary XIDEN_FETCH_PKGDEF_SIZE_MB arg->value "mebibytes"))
 (flag-out [-d --fetch-timeout] (cli-flag/unary XIDEN_FETCH_TIMEOUT_MS arg->value "milliseconds"))
-(flag-out [-q] (cli-flag/unary XIDEN_PRIVATE_KEY_PATH arg->value "path"))
 (flag-out [-o --max-redirects] (cli-flag/unary XIDEN_DOWNLOAD_MAX_REDIRECTS arg->value "exact-nonnegative-integer"))
 (flag-out [+h ++host] (cli-flag/list XIDEN_CATALOGS "url-string"))
 (flag-out [-r --subprocess-timeout] (cli-flag/unary XIDEN_SUBPROCESS_TIMEOUT_S arg->value "positive"))
+(flag-out [--byte-encoding] (cli-flag/unary XIDEN_BYTE_ENCODING arg->value "byte-encoding"))
+(flag-out [--md] (cli-flag/unary XIDEN_MESSAGE_DIGEST_ALGORITHM arg->value "algorithm"))
+(flag-out [-g --generated-input-name] (cli-flag/unary XIDEN_GENERATED_INPUT_NAME keep "name"))
+(flag-out [--signer]
+          (cli-flag XIDEN_SIGNER 'once-each null 3
+                    (λ (flag public-key-source private-key-path password-path)
+                      (map
+                       (λ (str)
+                         (let ([v (string->value str)])
+                           (and v (~a v))))
+                       (list public-key-source private-key-path password-path)))
+                    '("public-key-source" "private-key-path" "password-path")))
+
 
 ; Unary boolean flags
 (flag-out [-U --trust-unsigned] (cli-flag/boolean XIDEN_TRUST_UNSIGNED))
@@ -251,6 +264,14 @@
                                                 (arg->value input-expr))
                                           (XIDEN_INPUT_OVERRIDES)))
                     '("pregexp-pattern" "input-expr")))
+
+(flag-out [+u ++user-facing-source]
+          (cli-flag XIDEN_USER_FACING_SOURCES
+                    'multi null 1
+                    (λ (flag source)
+                      (cons source
+                            (XIDEN_USER_FACING_SOURCES)))
+                    '("source")))
 
 
 ; For use in REPL and tests. Provides a quick way to preview the effect of command
