@@ -197,10 +197,10 @@ expressed as a source, because that is what other people will use to
 download the public key for verification. It doesn't make sense to
 specify a path on a private system.
 
-@margin-note{Remember that command line arguments in Xiden are string
-expressions of Racket literals, so you express @racket[#f] according
-to your shell conventions. e.g. @litchar{--signer '...' '...' '#f'}.
-In Bash, @racket{#} starts a comment, so it must be quoted.}
+@margin-note{Remember that command line arguments in Xiden can be
+string expressions of Racket literals, so you express @racket[#f]
+according to your shell conventions. e.g. @litchar{--signer '...'
+'...' '#f'}.  In Bash, @tt{#} starts a comment, so it must be quoted.}
 
 The second argument is a path to the private key used to sign the raw
 digest bytes. The third is a path to a file containing the password
@@ -212,7 +212,7 @@ history and into process monitoring tools. You need to take care to
 securely create and delete the password file.
 
 @verbatim|{
-xiden mkinput +u 'https://example.com/file.tgz'
+xiden mkinput +u 'https://example.com/file.tgz' \
               --md sha384 \
               --byte-encoding base64 \
               --signer 'http://example.com/public-key.pem' ./private-key.pem ./password \
