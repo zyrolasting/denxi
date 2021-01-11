@@ -71,7 +71,9 @@
      (call-with-custom-custodian memory-limit
       (λ ()
         (with-handlers ([exn:fail:out-of-memory?
-                         (λ _ (plan 1 ($restrict:budget name 'space memory-limit)))])
+                         (λ _ (plan 1 ($restrict:budget name 'space memory-limit)))]
+                        [exn?
+                         (λ (e) (plan 1 ($show-string (exn->string e))))])
           (parameterize ([current-environment-variables envvars]
                          [current-https-protocol https-protocol]
                          [current-security-guard security-guard])
