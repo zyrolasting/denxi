@@ -1,6 +1,8 @@
 #lang scribble/manual
 
 @(require (for-label racket
+                     racket/fasl
+                     racket/serialize
                      xiden/integrity
                      xiden/rc
                      xiden/setting
@@ -214,7 +216,6 @@ Regardless of the setting's actual value, Xiden implicitly considers
 responsible for the integrity of their OpenSSL instance.
 }
 
-@require[@for-label[racket/fasl racket/serialize]]
 @defsetting*[XIDEN_FASL_OUTPUT]{
 When true, each value @racket[v] printed on STDOUT is first transformed using
 @racket[(s-exp->fasl (serialize v))].
