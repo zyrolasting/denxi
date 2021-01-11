@@ -17,6 +17,9 @@
 (define racket-launcher-names '("xiden"))
 (define racket-launcher-libraries '("cli.rkt"))
 
+(define compile-omit-paths
+  '("examples"))
+
 (define scribblings
   '(("docs/reference/xiden-reference.scrbl" (multi-page) (tool-library))
     ("docs/guide/xiden-guide.scrbl" (multi-page) (tool))))
