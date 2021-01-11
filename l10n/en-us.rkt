@@ -65,6 +65,9 @@
     [(XIDEN_TRUST_ANY_EXECUTABLE)
      "(DANGEROUS) Trust any executable"]
 
+    [(XIDEN_TRUSTED_HOST_EXECUTABLES)
+     "Trust executable file with given name if it can be found using find-executable-path"]
+
     [(XIDEN_TRUSTED_PUBLIC_KEYS)
      "Trust a given public key using integrity information"]
 

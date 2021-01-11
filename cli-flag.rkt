@@ -229,6 +229,12 @@
                                           (XIDEN_TRUSTED_EXECUTABLES)))
                     '("integrity-expr")))
 
+(flag-out [+t ++trust-host-executable]
+          (cli-flag XIDEN_TRUSTED_HOST_EXECUTABLES
+                    'multi null 1 (λ (flag name)
+                                    (cons name (XIDEN_TRUSTED_HOST_EXECUTABLES)))
+                    '("file-name")))
+
 (flag-out [+s ++install-source]
           (cli-flag XIDEN_INSTALL_SOURCES
                     'multi null 3 (λ (flag link-name output-name source)

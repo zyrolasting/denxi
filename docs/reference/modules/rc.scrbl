@@ -189,12 +189,30 @@ Xiden @tech{runtime configuration}.  If you include a
 Xiden launcher or a sufficiently flexible Racket launcher, a
 @tech{package} can start a new Xiden process with a full-trust
 configuration.
-
-@bold{Regardless of this setting, Xiden implicitly trusts the
-binary referenced by @racket{openssl} in your @tt{PATH}.} This will
-not be the case in a future release.
 }
 
+@defsetting*[XIDEN_TRUSTED_HOST_EXECUTABLES]{
+Like @racket[XIDEN_TRUSTED_EXECUTABLES], except this setting is a list
+of names. Xiden will allow execution of a file if its normalized path
+equals the value of @racket[find-executable-path] for an element of
+that list. You may need to add multiple entries to account for
+extension differences across platforms.
+
+This can be helpful in the event a package depends on access to an
+executable on the host system and there is no way to control the
+content of that executable.
+
+The @racket[find-executable-path] restriction is meant to prevent
+packages from creating and then immediately running their own
+executables just because they have a name in this list. Even so, this
+can be a dangerous setting, and should only be used if you trust both
+the package definition and the executables on your system. It's also
+why @tt{PATH} should not include a build directory.
+
+Regardless of the setting's actual value, Xiden implicitly considers
+@racket{openssl} an element of its list. The user is therefore
+responsible for the integrity of their OpenSSL instance.
+}
 
 @require[@for-label[racket/fasl racket/serialize]]
 @defsetting*[XIDEN_FASL_OUTPUT]{

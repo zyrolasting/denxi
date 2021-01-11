@@ -30,6 +30,7 @@
                   #:allowed-envvars allowed-envvars
                   #:trust-unverified-host? trust-unverified-host?
                   #:trust-any-executable? trust-any-executable?
+                  #:implicitly-trusted-host-executables implicitly-trusted-host-executables
                   #:workspace workspace
                   #:gc-period gc-period
                   #:name [name (or (object-name proc) "")])
@@ -46,6 +47,7 @@
         #:name name
         #:trust-any-executable? trust-any-executable?
         #:trust-executables trusted-executables
+        #:trust-host-executables implicitly-trusted-host-executables
         #:workspace workspace))
 
      (call-with-managed-thread
@@ -140,10 +142,12 @@
 (define (make-custom-security-guard #:name name
                                     #:trust-any-executable? trust-any-executable?
                                     #:trust-executables trust-executables
+                                    #:trust-host-executables trust-host-executables
                                     #:workspace [ws (workspace-directory)])
   (make-security-guard
    (current-security-guard)
    (make-file-guard #:trust-any-executable? trust-any-executable?
+                    #:trust-host-executables trust-host-executables
                     #:trust-executables trust-executables
                     #:writeable-directories (get-writeable-workspace-directories ws)
                     name)
@@ -151,11 +155,15 @@
    (make-link-guard name ws)))
 
 
+
 (define (make-file-guard #:trust-any-executable? trust-any-executable?
+                         #:trust-host-executables trust-host-executables
                          #:trust-executables trust-executables
                          #:writeable-directories write-dirs
                          name)
-  (let ([trust-executable? (bind-trust-list trust-executables)])
+  (let ([trust-executable? (make-executable-trust-predicate trust-any-executable?
+                                                            trust-executables
+                                                            (cons "openssl" trust-host-executables))])
     (λ (sym path-or-#f ops)
       (define (check-destructive-op op path)
         (define test (curry path-prefix? (normalize-path path)))
@@ -164,19 +172,24 @@
 
       (when path-or-#f
         (cond [(member 'execute ops)
-               (unless (or (equal? "openssl" (path->string (file-name-from-path path-or-#f)))
-                           trust-any-executable?
-                           (trust-executable? path-or-#f))
-                 (raise ($restrict:operation name
-                                             'file
-                                             'blocked-execute
-                                             (list sym path-or-#f ops))))]
+               (unless (trust-executable? path-or-#f)
+                 (raise ($restrict:operation name 'file 'blocked-execute (list sym path-or-#f ops))))]
 
               [(member 'write ops)
                (check-destructive-op 'blocked-write path-or-#f)]
 
               [(member 'delete ops)
                (check-destructive-op 'blocked-delete path-or-#f)])))))
+
+
+(define (make-executable-trust-predicate trust-any-executable? trust-executables trust-host-executables [find find-executable-path])
+  (define trust-by-integrity? (bind-trust-list trust-executables))
+  (define host-executable-paths (map normalize-path (filter-map find trust-host-executables)))
+  (λ (path)
+    (let ([normalized (normalize-path path)])
+      (or trust-any-executable?
+          (and (member normalized host-executable-paths) #t)
+          (trust-by-integrity? normalized)))))
 
 
 (define (make-network-guard name)
@@ -209,7 +222,42 @@
 
 
 (module+ test
-  (require rackunit)
+  (require racket/runtime-path
+           rackunit)
+
+  (define-runtime-path here ".")
+
+  (test-case "Build executable trust profiles"
+    (define my-file  "security.rkt")
+    (define my-path (build-path here my-file))
+    (define other-path (build-path here "main.rkt"))
+
+    (define trusts-anything
+      (make-executable-trust-predicate #t '() '()))
+
+    (define trusts-nothing
+      (make-executable-trust-predicate #f '() '()))
+
+    (define trusts-exact-things
+      (make-executable-trust-predicate #f
+                                       (list (integrity 'sha1 (make-digest my-path 'sha1)))
+                                       '()))
+
+    (define trusts-hosted-things
+      (make-executable-trust-predicate #f '() '("security.rkt") (λ (p) my-path)))
+
+    (check-true  (trusts-anything my-path))
+    (check-true  (trusts-anything other-path))
+
+    (check-false (trusts-nothing my-path))
+    (check-false (trusts-nothing other-path))
+
+    (check-true  (trusts-exact-things my-path))
+    (check-false (trusts-exact-things other-path))
+
+    (check-true  (trusts-hosted-things my-path))
+    (check-false (trusts-hosted-things other-path)))
+
 
   (test-case "Make envvar subset"
     (define subset

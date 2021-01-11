@@ -108,6 +108,7 @@
 (define-xiden-setting XIDEN_FETCH_TIMEOUT_MS (real-in 100 (* 1000 10)) 3000)
 (define-xiden-setting XIDEN_FETCH_TOTAL_SIZE_MB (or/c +inf.0 real?) 100)
 (define-xiden-setting XIDEN_GENERATED_INPUT_NAME string? DEFAULT_STRING)
+(define-xiden-setting XIDEN_TRUSTED_HOST_EXECUTABLES (listof string?) null)
 (define-xiden-setting XIDEN_INPUT_OVERRIDES (listof (list/c (or/c symbol? string? regexp? pregexp? byte-regexp? byte-pregexp?) list?)) null)
 (define-xiden-setting XIDEN_INSTALL_ABBREVIATED_SOURCES (listof string?) null)
 (define-xiden-setting XIDEN_INSTALL_DEFAULT_SOURCES (listof (list/c string? string?)) null)

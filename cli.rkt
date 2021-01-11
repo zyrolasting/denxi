@@ -62,6 +62,7 @@
        (make-cli-flag-table
         ++envvar
         ++trust-executable
+        ++trust-host-executable
         --fasl-output
         --memory-limit
         --reader-friendly-output
@@ -92,6 +93,7 @@
                              #:allowed-envvars (XIDEN_ALLOW_ENV)
                              #:trust-unverified-host? (XIDEN_TRUST_UNVERIFIED_HOST)
                              #:trust-any-executable? (XIDEN_TRUST_ANY_EXECUTABLE)
+                             #:implicitly-trusted-host-executables (XIDEN_TRUSTED_HOST_EXECUTABLES)
                              #:workspace (workspace-directory)
                              #:gc-period 30
                              #:name name))))))
