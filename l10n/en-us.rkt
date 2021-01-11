@@ -32,7 +32,7 @@
     [(XIDEN_MEMORY_LIMIT_MB)
      "Memory limit for the process"]
 
-    [(XIDEN_TIME_LIMIT_SECONDS)
+    [(XIDEN_TIME_LIMIT_S)
      "Time limit for the process"]
 
     [(XIDEN_INSTALL_SOURCES)
