@@ -695,7 +695,7 @@
     (with-handlers ([exn:fail:sql?
                      (λ (e)
                        (if (error-code-equal? 2067 e)
-                           (find-exactly-one rec)
+                           (find-exactly-one (path-record #f (path-record-path rec) #f #f))
                            (raise e)))])
       (gen-save rec))))
 
@@ -892,14 +892,14 @@
   (define-syntax-rule (test-db msg body ...)
     (run-db-test msg (λ () body ...)))
 
-  (test-db "Declare a path"
+  (test-db "Declare paths"
     (declare-path "a/b/c" #"digest")
     (check-equal? (find-exactly-one (path-record #f "a/b/c" #f #f))
                   (path-record 1 "a/b/c" #"digest" sql-null))
-    (test-exn "Forbid duplicate paths"
-              exn:fail?
-              (λ ()
-                (declare-path "a/b/c" #"different"))))
+
+    (test-case "Return existing records when trying to save a duplicate path"
+      (check-equal? (declare-path "a/b/c" #"different")
+                    (path-record 1 "a/b/c" #"digest" sql-null))))
 
 
   (test-db "Declare an output"
