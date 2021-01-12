@@ -186,7 +186,8 @@
     (bare-racket-module (syntax-e name) (syntax-e lang) (syntax->datum body)))
   (syntax-parse module-datum
     #:datum-literals (module)
-    [(module name:id lang:id (_ . body))
+    [(module name:id lang:id (bodyform:id . body))
+     #:when (member (syntax-e #'bodyform) '(#%module-begin #%plain-module-begin))
      (construct #'name #'lang #'body)]
     [(module name:id lang:id . body)
      (construct #'name #'lang #'body)]))
@@ -266,6 +267,11 @@
                            (check-match (car msg)
                                         ($racket-module-read-error _ 'unexpected-module-lang _))))
 
-  (test-equal? "Strip and dress modules"
-               (strip #'(module anon racket/base (#%module-begin (define a 1) (provide a))))
-               (bare-racket-module 'anon 'racket/base '((define a 1) (provide a)))))
+  (test-case "Strip and dress modules"
+    (define body '((define a 1) (provide a)))
+    (check-equal? (strip #`(module anon racket/base (#%module-begin . #,body)))
+                  (bare-racket-module 'anon 'racket/base body))
+    (check-equal? (strip #`(module anon racket/base (#%plain-module-begin . #,body)))
+                  (bare-racket-module 'anon 'racket/base body))
+    (check-equal? (strip #`(module anon racket/base . #,body))
+                  (bare-racket-module 'anon 'racket/base body))))
