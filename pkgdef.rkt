@@ -19,6 +19,7 @@
          input-ref
          input
          integrity
+         install
          mdo
          metadatum
          name
