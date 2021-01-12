@@ -149,7 +149,12 @@
        (λ (flags)
          (values flags
                  (λ (halt)
-                   (halt 0 ($finished-collecting-garbage (xiden-collect-garbage))))))))
+                   ; TODO: There's a bug where not everything is collected in the first
+                   ; pass sometimes. The second pass always gets it. Run it twice until
+                   ; the root cause gets fixed.
+                   (halt 0 ($finished-collecting-garbage
+                            (+ (xiden-collect-garbage)
+                               (xiden-collect-garbage)))))))))
 
 
 (define (show-command args)
