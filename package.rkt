@@ -178,10 +178,19 @@
   (define plugin-override (before-new-package stripped))
   (define package-name (get-static-abbreviated-query plugin-override))
   (define input-overrides (find-per-input-overrides package-name override-specs))
-  (make-package-definition-datum
+  (make-package-definition-datum #:id (make-id)
    (bare-racket-module-code
     (override-inputs plugin-override input-overrides))))
 
+
+(define (make-id)
+  (string->symbol
+   (format
+    "pkgdef~a~a"
+    (current-seconds)
+    (build-string 10
+                  (λ _ (integer->char (+ (char->integer #\0)
+                                         (random 0 10))))))))
 
 (define (fetch-package-definition source max-size)
   (fetch source
