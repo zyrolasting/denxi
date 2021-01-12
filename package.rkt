@@ -213,15 +213,15 @@
           (input "logic")
           (input "nonsense")))
        before-new-package
-       '((#px"dum" . (input "logic" (integrity 'sha1 (hex "abc"))))
-         (#px"zooks" . (input "nonsense" (integrity 'sha1 (hex "abc")))))))
+       '((#px"dum" (input "logic" (integrity 'sha1 (hex "abc"))))
+         (#px"zooks" (input "nonsense" (integrity 'sha1 (hex "abc")))))))
 
-    (check-equal? overridden
-                  (make-package-definition-datum
-                   '((provider "wonderland")
-                     (package "tweedledum")
-                     (input "logic" (integrity 'sha1 (hex "abc")))
-                     (input "nonsense"))))))
+    (check-match overridden
+                 `(module ,_ ,(? (curry equal? PACKAGE_DEFINITION_MODULE_LANG) _)
+                    (provider "wonderland")
+                    (package "tweedledum")
+                    (input "logic" (integrity 'sha1 (hex "abc")))
+                    (input "nonsense")))))
 
 
 
