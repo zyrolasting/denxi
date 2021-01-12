@@ -393,7 +393,7 @@
 
 (define (build-package-output pkg output-name build-directory)
   (logged-acyclic
-   (abbreviate-exact-package-query (package->package-query pkg))
+   (~a (abbreviate-exact-package-query (package->package-query pkg)) ", " output-name ", " build-directory)
    (λ (messages)
      (parameterize ([current-directory build-directory]
                     [current-inputs (package-inputs pkg)])
@@ -438,7 +438,7 @@
                             (car m)
                             ($package:log _ _
                                           (list ($fetch:scope _ _ _)
-                                                ($package:log _ _ (list ($cycle "default:default:default:0"))))))))))))
+                                                ($package:log _ _ (list ($cycle _))))))))))))
 
 
 
