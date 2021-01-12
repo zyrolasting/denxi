@@ -17,6 +17,9 @@
 (define racket-launcher-names '("xiden"))
 (define racket-launcher-libraries '("cli.rkt"))
 
+(define test-omit-paths
+  '("examples"))
+
 (define compile-omit-paths
   '("examples"))
 
