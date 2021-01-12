@@ -686,8 +686,18 @@
        (find-exactly-one search-rec)))
 
 
+; It's possible for make-addressable-file to try creating two path
+; records of the same name from different sources because it uses
+; a content-addressing scheme. Unique constraint violations are
+; therefore handled by returning existing records.
 (define (declare-path unnormalized-path digest)
-  (gen-save (make-file-path-record unnormalized-path digest)))
+  (let ([rec (make-file-path-record unnormalized-path digest)])
+    (with-handlers ([exn:fail:sql?
+                     (λ (e)
+                       (if (error-code-equal? 2067 e)
+                           (find-exactly-one rec)
+                           (raise e)))])
+      (gen-save rec))))
 
 (define (in-path-links path-id)
   (search-by-record (path-record #f #f #f path-id)))
