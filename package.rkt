@@ -169,7 +169,7 @@
                         [else pattern-variant]))
 
                 (and (regexp-match? pattern package-name)
-                     (cdr spec)))
+                     (cadr spec)))
               override-specs))
 
 

@@ -108,6 +108,7 @@
                             ++install-abbreviated
                             ++install-default
                             ++trust-public-key
+                            ++input-override
                             ++host
                             --fetch-total-size
                             --fetch-buffer-size

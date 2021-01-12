@@ -266,8 +266,8 @@
 (flag-out [+o ++input-override]
           (cli-flag XIDEN_INPUT_OVERRIDES
                     'multi null 2 (λ (flag pattern input-expr)
-                                    (cons (cons (arg->value pattern)
-                                                (arg->value input-expr))
+                                    (cons (list (arg->value flag pattern)
+                                                (arg->value flag input-expr))
                                           (XIDEN_INPUT_OVERRIDES)))
                     '("pregexp-pattern" "input-expr")))
 
