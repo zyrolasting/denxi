@@ -132,6 +132,19 @@ Use this to “scope” messages.
 Equivalent to @racket[(if (logged? v) v (logged-unit v))]
 }
 
+
+@deftogether[(
+@defproc[(logged-acyclic [key any/c] [proc (-> (listof $message?) (values any/c (listof messy-log/c)))]) logged?]
+@defstruct*[($cycle $message) ([key any/c])]
+)]{
+@racket[logged-acyclic] behaves like @racket[(logged proc)] with cycle
+detection.  If another @racket[logged] instance runs in the context of
+@racket[proc], and that instance was constructed using
+@racket[logged-acyclic] and a value @racket[equal?] to @racket[key],
+then evaluation ends early. In that case, the computed value is
+@racket[FAILURE] and @racket[($cycle key)] appears in the log.
+}
+
 @section{Logged Program Control}
 
 @defform[(define-logged (id formals ...) body ...)]{

@@ -408,4 +408,7 @@
 
   [($input-not-found name)
    (format "Input not found: ~s"
-           name)])
+           name)]
+
+  [($cycle key)
+   (format "Found cycle at ~s. You may have a circular dependency." key)])

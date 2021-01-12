@@ -382,10 +382,14 @@
   ($attach (make-addressable-link (find-path-record (output-record-path-id output-record-inst)) link-path)
            ($package:output:reused)))
 
-(define-logged (build-package-output pkg output-name build-directory)
-  (parameterize ([current-directory build-directory]
-                 [current-inputs (package-inputs pkg)])
-    ($run! ((package-build pkg) output-name))))
+(define (build-package-output pkg output-name build-directory)
+  (logged-acyclic
+   (abbreviate-exact-package-query (package->package-query pkg))
+   (λ (messages)
+     (parameterize ([current-directory build-directory]
+                    [current-inputs (package-inputs pkg)])
+       (run-log ((package-build pkg) output-name)
+                messages)))))
 
 (define-logged (build-package-output-directory pkg output-name)
   ($attach
@@ -408,6 +412,24 @@
                   directory-record)
   (make-addressable-link directory-record link-path)
   ($use (void)))
+
+
+
+(module+ test
+  (test-case "Stop cyclic package builds"
+    (call-with-temporary-file
+     (λ (tmp-file-path)
+       (write-to-file #:exists 'truncate/replace
+                      (make-package-definition-datum `((output "default" (install #f #f ,(~a tmp-file-path)))))
+                      tmp-file-path)
+       (call-with-values (install #f #f (~a tmp-file-path))
+                         (λ (v m)
+                           (check-eq? v FAILURE)
+                           (check-match
+                            (car m)
+                            ($package:log _ _
+                                          (list ($fetch:scope _ _ _)
+                                                ($package:log _ _ (list ($cycle "default:default:default:0"))))))))))))
 
 
 

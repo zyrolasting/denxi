@@ -17,6 +17,7 @@ This project follows [these versioning rules](https://sagegerard.com/edition-rev
 - Redirected downloads with no limit now work properly
 - Distinguish between abstract and concrete inputs
 - Add missing flags to CLI
+- Add cycle detection
 
 ## [draft:alpha] - 2020-08-02
 

@@ -14,6 +14,7 @@
    "../input-info.rkt"
    "../integrity.rkt"
    "../localstate.rkt"
+   "../logged.rkt"
    "../message.rkt"
    "../package.rkt"
    "../printer.rkt"

@@ -7,6 +7,7 @@
 (provide (struct-out logged)
          SUCCESS
          FAILURE
+         logged-acyclic
          logged-unit
          logged-failure
          logged-attachment
@@ -37,6 +38,7 @@
 (require racket/list
          racket/generator
          racket/sequence
+         racket/set
          "exn.rkt"
          "format.rkt"
          "message.rkt"
@@ -45,6 +47,8 @@
 
 (define SUCCESS (string->uninterned-symbol "SUCCESS"))
 (define FAILURE (string->uninterned-symbol "FAILURE"))
+
+(define+provide-message $cycle (key))
 
 (define messy-log/c
   (or/c $message?
@@ -66,6 +70,19 @@
          (values next-value new-messages)
          (run-log (f next-value)
                   new-messages)))))
+
+
+(define logged-acyclic
+  (let ([mark-key (string->uninterned-symbol "xiden:cycle-detection")])
+    (λ (key proc)
+      (logged
+       (λ (messages)
+         (let ([scope (or (continuation-mark-set-first (current-continuation-marks) mark-key) (set))])
+           (if (set-member? scope key)
+               (values FAILURE (cons ($cycle key) messages))
+               (with-continuation-mark mark-key (set-add scope key)
+                 (proc messages)))))))))
+
 
 (define (logged-unit v)
   (logged (λ (m) (values v m))))
@@ -271,4 +288,20 @@
                      (list ($show-string (pregexp "blah abc.+")))))
 
       (test-case "Show caught exceptions"
-        (try (λ (e) (logged (λ (m) (raise e)))))))))
+        (try (λ (e) (logged (λ (m) (raise e))))))))
+
+  (test-case "Cycle detection"
+    (define cyclic (logged-acyclic 1 (λ (m) (run-log cyclic m))))
+    (define acyclic (logged-acyclic 1 (λ (m) (values 'ok (cons 'ok m)))))
+
+    (test-logged-procedure "Make acyclic procedures behave like normal logged procedures"
+                           acyclic
+                           (λ (v msg)
+                             (check-eq? v 'ok)
+                             (check-equal? msg '(ok))))
+
+    (test-logged-procedure "Block cycles in acyclic logged procedures"
+                           cyclic
+                           (λ (v msg)
+                             (check-eq? v FAILURE)
+                             (check-equal? msg (list ($cycle 1)))))))
