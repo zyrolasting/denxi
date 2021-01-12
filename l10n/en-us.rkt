@@ -176,6 +176,21 @@
            (getenv "XIDEN_WORKSPACE")
            (workspace-directory))]
 
+  [($racket-module-read-error variant reason content)
+   (case reason
+     [(exception) content]
+     [(unexpected-module-lang)
+      (format "Unexpected module lang: ~v"
+              content)]
+     [(blocked-reader)
+      (format "Unexpected reader extension: ~v"
+              content)]
+     [(bad-module-form)
+      (format "Malformed module: ~v"
+              variant)]
+     [else
+      (~s ($racket-module-read-error variant reason content))])]
+
   [($transfer:scope name msg)
    (format "transfer ~a: ~a" name (format-message msg))]
 

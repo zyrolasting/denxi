@@ -18,6 +18,7 @@
    "../package.rkt"
    "../printer.rkt"
    "../port.rkt"
+   "../racket-module.rkt"
    "../racket-version.rkt"
    "../rc.rkt"
    "../security.rkt"
