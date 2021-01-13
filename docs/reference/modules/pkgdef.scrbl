@@ -133,22 +133,30 @@ Sets @racket[package-url].
              :=
              base32
              base64
+             coerce-source
+             define
              description
              edition
              extract
+             file-source
              find-input
              from-catalogs
              from-file
              hex
+             http-mirrors-source
+             http-source
              in-paths
              input-ref
              input
              integrity
+             install
+             lines-source
              mdo
              metadatum
+             name
              os-support
              output
-             package
+             plugin-source
              provider
              quote
              racket-versions
@@ -160,6 +168,7 @@ Sets @racket[package-url].
              signature
              sources
              tags
+             text-source
              url)
 
 @include-section{pkgdef/static.scrbl}

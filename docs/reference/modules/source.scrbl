@@ -18,72 +18,165 @@
 
 @defmodule[xiden/source]
 
-A @deftech{source} is a Racket string that refers to bytes.  The
-string may contain a URL, a filesystem path, or custom information
-understood by a plugin.
+A @deftech{source} is a value that implements @racket[gen:source].
+When used with @racket[fetch], a source produces an input port and an
+estimate of how many bytes that port can produce. Xiden uses sources
+to read data with safety limits. To @deftech{tap} a source means
+gaining a reference to the input port and estimate. To
+@deftech{exhaust} a source means gaining a reference to a contextual
+error value. We can also say a source is @deftech{tapped} or
+@deftech{exhausted}.
 
-@defthing[request-transfer/c
+Note that these terms are linguistic conveniences. There is no value
+representing a tapped or exhausted state. The only difference is where
+control ends up in the program, and what references become available
+as a result of using @racket[fetch] on a source.
+
+
+@defthing[tap/c
   chaperone-contract?
   #:value
   (-> input-port?
       (or/c +inf.0 exact-positive-integer?)
       any/c)]{
-A @tech/reference{contract} that matches a specific procedure. The
-procedure is expected to read bytes from a port, and then return a
-single value.
+A @tech/reference{contract} for a procedure used to @tech{tap} a
+@tech{source}.
 
-The procedure is given an estimate of the maximum number of bytes to
-read. This estimate could be @racket[+inf.0] to allow unlimited
-reading, provided the user allows this in their configuration.
+The procedure is given an input port, and an estimate of the maximum
+number of bytes the port can produce. This estimate could be
+@racket[+inf.0] to allow unlimited reading, provided the user allows
+this in their configuration.
 }
 
-@defstruct*[fetch-state ([source (or/c #f string?)] [result any/c]) #:transparent]{
-Represents the status of a @racket[fetch], such that @racket[source]
-is a freeform string that @racket[fetch] uses to compute the value of
-@racket[result].
+@defthing[exhaust/c chaperone-contract? #:value (-> any/c any/c)]{
+A @tech/reference{contract} for a procedure used when a source is
+@tech{exhausted}.
 
-If @racket[source] is @racket[#f], then @racket[result] should be
-considered unusable.
+The sole argument to the procedure depends on the source type.
 }
 
-@defproc[(fetch [name string?]
-                [sources (non-empty-listof string?)]
-                [request-transfer request-transfer/c])
-                logged?]{
-Returns a @tech{logged procedure} to compute a @racket[fetch-state].
+@deftogether[(
+@defidform[gen:source]
+@defthing[source? predicate/c]
+@defproc[(fetch [source source?] [tap tap/c] [exhaust exhaust/c]) any/c]
+)]{
+@racket[gen:source] is a @tech/reference{generic interface} that
+requires an implementation of @racket[fetch]. @racket[source?]
+returns @racket[#t] for values that do so.
 
-A fetch operation consults the given @racket[sources] in order. A
-source string can have any format. @racket[fetch] will use the string
-as a filesystem path, as a HTTPS URL, and as a plugin-specific value.
+@racket[fetch] attempts to @tech{tap} @racket[source]. If successful,
+@racket[fetch] calls @racket[tap] in tail position, passing the input
+port and the estimated maximum number of bytes that port is expected
+to produce.
 
-If one of these methods manages to find bytes using the source string,
-it will apply @racket[request-transfer] to the input port, along with
-the estimated maximum number of bytes that port is expected to
-produce. If bytes were transferred successfully, then the process is
-finished.
+Otherwise, @racket[fetch] calls @racket[exhaust] in tail position
+using a source-dependent argument.
+}
 
-Any @tech{message} produced by @racket[fetch] is an instance of
-@racket[$fetch]. Each instance @racketid[m] is scoped using
-@racket[($regarding ($fetch:scope name related-source) m)], where
-@racketid[related-source] is an element of @racket[sources], or
-@racket[#f]. When @racketid[related-source] is @racket[#f],
-@racketid[m] is a source-independent statement about the fetch
-operation.
 
-Assuming the returned @racket[fetch-state] is @racketid[F]:
+@deftogether[(
+@defproc[(logged-fetch [source source?] [tap tap/c]) logged?]
+@defstruct*[($fetch $message) ([errors (listof $message?)])]
+)]{
+Returns a @tech{logged procedure} that applies @racket[fetch] to
+@racket[source] and @racket[tap].
 
-@itemlist[
+The computed value of the logged procedure is @racket[FAILURE] if the
+source is @tech{exhausted}. Otherwise, the value is what's returned
+from @racket[tap].
 
-@item{@racket[(fetch-state-source F)] is the element of
-@racket[sources] most recently used by @racket[fetch], or @racket[#f].
-If @racket[#f], then no source produced a value.}
+The log will gain a @racket[($fetch errors)] message, where
+@racketid[errors] is empty if the fetch is successful.
+}
 
-@item{@racket[(fetch-state-result F)] is the value returned from the
-most recent application of @racket[request-transfer], or @racket[#f]
-if @racket[(fetch-state-source F)] is @racket[#f].}
 
+@section{Source Types}
+
+@defstruct*[exhausted-source ([value any/c])]{
+A source that is always @tech{exhausted}, meaning that
+@racket[(fetch (exhausted-source v) void values)] returns @racket[v].
+}
+
+
+@defstruct*[byte-source ([data bytes?])]{
+A source that, when @tech{tapped}, yields
+bytes directly from @racket[data].
+}
+
+@defstruct*[first-available-source ([sources (listof sources?)] [errors list?])]{
+A @tech{source} that, when @tech{tapped}, yields bytes from the first
+tapped source.
+
+If all sources for an instance are exhausted, then the instance is
+exhausted.  As sources are visited, errors are functionally
+accumulated in @racket[errors].
+
+The value produced for an exhausted @racket[first-available-source] is
+the longest possible list bound to @racket[errors].
+}
+
+
+@defstruct[text-source ([data string?])]{
+A @tech{source} that, when @tech{tapped}, produces bytes from the given string.
+}
+
+
+@defstruct[lines-source ([suffix (or/c #f char? string?)] [lines (listof string?)])]{
+A @tech{source} that, when @tech{tapped}, produces bytes from a
+string.  The string is defined as the combination of all
+@racket[lines], such that each line has the given @racket[suffix].  If
+@racket[suffix] is @racket[#f], then it uses a conventional line
+ending according to @racket[(system-type 'os)].
+
+@racketblock[
+(define src
+  (lines-source "\r\n"
+                '("#lang racket/base"
+                  "(provide a)"
+                  "(define a 1)")))
+
+(code:comment "\"#lang racket/base\r\n(provide a)\r\n(define a 1)\r\n\"")
+(fetch src consume void)
 ]
+}
 
+
+@defstruct[file-source ([path path-string?])]{
+A @tech{source} that, when @tech{tapped}, yields bytes
+from the file located at @racket[path].
+
+If the source is @tech{exhausted}, it yields a relevant
+@racket[exn:fail:filesystem] exception.
+}
+
+
+@defstruct[http-source ([request-url (or/c url? url-string?)])]{
+A @tech{source} that, when @tech{tapped}, yields bytes from an HTTP
+response body. The response comes from a GET request to
+@racket[request-url], and the body is only used for a 2xx response.
+
+If the source is @tech{exhausted}, it yields a relevant exception.
+
+The behavior of the source is impacted by @racket[XIDEN_DOWNLOAD_MAX_REDIRECTS].
+}
+
+
+@defstruct[http-mirrors-source ([request-urls (listof (or/c url-string? url?))])]{
+Like @racket[http-source], but tries each of the given URLs using
+@racket[first-available-source].
+}
+
+
+@defstruct[plugin-source ([hint any/c] [kw-lst list?] [kw-val-lst list?] [list? lst])]{
+A @tech{source} that consults the user's @tech{plugin} for data.
+
+The plugin is responsible for using @racket[hint] and
+@racket[fetch]-specific bindings to select a procedure. That procedure
+is then applied (as in @racket[keyword-apply]), to the remaining
+fields. The plugin then controls the result of the fetch.
+
+Xiden binds @racket[hint] to @racket['coerced] when using
+@racket[coerce-source].
 }
 
 
@@ -92,8 +185,27 @@ if @racket[(fetch-state-source F)] is @racket[#f].}
 The following procedures are useful for declaring sources in a
 @tech{package input}.
 
-@defproc[(sources [v any/c] ...) list?]{
-A semantic alias for @racket[list].
+@defproc[(sources [variant (or/c string? source?)] ...) source?]{
+Like @racket[first-available-source], but each string argument is
+coerced to a source using @racket[coerce-source].
+}
+
+@defproc[(coerce-source [variant (or/c string? source?)]) source?]{
+Returns @racket[variant] if it is already a @tech{source}.
+
+Otherwise, returns
+@racketblock[
+(first-available-source
+  (list (file-source s)
+        (http-source s)
+        (plugin-source 'coerced null null (list s)))
+  null)]
+}
+
+@defproc[(from-catalogs [query-string string?] [url-templates (listof string?) (XIDEN_CATALOGS)]) (listof url-string?)]{
+Returns a list of URL strings computed by URL-encoding
+@racket[query-string], and then replacing all occurrances of
+@racket{$QUERY} in @racket[url-templates] with the encoded string.
 }
 
 @defform[(from-file relative-path-expr)]{
@@ -103,58 +215,6 @@ appears.
 
 Due to this behavior, @racket[from-file] will return different results when the
 containing source file changes location on disk.
-}
-
-@defproc[(from-catalogs [query string?] [catalogs (listof string?) (XIDEN_CATALOGS)]) (listof url-string?)]{
-Returns a list of URL strings suitable for use in @racket[input]
-as possible sources for bytes.
-
-For each string in @racket[catalogs], all occurances of @racket{$QUERY} are
-replaced with the @racket[(uri-encode query)] in the output.
-
-Examples:
-
-@racketblock[
-(input "my-definition.rkt"
-       (from-catalogs "example.com:widget"))
-]
-
-@racketblock[
-(input "my-definition.rkt"
-       (append (from-catalogs "example.com:widget"
-                              '("https://mirrorA.example.com/$QUERY"
-                                "https://mirrorB.example.com/?q=$QUERY"))
-               (from-file "local.rkt")))
-]
-}
-
-@section{Data Sourcing Messages}
-
-@defstruct*[($fetch $message) () #:prefab]{
-A @tech{message} pertaining to @racket[fetch].
-}
-
-@defstruct*[($fetch:scope $message) ([fetch-name string?] [source-name (or/c string? #f)]) #:prefab]{
-Holds a user-provided name that helps trace an instance of
-@racket[$fetch] back to a particular application of @racket[fetch].
-
-If @racket[source-name] is not @racket[#f], then the clarified message
-pertains to a particular source.
-}
-
-@defstruct*[($fetch:fail $message) ([method symbol?] [reason (or/c #f string?)]) #:prefab]{
-A particular approach used to compute a value of
-@racket[fetch-state-result] failed. The reason for the failure is a
-human-readable string bound to @racket[reason].
-
-If @racket[reason] is @racket[#f], then a reason could not be inferred
-for the failure.
-}
-
-@defstruct*[($fetch:done $fetch) ([ok? boolean?]) #:prefab]{
-A call to @racket[fetch] finished. @racket[ok?] is @racket[#t] if the
-@racket[fetch-state-result] of the computed @racket[fetch-state] is
-not @racket[#f].
 }
 
 

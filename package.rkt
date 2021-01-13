@@ -147,13 +147,11 @@
          (logged-unit (dynamic-require `',(cadr overridden) 'pkg)))))
 
 
-(define (find-original-package-definition source max-size)
-  (if (string? source)
-      (mdo variant := (fetch-package-definition source max-size)
-           (if (and (fetch-state? variant) (fetch-state-result variant))
-               (read-package-definition (fetch-state-result variant))
-               (logged-failure ($package:unfetched source))))
-      (read-package-definition source)))
+(define (find-original-package-definition pkgdef-origin-variant max-size)
+  (if (string? pkgdef-origin-variant)
+      (mdo variant := (fetch-package-definition (coerce-source pkgdef-origin-variant) max-size)
+           (read-package-definition variant))
+      (read-package-definition pkgdef-origin-variant)))
 
 
 (define (find-per-input-overrides package-name override-specs)
@@ -193,12 +191,11 @@
                                          (random 0 10))))))))
 
 (define (fetch-package-definition source max-size)
-  (fetch source
-         (list source)
-         (λ (from-source est-size)
-           (make-limited-input-port from-source
-                                    (min max-size est-size)
-                                    #f))))
+  (logged-fetch source
+                (λ (from-source est-size)
+                  (make-limited-input-port from-source
+                                           (min max-size est-size)
+                                           #f))))
 
 (define (load-plugin-override)
   (load-from-plugin 'before-new-package
@@ -437,7 +434,7 @@
                            (check-match
                             (car m)
                             ($package:log _ _
-                                          (list ($fetch:scope _ _ _)
+                                          (list ($fetch _)
                                                 ($package:log _ _ (list ($cycle _))))))))))))
 
 

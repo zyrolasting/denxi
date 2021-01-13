@@ -1,46 +1,45 @@
 #lang racket/base
 
-; Define methods for fetching bytes using `source' strings.
-;
-; This addresses a core problem in dependency management: If you
-; didn't check your dependencies into version control, then how do you
-; get those EXACT dependencies later?
+; Define methods for fetching bytes
 
-(require "contract.rkt")
+(require "contract.rkt"
+         "message.rkt")
 
 ; This procedure acts as an interface between a specific method (HTTP,
 ; File read, etc.) and the part of Xiden that reads an estimated number
 ; of bytes from a port.
-(define request-transfer/c
+(define tap/c
   (-> input-port?
       (or/c +inf.0 exact-positive-integer?)
       any/c))
 
+(define exhaust/c
+  (-> any/c any/c))
 
-(provide (struct-out fetch-state)
+(define+provide-message $fetch (errors))
+
+(provide define-source
+         empty-source
          from-file
-         sources
+         gen:source
+         (struct-out exhausted-source)
+         (struct-out file-source)
+         (struct-out first-available-source)
+         (struct-out http-mirrors-source)
+         (struct-out http-source)
+         (struct-out lines-source)
+         (struct-out plugin-source)
+         (struct-out text-source)
          (contract-out
-          [request-transfer/c contract?]
-          [from-catalogs
-           (-> string?
-               (listof url-string?))]
-          [fetch
-           (-> non-empty-string?
-               (non-empty-listof any/c)
-               request-transfer/c
-               any/c)]))
+          [coerce-source (-> (or/c string? source?) source?)]
+          [exhaust/c contract?]
+          [from-catalogs (->* (string?) ((listof string?)) (listof url-string?))]
+          [fetch (-> source? tap/c exhaust/c any/c)]
+          [logged-fetch (-> source? tap/c logged?)]
+          [source? predicate/c]
+          [sources (->* () #:rest (listof (or/c string? source?)) source?)]
+          [tap/c contract?]))
 
-
-;-----------------------------------------------------------------------
-; Define messages to capture relevant states.
-
-(require "message.rkt")
-
-(define+provide-message $fetch ())
-(define+provide-message $fetch:scope  $fetch (fetch-name source-name message))
-(define+provide-message $fetch:fail   $fetch (method reason))
-(define+provide-message $fetch:done   $fetch (ok?))
 
 
 ;-----------------------------------------------------------------------
@@ -50,190 +49,170 @@
                      syntax/location
                      syntax/parse)
          (only-in net/uri-codec uri-encode)
-         racket/function
+         racket/exn
+         racket/generic
          racket/match
-         racket/sequence
          net/head
-         "cli-flag.rkt"
-         "exn.rkt"
-         "file.rkt"
-         "format.rkt"
-         "integrity.rkt"
-         "localstate.rkt"
          "logged.rkt"
-         "monad.rkt"
-         "path.rkt"
+         "message.rkt"
          "plugin.rkt"
          "port.rkt"
-         "printer.rkt"
-         "query.rkt"
          "rc.rkt"
-         "setting.rkt"
-         "signature.rkt"
          "string.rkt"
          "url.rkt")
 
-(module+ test
-  (require racket/file
-           racket/tcp
-           rackunit
-           mzlib/etc
-           "setting.rkt"))
 
-(struct fetch-state (source result) #:transparent)
+(define (logged-fetch source p)
+  (logged
+   (λ (messages)
+     (fetch source
+            (λ a
+              (values (apply p a)
+                      (cons ($fetch null)
+                            messages)))
+            (λ (variant)
+              (values FAILURE
+                      ($fetch (log-exhausted-source messages variant))))))))
 
-(define (fetch-ok? f)
-  (and (fetch-state? f)
-       (fetch-state-source f)))
+
+(define (log-exhausted-source messages variant)
+  (cond [(list? variant)
+         (foldl (λ (n res) (log-exhausted-source res n)) messages variant)]
+        [(exn? variant)
+         (cons ($show-string (exn->string variant)) messages)]
+        [($message? variant)
+         (cons variant messages)]
+        [else
+         (cons ($show-datum variant) messages)]))
 
 
 ;-----------------------------------------------------------------------
-; High-level operations
+; A source has its own method for producing bytes. Use CPS to handle
+; success and failure branches.
 
-(define (fetch name sources request-transfer)
+(define-generics source
+  [fetch source tap fail])
+
+(define (bind-recursive-fetch %tap %fail)
+  (λ (s [f %fail]) (fetch s %tap f)))
+
+(define-syntax (define-source stx)
+  (syntax-case stx ()
+    [(_ (id [field-id field-contract] ...) . body)
+     (syntax-protect
+      (datum->syntax stx
+                     (syntax->datum
+                      #'(struct id (field-id ...)
+                          #:guard
+                          (invariant-assertion (rename-contract
+                                                (-> field-contract ... any/c
+                                                    (values field-contract ...))
+                                                'id)
+                                               (λ a (apply values (reverse (cdr (reverse a))))))
+                          #:methods gen:source
+                          [(define (fetch %src %tap %fail)
+                             (match-define (id field-id ...) %src)
+                             (define %fetch (bind-recursive-fetch %tap %fail))
+                             . body)]))))]))
+
+
+
+;-----------------------------------------------------------------------
+; Source types
+
+(define-source (exhausted-source [value any/c])
+  (%fail value))
+
+
+(define-source (byte-source [data bytes?])
+  (%tap (open-input-bytes data)
+        (bytes-length data)))
+
+
+(define-source (first-available-source [sources (listof source?)] [errors list?])
   (if (null? sources)
-      (logged
-       (λ (messages)
-         (values (fetch-state #f #f)
-                 (cons ($fetch:scope name #f ($fetch:done #f))
-                       messages))))
-      (logged
-       (λ (messages)
-         (define source (car sources))
-         (define logged-state (fetch-named-source source request-transfer))
-         (define-values (state fetch-messages) (run-log logged-state null))
-         (define messages*
-           (append (map (curry $fetch:scope name source)
-                        fetch-messages)
-                   messages))
-         (if (fetch-state-result state)
-             (values state messages*)
-             (run-log (fetch name (cdr sources) request-transfer)
-                      messages*))))))
+      (%fail (reverse errors))
+      (%fetch (car sources)
+              (λ (e)
+                (%fetch (first-available-source (cdr sources) (cons e errors))
+                        %fail)))))
 
 
-; This terminates on the first source to produce a file with the requested bytes.
-(define (fetch-named-source source request-transfer)
-  (mdo initial       := (logged-unit (fetch-state source #f))
-       fs-result     := ((fetch-method 'filesystem fetch-source/filesystem) initial request-transfer)
-       http-result   := ((fetch-method 'http fetch-source/http) fs-result request-transfer)
-       ((fetch-method 'plugin fetch-source/plugin) http-result request-transfer)))
+(define-source (variant-source [value any/c] [constructors (-> any/c source?)])
+  (%fetch
+   (first-available-source
+    (map (λ (c) (c value))
+         constructors)
+    null)))
 
 
-;------------------------------------------------------------------------------
-; Fetch methods are procedures that each attempt to produce bytes from
-; a source.  An exception or #f produced by a fetch method only
-; rules out that method. A fetch fails if no fetch method returns a true value.
+(define-source (text-source [data string?])
+  (%fetch (byte-source (string->bytes/utf-8 data))))
 
 
-(define (fetch-method method f)
-  (λ (fetch-st request-transfer)
-    (match-let ([(fetch-state source result) fetch-st])
-      (if result
-          (logged-unit fetch-st)
-          (with-handlers ([values (fetch-exn-handler source method)])
-            (update-fetch-state source
-                                method
-                                (f source request-transfer)))))))
+(define-source (lines-source [suffix (or/c #f char? string?)] [lines (listof string?)])
+  (define s
+    (cond [(not suffix) (if (equal? (system-type 'os) 'windows) "\r\n" "\n")]
+          [(char? suffix) (string suffix)]
+          [(string? suffix) suffix]))
+  (%fetch (text-source (string-append (string-join lines s) s))))
 
 
-(define (fetch-exn-handler source method)
-  (λ (e)
-    (logged
-     (λ (messages)
-       (values (fetch-state source #f)
-               (cons ($fetch:fail method (exn-message e))
-                     messages))))))
+(define-source (file-source [path path-string?])
+  (with-handlers ([exn:fail:filesystem? %fail])
+    (%tap (open-input-file path)
+          (+ (* 20 1024) ; for Mac OS resource forks
+             (file-size path)))))
 
 
-(define (update-fetch-state source method method-result)
-  (logged
-   (λ (messages)
-     (values (fetch-state source method-result)
-             (cons (if method-result
-                       ($fetch:done #t)
-                       ($fetch:fail method #f))
-                   messages)))))
+(define-source (http-source [request-url (or/c url? url-string?)])
+  (with-handlers ([exn? %fail])
+    (define-values (in headers-string)
+      (get-pure-port/headers #:redirections (XIDEN_DOWNLOAD_MAX_REDIRECTS)
+                             #:method #"GET"
+                             (if (url? request-url)
+                                 request-url
+                                 (string->url request-url))))
 
-(module+ test
-  (let* ([method 'zappo]
-         [source "source"]
-         [request-transfer (λ (v) (check-eq? v 'next) 'done)]
-         [finished-state (fetch-state source 'done)]
-         [unfinished-state (fetch-state source #f)]
-         [bound (fetch-method method
-                              (λ (s r) (check-eq? s source)
-                                 (check-eq? r request-transfer)
-                                 (request-transfer 'next)))]
-         [raises (fetch-method method (λ (s r) (error "uh oh")))])
-    (test-case "Short circuit use of a fetch method if a result is already available"
-      (call-with-values (λ () (run-log (bound finished-state request-transfer) null))
-                        (λ (state messages)
-                          (check-eq? state finished-state))))
+    (define content-length-pair
+      (assf (λ (el) (equal? (string-downcase el) "content-length"))
+            (extract-all-fields headers-string)))
 
-    (test-case "Try to use a fetch method if no result is available"
-      (call-with-values (λ () (run-log (bound unfinished-state request-transfer) null))
-                        (λ (state messages)
-                          (check-equal? state finished-state))))
+    (%tap in
+          (if content-length-pair
+              (string->number (or (cdr content-length-pair) "+inf.0"))
+              +inf.0))))
 
-    (test-case "Treat #f as a failure to produce a result"
-      (call-with-values (λ () (run-log (update-fetch-state source method #f) null))
-                        (λ (state messages)
-                          (check-equal? state (fetch-state source #f))
-                          (check-equal? messages (list ($fetch:fail method #f))))))
 
-    (test-case "Treat an exception as a failure to produce a result"
-      (call-with-values (λ () (run-log (raises unfinished-state request-transfer) null))
-                        (λ (state messages)
-                          (check-equal? state (fetch-state source #f))
-                          (check-equal? messages (list ($fetch:fail method "uh oh"))))))
-
-    (test-case "Treat anything else as reason to mark a fetch done"
-      (call-with-values (λ () (run-log (update-fetch-state source method 'something) null))
-                        (λ (state messages)
-                          (check-equal? state (fetch-state source 'something))
-                          (check-equal? messages (list ($fetch:done #t))))))))
+(define-source (http-mirrors-source [request-urls (listof (or/c url? url-string?))])
+  (%fetch (apply sources (map http-source request-urls))))
 
 
 
-
-;------------------------------------------------------------------------------
-; Fetch method implementations
-
-(define (fetch-source/filesystem source request-transfer)
-  (request-transfer (open-input-file source)
-                    (+ (* 20 1024) ; for Mac OS resource forks
-                       (file-size source))))
+(define-source (plugin-source [hint any/c] [kw-lst list?] [kw-val-lst list?] [lst list?])
+  (let ([proc (load-from-plugin 'bind-custom-fetch (λ () (%fail 'undefined)) %fail)])
+    (keyword-apply (proc hint %tap %fail)
+                   kw-lst
+                   kw-val-lst
+                   lst)))
 
 
-(define (fetch-source/http source request-transfer)
-  (define-values (in headers-string)
-    (get-pure-port/headers #:redirections (XIDEN_DOWNLOAD_MAX_REDIRECTS)
-                           #:method #"GET"
-                           (string->url source)))
-
-  (define content-length-pair
-    (assf (λ (el) (equal? (string-downcase el) "content-length"))
-          (extract-all-fields headers-string)))
-
-  (request-transfer in
-                    (if content-length-pair
-                        (string->number (or (cdr content-length-pair) "+inf.0"))
-                        +inf.0)))
-
-
-
-(define (fetch-source/plugin source request-transfer)
-  (define (mod-fallback . _) (const #f))
-  ((load-from-plugin 'fetch-source mod-fallback mod-fallback)
-   source request-transfer))
-
-
-;------------------------------------------------------------------------------
+;-----------------------------------------------------------------------
 ; Source expressions
 
-(define sources
-  (procedure-rename list 'sources))
+(define empty-source (byte-source #""))
+
+(define (coerce-source s)
+  (if (string? s)
+      (first-available-source
+       (list (file-source s)
+             (http-source s)
+             (plugin-source 'coerced null null (list s)))
+       null)
+      s))
+
+(define (sources . variants)
+  (first-available-source (map coerce-source variants) null))
 
 
 (define-syntax (from-file stx)
@@ -253,112 +232,78 @@
     (map (λ (url-string) (string-replace url-string "$QUERY" encoded))
          url-templates)))
 
-(module+ test
-  (test-equal? "Alias (list) as (sources)"
-               (sources 1 2 3)
-               (list 1 2 3))
 
-  (test-equal? "Expand URLs as a way to search for remote resources"
-               (from-catalogs "%cool beans"
-                              '("https://example.com?a=$QUERY"
-                                "http://example.com/$QUERY"))
-               '("https://example.com?a=%25cool%20beans"
-                 "http://example.com/%25cool%20beans"))
+(module+ test
+  (require racket/file
+           racket/tcp
+           rackunit
+           mzlib/etc
+           "file.rkt"
+           "setting.rkt"
+           (submod "plugin.rkt" test))
+
+  (define (run-tap in est)
+    (define out (open-output-bytes))
+    (copy-port in out)
+    (if (equal? est +inf.0)
+        (get-output-bytes out #t)
+        (subbytes (get-output-bytes out #t) 0 est)))
+
+  (define (test-tap msg src expected)
+    (test-equal? msg
+                 (fetch src run-tap void)
+                 expected))
+
+  (test-pred "Always fail using exhausted-source"
+             void?
+             (fetch (exhausted-source (void)) list values))
+
+  (test-tap "Return exact bytes with a byte-source"
+            (byte-source #"abc")
+            #"abc")
+
+  (test-tap "Allow combining sources"
+            (sources (exhausted-source (void)) (byte-source #"abc"))
+            #"abc")
+
+  (test-tap "Produce text"
+            (text-source "abc")
+            #"abc")
+
+  (test-tap "Produce lines"
+            (lines-source "\r\n" '("a" "b" "cdef"))
+            #"a\r\nb\r\ncdef\r\n")
 
   (test-equal? "Expand paths relative to source file"
                (file-or-directory-identity (from-file "source.rkt"))
                (file-or-directory-identity (build-path (this-expression-source-directory)
-                                                       (this-expression-file-name)))))
+                                                       (this-expression-file-name))))
 
-;------------------------------------------------------------------------------
+  (test-equal? "Expand URLs as a way to search for remote resources"
+    (from-catalogs "%cool beans"
+                   '("https://example.com?a=$QUERY" "http://example.com/$QUERY"))
+    '("https://example.com?a=%25cool%20beans"
+      "http://example.com/%25cool%20beans"))
 
-(module+ test
-  (define plugin-module-datum
-    '(module mods racket/base
-       (provide fetch-source)
-       (define (fetch-source source request-transfer)
-         (request-transfer (open-input-string source)
-                           (string-length source)))))
 
-  (define fetch-name "anon")
-  (define mod-source "====[{]::[}]====")
-  (define mod-result (build-path "fake-path"))
+  (test-true "Fetch from file"
+    (call-with-temporary-file
+     (λ (tmp-path)
+       (display-to-file #:exists 'truncate/replace "123" tmp-path)
+       (fetch (file-source tmp-path)
+              (λ (in est-size)
+                (and (equal? (read in) 123)
+                     (<= (abs (- est-size (file-size tmp-path)))
+                         (* 20 1024))))
+              (λ _ #f)))))
 
-  (define (try-fetch l proc)
-    (call-with-values (λ () (run-log l null)) proc))
-
-  (define (try-mod-fetch proc)
-    (try-fetch (fetch "mod"
-                      (list mod-source)
-                      (λ (in est-size)
-                        (check-equal? est-size (string-length mod-source))
-                        (check-equal? (read-string est-size in) mod-source)
-                        mod-result)) ; <- Must produce a path for a successful fetch
-               proc))
-
-  (call-with-temporary-file
-   (λ (tmp)
-     (write-to-file plugin-module-datum tmp #:exists 'truncate/replace)
-     (parameterize ([(setting-derived-parameter XIDEN_PLUGIN_MODULE) tmp])
-       (define source (path->string tmp))
-       (define (request-transfer in est-size)
-         (test-equal? "Read file" (read in) plugin-module-datum)
-         (test-true "Estimate file size" (>= est-size (file-size tmp)))
-         tmp)
-
-       (test-case "Fetch from file"
-         (try-fetch (fetch fetch-name (list source) request-transfer)
-                    (λ (result messages)
-                      (check-equal? result (fetch-state source tmp))
-                      (check-equal? messages
-                                    (list ($fetch:scope fetch-name source
-                                                        ($fetch:done #t)))))))
-
-       (test-case "Show all errors if transfer crashes"
-         (define (raise-always . _) (error "uh oh"))
-         (try-fetch (fetch "crashes" (list source) raise-always)
-                    (λ (result messages)
-                      (check-equal? result (fetch-state #f #f))
-                      (check-match messages
-                                   (list ($fetch:scope "crashes" #f ($fetch:done #f))
-                                         ($fetch:scope "crashes" tmp
-                                                       ($fetch:fail (or 'filesystem 'http 'plugin)
-                                                                    (? string? _)))
-                                         ..3)))))
-
-       (test-case "Fetch from mod"
-         (try-mod-fetch
-          (λ (result messages)
-            (check-equal? result (fetch-state mod-source mod-result))
-
-            ; I wanted to combine these, but an expansion-time issue
-            ; keeps me from doing so with the `mod-source` binding
-            ; https://github.com/racket/racket/issues/3435
-            (check-match (car messages)
-                         ($fetch:scope "mod" mod-source
-                                       ($fetch:done #t)))
-            (check-match (cdr messages)
-                         (list ($fetch:scope "mod" mod-source
-                                             ($fetch:fail (or 'filesystem 'http) _))
-                               ..1))))))))
-
-  ; Notice we just left the parameterize that set the mod path
-  (test-case "Fetch fails when mod is not available"
-    (try-mod-fetch
-     (λ (result messages)
-       (check-match messages
-                    (list ($fetch:scope "mod" mod-source
-                                        (or (? $fetch:fail? _)
-                                            ($fetch:done #f)))
-                          ..1)))))
 
   (test-case "Fetch over HTTP"
     (define listener (tcp-listen 8018 1 #t))
-    (define http-result "from http")
     (define th
       (thread
        (λ ()
-         (let loop ([num 0])
+         (let loop ()
            (define-values (in out) (tcp-accept listener))
            (display "HTTP/1.1 200 OK\r\n" out)
            (display "https: //www.example.com/\r\n" out)
@@ -366,28 +311,46 @@
            (display "Date: Fri, 28 Aug 2020 04:02:21 GMT\r\n" out)
            (display "Server: foo\r\n" out)
            (display "Content-Length: 5\r\n\r\n" out)
-           (when (= num 0)
-             (write-bytes #"12345" out))
+           (write-bytes #"12345" out)
            (flush-output out)
            (close-output-port out)
            (close-input-port in)
-           (loop (add1 num))))))
+           (loop)))))
 
-    (define source "http://127.0.0.1:8018")
-
-    (define (request-transfer in est-size)
+    (define (tap in est-size)
       (check-eq? est-size 5)
       (check-equal? (read-bytes est-size in) #"12345")
-      (kill-thread th)
-      (tcp-close listener)
-      http-result)
+      #t)
 
-    (try-fetch (fetch fetch-name (list source) request-transfer)
-               (λ (result messages)
-                 (check-equal? result (fetch-state source http-result))
-                 (check-match messages
-                              (list ($fetch:scope fetch-name source
-                                                  (or ($fetch:done #t)
-                                                      ($fetch:fail (not 'http)
-                                                                   (? string? _))))
-                                    ..1))))))
+    (define (check s)
+      (check-true (fetch s tap (λ _ #f))))
+
+    (dynamic-wind void
+                  (λ ()
+                    (check (http-source "http://127.0.0.1:8018"))
+                    (check (http-mirrors-source (list "http://127.0.0.1:1" "http://127.0.0.1:8018"))))
+                  (λ ()
+                    (kill-thread th)
+                    (tcp-close listener))))
+
+
+  (test-case "Fetch using plugin"
+    (define plugin-module-datum
+      '(module mods racket/base
+         (provide bind-custom-fetch)
+         (define (bind-custom-fetch hint tap fail)
+           (λ (fail?)
+             (if fail?
+                 (fail 'failed)
+                 (tap (open-input-bytes #"") 678))))))
+
+    (define (check fail?)
+      (fetch (plugin-source #f null null (list fail?))
+             (λ (in est) (check-equal? est 678))
+             (λ (v) (check-equal? v 'failed))))
+
+    (call-with-plugin
+     plugin-module-datum
+     (λ ()
+       (check #t)
+       (check #f)))))

@@ -33,13 +33,18 @@ references to user-defined extensions. The bindings defined below are
 not provided by Xiden, but are instead provided by a
 @tech{plugin} to support the written behavior.
 
-@defproc[(fetch-source [source string?] [request-transfer request-transfer/c]) any/c]{
-This procedure must apply @racket[request-transfer] (See
-@racket[request-transfer/c]) in tail position to copy bytes in terms
-of a @tech{source} that Xiden does not understand.
 
-@racket[fetch-source] may return @racket[#f] or raise an exception
-if it cannot function as expected.
+@defproc[(bind-custom-fetch [hint any/c] [request-transfer request-transfer/c] [fail (-> (or/c exn? $message?) any)]) procedure?]{
+@racket[bind-custom-fetch] returns a procedure (@racket[custom-fetch])
+that must accept the keyword arguments and formal arguments from a
+@racket[plugin-source]. @racket[hint] can be used to select a specific
+procedure to return.
+
+@racket[custom-fetch] must apply either @racket[request-transfer] or
+@racket[fail] in tail position depending on whether bytes can be
+produced in terms of the arguments. Any value @racket[raise]d by
+either @racket[bind-custom-fetch] or @racket[custom-fetch] will be
+caught and passed to @racket[fail].
 }
 
 

@@ -228,10 +228,6 @@
   [($package:output:reused)
    "reused output"]
 
-  [($package:unfetched source)
-   (format "could not fetch package definition from source: ~s"
-           source)]
-
   [($package:output:undefined)
    "requested output is not defined"]
 
@@ -260,23 +256,12 @@
   [($package:unavailable-output available)
    (format "Requested output is not available. Available outputs: ~s" available)]
 
-  [($fetch:scope name source message)
-   (format "~a: ~a"
-           (if (or (equal? name source)
-                   (not source))
-               (format "fetch ~s" (~a name))
-               (format "fetch ~a from ~s" name (~a source)))
-           (format-message message))]
-
-  [($fetch:done ok?)
-   (if ok? "done" "failed")]
-
-  [($fetch:fail method reason)
-   (format "ruling out ~a~a"
-           method
-           (if (and (XIDEN_VERBOSE) reason)
-               (~a ": " reason)
-               ""))]
+  [($fetch errors)
+   (if (null? errors)
+       (format "fetch failed~n~a~n~n"
+               (string-join (map format-message errors)
+                            "\n"))
+       (format "fetched"))]
 
   [($signature ok? stage public-key-path)
    (format (~a "signature ~a: ~a")
@@ -406,7 +391,7 @@
            pattern
            wrt)]
 
-  [($input-not-found name)
+  [($input:not-found name)
    (format "Input not found: ~s"
            name)]
 

@@ -7,24 +7,30 @@
          :=
          base32
          base64
+         coerce-source
          define
          description
          edition
          extract
+         file-source
          find-input
          from-catalogs
          from-file
          hex
+         http-mirrors-source
+         http-source
          in-paths
          input-ref
          input
          integrity
          install
+         lines-source
          mdo
          metadatum
          name
          os-support
          output
+         plugin-source
          provider
          quote
          racket-versions
@@ -36,6 +42,7 @@
          signature
          sources
          tags
+         text-source
          url
          (rename-out [#%module-begin* #%module-begin]))
 
@@ -203,26 +210,26 @@
   (test-case "Expand package definition state"
     (define pkgdef
       (expand-instance
-      (name "pkg")
-      (edition "ed")
-      (revision-number 9)
-      (revision-names "n" "i" "c" "e")
-      (provider "example.com")
-      (input "archive")
-      (racket-versions ("7.9" "*") "6.2")
-      (metadatum boo "1")
-      (output "default" 1)
-      (input "int" '("src") (integrity 'sha1 (hex "abcd")))
-      (metadatum foo "2")
-      (tags "testable" "battle-ready")
-      (description "A " "combined str" "ing")
-      (input "sig"
-             '("src")
-             (integrity 'sha1 (hex "abcd"))
-             (signature "pub" #"bytes"))
-      (output "min" 2)
-      (os-support windows macosx)
-      (url "https://example.com/url")))
+       (name "pkg")
+       (edition "ed")
+       (revision-number 9)
+       (revision-names "n" "i" "c" "e")
+       (provider "example.com")
+       (input "archive")
+       (racket-versions ("7.9" "*") "6.2")
+       (metadatum boo "1")
+       (output "default" 1)
+       (input "int" (sources "src") (integrity 'sha1 (hex "abcd")))
+       (metadatum foo "2")
+       (tags "testable" "battle-ready")
+       (description "A " "combined str" "ing")
+       (input "sig"
+              (sources "src")
+              (integrity 'sha1 (hex "abcd"))
+              (signature "pub" #"bytes"))
+       (output "min" 2)
+       (os-support windows macosx)
+       (url "https://example.com/url")))
     (check-match
      pkgdef
      (package
@@ -237,13 +244,13 @@
       '(windows macosx)
       '(("7.9" "*") "6.2")
       (hash-table ('boo "1") ('foo "2"))
-      (list (input-info "archive" (list) #f #f)
+      (list (input-info "archive" #f #f #f)
             (input-info "int"
-                        '("src")
+                        (? source? _)
                         (integrity-info 'sha1 #"\253\315")
                         #f)
             (input-info "sig"
-                        '("src")
+                        (? source? _)
                         (integrity-info 'sha1 #"\253\315")
                         (signature-info "pub" #"bytes")))
       '("default" "min")

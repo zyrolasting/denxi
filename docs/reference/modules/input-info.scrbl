@@ -8,6 +8,7 @@
                     xiden/integrity
                     xiden/input-info
                     xiden/signature
+                    xiden/source
                     xiden/string]
          "../../shared.rkt"]
 
@@ -17,13 +18,13 @@
 
 A @deftech{package input} is an instance of @racket[input-info].
 
-@defstruct*[input-info ([name string?] [sources (non-empty-listof string?)] [integrity (or/c #f integrity-info?)] [signature (or/c #f signature-info?)]) #:prefab]{
-A structure representing a request for exact bytes.
+@defstruct*[input-info ([name string?] [source source?] [integrity (or/c #f integrity-info?)] [signature (or/c #f signature-info?)]) #:prefab]{
+A structure representing a request for exact bytes from a @tech{source}.
 }
 
 
 @defproc[(make-input-info [name string?]
-                          [sources (listof path-string?) null]
+                          [source source? null]
                           [integrity (or/c #f well-formed-integrity-info/c) #f]
                           [signature (or/c #f well-formed-signature-info/c) #f])
          well-formed-input-info/c]{
@@ -44,14 +45,14 @@ A contract that recognizes @tech{package inputs} suitable for use in
 
 @defthing[abstract-input-info/c
           flat-contract?
-          #:value (struct/c input-info file-name-string? null? #f #f)]{
+          #:value (struct/c input-info file-name-string? #f #f #f)]{
 A contract that recognizes @tech{package inputs} with only a name defined.
 }
 
 @defthing[concrete-input-info/c
           flat-contract?
           #:value (and/c well-formed-input-info/c (not/c abstract-input-info/c))]{
-A contract that recognizes @tech{package inputs} with a name and at least one source.
+A contract that recognizes @tech{package inputs} with a name and a source.
 }
 
 @defthing[current-inputs (parameter/c (listof input-info?))]{
@@ -85,6 +86,18 @@ of @racket[input], if no bytes are available, or if the runtime
 configuration does not place trust in the bytes.
 }
 
-@defstruct*[$input-not-found ([name string?])]{
+@defstruct*[($input $message) ([name string?])]{
+A @tech{message} regarding an input with a given name.
+}
+
+@defstruct*[($input:not-found $input) ()]{
 Represents a failure to find an input using @racket[find-input].
+}
+
+@defstruct*[($input:fetch $input) ([errors (listof $message?)])]{
+Represents the status for fetching an input from a source.
+
+If @racket[errors] is empty, then the fetch was successful.
+Otherwise, the fetch failed, and @racket[errors] holds @tech{messages}
+that explain why.
 }
