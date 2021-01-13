@@ -142,6 +142,7 @@ Sets @racket[package-url].
              find-input
              from-catalogs
              from-file
+             getenv
              hex
              http-mirrors-source
              http-source
