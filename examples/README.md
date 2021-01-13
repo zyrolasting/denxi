@@ -8,11 +8,11 @@ instructions][setup].
 
 # Conventional Files
 
-Each directory contains _at least_ the following files:
+Each directory may contain the following files:
 
 * `README.md`: Instructions for using the example
 * `program.rkt`: a hypothetical program that does not function without dependencies.
-* `defn.rkt`: the primary package definition used to fulfil dependencies for `program.rkt`.
+* `defn.rkt`: the primary package definition used to fulfil dependencies.
 * `xiden-workspace`: a directory used by Xiden to store state information.
 * `xiden-workspace/etc/xiden.rkt`: The runtime configuration file used for this example.
 
