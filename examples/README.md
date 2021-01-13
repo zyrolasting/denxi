@@ -2,6 +2,8 @@ This directory contains example programs that use Xiden.
 
 Each example is self-contained. A directory name starts with two
 numbers indicated the recommended reading order, starting with `00`.
+You will need Xiden installed, so be sure you've followed [setup][]
+instructions.
 
 
 # Conventional Files
@@ -44,3 +46,4 @@ please [open an issue][]
 
 
 [open an issue]: https://github.com/zyrolasting/xiden/issues
+[setup]: https://docs.racket-lang.org/xiden-guide/setup.html?q=xiden%20guide
