@@ -75,8 +75,8 @@ using a source-dependent argument.
 
 
 @deftogether[(
-@defproc[(logged-fetch [source source?] [tap tap/c]) logged?]
-@defstruct*[($fetch $message) ([errors (listof $message?)])]
+@defproc[(logged-fetch [id any/c] [source source?] [tap tap/c]) logged?]
+@defstruct*[($fetch $message) ([id any/c] [errors (listof $message?)])]
 )]{
 Returns a @tech{logged procedure} that applies @racket[fetch] to
 @racket[source] and @racket[tap].
@@ -85,7 +85,7 @@ The computed value of the logged procedure is @racket[FAILURE] if the
 source is @tech{exhausted}. Otherwise, the value is what's returned
 from @racket[tap].
 
-The log will gain a @racket[($fetch errors)] message, where
+The log will gain a @racket[($fetch id errors)] message, where
 @racketid[errors] is empty if the fetch is successful.
 }
 

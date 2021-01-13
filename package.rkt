@@ -57,7 +57,6 @@
 
 (define+provide-message $package ())
 (define+provide-message $package:log $package (query output-name messages))
-(define+provide-message $package:unfetched $package (source))
 (define+provide-message $package:output $package ())
 (define+provide-message $package:output:built $package:output ())
 (define+provide-message $package:output:reused $package:output ())
@@ -149,7 +148,9 @@
 
 (define (find-original-package-definition pkgdef-origin-variant max-size)
   (if (string? pkgdef-origin-variant)
-      (mdo variant := (fetch-package-definition (coerce-source pkgdef-origin-variant) max-size)
+      (mdo variant := (fetch-package-definition (~a pkgdef-origin-variant)
+                                                (coerce-source pkgdef-origin-variant)
+                                                max-size)
            (read-package-definition variant))
       (read-package-definition pkgdef-origin-variant)))
 
@@ -190,8 +191,9 @@
                   (λ _ (integer->char (+ (char->integer #\0)
                                          (random 0 10))))))))
 
-(define (fetch-package-definition source max-size)
-  (logged-fetch source
+(define (fetch-package-definition name source max-size)
+  (logged-fetch name
+                source
                 (λ (from-source est-size)
                   (make-limited-input-port from-source
                                            (min max-size est-size)
@@ -434,7 +436,7 @@
                            (check-match
                             (car m)
                             ($package:log _ _
-                                          (list ($fetch _)
+                                          (list ($fetch _ _)
                                                 ($package:log _ _ (list ($cycle _))))))))))))
 
 

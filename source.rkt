@@ -16,7 +16,7 @@
 (define exhaust/c
   (-> any/c any/c))
 
-(define+provide-message $fetch (errors))
+(define+provide-message $fetch (id errors))
 
 (provide define-source
          empty-source
@@ -35,7 +35,7 @@
           [exhaust/c contract?]
           [from-catalogs (->* (string?) ((listof string?)) (listof url-string?))]
           [fetch (-> source? tap/c exhaust/c any/c)]
-          [logged-fetch (-> source? tap/c logged?)]
+          [logged-fetch (-> any/c source? tap/c logged?)]
           [source? predicate/c]
           [sources (->* () #:rest (listof (or/c string? source?)) source?)]
           [tap/c contract?]))
@@ -62,17 +62,18 @@
          "url.rkt")
 
 
-(define (logged-fetch source p)
+(define (logged-fetch id source p)
   (logged
    (λ (messages)
      (fetch source
             (λ a
               (values (apply p a)
-                      (cons ($fetch null)
+                      (cons ($fetch id null)
                             messages)))
             (λ (variant)
               (values FAILURE
-                      ($fetch (log-exhausted-source messages variant))))))))
+                      (cons ($fetch id (log-exhausted-source messages variant))
+                            messages)))))))
 
 
 (define (log-exhausted-source messages variant)

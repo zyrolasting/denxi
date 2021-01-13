@@ -256,12 +256,13 @@
   [($package:unavailable-output available)
    (format "Requested output is not available. Available outputs: ~s" available)]
 
-  [($fetch errors)
+  [($fetch name errors)
    (if (null? errors)
-       (format "fetch failed~n~a~n~n"
+       (format "~a: fetched" name)
+       (format "~a: fetch failed~n~a"
+               name
                (string-join (map format-message errors)
-                            "\n"))
-       (format "fetched"))]
+                            "\n")))]
 
   [($signature ok? stage public-key-path)
    (format (~a "signature ~a: ~a")

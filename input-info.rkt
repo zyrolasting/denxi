@@ -113,10 +113,11 @@
       (mdo pathrec := (fetch-input info)
            (logged
             (λ (messages)
-              (check-input-integrity info path-record messages))))))
+              (check-input-integrity info pathrec messages))))))
 
 (define (fetch-input info)
-  (logged-fetch (input-info-source info)
+  (logged-fetch (input-info-name info)
+                (input-info-source info)
                 (λ (in est-size)
                   (make-addressable-file
                    #:max-size (mebibytes->bytes (XIDEN_FETCH_TOTAL_SIZE_MB))
