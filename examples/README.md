@@ -1,4 +1,38 @@
-These examples are self-contained. They each have their own rcfile
-that grants Xiden permission to do what is relevant to the example. A
-directory name starts with two numbers indicated the recommended
-reading order, starting with `00`.
+This directory contains example programs that use Xiden.
+
+Each example is self-contained. A directory name starts with two
+numbers indicated the recommended reading order, starting with `00`.
+
+
+# Conventional Files
+
+Each directory contains _at least_ the following files:
+
+* `README.md`: Instructions for using the example
+* `program.rkt`: a hypothetical program that does not function without dependencies.
+* `defn.rkt`: the primary package definition used to fulfil dependencies for `program.rkt`.
+* `xiden-workspace`: a directory used by Xiden to store state information.
+* `xiden-workspace/etc/xiden.rkt`: The runtime configuration file used for this example.
+
+
+# Workspace Invariant
+
+In order for an example to work, you will need to run commands inside
+the example's directory. This lets Xiden find the `xiden-workspace`
+directory for that example, which contains a runtime configuration
+file.
+
+You do not strictly have to do this, but if you don't, you will need
+to adjust command line flags and environment variables. For
+simplicity, the instructions in each example assume that you'll run
+commands in its directory.
+
+
+# Any Issues?
+
+The instructions for an example will tell you what you can expect to see.
+If you get any output or change that is not consistent with the instructions,
+please [open an issue][]
+
+
+[open an issue]: https://github.com/zyrolasting/xiden/issues
