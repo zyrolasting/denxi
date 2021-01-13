@@ -1,9 +1,9 @@
 This directory contains example programs that use Xiden.
 
-Each example is self-contained. A directory name starts with two
-numbers indicated the recommended reading order, starting with `00`.
-You will need Xiden installed, so be sure you've followed [setup][]
-instructions.
+Each example is self-contained. Directory names are numbered to
+indicate the recommended reading order, starting with `00`.  You will
+need Xiden installed, so be sure you've followed the [setup
+instructions][setup].
 
 
 # Conventional Files
