@@ -115,7 +115,7 @@
                               (or link-path-or-#f (package-name pkg))
                               pkg)
 
-       (logged-unit SUCCESS)))
+       (logged-unit (void))))
 
 
 ;===============================================================================
