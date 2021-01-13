@@ -96,7 +96,7 @@
 
   (define-values (handle stdout stdin stderr)
     (parameterize ([current-directory wd])
-      (start controller (current-output-port) #f #f #f cmd-actual args)))
+      (start controller (current-output-port) (current-input-port) #f #f cmd-actual args)))
 
   (when user-stdin
     (copy-port user-stdin stdin)
