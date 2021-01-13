@@ -28,6 +28,14 @@ simplicity, the instructions in each example assume that you'll run
 commands in its directory.
 
 
+# Resetting an Example
+
+Instructions may tell you to "reset" an example, if needed.  This is
+because the commands in the examples will create files and symbolic
+links.  To restore the initial state of the example, delete the
+symbolic links and run `xiden gc`.
+
+
 # Any Issues?
 
 The instructions for an example will tell you what you can expect to see.
