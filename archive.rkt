@@ -6,7 +6,8 @@
 
 (provide
  (contract-out
-  [extract (-> (or/c path-string? input-port?) (logged/c void?))]))
+  [extract (-> (or/c path-string? input-port?) (logged/c void?))]
+  [extract-input (->* (string?) (#:keep? any/c) logged?)]))
 
 (require racket/format
          racket/match
@@ -17,8 +18,10 @@
          file/untgz
          file/unzip
          "file.rkt"
+         "input-info.rkt"
          "logged.rkt"
          "message.rkt"
+         "monad.rkt"
          "plugin.rkt")
 
 (define+provide-message $extract-report (status target))
@@ -34,6 +37,14 @@
               ($attach (void (proc in)) ($extract-report 'done path))
               ($fail ($extract-report 'unsupported path)))))))
 
+(define (extract-input #:keep? [keep? #f] name)
+  (if keep?
+      (mdo p := (keep-input name)
+           (extract p))
+      (mdo i := (input-ref name)
+           p := (resolve-input name)
+           (extract p)
+           (release-input i))))
 
 (define (get-extract-procedure name)
   (match (reverse (string-split (~a (file-name-from-path name)) "."))

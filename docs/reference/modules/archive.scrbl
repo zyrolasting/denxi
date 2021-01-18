@@ -8,6 +8,7 @@
            file/unzip
            racket/contract
            xiden/archive
+           xiden/input-info
            xiden/file
            xiden/logged]
            "../../shared.rkt"]
@@ -44,6 +45,14 @@ then @racketid[P] behaves like @racket[untar].  If @racket{.tgz}
 or @racket{.tar.gz}, then @racket[untgz]. If @racket{.zip},
 @racket[unzip]. Otherwise, @racketid[P] will attempt to use
 a @tech{plugin}'s @racket[get-extract-procedure].
+}
+
+
+@defproc[(extract-input [name string?] [#:keep? any/c #f]) logged?]{
+Like @racket[extract], except archive data is drawn from the input
+found using @racket[(input-ref name)] and @racket[resolve-input].  If
+@racket[keep?] is @racket[#f], the input is released using
+@racket[release-input] after extraction.
 }
 
 
