@@ -12,6 +12,7 @@
          description
          edition
          extract
+         extract-input
          file-source
          find-input
          from-catalogs
@@ -25,6 +26,7 @@
          input
          integrity
          install
+         keep-input
          lines-source
          mdo
          metadatum
