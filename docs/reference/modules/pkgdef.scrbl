@@ -10,6 +10,10 @@
                     xiden/rc
                     @only-in[xiden/url url-string?]
                     @except-in[xiden/pkgdef #%module-begin]]
+         @for-syntax[racket/base
+                     racket/list
+                     racket/match
+                     @except-in[xiden/pkgdef #%module-begin]]
          "../../shared.rkt"]
 
 @title{Package Definitions}
@@ -120,56 +124,40 @@ Sets @racket[package-url].
 }
 
 
-@section{Additional Bindings}
+@section{Reprovided Binding Index}
 
-@(define-syntax-rule (reprovided sym ...)
-  (para (racketmodname xiden/pkgdef)
-  " reprovides the following bindings for use in "
-  (tech "package outputs") " and procedure bodies "
-  (elem (racket sym) " ") ...))
+@racketmodname[xiden/pkgdef] reprovides bindings from several other
+modules in the collection. They are indexed here for reference.
 
-@(reprovided #%app
-             #%datum
-             :=
-             base32
-             base64
-             coerce-source
-             define
-             description
-             edition
-             extract
-             file-source
-             find-input
-             from-catalogs
-             from-file
-             getenv
-             hex
-             http-mirrors-source
-             http-source
-             in-paths
-             input-ref
-             input
-             integrity
-             install
-             lines-source
-             mdo
-             metadatum
-             name
-             os-support
-             output
-             plugin-source
-             provider
-             quote
-             racket-versions
-             release-input
-             resolve-input
-             revision-names
-             revision-number
-             run
-             signature
-             sources
-             tags
-             text-source
-             url)
+@(define-for-syntax (fold-ids ids)
+   (foldl (lambda (id res)
+            (define k (string-ref (symbol->string id) 0))
+            (hash-set res k (cons id (hash-ref res k null))))
+           (hash)
+           ids))
+
+@(define-for-syntax (unfold-ids h)
+   (sort (map (lambda (l) (sort l symbol<?)) (hash-values h))
+         #:key car
+         symbol<?))
+
+@(define-syntax (reprovided stx)
+   (define-values (v s) (module->exports 'xiden/pkgdef))
+   (define exported-ids (match (append v s) [`((,o (,i ,_ ...) ...) ...) (flatten i)]))
+   (define useable-ids (remove '#%module-begin exported-ids))
+   (define grouped-ids (unfold-ids (fold-ids useable-ids)))
+   (with-syntax ([(group ...) grouped-ids])
+     #'(begin (para (reprovided-group group)) ...)))
+
+@(define-syntax (reprovided-group stx)
+   (syntax-case stx ()
+     [(_ (a)) #'(racket a)]
+     [(_ (a . b))
+     #'(elem (reprovided-group (a))
+             " · "
+             (reprovided-group b))]))
+
+
+@reprovided[]
 
 @include-section{pkgdef/static.scrbl}
