@@ -9,7 +9,6 @@
          "contract.rkt"
          "format.rkt"
          "integrity.rkt"
-         "l10n.rkt"
          "localstate.rkt"
          "logged.rkt"
          "message.rkt"
@@ -123,9 +122,10 @@
                    #:max-size (mebibytes->bytes (XIDEN_FETCH_TOTAL_SIZE_MB))
                    #:buffer-size (mebibytes->bytes (XIDEN_FETCH_BUFFER_SIZE_MB))
                    #:timeout-ms (XIDEN_FETCH_TIMEOUT_MS)
-                   #:on-status (make-on-status (get-message-formatter))
+                   #:on-status (make-on-status (current-message-formatter))
                    (input-info-name info)
                    in est-size))))
+
 
 (define (make-on-status formatter)
   (λ (m)

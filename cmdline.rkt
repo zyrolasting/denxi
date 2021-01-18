@@ -73,7 +73,9 @@
         (call-with-applied-settings
          (build-runtime-configuration flags)
          (λ ()
-           (define-values (exit-code program-output) (call/cc run!))
+           (define-values (exit-code program-output)
+             (parameterize ([current-message-formatter format-message])
+               (call/cc run!)))
            (write-message-log program-output format-message)
            (use-exit-code exit-code))))))))
 
