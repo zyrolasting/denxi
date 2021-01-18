@@ -7,6 +7,7 @@
                     xiden/message
                     xiden/integrity
                     xiden/input-info
+                    xiden/monad
                     xiden/signature
                     xiden/source
                     xiden/string]
@@ -84,6 +85,12 @@ returns a relative path to a symbolic link in
 The process will fail if the bytes do not meet the requirements
 of @racket[input], if no bytes are available, or if the runtime
 configuration does not place trust in the bytes.
+}
+
+@defproc[(keep-input [name string?]) (logged/c path-string?)]{
+Equivalent to @racket[(mdo i := (input-ref name) (resolve-input i))].
+
+Use for inputs that you do not intend to release.
 }
 
 @defstruct*[($input $message) ([name string?])]{

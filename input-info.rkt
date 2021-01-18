@@ -36,6 +36,8 @@
                 input-info?)]
           [release-input
            (-> input-info? (logged/c void?))]
+          [keep-input
+           (-> string? logged?)]
           [find-input
            (-> (listof input-info?)
                path-string?
@@ -88,6 +90,10 @@
   (if result
       ($use result)
       ($fail ($input:not-found name))))
+
+(define (keep-input name)
+  (mdo i := (input-ref name)
+       (resolve-input i)))
 
 (define-logged (release-input input)
   ($use (delete-file (input-info-name input))))
