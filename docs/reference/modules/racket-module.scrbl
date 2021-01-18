@@ -127,3 +127,17 @@ Returns
   (bare-racket-module-lang stripped)
   (bare-racket-module-code stripped))]
 }
+
+@section{Fetching Racket Modules in Package Definition}
+
+@defproc[(keep-standalone-racket-module [#:compile-with compile-with (or/c #f path-string?) "raco"]
+                                        [name string?])
+                                        logged?]{
+Behaves like @racket[keep-input] when @racket[compile-with] is
+@racket[#f].
+
+If @racket[compile-with] is not @racket[#f], it is used as the first
+argument to @racket[run] for selecting a @tt{raco} executable.  Once
+the module is available, it is immediately compiled using the
+@tt{make} subcommand.
+}

@@ -23,7 +23,11 @@
                      list?)]
                [read-racket-module
                 (->* (symbol? symbol? racket-module-input-variant/c)
-                     (logged/c syntax?))]))
+                     (logged/c syntax?))]
+               [keep-standalone-racket-module
+                (->* (string?) (#:compile-with (or/c path-string? #f))
+                     logged?)]))
+
 
 
 (require (only-in racket/exn exn->string)
@@ -36,11 +40,14 @@
          syntax/parse
          "codec.rkt"
          "integrity.rkt"
+         "input-info.rkt"
          "logged.rkt"
          "message.rkt"
+         "monad.rkt"
          "path.rkt"
          "signature.rkt"
-         "string.rkt")
+         "string.rkt"
+         "system.rkt")
 
 
 (define+provide-message $racket-module-read-error $message (variant reason context))
@@ -191,6 +198,16 @@
      (construct #'name #'lang #'body)]
     [(module name:id lang:id . body)
      (construct #'name #'lang #'body)]))
+
+
+;------------------------------------------------------------------------
+; For package definitions
+
+(define (keep-standalone-racket-module #:compile-with [compile-with "raco"] name)
+  (mdo input-path := (keep-input name)
+       (if compile-with
+           (run compile-with "make" input-path)
+           (logged-unit input-path))))
 
 
 (module+ test

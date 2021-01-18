@@ -27,6 +27,7 @@
          integrity
          install
          keep-input
+         keep-standalone-racket-module
          lines-source
          mdo
          metadatum
@@ -77,6 +78,7 @@
          "logged.rkt"
          "monad.rkt"
          "package.rkt"
+         "racket-module.rkt"
          "setting.rkt"
          "signature.rkt"
          "string.rkt"
