@@ -4,20 +4,15 @@
 ; one source. Requires knowledge of source.rkt, integrity.rkt and
 ; signature.rkt.
 
-(require "cli-flag.rkt"
-         "codec.rkt"
-         "contract.rkt"
-         "format.rkt"
+(require "format.rkt"
          "integrity.rkt"
          "localstate.rkt"
          "logged.rkt"
          "message.rkt"
          "monad.rkt"
-         "path.rkt"
          "port.rkt"
          "printer.rkt"
          "rc.rkt"
-         "setting.rkt"
          "signature.rkt"
          "string.rkt"
          "source.rkt"
