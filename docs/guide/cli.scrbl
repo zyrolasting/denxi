@@ -151,8 +151,10 @@ The most tedious part of writing a package definition is writing
 code for you to copy to the clipboard or append directly to a package
 definition.
 
-In the simplest case, pass in a path to a file. If you are creating
-input from a file on the Internet, then you need to download it first.
+
+@subsubsection{Using a File}
+
+In the simplest case, pass in a path to a file.
 
 @verbatim|{
 $ xiden mkinput ./file.tgz
@@ -168,34 +170,76 @@ the file for consumers.
 $ xiden mkinput +u 'https://example.com/file.tgz' ./file.tgz
 }|
 
-@litchar{mkinput} will always generate integrity information for the
-file using reasonable defaults, which are subject to change for
-security reasons. But, you can specify a message digest algorithm to
-control the digest in the output.
+If you wish to include the file path as a source, you can still do
+so. You just have to add it yourself.
 
 @verbatim|{
-$ xiden mkinput +u 'https://example.com/file.tgz' --md sha384 ./file.tgz
+$ xiden mkinput +u "$(readlink -f ./file.tgz)" +u 'https://example.com/file.tgz' ./file.tgz
+}|
+
+
+@subsubsection{Using an URL}
+
+You may specify a URL as an argument.
+
+@verbatim|{
+$ xiden mkinput https://example.com/file.tgz
+}|
+
+In this case, the generated input expression will include the URL as a
+@tech/xiden-reference{source} in addition to any sources specified
+using @litchar{+u}. This can be more convenient when building an input
+expression for a remote resource that you trust.
+
+Unlike other commands, @bold{files downloaded using @litchar{mkinput}
+are not subject to size limits}. This is because the command works for
+the sake of a package definition's author, not necessarily an
+end-user.
+
+Note that the response is downloaded to a fresh temporary file each
+time. This can be wasteful when iterating. Also, there are times you
+will need to know what was actually used to generate an expression
+(e.g. a 404 response will likely result in an incorrect expression).
+If you turn on verbose mode, then the generated code will include
+Racket comments displaying the absolute path of the file used to
+generate each input expression.
+
+@verbatim|{
+$ xiden -v '#t' mkinput https://example.com/file.tgz
+}|
+
+
+@subsubsection{Adjusting Generated Integrity Information}
+
+@litchar{mkinput} will always generate integrity information using
+reasonable defaults, which are subject to change for security
+reasons. But, you can specify a message digest algorithm to control
+the computed digest.
+
+@verbatim|{
+$ xiden mkinput --md sha384 https://example.com/file.tgz
 }|
 
 You can also specify the encoding that Xiden uses to express bytes in
 the generated code.
 
 @verbatim|{
-$ xiden mkinput +u 'https://example.com/file.tgz' \
-                --md sha384 \
-                --byte-encoding base64 \
-                ./file.tgz
+$ xiden mkinput --md sha384 --byte-encoding base64 ...
 }|
 
-The encoding applies to both integrity information and a signature,
-should you choose to add one.
+Note that changes to byte encodings applies to both integrity
+information and a signature, should you choose to add one.
+
+
+@subsubsection{Signing the Generated Input}
 
 You can add a signature with the @litchar{--signer} flag, which takes
 three arguments. The first is a @tech/xiden-reference{source} for a
 public key used to verify the signature. It's important that it is
 expressed as a source, because that is what other people will use to
 download the public key for verification. It doesn't make sense to
-specify a path on a private system.
+specify a path on a private system for the same reasons why a local
+file path isn't used as a source in generated input expressions.
 
 @margin-note{Remember that command line arguments in Xiden can be
 string expressions of Racket literals, so you express @racket[#f]
@@ -208,55 +252,20 @@ for that private key, or @racket[#f] if there is no password on the
 private key. You must put the password in a file, because Xiden uses
 OpenSSL, and OpenSSL cautions against writing the password in a
 command. If you did, then the password would leak into your shell
-history and into process monitoring tools. You need to take care to
-securely create and delete the password file.
+history and into process monitoring tools. You are responsible
+for securely distributing and deleting the password file.
 
 @verbatim|{
-xiden mkinput +u 'https://example.com/file.tgz' \
-              --md sha384 \
+xiden mkinput --md sha384 \
               --byte-encoding base64 \
               --signer 'http://example.com/public-key.pem' ./private-key.pem ./password \
-              ./file.tgz
+              https://example.com/file.tgz
 }|
 
-The command is long, so don't forget that you can shorten it using the
-@tech/xiden-reference{runtime configuration}.
-
-Let's start by using shell features, assuming a Bash-like shell.
-
-@verbatim|{
-$ mk() {
-> xiden mkinput +u 'https://example.com/file.tgz' \
->               --md sha384 \
->               --byte-encoding base64 \
->               --signer 'http://example.com/public-key.pem' ./private-key.pem ./password \
->               $@
-> }
-$ mk ./a.tgz
-...
-$ mk ./mod.rkt
-...
-}|
-
-Here's the same example using canonical setting names.
-
-@verbatim|{
-$ mk() {
-> xiden mkinput --XIDEN_USER_FACING_SOURCES 'https://example.com/file.tgz' \
->               --XIDEN_MESSAGE_DIGEST_ALGORITHM sha384 \
->               --XIDEN_BYTE_ENCODING base64 \
->               --XIDEN_SIGNER 'http://example.com/public-key.pem' ./private-key.pem ./password \
->               $@
-> }
-$ mk ./a.tgz
-...
-$ mk ./mod.rkt
-...
-}|
-
-Due to the way @tech/xiden-reference{runtime configurations} work, you
-just place the same settings in an an rcfile or environment
-variables. That way you can simply omit the command line flags.
+You can shorten the command using the @tech/xiden-reference["runtime
+configuration"]. Just define the same settings in an an rcfile or
+environment variables, such that you can simply omit the command line
+flags.
 
 @verbatim|{
 $ xiden mkinput ./a.tgz
