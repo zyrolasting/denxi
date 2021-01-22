@@ -334,17 +334,21 @@
 ; 2. Delete any record of objects with no incoming links.
 ; 3. If database changed in step 2, go to step 1.
 ; 4. Delete all object files with no corresponding record
+;
+; TODO: There's a bug where not everything is collected in one
+; pass. The second pass always gets it. Use `extra?' to run it twice
+; until the root cause gets fixed.
 
 (define (xiden-collect-garbage)
   (parameterize ([current-directory (workspace-directory)]
                  [current-security-guard (make-gc-security-guard)])
     (if (directory-exists? (current-directory))
-        (let loop ([bytes-recovered 0])
+        (let loop ([bytes-recovered 0] [extra? #t])
           (forget-missing-links!)
           (forget-unlinked-paths!)
           (define bytes-recovered* (+ bytes-recovered (delete-unreferenced-objects!)))
-          (if (> bytes-recovered* bytes-recovered)
-              (loop bytes-recovered*)
+          (if (or extra? (> bytes-recovered* bytes-recovered))
+              (loop bytes-recovered* #f)
               bytes-recovered*))
         0)))
 
