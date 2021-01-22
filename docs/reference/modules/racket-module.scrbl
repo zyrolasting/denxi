@@ -6,8 +6,10 @@
                     racket/path
                     racket/pretty
                     syntax/modread
+                    xiden/input-info
                     xiden/logged
-                    xiden/racket-module]
+                    xiden/racket-module
+                    xiden/system]
          "../../shared.rkt"]
 
 @title[#:tag "rktmod"]{Racket Module Operations}
