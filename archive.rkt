@@ -42,7 +42,7 @@
       (mdo p := (keep-input name)
            (extract p))
       (mdo i := (input-ref name)
-           p := (resolve-input name)
+           p := (resolve-input i)
            (extract p)
            (release-input i))))
 
