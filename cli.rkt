@@ -71,13 +71,13 @@
         --trust-any-host
         --verbose)
        (λ (flags action . remaining-args)
-         (define-values (name proc)
+         (define-values (restrict? name proc)
            (match action
-             ["do" (values "do" do-command)]
-             ["show" (values "show" show-command)]
-             ["gc" (values "gc" gc-command)]
-             ["mkint" (values "mkint" mkint-command)]
-             ["mkinput" (values "mkinput" mkinput-command)]
+             ["do" (values #t "do" do-command)]
+             ["show" (values #t "show" show-command)]
+             ["gc" (values #t "gc" gc-command)]
+             ["mkint" (values #t "mkint" mkint-command)]
+             ["mkinput" (values #f "mkinput" mkinput-command)]
              [_ (values ""
                         (λ _ (values null
                                      (λ (halt)
@@ -85,18 +85,20 @@
          (define-values (subflags planned) (proc remaining-args))
          (values (append flags subflags)
                  (λ (halt)
-                   (restrict halt
-                             planned
-                             #:memory-limit (XIDEN_MEMORY_LIMIT_MB)
-                             #:time-limit (XIDEN_TIME_LIMIT_S)
-                             #:trusted-executables (XIDEN_TRUSTED_EXECUTABLES)
-                             #:allowed-envvars (XIDEN_ALLOW_ENV)
-                             #:trust-unverified-host? (XIDEN_TRUST_UNVERIFIED_HOST)
-                             #:trust-any-executable? (XIDEN_TRUST_ANY_EXECUTABLE)
-                             #:implicitly-trusted-host-executables (XIDEN_TRUSTED_HOST_EXECUTABLES)
-                             #:workspace (workspace-directory)
-                             #:gc-period 30
-                             #:name name))))))
+                   (if restrict?
+                       (restrict halt
+                                 planned
+                                 #:memory-limit (XIDEN_MEMORY_LIMIT_MB)
+                                 #:time-limit (XIDEN_TIME_LIMIT_S)
+                                 #:trusted-executables (XIDEN_TRUSTED_EXECUTABLES)
+                                 #:allowed-envvars (XIDEN_ALLOW_ENV)
+                                 #:trust-unverified-host? (XIDEN_TRUST_UNVERIFIED_HOST)
+                                 #:trust-any-executable? (XIDEN_TRUST_ANY_EXECUTABLE)
+                                 #:implicitly-trusted-host-executables (XIDEN_TRUSTED_HOST_EXECUTABLES)
+                                 #:workspace (workspace-directory)
+                                 #:gc-period 30
+                                 #:name name)
+                       (planned halt)))))))
 
 
 (define (do-command args)
@@ -235,7 +237,7 @@
 (define (mkinput-command args)
   (cli #:args args
        #:program "mkinput"
-       #:arg-help-strings '("path")
+       #:arg-help-strings '("path-or-url")
        #:flags
        (make-cli-flag-table
         ++user-facing-source
@@ -243,26 +245,37 @@
         --generated-input-name
         --md
         --signer)
-       (λ (flags file-path)
+       (λ (flags variant)
+         (define (interpret-argument src)
+           (if (file-exists? src)
+               (values values src)
+               (let ([path (make-temporary-file)])
+                 (call-with-output-file #:exists 'truncate/replace path
+                   (λ (out)
+                     (copy-port (get-pure-port (string->url src)) out)
+                     (values (λ (v) (cons src v)) path))))))
+
          (values flags
                  (λ (halt)
+                   (define-values (include-source file-path) (interpret-argument variant))
                    (match-define (list pubkey prvkey pass) (XIDEN_SIGNER))
                    (define default-name (XIDEN_GENERATED_INPUT_NAME))
                    (define byte-encoding (XIDEN_BYTE_ENCODING))
                    (define md-algorithm (XIDEN_MESSAGE_DIGEST_ALGORITHM))
-                   (define user-facing-sources (reverse (XIDEN_USER_FACING_SOURCES)))
+                   (define user-facing-sources (include-source (reverse (XIDEN_USER_FACING_SOURCES))))
                    (halt 0
-                         ($show-datum
-                          (autocomplete-input-expression
-                           #:byte-encoding byte-encoding
-                           #:default-md-algorithm md-algorithm
-                           #:private-key-password-path pass
-                           #:default-name default-name
-                           #:find-file (λ _ file-path)
-                           #:private-key-path prvkey
-                           #:public-key-source pubkey
-                           `(input ,default-name
-                                   (sources . ,user-facing-sources))))))))))
+                         (list ($show-datum
+                                (autocomplete-input-expression
+                                 #:byte-encoding byte-encoding
+                                 #:default-md-algorithm md-algorithm
+                                 #:private-key-password-path pass
+                                 #:default-name default-name
+                                 #:find-file (λ _ file-path)
+                                 #:private-key-path prvkey
+                                 #:public-key-source pubkey
+                                 `(input ,default-name
+                                         (sources . ,user-facing-sources))))
+                               ($verbose ($show-string (~a file-path))))))))))
 
 
 
