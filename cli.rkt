@@ -245,7 +245,7 @@
         --generated-input-name
         --md
         --signer)
-       (λ (flags variant)
+       (λ (flags . user-args)
          (define (interpret-argument src)
            (if (file-exists? src)
                (values values src)
@@ -255,27 +255,33 @@
                      (copy-port (get-pure-port (string->url src)) out)
                      (values (λ (v) (cons src v)) path))))))
 
+         (define (log-input src messages)
+           (define-values (include-source file-path) (interpret-argument src))
+           (match-define (list pubkey prvkey pass) (XIDEN_SIGNER))
+           (define default-name (XIDEN_GENERATED_INPUT_NAME))
+           (define byte-encoding (XIDEN_BYTE_ENCODING))
+           (define md-algorithm (XIDEN_MESSAGE_DIGEST_ALGORITHM))
+           (define user-facing-sources (include-source (reverse (XIDEN_USER_FACING_SOURCES))))
+           (cons ($show-datum
+                  (autocomplete-input-expression
+                   #:byte-encoding byte-encoding
+                   #:default-md-algorithm md-algorithm
+                   #:private-key-password-path pass
+                   #:default-name default-name
+                   #:find-file (λ _ file-path)
+                   #:private-key-path prvkey
+                   #:public-key-source pubkey
+                   `(input ,default-name
+                           (sources . ,user-facing-sources))))
+                 (cons ($verbose ($show-string (~a "; " file-path)))
+                       messages)))
+
          (values flags
                  (λ (halt)
-                   (define-values (include-source file-path) (interpret-argument variant))
-                   (match-define (list pubkey prvkey pass) (XIDEN_SIGNER))
-                   (define default-name (XIDEN_GENERATED_INPUT_NAME))
-                   (define byte-encoding (XIDEN_BYTE_ENCODING))
-                   (define md-algorithm (XIDEN_MESSAGE_DIGEST_ALGORITHM))
-                   (define user-facing-sources (include-source (reverse (XIDEN_USER_FACING_SOURCES))))
                    (halt 0
-                         (list ($show-datum
-                                (autocomplete-input-expression
-                                 #:byte-encoding byte-encoding
-                                 #:default-md-algorithm md-algorithm
-                                 #:private-key-password-path pass
-                                 #:default-name default-name
-                                 #:find-file (λ _ file-path)
-                                 #:private-key-path prvkey
-                                 #:public-key-source pubkey
-                                 `(input ,default-name
-                                         (sources . ,user-facing-sources))))
-                               ($verbose ($show-string (~a file-path))))))))))
+                         (for/fold ([messages null])
+                                   ([src (in-list user-args)])
+                           (log-input src messages))))))))
 
 
 
