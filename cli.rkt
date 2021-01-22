@@ -250,10 +250,15 @@
                      (copy-port (get-pure-port (string->url src)) out)
                      (values (λ (v) (cons src v)) path))))))
 
-         (define (log-input src messages)
+         (define (log-input src index messages)
            (define-values (include-source file-path) (interpret-argument src))
            (match-define (list pubkey prvkey pass) (XIDEN_SIGNER))
-           (define default-name (XIDEN_GENERATED_INPUT_NAME))
+
+           (define default-name
+             (format "~a~a"
+                     (XIDEN_GENERATED_INPUT_NAME)
+                     (if (eq? index 0) "" index)))
+
            (define byte-encoding (XIDEN_BYTE_ENCODING))
            (define md-algorithm (XIDEN_MESSAGE_DIGEST_ALGORITHM))
            (define user-facing-sources (include-source (reverse (XIDEN_USER_FACING_SOURCES))))
@@ -275,8 +280,9 @@
                  (λ (halt)
                    (halt 0
                          (for/fold ([messages null])
-                                   ([src (in-list user-args)])
-                           (log-input src messages))))))))
+                                   ([(src index) (in-indexed user-args)])
+                           (log-input src index messages))))))))
+
 
 
 
