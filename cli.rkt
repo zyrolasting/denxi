@@ -335,7 +335,8 @@
       (define-values (flags exit-code msg) (try (mkinput-command (list test-dummy-file-path))))
       (check-pred null? flags)
       (check-equal? exit-code 0)
-      (check-equal? msg ($show-datum (expected-simple-input))))
+      (check-equal? (findf $show-datum? msg)
+                    ($show-datum (expected-simple-input))))
 
     (test-case "Generate integrity expression with default values"
       (define-values (flags exit-code msg)
@@ -345,7 +346,8 @@
 
       (check-pred cli-flag-state? (car flags))
       (check-equal? exit-code 0)
-      (check-equal? msg ($show-datum (expected-simple-input "user-source1" "user-source2"))))
+      (check-equal? (findf $show-datum? msg)
+                    ($show-datum (expected-simple-input "user-source1" "user-source2"))))
 
     (test-case "Generate all specified values"
       (define md-algo 'md5)
@@ -386,7 +388,7 @@
 
       (check-pred cli-flag-state? (car flags))
       (check-equal? exit-code 0)
-      (check-equal? msg
+      (check-equal? (findf $show-datum? msg)
                     ($show-datum
                      `(input "boo"
                              (sources "user-source1" "user-source2")
