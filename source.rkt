@@ -191,11 +191,10 @@
 
 
 (define-source (plugin-source [hint any/c] [kw-lst list?] [kw-val-lst list?] [lst list?])
-  (let ([proc (load-from-plugin 'bind-custom-fetch (λ () (%fail 'undefined)) %fail)])
-    (keyword-apply (proc hint %tap %fail)
-                   kw-lst
-                   kw-val-lst
-                   lst)))
+  (let ([v (load-from-plugin 'bind-custom-fetch (λ () 'undefined) values)])
+    (if (procedure? v)
+        (keyword-apply (v hint %tap %fail) kw-lst kw-val-lst lst)
+        (%fail v))))
 
 
 ;-----------------------------------------------------------------------
