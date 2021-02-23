@@ -46,14 +46,30 @@ Returns @racket[#t] if the input value is a string that, when converted to a
 number, is useable as a @tech{revision number}.
 }
 
-@defproc[(make-revision-interval [lo revision-number?]
-                                 [hi revision-number?]
+@defproc[(revision-number-variant? [v any/c]) boolean?]{
+Equivalent to @racket[(or/c revision-number? revision-number-string?)].
+}
+
+@defproc[(coerce-revision-number [v revision-number-variant?]) revision-number?]{
+Returns a revision number in terms of a variant type.
+}
+
+@defproc[(coerce-revision-number-string [v revision-number-variant?]) revision-number-string?]{
+Returns a revision number string in terms of a variant type.
+}
+
+@defproc[(make-revision-interval [lo (or/c revision-number? #f)]
+                                 [hi (or/c revision-number? #f)]
                                  [#:lo-exclusive lo-exclusive any/c]
                                  [#:hi-exclusive hi-exclusive any/c])
                                  (values revision-number? revision-number?)]{
-Creates a (possibly invalid) integer interval using
+Creates a possibly invalid integer interval using
 
 @racketblock[
-(values (if lo-exclusive (add1 lo) lo)
-        (if hi-exclusive (sub1 hi) hi))]
+(values (if (and lo lo-exclusive) (add1 lo) lo)
+        (if (and hi hi-exclusive) (sub1 hi) hi))]
+
+@racket[lo] and @racket[hi] may be @racket[#f] to capture cases where
+@tech{revision names} cannot map to @tech{revision numbers}. In that
+case, the corresponding interval bound will also be @racket[#f].
 }

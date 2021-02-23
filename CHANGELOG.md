@@ -18,6 +18,8 @@ This project follows [these versioning rules](https://sagegerard.com/edition-rev
 - Distinguish between abstract and concrete inputs
 - Add missing flags to CLI
 - Add cycle detection
+- Make revision number conversions more explicit
+
 
 ## [draft:alpha] - 2020-08-02
 
