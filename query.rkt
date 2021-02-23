@@ -19,7 +19,8 @@
           [make-exact-package-query
            (-> string? string? string? revision-number? exact-package-query?)]
           [parse-package-query (-> package-query? parsed-package-query?)]
-          [resolve-revision-interval (->* (parsed-package-query? (-> boolean? string? revision-number?))
+          [resolve-revision-interval (->* (parsed-package-query? (-> boolean? string?
+                                                                     (or/c #f revision-number-variant?)))
                                           (#:default-bounds boundary-flags-string?)
                                           (values revision-number?
                                                   revision-number?))]))
@@ -140,8 +141,8 @@
                     (parsed-package-query-interval-bounds query)
                     default-bounds)])
     (make-revision-interval
-     (revision->revision-number #f (parsed-package-query-revision-min query))
-     (revision->revision-number #t (parsed-package-query-revision-max query))
+     (coerce-revision-number (revision->revision-number #f (parsed-package-query-revision-min query)))
+     (coerce-revision-number (revision->revision-number #t (parsed-package-query-revision-max query)))
      #:lo-exclusive (boundary-flag->boolean (string-ref bounds 0))
      #:hi-exclusive (boundary-flag->boolean (string-ref bounds 1)))))
 

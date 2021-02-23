@@ -157,7 +157,7 @@ Returns an @tech{exact package query} build from the arguments.
 
 @defproc[(resolve-revision-interval [query parsed-package-query?]
                                     [make-revision-number
-                                     (-> boolean? string? revision-number?)]
+                                     (-> boolean? string? (or/c #f revision-number?))]
                                     [#:default-bounds default-bounds "ii"])
          (values revision-number? revision-number?)]{
 Returns values created from @racket[make-revision-interval].  The
@@ -178,7 +178,7 @@ The first argument is useful for generating mock data for tests, but
 is otherwise unhelpful when normalizing an arbitrary @tech{revision}
 to a @tech{revision number}.
 
-The output integers are adjusted according to
+Output integers are adjusted according to
 @racket[(parsed-package-query-interval-bounds query)], or
 @racket[default-bounds] if @racket[(boundary-flags-string?
 (parsed-package-query-interval-bounds query))] is @racket[#f].
