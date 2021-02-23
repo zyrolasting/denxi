@@ -98,7 +98,7 @@
 
 
 (define (parse-package-query s)
-  (define user-defined (string-split s ":"))
+  (define user-defined (string-split #:trim? #f #:repeat? #f s ":"))
   (define num-fields (length user-defined))
   (apply parsed-package-query
          (build-list (procedure-arity parsed-package-query)
