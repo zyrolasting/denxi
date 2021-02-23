@@ -19,6 +19,7 @@ This project follows [these versioning rules](https://sagegerard.com/edition-rev
 - Add missing flags to CLI
 - Add cycle detection
 - Make revision number conversions more explicit
+- Loosen requirement for well-formed package queries
 
 
 ## [draft:alpha] - 2020-08-02

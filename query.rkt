@@ -52,8 +52,8 @@
 
 (define well-formed-package-query?
   (struct/c parsed-package-query
-            non-empty-string?
-            non-empty-string?
+            string?
+            string?
             string?
             string?
             string?
