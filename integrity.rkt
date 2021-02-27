@@ -80,7 +80,8 @@
 
 (define (make-digest variant algorithm)
   (cond [(path-string? variant)
-         (call-with-input-file variant (λ (i) (make-digest i algorithm)))]
+         (call-with-input-file (expand-user-path variant)
+           (λ (i) (make-digest i algorithm)))]
         [(bytes? variant)
          (make-digest (open-input-bytes variant) algorithm)]
         [(input-port? variant)

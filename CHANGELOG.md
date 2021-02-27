@@ -20,7 +20,7 @@ This project follows [these versioning rules](https://sagegerard.com/edition-rev
 - Add cycle detection
 - Make revision number conversions more explicit
 - Loosen requirement for well-formed package queries
-
+- `make-digest` expands user paths before opening files.
 
 ## [draft:alpha] - 2020-08-02
 
