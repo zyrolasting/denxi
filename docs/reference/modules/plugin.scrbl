@@ -44,17 +44,21 @@ A @tech{catalog} used to resolve package queries.
 Defaults to @racket[default-catalog].
 }
 
-@defproc[(bind-custom-fetch [hint any/c] [request-transfer request-transfer/c] [fail (-> (or/c exn? $message?) any)]) procedure?]{
-@racket[bind-custom-fetch] returns a procedure (@racket[custom-fetch])
-that must accept the keyword arguments and formal arguments from a
-@racket[plugin-source]. @racket[hint] can be used to select a specific
-procedure to return.
+@defproc[(string->source [user-string string?]) source?]{
+Converts a string to a @tech{source}.
 
-@racket[custom-fetch] must apply either @racket[request-transfer] or
-@racket[fail] in tail position depending on whether bytes can be
-produced in terms of the arguments. Any value @racket[raise]d by
-either @racket[bind-custom-fetch] or @racket[custom-fetch] will be
-caught and passed to @racket[fail].
+When a user uses a plain string where a source is expected, then Xiden
+uses @racket[coerce-source] to convert it to a source. By defining
+this, you control how strings map to byte sources.
+
+Defaults to
+
+@racketblock[
+(define (string->source s)
+  (first-available-source
+   (list (file-source s) (http-source s))
+   null))
+]
 }
 
 

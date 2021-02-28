@@ -34,7 +34,6 @@
          name
          os-support
          output
-         plugin-source
          provider
          quote
          racket-versions

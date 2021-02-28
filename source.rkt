@@ -29,7 +29,6 @@
          (struct-out http-mirrors-source)
          (struct-out http-source)
          (struct-out lines-source)
-         (struct-out plugin-source)
          (struct-out text-source)
          (struct-out byte-source)
          (contract-out
@@ -196,26 +195,20 @@
 
 
 
-(define-source (plugin-source [hint any/c] [kw-lst list?] [kw-val-lst list?] [lst list?])
-  (let ([v (load-from-plugin 'bind-custom-fetch (λ () 'undefined) values)])
-    (if (procedure? v)
-        (keyword-apply (v hint %tap %fail) kw-lst kw-val-lst lst)
-        (%fail v))))
-
-
 ;-----------------------------------------------------------------------
 ; Source expressions
 
 (define empty-source (byte-source #""))
 
+(define (infer-source s)
+  (first-available-source
+   (list (file-source s) (http-source s))
+   null))
+
 (define (coerce-source s)
-  (if (string? s)
-      (first-available-source
-       (list (file-source s)
-             (http-source s)
-             (plugin-source 'coerced null null (list s)))
-       null)
-      s))
+  ((if (string? s)
+       (plugin-ref 'coerce-source infer-source)
+       values) s))
 
 (define (sources . variants)
   (first-available-source (map coerce-source variants) null))
@@ -368,27 +361,24 @@
                     (kill-thread th)
                     (tcp-close listener))))
 
-
   (test-case "Fetch using plugin"
+    (define greeting "Hello, world")
     (define plugin-module-datum
       '(module mods racket/base
-         (provide bind-custom-fetch)
-         (define (bind-custom-fetch hint tap fail)
-           (λ (fail?)
-             (if fail?
-                 (fail 'failed)
-                 (tap (open-input-bytes #"") 678))))))
-
-    (define (check fail?)
-      (fetch (plugin-source #f null null (list fail?))
-             (λ (in est) (check-equal? est 678))
-             (λ (v) (check-equal? v 'failed))))
+         (require xiden/source)
+         (provide coerce-source)
+         (define (coerce-source str)
+           (text-source str))))
 
     (call-with-plugin
      plugin-module-datum
      (λ ()
-       (check #t)
-       (check #f))))
+       (fetch (coerce-source greeting)
+              (λ (in est)
+                (define str (port->string in))
+                (check-equal? str greeting)
+                (check-equal? est (bytes-length (string->bytes/utf-8 greeting))))
+              (λ (v) (fail "Dummy plugin source should not be exhausted"))))))
 
   (define-namespace-anchor ns-anchor)
   (define test-ns (namespace-anchor->namespace ns-anchor))

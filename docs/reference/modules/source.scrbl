@@ -4,6 +4,7 @@
                     racket/contract
                     xiden/cmdline
                     xiden/logged
+                    xiden/plugin
                     xiden/port
                     xiden/rc
                     xiden/source
@@ -261,19 +262,6 @@ Like @racket[http-source], but tries each of the given URLs using
 }
 
 
-@defstruct[plugin-source ([hint any/c] [kw-lst list?] [kw-val-lst list?] [list? lst])]{
-A @tech{source} that consults the user's @tech{plugin} for data.
-
-The plugin is responsible for using @racket[hint] and
-@racket[fetch]-specific bindings to select a procedure. That procedure
-is then applied (as in @racket[keyword-apply]), to the remaining
-fields. The plugin then controls the result of the fetch.
-
-Xiden binds @racket[hint] to @racket['coerced] when using
-@racket[coerce-source].
-}
-
-
 @section{Source Expressions}
 
 The following procedures are useful for declaring sources in a
@@ -287,13 +275,8 @@ coerced to a source using @racket[coerce-source].
 @defproc[(coerce-source [variant (or/c string? source?)]) source?]{
 Returns @racket[variant] if it is already a @tech{source}.
 
-Otherwise, returns
-@racketblock[
-(first-available-source
-  (list (file-source s)
-        (http-source s)
-        (plugin-source 'coerced null null (list s)))
-  null)]
+Otherwise, returns @racket[(string->source variant)] in terms of the
+@tech{plugin}.
 }
 
 @defproc[(from-catalogs [query-string string?] [url-templates (listof string?) (XIDEN_CATALOGS)]) (listof url-string?)]{
