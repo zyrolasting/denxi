@@ -11,7 +11,7 @@
 (define tap/c
   (-> input-port?
       (or/c +inf.0 exact-positive-integer?)
-      any/c))
+      any))
 
 (define exhaust/c
   (-> any/c any/c))
@@ -33,7 +33,7 @@
          (struct-out byte-source)
          (contract-out
           [bind-recursive-fetch
-           (-> tap/c exhaust/c (->* (source?) (exhaust/c) any/c))]
+           (-> tap/c exhaust/c (->* (source?) (exhaust/c) any))]
           [coerce-source (-> (or/c string? source?) source?)]
           [exhaust/c contract?]
           [from-catalogs (->* (string?) ((listof string?)) (listof url-string?))]
@@ -200,19 +200,19 @@
 
 (define empty-source (byte-source #""))
 
-(define (infer-source s)
-  (first-available-source
-   (list (file-source s) (http-source s))
-   null))
+(define (default-string->source s)
+  (if (file-exists? s)
+      (file-source s)
+      (with-handlers ([values exhausted-source])
+        (http-source s))))
 
 (define (coerce-source s)
   ((if (string? s)
-       (plugin-ref 'coerce-source infer-source)
+       (plugin-ref 'string->source default-string->source)
        values) s))
 
 (define (sources . variants)
   (first-available-source (map coerce-source variants) null))
-
 
 (define-syntax (from-file stx)
   (syntax-parse stx

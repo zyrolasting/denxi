@@ -16,6 +16,7 @@
          racket/stream
          racket/vector
          (for-syntax racket/base)
+         "catalog.rkt"
          "cli-flag.rkt"
          "cmdline.rkt"
          "codec.rkt"
@@ -299,21 +300,29 @@
 
          (values flags
                  (λ (halt)
-                   (define datum
+                   (define unnormalized-datum
                      (with-handlers ([exn?
                                       (λ (e)
                                         ((error-display-handler) (exn-message e) e)
                                         (halt 1 null))])
                        (string->value source-expr-string)))
 
+
+                   (define datum
+                     (cond [(symbol? unnormalized-datum)
+                            (coerce-source (~a unnormalized-datum))]
+                           [(string? unnormalized-datum)
+                            (coerce-source unnormalized-datum)]
+                           [else unnormalized-datum]))
+
                    (define program
                      (mdo source :=
-                          (eval-untrusted-source-expression datum
-                                                            (namespace-anchor->namespace cli-namespace-anchor))
+                          (eval-untrusted-source-expression
+                           datum
+                           (namespace-anchor->namespace cli-namespace-anchor))
                           (logged-fetch display-name source copy-to-stdout)))
 
                    (define-values (result messages) (run-log program))
-                   (eprintf "~s~n" messages)
                    (parameterize ([current-output-port (current-error-port)])
                      (write-message-log messages (current-message-formatter)))
                    (halt (if (eq? result FAILURE) 1 0) null))))))
