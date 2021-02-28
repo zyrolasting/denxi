@@ -368,8 +368,8 @@
     (define plugin-module-datum
       '(module mods racket/base
          (require xiden/source)
-         (provide coerce-source)
-         (define (coerce-source str)
+         (provide string->source)
+         (define (string->source str)
            (text-source str))))
 
     (call-with-plugin
