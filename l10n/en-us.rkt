@@ -396,5 +396,13 @@
    (format "Input not found: ~s"
            name)]
 
+  [($bad-source-eval reason datum)
+   (format "Cannot evaluate alleged source expression: ~e~n  ~a"
+           datum
+           (case reason
+             [(security) "security violation (all file and network I/O is blocked)"]
+             [(invariant) "expression did not produce a source"]
+             [else "unknown reason"]))]
+
   [($cycle key)
    (format "Found cycle at ~s. You may have a circular dependency." key)])

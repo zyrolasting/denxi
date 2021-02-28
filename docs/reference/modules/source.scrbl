@@ -218,6 +218,31 @@ containing source file changes location on disk.
 }
 
 
+@section{Untrusted Source Expressions}
+
+@deftogether[(
+@defstruct*[($bad-source-eval $message) ([reason (or/c 'security 'invariant)] [datum any/c])]
+@defproc[(eval-untrusted-source-expression [datum any/c] [ns namespace? (current-namespace)]) logged?]
+)]{
+@racket[eval-untrusted-source-expression] returns a @tech{logged
+procedure} which evaluates @racket[(eval datum ns)] in the context of
+a @tech/reference{security guard}. The security guard blocks all file
+operations (except @racket['exists]), and all network operations.
+
+If the evaluation produces a @tech{source}, then the result of the
+logged procedure is that source, and no other @tech{messages} will
+appear in the program log.
+
+If the evaluation does not produce a @tech{source}, then the result is
+@racket[FAILURE] and the program log gains a @racket[($bad-source-eval
+'invariant datum)].
+
+If the evaluation is blocked by the security guard, then the result is
+@racket[FAILURE] and the program log gains a @racket[($bad-source-eval
+'security datum)].
+}
+
+
 @section{Transferring Bytes}
 
 @defmodule[xiden/port]

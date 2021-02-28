@@ -17,6 +17,7 @@
   (-> any/c any/c))
 
 (define+provide-message $fetch (id errors))
+(define+provide-message $bad-source-eval (reason datum))
 
 (provide define-source
          empty-source
@@ -38,7 +39,9 @@
           [logged-fetch (-> any/c source? tap/c logged?)]
           [source? predicate/c]
           [sources (->* () #:rest (listof (or/c string? source?)) source?)]
-          [tap/c contract?]))
+          [tap/c contract?]
+          [eval-untrusted-source-expression
+           (->* (any/c) (namespace?) logged?)]))
 
 
 
@@ -233,6 +236,34 @@
          url-templates)))
 
 
+(define (eval-untrusted-source-expression datum [ns (current-namespace)])
+  (logged
+   (λ (messages)
+     (call/cc
+      (λ (return)
+        (define (block . _)
+          (return FAILURE
+                  (cons ($bad-source-eval 'security datum)
+                        messages)))
+        (define variant
+          (parameterize ([current-security-guard
+                          (make-security-guard (current-security-guard)
+                                               (λ (sym path-or-#f ops)
+                                                 (when (and path-or-#f
+                                                            (or (member 'execute ops)
+                                                                (member 'write ops)
+                                                                (member 'read ops)
+                                                                (member 'delete ops)))
+                                                   (block)))
+                                               block
+                                               block)])
+            (eval-syntax (namespace-syntax-introduce (datum->syntax #f datum) ns) ns)))
+        (if (source? variant)
+            (values variant messages)
+            (values FAILURE
+                    (cons ($bad-source-eval 'invariant datum)
+                          messages))))))))
+
 (module+ test
   (require racket/file
            racket/tcp
@@ -240,6 +271,7 @@
            mzlib/etc
            "file.rkt"
            "setting.rkt"
+           (submod "logged.rkt" test)
            (submod "plugin.rkt" test))
 
   (define (run-tap in est)
@@ -353,4 +385,55 @@
      plugin-module-datum
      (λ ()
        (check #t)
-       (check #f)))))
+       (check #f))))
+
+  (define-namespace-anchor ns-anchor)
+  (define test-ns (namespace-anchor->namespace ns-anchor))
+
+  (define (test-safe-expression intent predicate datum)
+    (test-logged-procedure
+     (format "Eval source expression (safe, ~a)" intent)
+     (eval-untrusted-source-expression datum test-ns)
+     (λ (val messages)
+       (check-pred predicate val)
+       (check-pred null? messages))))
+
+  (define (test-unsafe-expression intent datum)
+    (test-logged-procedure
+     (format "Eval source expression (dangerous, ~a)" intent)
+     (eval-untrusted-source-expression datum test-ns)
+     (λ (val messages)
+       (check-eq? val FAILURE)
+       (check-match (car messages)
+                    ($bad-source-eval 'security (? (λ (v) (equal? datum v)) _))))))
+
+  (test-logged-procedure
+   "Eval non-source expression"
+   (eval-untrusted-source-expression '1 test-ns)
+   (λ (val messages)
+       (check-eq? val FAILURE)
+       (check-match (car messages)
+                    ($bad-source-eval 'invariant (? (λ (v) (equal? '1 v)) _)))))
+
+  (test-safe-expression
+   "Literal bytes"
+   byte-source?
+   '(byte-source #"abc"))
+
+  (test-unsafe-expression
+   "file input"
+   '(open-input-file "evil"))
+
+  (test-unsafe-expression
+   "file output"
+   '(open-output-file "evil"))
+
+  (test-unsafe-expression
+   "execute"
+   '(let evil ()
+      (local-require racket/system compiler/find-exe)
+      (system* (find-exe))))
+
+  (test-unsafe-expression
+   "network connection"
+   '(tcp-connect "127.0.0.1" 80)))
