@@ -147,7 +147,7 @@
                 get-package-definition-source]))
 
 (define default-catalog
-  (set-catalog-filesystem-directory   
+  (set-catalog-filesystem-directory
    (let ([get-default (const DEFAULT_STRING)])
      (catalog get-default
               get-default
