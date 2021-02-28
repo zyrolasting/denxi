@@ -130,9 +130,9 @@ arguments.
 
 @section{Package Definition Code Generation}
 
-@defproc[(make-input-expression-from-files
-         [path path-string?]
-         [#:local-name local-name string? (path->string (file-name-from-path path))]
+@defproc[(make-input-expression
+         [path-or-port (or/c path-string? input-port?)]
+         [#:local-name local-name string? '(see definition)]
          [#:byte-encoding byte-encoding (or/c #f xiden-encoding/c) 'base64]
          [#:md-algorithm message-digest-algorithm md-algorithm/c 'sha384]
          [make-sources (-> bytes? path-string? (non-empty-listof any/c))]
@@ -141,13 +141,17 @@ arguments.
          [private-key-password-path (or/c #f path-string?) #f])
          list?]{
 Returns an input expression (as a list datum) from several pieces of
-information stored in files. All files must exist. @bold{Do not use
+information stored in files. All given files must exist. @bold{Do not use
 this procedure with untrusted data}.
+
+If @racket[local-name] is not set and @racket[path-or-port] is a
+@racket[path-string?], then @racket[local-name] is set to
+@racket[(path->string (file-name-from-path path-or-port))].
 
 For example, consider the following application:
 
 @racketblock[
-(make-input-expression-from-files
+(make-input-expression
   "source-code.tar.gz"
   #:local-name "code.tar.gz"
   #:byte-encoding 'base64
@@ -200,7 +204,7 @@ This allows authors to define several inputs the same way.
 @racketblock[
 (define (mkinput . paths)
   (for/list ([p (in-list paths)])
-    (make-input-expression-from-files
+    (make-input-expression
       p
       (lambda (digest also-p) (list (format "https://example.com/~a" (file-name-from-path also-p))))
       'sha384
@@ -215,7 +219,7 @@ This allows authors to define several inputs the same way.
            [expr any/c]
            [#:default-name default-name non-empty-string? DEFAULT_STRING]
            [#:public-key-source public-key-source non-empty-string?]
-           [#:find-file find-file procedure?]
+           [#:find-data find-data procedure?]
            [#:private-key-path private-key-path path-string?]
            [#:byte-encoding byte-encoding (or/c #f xiden-encoding/c) 'base64]
            [#:default-md-algorithm default-md-algorithm md-algorithm/c 'sha384]
@@ -231,8 +235,8 @@ Equivalent to
                           public-key-source
                           md-algorithm
                           (λ (n s md ib pk sb)
-                            (make-input-expression-from-files
-                             (find-file n s md ib pk sb)
+                            (make-input-expression
+                             (find-data n s md ib pk sb)
                              #:local-name (or n default-name)
                              #:byte-encoding byte-encoding
                              #:md-algorithm (or md default-md-algorithm)
@@ -247,7 +251,7 @@ Equivalent to
 @defproc[(autocomplete-inputs [stripped bare-racket-module?]
                               [#:default-name default-name non-empty-string? DEFAULT_STRING]
                               [#:public-key-source public-key-source non-empty-string?]
-                              [#:find-file find-file procedure?]
+                              [#:find-data find-data procedure?]
                               [#:private-key-path private-key-path path-string?]
                               [#:byte-encoding byte-encoding (or/c #f xiden-encoding/c) 'base64]
                               [#:default-md-algorithm default-md-algorithm md-algorithm/c 'sha384]

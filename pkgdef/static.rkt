@@ -15,8 +15,8 @@
           [read-package-definition
            (->* (racket-module-input-variant/c)
                 (logged/c syntax?))]
-          [make-input-expression-from-files
-           (->* (path-string?
+          [make-input-expression
+           (->* ((or/c path-string? input-port?)
                  (-> bytes? path-string? (non-empty-listof any/c))
                  string?
                  path-string?)
@@ -42,7 +42,7 @@
            (->* (bare-racket-module?
                  #:public-key-source (or/c #f non-empty-string?)
                  #:private-key-path (or/c #f path-string?)
-                 #:find-file procedure?)
+                 #:find-data procedure?)
                 (#:default-name non-empty-string?
                  #:byte-encoding (or/c #f xiden-encoding/c)
                  #:default-md-algorithm md-algorithm/c
@@ -53,7 +53,7 @@
            (->* (any/c
                  #:public-key-source (or/c #f non-empty-string?)
                  #:private-key-path (or/c #f path-string?)
-                 #:find-file procedure?)
+                 #:find-data procedure?)
                 (#:default-name non-empty-string?
                  #:byte-encoding (or/c #f xiden-encoding/c)
                  #:default-md-algorithm md-algorithm/c
@@ -167,23 +167,30 @@
 ;-------------------------------------------------------------------------------
 ; Authoring aids
 
-(define (make-input-expression-from-files
-         path
-         #:local-name [local-name (path->string (file-name-from-path path))]
+(define (infer-local-name path-or-port)
+  (if (path-string? path-or-port)
+      (path->string (file-name-from-path path-or-port))
+      (or (object-name path-or-port)
+          "")))
+
+(define (make-input-expression
+         path-or-port
+         #:local-name [local-name (infer-local-name path-or-port)]
          #:byte-encoding [byte-encoding 'base64]
          #:md-algorithm [message-digest-algorithm 'sha384]
          make-sources
          public-key-source
          private-key-path
          [private-key-password-path #f])
-  (let ([digest (make-digest (expand-user-path path) message-digest-algorithm)]
-        [make-byte-expression
-         (if byte-encoding
-             (λ (bstr) `(,byte-encoding ,(coerce-string (encode byte-encoding bstr))))
-             values)])
+  (let* ([digest (make-digest path-or-port message-digest-algorithm)]
+         [make-byte-expression
+          (if byte-encoding
+              (λ (bstr) `(,byte-encoding ,(coerce-string (encode byte-encoding bstr))))
+              values)]
+         [generated-sources (make-sources digest path-or-port)])
     (if (and public-key-source private-key-path)
         `(input ,local-name
-                (sources . ,(make-sources digest path))
+                (sources . ,generated-sources)
                 (integrity ',message-digest-algorithm ,(make-byte-expression digest))
                 (signature ,public-key-source
                            ,(make-byte-expression
@@ -193,7 +200,7 @@
                               (and private-key-password-path
                                    (expand-user-path private-key-password-path))))))
         `(input ,local-name
-                (sources . ,(make-sources digest path))
+                (sources . ,generated-sources)
                 (integrity ',message-digest-algorithm ,(make-byte-expression digest))))))
 
 
@@ -226,7 +233,7 @@
                              #:private-key-password-path [private-key-password-path #f]
                              #:default-name [default-name DEFAULT_STRING]
                              #:public-key-source public-key-source
-                             #:find-file find-file
+                             #:find-data find-data
                              #:private-key-path private-key-path)
   (map (λ (form)
          (if (eq? 'input (car form))
@@ -234,7 +241,7 @@
                                             #:byte-encoding byte-encoding
                                             #:default-md-algorithm md-algorithm
                                             #:default-name default-name
-                                            #:find-file find-file
+                                            #:find-file find-data
                                             #:override-sources override-sources
                                             #:public-key-source public-key-source
                                             #:private-key-path private-key-path
@@ -248,14 +255,14 @@
                                        #:override-sources [override-sources (λ (d p s) s)]
                                        #:private-key-password-path [private-key-password-path #f]
                                        #:default-name [default-name DEFAULT_STRING]
-                                       #:find-file find-file
+                                       #:find-data find-data
                                        #:private-key-path private-key-path
                                        #:public-key-source public-key-source
                                        expr)
   (analyze-input-expression expr
                             (λ (n s md ib pk sb)
-                              (make-input-expression-from-files
-                               (find-file n s md ib pk sb)
+                              (make-input-expression
+                               (find-data n s md ib pk sb)
                                #:local-name (or n default-name)
                                #:byte-encoding byte-encoding
                                #:md-algorithm (or md default-md-algorithm)
