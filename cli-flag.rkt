@@ -271,14 +271,6 @@
                                           (XIDEN_INPUT_OVERRIDES)))
                     '("pregexp-pattern" "input-expr")))
 
-(flag-out [+u ++user-facing-source]
-          (cli-flag XIDEN_USER_FACING_SOURCES
-                    'multi null 1
-                    (λ (flag source)
-                      (cons source
-                            (XIDEN_USER_FACING_SOURCES)))
-                    '("source")))
-
 
 ; For use in REPL and tests. Provides a quick way to preview the effect of command
 ; line flags, and generated help strings shown.

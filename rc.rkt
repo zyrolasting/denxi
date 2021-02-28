@@ -128,7 +128,6 @@
 (define-xiden-setting XIDEN_TRUST_BAD_SIGNATURE boolean? #f)
 (define-xiden-setting XIDEN_TRUST_UNSIGNED boolean? #f)
 (define-xiden-setting XIDEN_TRUST_UNVERIFIED_HOST boolean? #f)
-(define-xiden-setting XIDEN_USER_FACING_SOURCES (listof string?) null)
 (define-xiden-setting XIDEN_VERBOSE boolean? #f)
 
 (module+ test

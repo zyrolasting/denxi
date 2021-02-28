@@ -91,3 +91,12 @@ process is sent to @racket[(current-error-port)].
 This all happens under a @tech{runtime configuration}, so transfers
 can be halted by settings like @racket[XIDEN_FETCH_TOTAL_SIZE_MB].
 }
+
+@defthing[mkinput-command argument-parser/c]{
+Creates a program based that accepts any number of format arguments.
+
+The program generates an input expression, with a @racket[sources]
+form containing each of the arguments. The data used to compute the
+integrity and signature information is read from
+@racket[current-input-port].
+}

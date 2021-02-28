@@ -21,6 +21,8 @@ This project follows [these versioning rules](https://sagegerard.com/edition-rev
 - Make revision number conversions more explicit
 - Loosen requirement for well-formed package queries
 - `make-digest` expands user paths before opening files.
+- Add `fetch` command
+- Simplify `mkinput` command
 
 ## [draft:alpha] - 2020-08-02
 

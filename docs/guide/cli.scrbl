@@ -179,7 +179,8 @@ A simple approach is to send in a file.
 $  <./file.tgz xiden mkinput
 }|
 
-This command will produce an input expression, without sources.  Since
+Under the default configuration, this command will produce an input
+expression, without sources, but with integrity information.  Since
 others might not have access to your disk, you need to specify source
 expressions for other people to use.
 
@@ -190,9 +191,6 @@ $ <./file.tgz xiden mkinput '(http-source "https://example.com/file.tgz")'
 This version of the command will still generate an input expression
 for the file, but will use arguments as sources in the printed input
 expression.
-
-
-@subsection{Adding More Input Expressions}
 
 @litchar{mkinput} will only generate one input expression.  If you
 want several, you'll need to run @litchar{mkinput} several times.
@@ -208,7 +206,7 @@ configuration.
 
 @verbatim|{
 $ s='(http-source "https://example.com/file.tgz")'
-$ xiden fetch "$s" | xiden mkinput "$s"
+$ xiden fetch "$s" 2>/dev/null | xiden mkinput "$s"
 }|
 
 
@@ -220,7 +218,7 @@ reasons. But, you can specify a message digest algorithm to control
 the computed digest.
 
 @verbatim|{
-$ xiden mkinput --md sha384 https://example.com/file.tgz
+$ xiden mkinput --md sha384 ...
 }|
 
 You can also specify the encoding that Xiden uses to express bytes in
@@ -258,7 +256,7 @@ password file.
 xiden mkinput --md sha384 \
               --byte-encoding base64 \
               --signer 'http://example.com/public-key.pem' ./private-key.pem ./password \
-              "https://example.com/file.tgz"
+              ...
 }|
 
 You can shorten the command using the @tech/xiden-reference["runtime

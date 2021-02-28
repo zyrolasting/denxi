@@ -234,56 +234,37 @@
 (define (mkinput-command args)
   (cli #:args args
        #:program "mkinput"
-       #:arg-help-strings '("path-or-url")
+       #:arg-help-strings '("source-exprs")
        #:flags
        (make-cli-flag-table
-        ++user-facing-source
         --byte-encoding
         --generated-input-name
         --md
         --signer)
        (λ (flags . user-args)
-         (define (interpret-argument src)
-           (if (file-exists? src)
-               (values values src)
-               (let ([path (make-temporary-file)])
-                 (call-with-output-file #:exists 'truncate/replace path
-                   (λ (out)
-                     (copy-port (get-pure-port (string->url src)) out)
-                     (values (λ (v) (cons src v)) path))))))
-
-         (define (log-input src index messages)
-           (define-values (include-source file-path) (interpret-argument src))
-           (match-define (list pubkey prvkey pass) (XIDEN_SIGNER))
-
-           (define default-name
-             (format "~a~a"
-                     (XIDEN_GENERATED_INPUT_NAME)
-                     (if (eq? index 0) "" index)))
-
-           (define byte-encoding (XIDEN_BYTE_ENCODING))
-           (define md-algorithm (XIDEN_MESSAGE_DIGEST_ALGORITHM))
-           (define user-facing-sources (include-source (reverse (XIDEN_USER_FACING_SOURCES))))
-           (cons ($show-datum
-                  (autocomplete-input-expression
-                   #:byte-encoding byte-encoding
-                   #:default-md-algorithm md-algorithm
-                   #:private-key-password-path pass
-                   #:default-name default-name
-                   #:find-file (λ _ file-path)
-                   #:private-key-path prvkey
-                   #:public-key-source pubkey
-                   `(input ,default-name
-                           (sources . ,user-facing-sources))))
-                 (cons ($verbose ($show-string (~a "; " file-path)))
-                       messages)))
-
          (values flags
                  (λ (halt)
+                   (match-define (list pubkey prvkey pass) (XIDEN_SIGNER))
                    (halt 0
-                         (for/fold ([messages null])
-                                   ([(src index) (in-indexed user-args)])
-                           (log-input src index messages))))))))
+                         ($show-datum
+                          (autocomplete-input-expression
+                           #:byte-encoding (XIDEN_BYTE_ENCODING)
+                           #:default-md-algorithm (XIDEN_MESSAGE_DIGEST_ALGORITHM)
+                           #:private-key-password-path pass
+                           #:default-name (XIDEN_GENERATED_INPUT_NAME)
+                           #:find-data (λ _ (current-input-port))
+                           #:override-sources
+                           (λ _ (map (λ (s)
+                                       ; If the argument is read as a
+                                       ; symbol, then the argument
+                                       ; represents a string meant to
+                                       ; be used as-is.
+                                       (define datum (string->value s))
+                                       (if (symbol? datum) s datum))
+                                     user-args))
+                           #:private-key-path prvkey
+                           #:public-key-source pubkey
+                           `(input)))))))))
 
 
 (define-namespace-anchor cli-namespace-anchor)
@@ -395,24 +376,6 @@
               (integrity 'sha384
                          (base64 "l0kWCDBh9kC+NzqGXwGTdELJESIB+JUHx1f1dDQ5IFyjpZHoQyocK6lMslXieV+B"))))
 
-    (test-case "Allow empty sources"
-      (define-values (flags exit-code msg) (try (mkinput-command (list test-dummy-file-path))))
-      (check-pred null? flags)
-      (check-equal? exit-code 0)
-      (check-equal? (findf $show-datum? msg)
-                    ($show-datum (expected-simple-input))))
-
-    (test-case "Generate integrity expression with default values"
-      (define-values (flags exit-code msg)
-        (try (mkinput-command (list (mkflag +u) "user-source1"
-                                    (mkflag +u) "user-source2"
-                                    test-dummy-file-path))))
-
-      (check-pred cli-flag-state? (car flags))
-      (check-equal? exit-code 0)
-      (check-equal? (findf $show-datum? msg)
-                    ($show-datum (expected-simple-input "user-source1" "user-source2"))))
-
     (test-case "Generate all specified values"
       (define md-algo 'md5)
       (define expected-digest-base32 "0rsd0k4es4dks32empq1we4gh8======")
@@ -439,20 +402,22 @@
       (define expected-signature-info (signature public-key-source (base32 signature-base32)))
 
       (define-values (flags exit-code msg)
-        (try (mkinput-command (list (mkflag ++user-facing-source) "user-source1"
-                                    (mkflag ++user-facing-source) "user-source2"
-                                    (mkflag --byte-encoding) "base32"
-                                    (mkflag --generated-input-name) "boo"
-                                    (mkflag --md) "md5"
-                                    (mkflag --signer)
-                                    public-key-source
-                                    test-private-key-path
-                                    test-private-key-password-path
-                                    test-dummy-file-path))))
+        (call-with-input-file test-dummy-file-path
+          (λ (from-file)
+            (parameterize ([current-input-port from-file])
+              (try (mkinput-command (list (mkflag --byte-encoding) "base32"
+                                          (mkflag --generated-input-name) "boo"
+                                          (mkflag --md) "md5"
+                                          (mkflag --signer)
+                                          public-key-source
+                                          test-private-key-path
+                                          test-private-key-password-path
+                                          "user-source1"
+                                          "user-source2")))))))
 
       (check-pred cli-flag-state? (car flags))
       (check-equal? exit-code 0)
-      (check-equal? (findf $show-datum? msg)
+      (check-equal? msg
                     ($show-datum
                      `(input "boo"
                              (sources "user-source1" "user-source2")
