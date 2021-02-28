@@ -7,6 +7,7 @@
          :=
          base32
          base64
+         byte-source
          catalog-source
          coerce-source
          define
