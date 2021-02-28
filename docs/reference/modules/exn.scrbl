@@ -6,7 +6,7 @@
 
 @defmodule[xiden/exn]
 
-racketmodname[xiden/exn] defines exceptions for control in subprograms
+@racketmodname[xiden/exn] defines exceptions for control in subprograms
 that are not @tech{message}-oriented.  It also provides procedures for
 constructing and raising exceptions.  These procedures are not
 documented because they are private, and simple enough to be
