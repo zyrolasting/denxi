@@ -9,10 +9,13 @@
 
 (provide
  (contract-out
+  [plugin-ref
+   (-> symbol? any/c any/c)]
   [load-from-plugin
    (-> symbol? (-> any/c) (-> exn? any) any/c)]))
 
-(require "rc.rkt")
+(require (only-in racket/function const)
+         "rc.rkt")
 
 (define (load-from-plugin key fail-thunk on-load-failure)
   (define maybe-path (XIDEN_PLUGIN_MODULE))
@@ -22,6 +25,11 @@
                          key
                          fail-thunk))
       (fail-thunk)))
+
+(define (plugin-ref key default-value)
+  (load-from-plugin key
+                    (const default-value)
+                    (const default-value)))
 
 (module+ test
   (provide call-with-plugin)
@@ -35,4 +43,23 @@
                     (write-to-file #:exists 'truncate/replace plugin plugin-path)
                     (XIDEN_PLUGIN_MODULE plugin-path proc))
                   (λ ()
-                    (delete-file plugin-path)))))
+                    (delete-file plugin-path))))
+
+  (define wont-load (find-system-path 'temp-dir))
+  
+  (test-exn "Handle plugin load failures"
+            exn:fail:filesystem?
+            (λ ()
+              (XIDEN_PLUGIN_MODULE wont-load
+               (λ ()
+                 (load-from-plugin 'whatever
+                                   (λ () (fail "Wrong fail thunk called"))
+                                   raise)
+                 (check-equal? (plugin-ref 'whatever 'fallback) 'fallback)))))
+
+  (test-case "Work with dummy plugins"
+    (call-with-plugin
+     '(module anon racket/base (provide a) (define a 1))
+     (λ ()
+       (check-equal? (plugin-ref 'a 2) 1)
+       (check-equal? (plugin-ref 'b 2) 2)))))

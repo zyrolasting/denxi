@@ -2,6 +2,7 @@
 
 @require[@for-label[racket/base
                     racket/contract
+                    racket/function
                     xiden/rc
                     xiden/source
                     xiden/plugin
@@ -26,6 +27,10 @@ If @racket[(XIDEN_PLUGIN_MODULE)] fails to load,
 @racket[on-load-failure] applied to the relevant exception.
 }
 
+@defproc[(plugin-ref [key symbol?] [default-value any/c]) any/c]{
+Equivalent to @racket[(load-from-plugin key (const default-value) (const default-value))].
+}
+
 @section{Supported Bindings}
 
 Xiden applies @racket[load-from-plugin] internally to get
@@ -33,6 +38,11 @@ references to user-defined extensions. The bindings defined below are
 not provided by Xiden, but are instead provided by a
 @tech{plugin} to support the written behavior.
 
+@defthing[catalog catalog?]{
+A @tech{catalog} used to resolve package queries.
+
+Defaults to @racket[default-catalog].
+}
 
 @defproc[(bind-custom-fetch [hint any/c] [request-transfer request-transfer/c] [fail (-> (or/c exn? $message?) any)]) procedure?]{
 @racket[bind-custom-fetch] returns a procedure (@racket[custom-fetch])
