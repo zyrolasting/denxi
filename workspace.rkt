@@ -41,21 +41,24 @@
 (define (assert-workspace-directory v)
   (invariant-assertion workspace-directory/c v))
 
+(define (get-envvar-workspace-directory)
+  (define v (getenv "XIDEN_WORKSPACE"))
+  (and v (expand-user-path v)))
+
 (define (get-initial-workspace-directory)
-  (or (with-handlers
-        ([exn:fail:contract? (λ (e) #f)])
-        (let ([ws (getenv "XIDEN_WORKSPACE")])
-          (assert-workspace-directory ws)))
+  (or (with-handlers ([exn:fail:contract? (λ (e) #f)])
+        (assert-workspace-directory (get-envvar-workspace-directory)))
       (find-workspace-directory)
       (build-path (current-directory)
                   CONVENTIONAL_WORKSPACE_NAME)))
 
 (define (show-workspace-envvar-error?)
-  (let ([ws (getenv "XIDEN_WORKSPACE")])
+  (let ([ws (get-envvar-workspace-directory)])
     (and ws
          (with-handlers ([exn:fail:contract?
                           (λ (e) (not (equal? ws (workspace-directory))))])
-           (assert-workspace-directory ws)))))
+           (and (assert-workspace-directory ws)
+                #f)))))
 
 (define workspace-directory
   (make-parameter (get-initial-workspace-directory)
@@ -96,10 +99,6 @@
                     (if (directory-exists? tmpfile)
                         (delete-directory/files tmpfile)
                         (delete-file tmpfile)))))
-
-  (test-equal? "Workspace always starts with conventional name"
-               (path->string (file-name-from-path (workspace-directory)))
-               CONVENTIONAL_WORKSPACE_NAME)
 
   (test-case "Can find workspace directory"
     (define wsn CONVENTIONAL_WORKSPACE_NAME)
