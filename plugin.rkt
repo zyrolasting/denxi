@@ -21,7 +21,9 @@
   (define maybe-path (XIDEN_PLUGIN_MODULE))
   (if maybe-path
       (with-handlers ([exn:fail? on-load-failure])
-        (dynamic-require maybe-path
+        (dynamic-require (if (string? maybe-path)
+                             (string->path maybe-path)
+                             maybe-path)
                          key
                          fail-thunk))
       (fail-thunk)))
