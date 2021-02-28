@@ -90,6 +90,100 @@ The log will gain a @racket[($fetch id errors)] message, where
 }
 
 
+
+@section{Defining Source Types}
+
+@defform[(define-source (id [field field-contract] ...) body ...)]{
+Defines a new @tech{source} type.
+
+On expansion, @racket[define-source] defines a new structure type
+using @racket[(struct id (field ...))]. The type is created with a
+guard that enforces per-field contracts. Instances implement
+@racket[gen:source].
+
+@racket[define-source] injects several bindings into the lexical
+context of @racket[body]:
+
+@itemlist[
+@item{
+@racket[%src], @racket[%tap], and @racket[%fail] are each bound to
+their respective formal argument of @racket[fetch].
+}
+
+@item{
+@racket[%fetch] is @racket[(bind-recursive-fetch %tap %fail)].
+}
+
+@item{
+Each @racket[field] identifier is bound to a respective value
+for an instance of the structure type.
+}
+]
+
+To understand how these injected bindings work together, let's go
+through a few examples.
+
+Use @racket[%tap] to fulfil data with an input port and an estimated
+data length. In the simplest case, you can return constant data.
+
+@racket[byte-source] uses @racket[%tap] like so:
+
+@racketblock[
+(define-source (byte-source [data bytes?])
+  (%tap (open-input-bytes data)
+        (bytes-length data)))]
+
+Notice that the @racket[data] is used to both define a @racket[data]
+field (where it appears by @racket[bytes?]) and to reference the value
+contained in that field (within @racket[open-input-bytes] and
+@racket[bytes-length]).
+
+Use @racket[%fail] in tail position with error information to
+indicate a source was @tech{exhausted}.
+
+@racket[file-source] uses @racket[%fail] like so:
+
+@racketblock[
+(define-source (file-source [path path-string?])
+  (with-handlers ([exn:fail:filesystem? %fail])
+    (%tap (open-input-file path)
+          (+ (* 20 1024) ; Pad out to factor in Mac OS resource forks
+             (file-size path)))))
+]
+
+Note that @racket[%fail] is an @racket[exhaust/c] procedure, so it
+does not have to be given an exception as an argument.
+
+@racket[%fetch] is a recursive variant of @racket[fetch] that uses
+@racket[%tap], but a possibly different @racket[exhaust/c] procedure.
+This allows sources to control an entire fetch process and fall back
+to alternatives.
+
+@racket[first-available-source] uses a resursive fetch to iterate on
+available sources until it has none left to check.
+
+@racketblock[
+(define-source (first-available-source [available (listof source?)] [errors list?])
+  (if (null? available)
+      (%fail (reverse errors))
+      (%fetch (car available)
+              (λ (e)
+                (%fetch (first-available-source (cdr available) (cons e errors))
+                        %fail)))))
+]
+
+Finally, @racket[%src] is just a reference to an instance of the
+structure containing each field.
+}
+
+
+@defproc[(bind-recursive-fetch [%tap tap/c] [%fail exhaust/c]) (->* (source?) (exhaust/c) any/c)]{
+Returns a @racket[fetch]-like procedure that accepts only a source and
+an optional procedure to mark the source exhausted (defaults to
+@racket[%fail]).
+}
+
+
 @section{Source Types}
 
 @defstruct*[exhausted-source ([value any/c])]{

@@ -33,6 +33,8 @@
          (struct-out text-source)
          (struct-out byte-source)
          (contract-out
+          [bind-recursive-fetch
+           (-> tap/c exhaust/c (->* (source?) (exhaust/c) any/c))]
           [coerce-source (-> (or/c string? source?) source?)]
           [exhaust/c contract?]
           [from-catalogs (->* (string?) ((listof string?)) (listof url-string?))]
