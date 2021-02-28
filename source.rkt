@@ -31,6 +31,7 @@
          (struct-out lines-source)
          (struct-out plugin-source)
          (struct-out text-source)
+         (struct-out byte-source)
          (contract-out
           [coerce-source (-> (or/c string? source?) source?)]
           [exhaust/c contract?]
