@@ -8,6 +8,7 @@
                     xiden/logged
                     xiden/message
                     xiden/rc
+                    xiden/source
                     xiden/workspace]
           "../../shared.rkt"]
 
@@ -75,4 +76,18 @@ and output @racket[($show-string (path->string (workspace-directory)))].
 In all other cases, the program halts with exit code 1 and output
 @racket[($cli:undefined-command A)].
 
+}
+
+@defthing[fetch-command argument-parser/c]{
+Creates a program based on the first argument @racketid[A].
+
+@racketid[A] is treated as a string representation of a datum to
+evaluate using @racket[eval-untrusted-source-expression]. If the
+result is a @tech/xiden-reference{source} and the evaluation produced
+no I/O (for security), then the command sents bytes produced from the
+source to @racket[(current-output-port)]. Information about the
+process is sent to @racket[(current-error-port)].
+
+This all happens under a @tech{runtime configuration}, so transfers
+can be halted by settings like @racket[XIDEN_FETCH_TOTAL_SIZE_MB].
 }

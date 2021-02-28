@@ -32,6 +32,7 @@
          "monad.rkt"
          "package.rkt"
          "pkgdef/static.rkt"
+         "port.rkt"
          "printer.rkt"
          "query.rkt"
          "racket-version.rkt"
@@ -78,6 +79,7 @@
              ["gc" (values #t "gc" gc-command)]
              ["mkint" (values #t "mkint" mkint-command)]
              ["mkinput" (values #f "mkinput" mkinput-command)]
+             ["fetch" (values #t "fetch" fetch-command)]
              [_ (values ""
                         (λ _ (values null
                                      (λ (halt)
@@ -284,6 +286,56 @@
                            (log-input src index messages))))))))
 
 
+(define-namespace-anchor cli-namespace-anchor)
+(define (fetch-command args)
+  (cli #:args args
+       #:program "fetch"
+       #:arg-help-strings '("source-expr")
+       #:flags
+       (make-cli-flag-table ++host
+                            --fetch-total-size
+                            --fetch-buffer-size
+                            --fetch-pkgdef-size
+                            --fetch-timeout
+                            --max-redirects)
+       (λ (flags source-expr-string)
+         (define display-name
+           (~s (~a #:max-width 60 #:limit-marker "..." source-expr-string)))
+
+         (define (copy-to-stdout in est-size)
+           (transfer in
+                     (current-output-port)
+                     #:on-status
+                     (λ (status-message)
+                       (write-message status-message
+                                      (current-message-formatter)
+                                      (current-error-port)))
+                     #:transfer-name display-name
+                     #:max-size (mebibytes->bytes (XIDEN_FETCH_TOTAL_SIZE_MB))
+                     #:buffer-size (mebibytes->bytes (XIDEN_FETCH_BUFFER_SIZE_MB))
+                     #:timeout-ms (XIDEN_FETCH_TIMEOUT_MS)
+                     #:est-size est-size))
+
+         (values flags
+                 (λ (halt)
+                   (define datum
+                     (with-handlers ([exn?
+                                      (λ (e)
+                                        ((error-display-handler) (exn-message e) e)
+                                        (halt 1 null))])
+                       (string->value source-expr-string)))
+
+                   (define program
+                     (mdo source :=
+                          (eval-untrusted-source-expression datum
+                                                            (namespace-anchor->namespace cli-namespace-anchor))
+                          (logged-fetch display-name source copy-to-stdout)))
+
+                   (define-values (result messages) (run-log program))
+                   (eprintf "~s~n" messages)
+                   (parameterize ([current-output-port (current-error-port)])
+                     (write-message-log messages (current-message-formatter)))
+                   (halt (if (eq? result FAILURE) 1 0) null))))))
 
 
 ; Functional tests follow. Use to detect changes in the interface and
@@ -317,6 +369,18 @@
 
   (define-syntax-rule (try prog)
     (run-functional-test (λ () prog)))
+
+  (test-case "Fetch from user-provided sources"
+    (define stdout (open-output-bytes))
+    (define stderr (open-output-bytes))
+    (parameterize ([current-output-port stdout] [current-error-port stderr])
+      (define-values (flags exit-code msg) (try (fetch-command '("(byte-source #\"abcdef\")"))))
+      (check-pred null? flags)
+      (check-pred null? msg)
+      (check-equal? exit-code 0)
+      (check-equal? (get-output-bytes stdout) #"abcdef")
+      (check-true (> (bytes-length (get-output-bytes stderr)) 0))))
+
 
   (test-case "Dump all (read)able configuration on request"
     (define-values (flags exit-code msg) (try (show-command '("config"))))

@@ -144,68 +144,72 @@ so a garbage collection pass can break the link. But when you use a relative
 path as shown, then you can repair the link by running the same transaction.
 
 
+@subsection{Fetching Sources}
+
+You can use Xiden's data fulfilment features with the @litchar{fetch}
+command. The @litchar{fetch} command evaluates a given
+@tech/xiden-reference{source} expression and writes bytes to standard
+output.  The entire process is subject to the current
+@tech/xiden-reference{runtime configuration}.
+
+@verbatim|{
+$ xiden fetch '(http-source "https://example.com/file.tgz")' >file.tgz
+}|
+
+You can use the @litchar{fetch} command as a downloader, or as a way
+to verify if data fulfilment works on a source under your settings.
+
+@litchar{fetch} does not check the integrity or signature of the
+output data.
+
+
 @subsection{Generating Input Expressions}
 
 The most tedious part of writing a package definition is writing
-@tech{package inputs}. @litchar{xiden mkinput} generates package input
-code for you to copy to the clipboard or append directly to a package
+@tech{package inputs}. @litchar{xiden mkinput} reads data from
+standard input to generate input expressions for you. You can copy the
+code to the clipboard or append the output directly to a package
 definition.
 
+@subsubsection{Adjusting Generated Sources}
 
-@subsubsection{Using a File}
-
-In the simplest case, pass in a path to a file.
+A simple approach is to send in a file.
 
 @verbatim|{
-$ xiden mkinput ./file.tgz
+$  <./file.tgz xiden mkinput
 }|
 
-This command will produce an input expression with no
-@tech/xiden-reference{sources} defined. It doesn't make sense to
-assume the local file path as a source because the end-user does not
-have access to your disk. You need to explicitly specify a source for
-the file for consumers.
+This command will produce an input expression, without sources.  Since
+others might not have access to your disk, you need to specify source
+expressions for other people to use.
 
 @verbatim|{
-$ xiden mkinput +u 'https://example.com/file.tgz' ./file.tgz
+$ <./file.tgz xiden mkinput '(http-source "https://example.com/file.tgz")'
 }|
 
-If you wish to include the file path as a source, you can still do
-so. You just have to add it yourself.
+This version of the command will still generate an input expression
+for the file, but will use arguments as sources in the printed input
+expression.
+
+
+@subsubsection{Adding More Input Expressions}
+
+@litchar{mkinput} will only generate one input expression.  If you
+want several, you'll need to run @litchar{mkinput} several times.
+
+
+@subsubsection{Using Sources}
+
+You can generate input expressions based on @tech{sources} by piping
+@litchar{fetch} to @litchar{mkinput}. This is a particularly useful
+pattern when the data you want to release is available from one of
+several locations. If the source used in @litchar{fetch} is also used
+in @litchar{mkinput}, then you can trust that an input expression will
+work for others with a compatible configuration.
 
 @verbatim|{
-$ xiden mkinput +u "$(readlink -f ./file.tgz)" +u 'https://example.com/file.tgz' ./file.tgz
-}|
-
-
-@subsubsection{Using an URL}
-
-You may specify a URL as an argument.
-
-@verbatim|{
-$ xiden mkinput https://example.com/file.tgz
-}|
-
-In this case, the generated input expression will include the URL as a
-@tech/xiden-reference{source} in addition to any sources specified
-using @litchar{+u}. This can be more convenient when building an input
-expression for a remote resource that you trust.
-
-Unlike other commands, @bold{files downloaded using @litchar{mkinput}
-are not subject to size limits}. This is because the command works for
-the sake of a package definition's author, not necessarily an
-end-user.
-
-Note that the response is downloaded to a fresh temporary file each
-time. This can be wasteful when iterating. Also, there are times you
-will need to know what was actually used to generate an expression
-(e.g. a 404 response will likely result in an incorrect expression).
-If you turn on verbose mode, then the generated code will include
-Racket comments displaying the absolute path of the file used to
-generate each input expression.
-
-@verbatim|{
-$ xiden -v '#t' mkinput https://example.com/file.tgz
+$ s='(http-source "https://example.com/file.tgz")'
+$ xiden fetch "$s" | xiden mkinput "$s"
 }|
 
 
@@ -231,20 +235,13 @@ Note that changes to byte encodings applies to both integrity
 information and a signature, should you choose to add one.
 
 
-@subsubsection{Signing the Generated Input}
+@subsubsection{Signing Generated Inputs}
 
 You can add a signature with the @litchar{--signer} flag, which takes
 three arguments. The first is a @tech/xiden-reference{source} for a
-public key used to verify the signature. It's important that it is
-expressed as a source, because that is what other people will use to
-download the public key for verification. It doesn't make sense to
-specify a path on a private system for the same reasons why a local
-file path isn't used as a source in generated input expressions.
-
-@margin-note{Remember that command line arguments in Xiden can be
-string expressions of Racket literals, so you express @racket[#f]
-according to your shell conventions. e.g. @litchar{--signer '...'
-'...' '#f'}.  In Bash, @tt{#} starts a comment, so it must be quoted.}
+public key used to verify the signature. This is also expressed as a
+source, because that is what other people will use to download the
+public key for verification.
 
 The second argument is a path to the private key used to sign the raw
 digest bytes. The third is a path to a file containing the password
@@ -252,27 +249,22 @@ for that private key, or @racket[#f] if there is no password on the
 private key. You must put the password in a file, because Xiden uses
 OpenSSL, and OpenSSL cautions against writing the password in a
 command. If you did, then the password would leak into your shell
-history and into process monitoring tools. You are responsible
-for securely distributing and deleting the password file.
+history and into process monitoring tools. Xiden forces you to follow
+this suggestion.
+
+You are responsible for securely distributing and deleting the
+password file.
 
 @verbatim|{
 xiden mkinput --md sha384 \
               --byte-encoding base64 \
               --signer 'http://example.com/public-key.pem' ./private-key.pem ./password \
-              https://example.com/file.tgz
+              "https://example.com/file.tgz"
 }|
 
 You can shorten the command using the @tech/xiden-reference["runtime
-configuration"]. Just define the same settings in an an rcfile or
-environment variables, such that you can simply omit the command line
-flags.
-
-@verbatim|{
-$ xiden mkinput ./a.tgz
-...
-$ xiden mkinput ./mod.rkt
-...
-}|
+configuration"]. If you define the same settings in an an rcfile or
+environment variables, then you can omit command line flags.
 
 
 @section{Printing Reports}
