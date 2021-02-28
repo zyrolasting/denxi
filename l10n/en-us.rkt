@@ -13,6 +13,7 @@
         "  do      Run transaction"
         "  gc      Collect garbage"
         "  show    Print report"
+        "  fetch   Transfer bytes from source"
         "  mkint   Make integrity info for bytes"
         "  mkinput Make input expression")]
 
