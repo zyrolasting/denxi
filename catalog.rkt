@@ -121,9 +121,11 @@
   ; normalize-path will resolve symlinsk
   (define/contract (get-revision-number provider package edition revision)
     (-> file-name-string? file-name-string? file-name-string? file-name-string? file-name-string?)
-    (path->string
-     (file-name-from-path
-      (build-catalog-path provider package edition revision))))
+    (regexp-replace* #px"\\D"
+                     (~a (file-name-from-path
+                          (build-catalog-path provider package edition revision)))
+                     ""))
+
 
   (define/contract (get-package-definition-source query)
     (-> resolved-package-query? (or/c #f source?))
