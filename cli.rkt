@@ -363,14 +363,15 @@
   (test-case "Fetch from user-provided sources"
     (define stdout (open-output-bytes))
     (define stderr (open-output-bytes))
-    (parameterize ([current-output-port stdout] [current-error-port stderr])
-      (define-values (flags exit-code msg) (try (fetch-command '("(byte-source #\"abcdef\")"))))
-      (check-pred null? flags)
-      (check-pred null? msg)
-      (check-equal? exit-code 0)
-      (check-equal? (get-output-bytes stdout) #"abcdef")
-      (check-true (> (bytes-length (get-output-bytes stderr)) 0))))
+    (define-values (flags exit-code msg)
+      (parameterize ([current-output-port stdout] [current-error-port stderr])
+        (try (fetch-command '("(byte-source #\"abcdef\")")))))
 
+    (check-pred null? flags)
+    (check-pred null? msg)
+    (check-equal? (get-output-bytes stdout) #"abcdef")
+    (check-equal? exit-code 0)
+    (check-true (> (bytes-length (get-output-bytes stderr)) 0)))
 
   (test-case "Dump all (read)able configuration on request"
     (define-values (flags exit-code msg) (try (show-command '("config"))))

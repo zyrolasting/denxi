@@ -17,7 +17,7 @@
   (-> any/c any/c))
 
 (define+provide-message $fetch (id errors))
-(define+provide-message $bad-source-eval (reason datum))
+(define+provide-message $bad-source-eval (reason datum context))
 
 (provide define-source
          empty-source
@@ -237,27 +237,29 @@
    (λ (messages)
      (call/cc
       (λ (return)
-        (define (block . _)
+        (define (block . context)
           (return FAILURE
-                  (cons ($bad-source-eval 'security datum)
+                  (cons ($bad-source-eval 'security datum context)
                         messages)))
         (define variant
           (parameterize ([current-security-guard
-                          (make-security-guard (current-security-guard)
-                                               (λ (sym path-or-#f ops)
-                                                 (when (and path-or-#f
-                                                            (or (member 'execute ops)
-                                                                (member 'write ops)
-                                                                (member 'read ops)
-                                                                (member 'delete ops)))
-                                                   (block)))
-                                               block
-                                               block)])
+                          (make-security-guard
+                           (current-security-guard)
+                           (λ (sym path-or-#f ops)
+                             (define (block/fs)
+                               (block 'fs sym path-or-#f ops))
+                             (when path-or-#f
+                               (when (or (member 'execute ops)
+                                         (member 'write ops)
+                                         (member 'delete ops))
+                                 (block/fs))))
+                           (λ _ (apply block 'network _))
+                           (λ _ (apply block 'link _)))])
             (eval-syntax (namespace-syntax-introduce (datum->syntax #f datum) ns) ns)))
         (if (source? variant)
             (values variant messages)
             (values FAILURE
-                    (cons ($bad-source-eval 'invariant datum)
+                    (cons ($bad-source-eval 'invariant datum #f)
                           messages))))))))
 
 (module+ test
@@ -398,7 +400,9 @@
      (λ (val messages)
        (check-eq? val FAILURE)
        (check-match (car messages)
-                    ($bad-source-eval 'security (? (λ (v) (equal? datum v)) _))))))
+                    ($bad-source-eval 'security
+                                      (? (λ (v) (equal? datum v)) _)
+                                      _)))))
 
   (test-logged-procedure
    "Eval non-source expression"
@@ -406,16 +410,14 @@
    (λ (val messages)
        (check-eq? val FAILURE)
        (check-match (car messages)
-                    ($bad-source-eval 'invariant (? (λ (v) (equal? '1 v)) _)))))
+                    ($bad-source-eval 'invariant
+                                      (? (λ (v) (equal? '1 v)) _)
+                                      _))))
 
   (test-safe-expression
    "Literal bytes"
    byte-source?
    '(byte-source #"abc"))
-
-  (test-unsafe-expression
-   "file input"
-   '(open-input-file "evil"))
 
   (test-unsafe-expression
    "file output"
