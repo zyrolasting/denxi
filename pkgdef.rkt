@@ -7,6 +7,7 @@
          :=
          base32
          base64
+         catalog-source
          coerce-source
          define
          description
@@ -70,6 +71,7 @@
                               url-string))
          syntax/parse/define
          "archive.rkt"
+         "catalog.rkt"
          "codec.rkt"
          "file.rkt"
          "input-info.rkt"
