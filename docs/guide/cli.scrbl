@@ -56,7 +56,7 @@ use @secref{config} to edit your configuration. When you are ready, run
 in the current directory called @tt{my-first-package}, then you did it!
 
 
-@section{What's with the Link?}
+@subsection{What's with the Link?}
 
 The @litchar{+a} switch is actually short for @litchar{++install-abbreviated}.
 You give it a @tech{package definition} and it will build the @racket{default}
@@ -144,7 +144,7 @@ so a garbage collection pass can break the link. But when you use a relative
 path as shown, then you can repair the link by running the same transaction.
 
 
-@subsection{Fetching Sources}
+@section{Fetching Sources}
 
 You can use Xiden's data fulfilment features with the @litchar{fetch}
 command. The @litchar{fetch} command evaluates a given
@@ -163,7 +163,7 @@ to verify if data fulfilment works on a source under your settings.
 output data.
 
 
-@subsection{Generating Input Expressions}
+@section{Generating Input Expressions}
 
 The most tedious part of writing a package definition is writing
 @tech{package inputs}. @litchar{xiden mkinput} reads data from
@@ -171,7 +171,7 @@ standard input to generate input expressions for you. You can copy the
 code to the clipboard or append the output directly to a package
 definition.
 
-@subsubsection{Adjusting Generated Sources}
+@subsection{Adjusting Generated Sources}
 
 A simple approach is to send in a file.
 
@@ -192,20 +192,19 @@ for the file, but will use arguments as sources in the printed input
 expression.
 
 
-@subsubsection{Adding More Input Expressions}
+@subsection{Adding More Input Expressions}
 
 @litchar{mkinput} will only generate one input expression.  If you
 want several, you'll need to run @litchar{mkinput} several times.
 
 
-@subsubsection{Using Sources}
+@subsection{Using Sources}
 
-You can generate input expressions based on @tech{sources} by piping
-@litchar{fetch} to @litchar{mkinput}. This is a particularly useful
-pattern when the data you want to release is available from one of
-several locations. If the source used in @litchar{fetch} is also used
-in @litchar{mkinput}, then you can trust that an input expression will
-work for others with a compatible configuration.
+To generate input expressions based on @tech/xiden-reference{sources},
+pipe @litchar{fetch} to @litchar{mkinput}. If the source used in
+@litchar{fetch} is also used in @litchar{mkinput}, then you can trust
+that an input expression will work for others with a compatible
+configuration.
 
 @verbatim|{
 $ s='(http-source "https://example.com/file.tgz")'
@@ -213,7 +212,7 @@ $ xiden fetch "$s" | xiden mkinput "$s"
 }|
 
 
-@subsubsection{Adjusting Generated Integrity Information}
+@subsection{Adjusting Generated Integrity Information}
 
 @litchar{mkinput} will always generate integrity information using
 reasonable defaults, which are subject to change for security
@@ -235,7 +234,7 @@ Note that changes to byte encodings applies to both integrity
 information and a signature, should you choose to add one.
 
 
-@subsubsection{Signing Generated Inputs}
+@subsection{Signing Generated Inputs}
 
 You can add a signature with the @litchar{--signer} flag, which takes
 three arguments. The first is a @tech/xiden-reference{source} for a
