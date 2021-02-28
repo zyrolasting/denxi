@@ -49,13 +49,10 @@ of the string. An omitted field is set to the empty string.
 e.g. @racket{example.com:htdp::8::ie}, or @racket{example.com:htdp}.
 
 When a field is set to the empty string, a fallback value may be used
-instead. This manual does not define a standard for default values
-that other services have to follow. However, if this manual mentions a
-default value for information that appears as a package query's field
-(such as an @tech{edition}), then that is the default value for the
-field in that context.
+instead. This section does not define a standard for default values
+because those details are @tech/xiden-reference{catalog}-specific.
 
-The empty string is equivalent to accepting only default values.
+The empty string is equivalent to using only default values.
 
 
 @section[#:tag "pkg-query-classifications"]{Package Query Classifications}
