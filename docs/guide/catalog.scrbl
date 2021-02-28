@@ -12,17 +12,9 @@ to specify the location of their requested information.
 @section{Using a Catalog}
 
 To define a catalog for your @tech{workspace}, open your plugin file
-and @racket[provide] one. This controls how @racket[catalog-source]
-behaves.
-
-This example defines a filesystem-based catalog, which uses a
-directory to serve package definitions.
-
-@racketblock[
-(require xiden/catalog)
-(provide catalog)
-(define catalog (file-catalog (build-path (find-system-path 'home-dir) "pkgdefs")))
-]
+and @racket[provide] one bound to the @racketid[catalog]
+identifier. This controls how @racket[catalog-source] behaves. See
+@racket[catalog] for information about how to write your own catalog.
 
 
 @section{Catalogs Are (More) Authoratative}
