@@ -133,9 +133,9 @@
     (define rln (string->number rl))
     (define rhn (string->number rh))
     (let loop ([index rhn])
-      (define path (build-catalog-path pr pk ed index))
+      (define path (~a (build-catalog-path pr pk ed index) ".rkt"))
       (cond [(file-exists? path)
-             (file-source (path->string path))]
+             (file-source (~a path))]
             [(< index rln)
              #f]
             [else (loop (sub1 index))])))
