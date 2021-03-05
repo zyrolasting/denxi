@@ -62,8 +62,9 @@
    get-package-definition-source))
 
 
-
-(define-source (catalog-source [query package-query?])
+(define-source #:key (λ (s) (string-append ((catalog-get-default-provider (plugin-ref 'catalog default-catalog)))
+                                           (catalog-source-query s)))
+               (catalog-source [query package-query?])
   (let ([c (plugin-ref 'catalog default-catalog)])
     (with-handlers ([values %fail])
       (%fetch (find-package-definition c query) %fail))))

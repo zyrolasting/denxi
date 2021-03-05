@@ -4,9 +4,9 @@
                     racket/contract
                     xiden/message
                     xiden/integrity
+                    xiden/openssl
                     xiden/rc]
          racket/format
-         racket/pretty
          xiden/integrity
          @for-syntax[racket/base]
          "../../shared.rkt"]
@@ -21,26 +21,6 @@ Represents integrity information for bytes. Given bytes from some
 source, the bytes pass an @tech{integrity check} if they, when applied to
 @racket[algorithm], produce a value @racket[equal?] to
 @racket[digest].
-}
-
-
-@defthing[md-algorithm/c flat-contract? #:value (apply or/c md-algorithms)]{
-A contract that accepts one of the symbols in @racket[md-algorithms].
-}
-
-
-@defthing[md-algorithms (listof symbol?)]{
-A list of symbols that represent supported message digest algorithms.
-
-Bound to @typeset-code[(pretty-format #:mode 'print md-algorithms)]
-}
-
-
-@defthing[md-bytes-source/c flat-contract? #:value (or/c path-string? bytes? input-port?)]{
-This contract matches a value @racket[V] suitable for use in @racket[make-digest].
-
-Given @racket[(path-string? V)], the bytes are drawn from the file located at @racket[V].
-Given @racket[(bytes? V)] or @racket[(input-port? V)], the bytes are drawn directly from @racket[V].
 }
 
 
@@ -81,10 +61,6 @@ for the check.
 An abbreviated constructor for @racket[integrity-info] that performs stronger validation on arguments.
 
 Meant for use in @tech{package definitions} when declaring @tech{package inputs}.
-}
-
-@defproc[(make-digest [variant md-bytes-source/c] [algorithm md-algorithm/c]) bytes?]{
-Returns the raw byte content of @racket[algorithm] applied to bytes from @racket[variant].
 }
 
 @defproc[(bind-trust-list [trusted (listof well-formed-integrity-info/c)]) (-> path-string? boolean?)]{

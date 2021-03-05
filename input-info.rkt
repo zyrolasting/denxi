@@ -120,6 +120,7 @@
                 (input-info-source info)
                 (λ (in est-size)
                   (make-addressable-file
+                   #:cache-key (make-source-key (input-info-source info))
                    #:max-size (mebibytes->bytes (XIDEN_FETCH_TOTAL_SIZE_MB))
                    #:buffer-size (mebibytes->bytes (XIDEN_FETCH_BUFFER_SIZE_MB))
                    #:timeout-ms (XIDEN_FETCH_TIMEOUT_MS)

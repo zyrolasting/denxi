@@ -85,6 +85,7 @@
          "../exn.rkt"
          "../integrity.rkt"
          "../logged.rkt"
+         "../openssl.rkt"
          "../path.rkt"
          "../query.rkt"
          "../racket-module.rkt"

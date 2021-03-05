@@ -4,6 +4,7 @@
                     racket/contract
                     xiden/cmdline
                     xiden/logged
+                    xiden/format
                     xiden/plugin
                     xiden/port
                     xiden/rc
@@ -60,18 +61,26 @@ The sole argument to the procedure depends on the source type.
 @defidform[gen:source]
 @defthing[source? predicate/c]
 @defproc[(fetch [source source?] [tap tap/c] [exhaust exhaust/c]) any/c]
+@defproc[(identify [source source?]) (or/c input-port? #f)]
 )]{
 @racket[gen:source] is a @tech/reference{generic interface} that
-requires an implementation of @racket[fetch]. @racket[source?]
-returns @racket[#t] for values that do so.
+requires an implementation of @racket[fetch] and
+@racket[identify]. @racket[source?] returns @racket[#t] for values
+that do so.
 
 @racket[fetch] attempts to @tech{tap} @racket[source]. If successful,
 @racket[fetch] calls @racket[tap] in tail position, passing the input
 port and the estimated maximum number of bytes that port is expected
-to produce.
+to produce. Otherwise, @racket[fetch] calls @racket[exhaust] in tail
+position using a source-dependent argument.
 
-Otherwise, @racket[fetch] calls @racket[exhaust] in tail position
-using a source-dependent argument.
+@racket[identify] attempts to return an input port that produces bytes
+used to identify a @racket[source?] value. The input port does not
+produce bytes for expected content, and cannot use any information
+outside of what's available in the value itself. This allows other
+other systems to compute cache keys and avoid unnecessary calls to
+@racket[fetch]. If @racket[identify] returns @racket[#f] for a source,
+then that source cannot be identified.
 }
 
 
@@ -90,11 +99,19 @@ The log will gain a @racket[($fetch id errors)] message, where
 @racketid[errors] is empty if the fetch is successful.
 }
 
+@defproc[(make-source-key [src source?]) (or/c #f bytes?)]{
+Returns bytes to uniquely identify @racket[src], or @racket[#f]
+if the source is not meant to be identified.
+
+This is a front-end to @racket[identify] that will always produce a
+fixed-length byte string. Prefer using this over using
+@racket[identify] directly.
+}
 
 
 @section{Defining Source Types}
 
-@defform[(define-source (id [field field-contract] ...) body ...)]{
+@defform[(define-source #:key compute-key (id [field field-contract] ...) body ...)]{
 Defines a new @tech{source} type.
 
 On expansion, @racket[define-source] defines a new structure type
@@ -130,7 +147,7 @@ data length. In the simplest case, you can return constant data.
 @racket[byte-source] uses @racket[%tap] like so:
 
 @racketblock[
-(define-source (byte-source [data bytes?])
+(define-source #:key byte-source-data (byte-source [data bytes?])
   (%tap (open-input-bytes data)
         (bytes-length data)))]
 
@@ -145,7 +162,7 @@ indicate a source was @tech{exhausted}.
 @racket[file-source] uses @racket[%fail] like so:
 
 @racketblock[
-(define-source (file-source [path path-string?])
+(define-source #:key file-source-path (file-source [path path-string?])
   (with-handlers ([exn:fail:filesystem? %fail])
     (%tap (open-input-file path)
           (+ (* 20 1024) ; Pad out to factor in Mac OS resource forks
@@ -164,7 +181,8 @@ to alternatives.
 available sources until it has none left to check.
 
 @racketblock[
-(define-source (first-available-source [available (listof source?)] [errors list?])
+(define-source #:key first-available-source-sources
+               (first-available-source [available (listof source?)] [errors list?])
   (if (null? available)
       (%fail (reverse errors))
       (%fetch (car available)
@@ -175,6 +193,14 @@ available sources until it has none left to check.
 
 Finally, @racket[%src] is just a reference to an instance of the
 structure containing each field.
+
+@racket[compute-key] is an expression that must resolve to a
+procedure, or @racket[#f]. It is used to generate an implementation of
+@racket[identify], such that the procedure must produce a value that
+can be reasonably coerced to an input port for use with
+@racket[identify]. Currently, the accepted values include input ports,
+paths, strings, byte strings, instances of @racket[url], @tech{sources}, or
+lists of the aforementioned types.
 }
 
 
@@ -217,11 +243,8 @@ A @tech{source} that, when @tech{tapped}, produces bytes from the given string.
 
 
 @defstruct[lines-source ([suffix (or/c #f char? string?)] [lines (listof string?)])]{
-A @tech{source} that, when @tech{tapped}, produces bytes from a
-string.  The string is defined as the combination of all
-@racket[lines], such that each line has the given @racket[suffix].  If
-@racket[suffix] is @racket[#f], then it uses a conventional line
-ending according to @racket[(system-type 'os)].
+A @tech{source} that, when @tech{tapped}, produces bytes from
+@racket[(join-lines #:suffix suffix #:trailing? #f lines)].
 
 @racketblock[
 (define src

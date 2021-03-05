@@ -18,6 +18,7 @@
          "logged.rkt"
          "message.rkt"
          "monad.rkt"
+         "openssl.rkt"
          "package.rkt"
          "pkgdef/static.rkt"
          "port.rkt"

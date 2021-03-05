@@ -1,10 +1,24 @@
 #lang racket/base
 
+(require "contract.rkt")
+
 (provide run-openssl-command
          openssl
-         (struct-out exn:fail:xiden:openssl))
+         (struct-out exn:fail:xiden:openssl)
+         (contract-out
+          [md-algorithms
+           (non-empty-listof symbol?)]
+          [md-algorithm/c
+           flat-contract?]
+          [md-bytes-source/c
+           flat-contract?]
+          [make-digest
+           (-> md-bytes-source/c
+               md-algorithm/c
+               bytes?)]))
 
 (require racket/file
+         racket/format
          racket/function
          racket/path
          racket/port
@@ -18,6 +32,43 @@
 (define-exn exn:fail:xiden:openssl exn:fail:xiden (exit-code output))
 
 (define openssl (find-executable-path "openssl"))
+
+(define md-algorithms
+  '(md4
+    md5
+    sha1
+    sha224
+    sha256
+    sha3-224
+    sha3-256
+    sha3-384
+    sha3-512
+    sha384
+    sha512
+    sha512-224
+    sha512-256))
+
+(define md-bytes-source/c
+  (or/c path-string? bytes? input-port?))
+
+(define md-algorithm/c
+  (apply or/c md-algorithms))
+
+(define (make-digest variant algorithm)
+  (cond [(path-string? variant)
+         (call-with-input-file (expand-user-path variant)
+           (λ (i) (make-digest i algorithm)))]
+        [(bytes? variant)
+         (make-digest (open-input-bytes variant) algorithm)]
+        [(input-port? variant)
+         (run-openssl-command variant
+                              "dgst"
+                              "-binary"
+                              (~a "-" algorithm))]
+        [else (raise-argument-error 'make-digest
+                                    "A path, bytes, or an input port"
+                                    variant)]))
+
 
 (define (run-openssl-command #:timeout [delay-seconds 3] stdin-source . args)
   (define-values (sp from-stdout to-stdin from-stderr)

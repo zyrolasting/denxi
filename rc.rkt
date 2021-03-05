@@ -24,6 +24,7 @@
          "file.rkt"
          "integrity.rkt"
          "message.rkt"
+         "openssl.rkt"
          "setting.rkt"
          "string.rkt"
          "url.rkt"

@@ -16,6 +16,7 @@
    "../localstate.rkt"
    "../logged.rkt"
    "../message.rkt"
+   "../openssl.rkt"
    "../package.rkt"
    "../printer.rkt"
    "../port.rkt"

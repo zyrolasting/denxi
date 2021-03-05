@@ -38,7 +38,9 @@
           [exhaust/c contract?]
           [from-catalogs (->* (string?) ((listof string?)) (listof url-string?))]
           [fetch (-> source? tap/c exhaust/c any/c)]
+          [identify (-> source? (or/c #f input-port?))]
           [logged-fetch (-> any/c source? tap/c logged?)]
+          [make-source-key (-> source? (or/c bytes? #f))]
           [source? predicate/c]
           [sources (->* () #:rest (listof (or/c string? source?)) source?)]
           [tap/c contract?]
@@ -57,9 +59,12 @@
          racket/exn
          racket/generic
          racket/match
+         racket/path
          net/head
+         "format.rkt"
          "logged.rkt"
          "message.rkt"
+         "openssl.rkt"
          "plugin.rkt"
          "port.rkt"
          "rc.rkt"
@@ -97,45 +102,63 @@
 ; success and failure branches.
 
 (define-generics source
-  [fetch source tap fail])
+  [fetch source tap fail]
+  ; source? -> input-port?
+  [identify source])
+
+(define (make-source-key src)
+  (define id (identify src))
+  (and id (make-digest id 'sha384)))
+
+
+(define (coerce-key-port variant)
+  (cond [(string? variant) (open-input-string variant)]
+        [(bytes? variant) (open-input-bytes variant)]
+        [(path? variant) (coerce-key-port (path->string (normalize-path variant)))]
+        [(url? variant) (coerce-key-port (url->string variant))]
+        [(source? variant) (identify variant)]
+        [(list? variant) (apply input-port-append #t (map coerce-key-port variant))]))
 
 (define (bind-recursive-fetch %tap %fail)
   (λ (s [f %fail]) (fetch s %tap f)))
 
 (define-syntax (define-source stx)
   (syntax-case stx ()
-    [(_ (id [field-id field-contract] ...) . body)
+    [(_ #:key cache-fn (id [field-id field-contract] ...) . body)
      (syntax-protect
-      (datum->syntax stx
-                     (syntax->datum
-                      #'(struct id (field-id ...)
-                          #:guard
-                          (invariant-assertion (rename-contract
-                                                (-> field-contract ... any/c
-                                                    (values field-contract ...))
-                                                'id)
-                                               (λ a (apply values (reverse (cdr (reverse a))))))
-                          #:methods gen:source
-                          [(define (fetch %src %tap %fail)
-                             (match-define (id field-id ...) %src)
-                             (define %fetch (bind-recursive-fetch %tap %fail))
-                             . body)]))))]))
-
+      (with-syntax ([(%fetch %src %tap %fail)
+                     (map (λ (v) (datum->syntax stx v)) '(%fetch %src %tap %fail))])
+        #'(struct id (field-id ...)
+            #:guard
+            (invariant-assertion (rename-contract
+                                  (-> field-contract ... any/c
+                                      (values field-contract ...))
+                                  'id)
+                                 (λ a (apply values (reverse (cdr (reverse a))))))
+            #:methods gen:source
+            [(define (fetch %src %tap %fail)
+               (match-define (id field-id ...) %src)
+               (define %fetch (bind-recursive-fetch %tap %fail))
+               . body)
+             (define (identify %src)
+               (and cache-fn
+                    (coerce-key-port (cache-fn %src))))])))]))
 
 
 ;-----------------------------------------------------------------------
 ; Source types
 
-(define-source (exhausted-source [value any/c])
+(define-source #:key #f (exhausted-source [value any/c])
   (%fail value))
 
 
-(define-source (byte-source [data bytes?])
+(define-source #:key byte-source-data (byte-source [data bytes?])
   (%tap (open-input-bytes data)
         (bytes-length data)))
 
 
-(define-source (first-available-source [sources (listof source?)] [errors list?])
+(define-source #:key first-available-source-sources
+               (first-available-source [sources (listof source?)] [errors list?])
   (if (null? sources)
       (%fail (reverse errors))
       (%fetch (car sources)
@@ -144,34 +167,31 @@
                         %fail)))))
 
 
-(define-source (variant-source [value any/c] [constructors (-> any/c source?)])
-  (%fetch
-   (first-available-source
-    (map (λ (c) (c value))
-         constructors)
-    null)))
-
-
-(define-source (text-source [data string?])
+(define-source #:key text-source-data
+               (text-source [data string?])
   (%fetch (byte-source (string->bytes/utf-8 data))))
 
 
-(define-source (lines-source [suffix (or/c #f char? string?)] [lines (listof string?)])
-  (define s
-    (cond [(not suffix) (if (equal? (system-type 'os) 'windows) "\r\n" "\n")]
-          [(char? suffix) (string suffix)]
-          [(string? suffix) suffix]))
-  (%fetch (text-source (string-append (string-join lines s) s))))
+(define (lines-source->string s)
+  (join-lines #:trailing? #t
+              #:suffix (lines-source-suffix s)
+              (lines-source-lines s)))
+
+(define-source #:key lines-source->string
+               (lines-source [suffix (or/c #f char? string?)] [lines (listof string?)])
+  (%fetch (text-source (lines-source->string %src))))
 
 
-(define-source (file-source [path path-string?])
+(define-source #:key file-source-path
+               (file-source [path path-string?])
   (with-handlers ([exn:fail:filesystem? %fail])
     (%tap (open-input-file path)
           (+ (* 20 1024) ; for Mac OS resource forks
              (file-size path)))))
 
 
-(define-source (http-source [request-url (or/c url? url-string?)])
+(define-source #:key http-source-request-url
+               (http-source [request-url (or/c url? url-string?)])
   (with-handlers ([exn? %fail])
     (define-values (in headers-string)
       (get-pure-port/headers #:redirections (XIDEN_DOWNLOAD_MAX_REDIRECTS)
@@ -190,7 +210,8 @@
               +inf.0))))
 
 
-(define-source (http-mirrors-source [request-urls (listof (or/c url? url-string?))])
+(define-source #:key http-mirrors-source-request-urls
+               (http-mirrors-source [request-urls (listof (or/c url? url-string?))])
   (%fetch (apply sources (map http-source request-urls))))
 
 
@@ -265,6 +286,7 @@
 (module+ test
   (require racket/file
            racket/tcp
+           racket/runtime-path
            rackunit
            mzlib/etc
            "file.rkt"
@@ -431,4 +453,18 @@
 
   (test-unsafe-expression
    "network connection"
-   '(tcp-connect "127.0.0.1" 80)))
+   '(tcp-connect "127.0.0.1" 80))
+
+  (define-runtime-path here ".")
+  (test-case "Identify sources in advance of a fetch"
+    (define path (build-path here "file.txt"))
+    (check-equal? (port->bytes
+                   (identify (sources (http-mirrors-source '("x.com" "y.net"))
+                                      (http-source "https://z.org")
+                                      (text-source "hello world")
+                                      (byte-source #"abc")
+                                      (lines-source #\| '("line 1" "line 2"))
+                                      (file-source path))))
+                  (string->bytes/utf-8
+                   (format "x.comy.nethttps://z.orghello worldabcline 1|line 2|~a"
+                           (normalize-path path))))))

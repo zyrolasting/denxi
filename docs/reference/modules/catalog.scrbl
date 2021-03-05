@@ -74,6 +74,13 @@ default query suitable for use with any catalog @racketid[C].
 @racket[get-package-definition-source] is used to return a
 @tech{source} for a package definition. The argument should be in
 @tech{canonical form} with respect to the corresponding instance.
+
+@racket[get-default-provider]'s return value may change, but should do
+so rarely (if ever) if the catalog is meant for use in
+@racket[catalog-source]. In that context, the default provider is
+expected to reflect the catalog as a provider itself. Catalog hosts
+that expect to change default providers should therefore instruct
+clients to select their own catalog name.
 }
 
 @defthing[default-catalog catalog?]{
@@ -89,6 +96,16 @@ is @racket[(build-path (find-system-path 'home-dir) "xiden-catalog")].
 @defstruct[catalog-source ([query package-query?])]{
 A @tech{source} that consults the @tech{plugin}'s @racket[catalog]
 using @racket[query].
+
+When used with @racket[identify], a @racket[catalog-source] produces a
+value in terms of @racket[(catalog-get-default-provider)] and the
+query. Note that two catalogs that conflict on both will cause
+unwanted cache hits if combined for use in a @tech{workspace}.
+Additionally, catalogs that change their default providers will induce
+cache misses for all clients.
+
+You can prevent cache-related surprises by defining a constant default
+provider name in your @tech{plugin}.
 }
 
 @defproc[(autocomplete-parsed-package-query [cat catalog?]

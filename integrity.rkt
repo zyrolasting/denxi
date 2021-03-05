@@ -4,46 +4,14 @@
 
 (require "contract.rkt")
 
-; Mirror OpenSSL
-(define md-algorithms
-  '(md4
-    md5
-    sha1
-    sha224
-    sha256
-    sha3-224
-    sha3-256
-    sha3-384
-    sha3-512
-    sha384
-    sha512
-    sha512-224
-    sha512-256))
-
-(define md-bytes-source/c
-  (or/c path-string? bytes? input-port?))
-
-(define md-algorithm/c
-  (apply or/c md-algorithms))
-
 (provide (struct-out integrity-info)
          (contract-out
           [integrity
            (-> md-algorithm/c
                bytes?
                integrity-info?)]
-          [md-algorithms
-           (non-empty-listof symbol?)]
-          [md-algorithm/c
-           flat-contract?]
-          [md-bytes-source/c
-           flat-contract?]
           [well-formed-integrity-info/c
            flat-contract?]
-          [make-digest
-           (-> md-bytes-source/c
-               md-algorithm/c
-               bytes?)]
           [bind-trust-list
            (-> (listof well-formed-integrity-info/c)
                (-> path-string? boolean?))]
@@ -76,22 +44,6 @@
   (struct/c integrity-info
             md-algorithm/c
             bytes?))
-
-
-(define (make-digest variant algorithm)
-  (cond [(path-string? variant)
-         (call-with-input-file (expand-user-path variant)
-           (λ (i) (make-digest i algorithm)))]
-        [(bytes? variant)
-         (make-digest (open-input-bytes variant) algorithm)]
-        [(input-port? variant)
-         (run-openssl-command variant
-                              "dgst"
-                              "-binary"
-                              (~a "-" algorithm))]
-        [else (raise-argument-error 'make-digest
-                                    "A path, bytes, or an input port"
-                                    variant)]))
 
 
 (define (bind-trust-list trusted)
