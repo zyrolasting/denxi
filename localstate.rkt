@@ -68,11 +68,14 @@
                            exact-positive-integer?
                            path-string?))]
           [make-addressable-file
-           (-> non-empty-string? input-port? (or/c +inf.0 exact-positive-integer?)
-               #:on-status (-> $message? any)
-               #:max-size (or/c +inf.0 exact-positive-integer?)
-               #:buffer-size exact-positive-integer?
-               #:timeout-ms (>=/c 0)
+           (->* (non-empty-string?
+                 input-port?
+                 (or/c +inf.0 exact-positive-integer?)
+                 #:on-status (-> $message? any)
+                 #:max-size (or/c +inf.0 exact-positive-integer?)
+                 #:buffer-size exact-positive-integer?
+                 #:timeout-ms (>=/c 0))
+                (#:cache-key (or/c bytes? #f))
                path-record?)]
           [make-addressable-directory
            (-> (non-empty-listof input-port?)
@@ -214,11 +217,17 @@
   "revision_id INTEGER NOT NULL"
   "FOREIGN KEY (revision_id) REFERENCES revisions(id)")
 
+(define-relation path-keys (key path-id)
+  "key BLOB UNIQUE NOT NULL"
+  "path_id INTEGER NOT NULL"
+  "FOREIGN KEY (path_id) REFERENCES paths(id) ON DELETE CASCADE ON UPDATE CASCADE")
+
 (define ALL_RELATIONS
   (list editions
         outputs
         packages
         paths
+        path-keys
         providers
         revisions
         revision-names))
@@ -558,31 +567,36 @@
                                #:max-size max-size
                                #:buffer-size buffer-size
                                #:timeout-ms timeout-ms
+                               #:cache-key [cache-key #f]
                                name
                                in
                                est-size)
-  (define tmp (build-addressable-path #"tmp"))
-  (dynamic-wind
-    void
-    (λ ()
-      (with-handlers ([values (λ (e) (delete-file* tmp) (raise e))])
-        (make-directory* (path-only tmp))
-        (call-with-output-file tmp #:exists 'truncate/replace
-          (λ (to-file)
-            (transfer in to-file
-                      #:on-status on-status
-                      #:transfer-name name
-                      #:max-size max-size
-                      #:buffer-size buffer-size
-                      #:timeout-ms timeout-ms
-                      #:est-size est-size))))
-        (define digest (make-digest tmp 'sha384))
-        (define path (build-addressable-path digest))
-        (make-directory* (path-only path))
-        (rename-file-or-directory tmp path #t)
-        (declare-path (find-relative-path (workspace-directory) path) digest))
-    (λ () (close-input-port in))))
+  (or (and cache-key (look-up-path cache-key))
+      (let ([tmp (build-addressable-path #"tmp")])
+        (dynamic-wind
+          void
+          (λ ()
+            (with-handlers ([values (λ (e) (delete-file* tmp) (raise e))])
+              (make-directory* (path-only tmp))
+              (call-with-output-file tmp #:exists 'truncate/replace
+                (λ (to-file)
+                  (transfer in to-file
+                            #:on-status on-status
+                            #:transfer-name name
+                            #:max-size max-size
+                            #:buffer-size buffer-size
+                            #:timeout-ms timeout-ms
+                            #:est-size est-size))))
+            (define digest (make-digest tmp 'sha384))
+            (define path (build-addressable-path digest))
+            (make-directory* (path-only path))
+            (rename-file-or-directory tmp path #t)
+            (define path-record (declare-path (find-relative-path (workspace-directory) path) digest))
+            (when cache-key
+              (gen-save (path-key-record cache-key (record-id path-record))))
 
+            path-record)
+          (λ () (close-input-port in))))))
 
 
 (define (make-addressable-directory digest-ports)
@@ -711,11 +725,17 @@
                  "inner join " (relation-name paths) " as L "
                  "on L.target_id = P.id;")))
 
+(define (look-up-path key)
+  (define r (find-exactly-one (path-key-record #f key #f)))
+  (and r
+       (find-exactly-one (path-record (path-key-record-path-id r) #f #f #f))))
+
 
 (define (normalize-path-for-db path)
   (if (string? path)
       path
       (path->string path)))
+
 
 
 ;----------------------------------------------------------------------------------
@@ -898,12 +918,31 @@
 
   (test-db "Declare paths"
     (declare-path "a/b/c" #"digest")
+    (define expected (path-record 1 "a/b/c" #"digest" sql-null))
     (check-equal? (find-exactly-one (path-record #f "a/b/c" #f #f))
-                  (path-record 1 "a/b/c" #"digest" sql-null))
+                  expected)
 
     (test-case "Return existing records when trying to save a duplicate path"
       (check-equal? (declare-path "a/b/c" #"different")
-                    (path-record 1 "a/b/c" #"digest" sql-null))))
+                    expected))
+
+    (test-case "Declare a path key"
+      (gen-save (path-key-record #f #"name" 1))
+      (define actual (look-up-path #"name"))
+      (check-equal? actual expected)
+      (test-equal? "Use path key with make-addressable-file"
+                   (make-addressable-file #:cache-key #"name"
+                                          #:on-status void
+                                          #:buffer-size 0
+                                          #:timeout-ms 0
+                                          #:max-size 0
+                                          ""
+                                          (open-input-bytes #"")
+                                          1)
+                   expected))
+
+    (test-false "Find no path when using undefined key"
+                (look-up-path #"nothing")))
 
 
   (test-db "Declare an output"
