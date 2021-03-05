@@ -23,6 +23,7 @@ This project follows [these versioning rules](https://sagegerard.com/edition-rev
 - `make-digest` expands user paths before opening files.
 - Add `fetch` command
 - Simplify `mkinput` command
+- Support source-level caching
 
 ## [draft:alpha] - 2020-08-02
 
