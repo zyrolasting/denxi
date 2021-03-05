@@ -63,8 +63,7 @@
 
 (module+ test
   (require rackunit
-           (submod "plugin.rkt" test)
-           "rc.rkt")
+           (submod "plugin.rkt" test))
 
   (define (make-file path-string)
     (define path (string->path path-string))

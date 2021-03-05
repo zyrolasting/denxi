@@ -2,29 +2,16 @@
 
 ; Define primary entry point for the program.
 
-(require racket/function
-         racket/path
-         racket/pretty
-         racket/list
+(require racket/path
          racket/match
-         racket/os
          racket/path
-         racket/place
-         racket/port
          racket/runtime-path
          racket/sequence
-         racket/stream
-         racket/vector
          (for-syntax racket/base)
-         "catalog.rkt"
          "cli-flag.rkt"
          "cmdline.rkt"
          "codec.rkt"
-         "contract.rkt"
-         "exn.rkt"
-         "file.rkt"
          "format.rkt"
-         "input-info.rkt"
          "integrity.rkt"
          "l10n.rkt"
          "localstate.rkt"
@@ -36,16 +23,12 @@
          "port.rkt"
          "printer.rkt"
          "query.rkt"
-         "racket-version.rkt"
          "rc.rkt"
          "security.rkt"
-         "setting.rkt"
          "signature.rkt"
          "source.rkt"
          "string.rkt"
          "transaction.rkt"
-         "url.rkt"
-         "openssl.rkt"
          "workspace.rkt")
 
 (module+ main
@@ -331,11 +314,9 @@
 ; Functional tests follow. Use to detect changes in the interface and
 ; verify high-level impact.
 (module+ test
-  (require racket/port
-           racket/random
+  (require
            racket/runtime-path
-           rackunit
-           (submod "file.rkt" test))
+           rackunit)
 
   (define mkflag shortest-cli-flag)
 
