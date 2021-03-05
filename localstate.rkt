@@ -939,10 +939,12 @@
                                           ""
                                           (open-input-bytes #"")
                                           1)
-                   expected))
+                   expected)
 
-    (test-false "Find no path when using undefined key"
-                (look-up-path #"nothing")))
+
+      (test-case "Path keys are deleted when paths are deleted"
+        (delete-record actual)
+        (check-false (look-up-path #"name")))))
 
 
   (test-db "Declare an output"
