@@ -22,9 +22,9 @@
           [indent-lines
            (-> (listof string?) (listof string?))]
           [join-lines
-           (-> (listof string?) string?)]
+           (->* ((listof string?)) (#:trailing? any/c #:suffix (or/c char? string? #f)) string?)]
           [join-lines*
-           (->* () #:rest (listof string?) string?)]
+           (->* () (#:trailing? any/c #:suffix (or/c char? string? #f)) #:rest (listof string?) string?)]
           [message-formatter/c
            contract?]
           [current-message-formatter
@@ -39,17 +39,32 @@
 ;-----------------------------------------------------------------------------
 ; Conventional formatting procedures
 
+(define system-eol
+  (if (equal? (system-type 'os) 'windows)
+      "\r\n"
+      "\n"))
+
 (define (format-symbol-for-display i)
   (format "`~a`" i))
 
 (define (indent-lines lines)
   (map (λ (s) (~a "  " s)) lines))
 
-(define (join-lines lines)
-  (string-join lines "\n"))
+(define (join-lines #:suffix [preferred-suffix #f] #:trailing? [trailing? #f] lines)
+  (define suffix (select-eol preferred-suffix))
+  (define joined (string-join lines suffix))
+  (if trailing?
+      (string-append joined suffix)
+      joined))
 
-(define (join-lines* . lines)
-  (join-lines lines))
+(define (join-lines* #:suffix [preferred-suffix #f] #:trailing? [trailing? #f] . lines)
+  (join-lines #:suffix preferred-suffix #:trailing? trailing? lines))
+
+(define (select-eol preferred-suffix)
+  (cond [(not preferred-suffix) system-eol]
+        [(char? preferred-suffix) (string preferred-suffix)]
+        [(string? preferred-suffix) preferred-suffix]))
+
 
 
 ;-----------------------------------------------------------------------------
@@ -92,8 +107,8 @@
 
   (check-equal? (format-symbol-for-display 'foo) "`foo`")
   (check-equal? (indent-lines '("a" "b")) '("  a" "  b"))
-  (check-equal? (join-lines '("a" "b" "c")) "a\nb\nc")
-  (check-equal? (join-lines* "a" "b" "c") "a\nb\nc")
+  (check-equal? (join-lines #:suffix "\n" '("a" "b" "c")) "a\nb\nc")
+  (check-equal? (join-lines* #:suffix #\| #:trailing? #t "a" "b" "c") "a|b|c|")
 
   (define dummy ($show-string "Testing: Blah"))
 

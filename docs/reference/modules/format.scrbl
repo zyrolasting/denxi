@@ -29,12 +29,24 @@ Returns a new version of @racket[lines] where each element has two
 leading spaces.
 }
 
-@defproc[(join-lines [lines (listof string?)]) string?]{
-Equivalent to @racket[(string-join lines "\n")].
+@defproc[(join-lines [#:trailing? trailing? any/c #f]
+                     [#:suffix suffix (or/c char? string? #f)]
+                     [lines (listof string?)]) string?]{
+Combines @racket[lines] into a single string.
+
+If @racket[suffix] is @racket[#f], then @racket[join-lines] will use a
+platform-specific suffix.
+
+If @racket[trailing?] is @racket[#t], then the last line will also end
+in the suffix.
 }
 
-@defproc[(join-lines* [line string?] ...) string?]{
-Equivalent to @racket[(join-lines (list line ...))].
+@defproc[(join-lines* [#:trailing? trailing? any/c #f]
+                      [#:suffix suffix (or/c char? string? #f)]
+                      [line string?] ...)
+                      string?]{
+Like @racket[join-lines], except lines are accumulated from formal
+arguments.
 }
 
 
