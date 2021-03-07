@@ -254,11 +254,6 @@ source.
 When true, emit more detailed program output.
 }
 
-@defsetting*[XIDEN_CATALOGS]{
-A list of strings representing URL templates.
-
-This setting affects the output of @racket[from-catalogs].
-}
 
 @defsetting*[XIDEN_DOWNLOAD_MAX_REDIRECTS]{
 The maximum number of HTTP redirects to follow when resolving a GET request.

@@ -302,11 +302,6 @@ Otherwise, returns @racket[(string->source variant)] in terms of the
 @tech{plugin}.
 }
 
-@defproc[(from-catalogs [query-string string?] [url-templates (listof string?) (XIDEN_CATALOGS)]) (listof url-string?)]{
-Returns a list of URL strings computed by URL-encoding
-@racket[query-string], and then replacing all occurrances of
-@racket{$QUERY} in @racket[url-templates] with the encoded string.
-}
 
 @defform[(from-file relative-path-expr)]{
 Expands to a complete path. @racket[relative-path-expr] is a relative path

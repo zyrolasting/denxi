@@ -95,7 +95,6 @@
 (define-xiden-setting XIDEN_ALLOW_ENV (listof (or/c bytes-environment-variable-name? string?)) null)
 (define-xiden-setting XIDEN_ALLOW_UNSUPPORTED_RACKET boolean? #f)
 (define-xiden-setting XIDEN_BYTE_ENCODING xiden-encoding/c 'base64)
-(define-xiden-setting XIDEN_CATALOGS (listof url-string?) '("https://zcpkg.com/$QUERY"))
 (define-xiden-setting XIDEN_DOWNLOAD_MAX_REDIRECTS exact-nonnegative-integer? 2)
 (define-xiden-setting XIDEN_FASL_OUTPUT boolean? #f)
 (define-xiden-setting XIDEN_FETCH_BUFFER_SIZE_MB (real-in 0.1 20) 10)

@@ -17,7 +17,6 @@
          extract-input
          file-source
          find-input
-         from-catalogs
          from-file
          getenv
          hex

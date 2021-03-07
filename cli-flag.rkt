@@ -185,7 +185,6 @@
 (flag-out [-p --fetch-pkgdef-size] (cli-flag/unary XIDEN_FETCH_PKGDEF_SIZE_MB arg->value "mebibytes"))
 (flag-out [-d --fetch-timeout] (cli-flag/unary XIDEN_FETCH_TIMEOUT_MS arg->value "milliseconds"))
 (flag-out [-o --max-redirects] (cli-flag/unary XIDEN_DOWNLOAD_MAX_REDIRECTS arg->value "exact-nonnegative-integer"))
-(flag-out [+h ++host] (cli-flag/list XIDEN_CATALOGS "url-string"))
 (flag-out [-r --subprocess-timeout] (cli-flag/unary XIDEN_SUBPROCESS_TIMEOUT_S arg->value "positive"))
 (flag-out [--byte-encoding] (cli-flag/unary XIDEN_BYTE_ENCODING arg->value "byte-encoding"))
 (flag-out [--md] (cli-flag/unary XIDEN_MESSAGE_DIGEST_ALGORITHM arg->value "algorithm"))

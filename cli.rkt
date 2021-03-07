@@ -95,7 +95,6 @@
                             ++install-default
                             ++trust-public-key
                             ++input-override
-                            ++host
                             --fetch-total-size
                             --fetch-buffer-size
                             --fetch-pkgdef-size
@@ -255,8 +254,7 @@
        #:program "fetch"
        #:arg-help-strings '("source-expr")
        #:flags
-       (make-cli-flag-table ++host
-                            --fetch-total-size
+       (make-cli-flag-table --fetch-total-size
                             --fetch-buffer-size
                             --fetch-pkgdef-size
                             --fetch-timeout

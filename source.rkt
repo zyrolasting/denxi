@@ -54,7 +54,6 @@
            (-> tap/c exhaust/c (->* (source?) (exhaust/c) any))]
           [coerce-source (-> (or/c string? source?) source?)]
           [exhaust/c contract?]
-          [from-catalogs (->* (string?) ((listof string?)) (listof url-string?))]
           [fetch (-> source? tap/c exhaust/c any/c)]
           [identify (-> source? (or/c #f input-port?))]
           [logged-fetch (-> any/c source? tap/c logged?)]
@@ -245,12 +244,6 @@
        #'(path->string (path->complete-path user-path wrt)))]))
 
 
-(define (from-catalogs query-string [url-templates (XIDEN_CATALOGS)])
-  (let ([encoded (uri-encode query-string)])
-    (map (λ (url-string) (string-replace url-string "$QUERY" encoded))
-         url-templates)))
-
-
 (define (eval-untrusted-source-expression datum [ns (current-namespace)])
   (logged
    (λ (messages)
@@ -328,12 +321,6 @@
                (file-or-directory-identity (from-file "source.rkt"))
                (file-or-directory-identity (build-path (this-expression-source-directory)
                                                        (this-expression-file-name))))
-
-  (test-equal? "Expand URLs as a way to search for remote resources"
-    (from-catalogs "%cool beans"
-                   '("https://example.com?a=$QUERY" "http://example.com/$QUERY"))
-    '("https://example.com?a=%25cool%20beans"
-      "http://example.com/%25cool%20beans"))
 
 
   (test-true "Fetch from file"
