@@ -14,15 +14,8 @@
          output-not-found
          (struct-out package))
 
-
-(require racket/function
-         racket/format
+(require racket/format
          racket/list
-         version/utils
-         syntax/parse/define
-         "codec.rkt"
-         "contract.rkt"
-         "file.rkt"
          "input-info.rkt"
          "integrity.rkt"
          "localstate.rkt"
@@ -30,28 +23,25 @@
          "message.rkt"
          "monad.rkt"
          "pkgdef/static.rkt"
-         "path.rkt"
          "plugin.rkt"
          "port.rkt"
          "query.rkt"
          "racket-module.rkt"
          "racket-version.rkt"
          "rc.rkt"
-         "setting.rkt"
-         "signature.rkt"
          "source.rkt"
          "string.rkt"
          "system.rkt"
          "url.rkt"
-         "version.rkt"
          "workspace.rkt")
 
-
 (module+ test
-  (require rackunit
+  (require racket/function
+           rackunit
            (submod "file.rkt" test)
            (submod "logged.rkt" test)
            (submod "plugin.rkt" test)
+           "file.rkt"
            "setting.rkt"))
 
 

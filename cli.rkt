@@ -2,12 +2,9 @@
 
 ; Define primary entry point for the program.
 
-(require racket/path
-         racket/match
+(require racket/match
          racket/path
-         racket/runtime-path
          racket/sequence
-         (for-syntax racket/base)
          "cli-flag.rkt"
          "cmdline.rkt"
          "codec.rkt"

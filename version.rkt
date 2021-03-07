@@ -2,8 +2,8 @@
 
 ; Checks for editions/revisions
 
-(require "contract.rkt"
-         racket/format)
+(require racket/format
+         "contract.rkt")
 
 (provide (contract-out [revision-number? predicate/c]
                        [revision-number-string? predicate/c]

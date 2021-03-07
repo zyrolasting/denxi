@@ -2,7 +2,18 @@
 
 ; Operate on package definitions as a syntax objects or lists.
 
-(require "../contract.rkt")
+(require (for-syntax racket/base
+                     racket/match)
+         racket/match
+         "../codec.rkt"
+         "../contract.rkt"
+         "../logged.rkt"
+         "../openssl.rkt"
+         "../path.rkt"
+         "../query.rkt"
+         "../racket-module.rkt"
+         "../signature.rkt"
+         "../string.rkt")
 
 (provide (contract-out
           [PACKAGE_DEFINITION_MODULE_LANG symbol?]
@@ -74,23 +85,6 @@
                                           (or/c bytes? string?))))
                    any)
                any)]))
-
-
-(require (only-in racket/format ~s)
-         racket/list
-         racket/match
-         (for-syntax racket/base
-                     racket/match)
-         "../codec.rkt"
-         "../exn.rkt"
-         "../integrity.rkt"
-         "../logged.rkt"
-         "../openssl.rkt"
-         "../path.rkt"
-         "../query.rkt"
-         "../racket-module.rkt"
-         "../signature.rkt"
-         "../string.rkt")
 
 (define PACKAGE_DEFINITION_MODULE_LANG 'xiden/pkgdef)
 (define PACKAGE_DEFINITION_READER_LANG 'xiden)

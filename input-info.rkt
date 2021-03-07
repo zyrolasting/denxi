@@ -14,8 +14,8 @@
          "printer.rkt"
          "rc.rkt"
          "signature.rkt"
-         "string.rkt"
          "source.rkt"
+         "string.rkt"
          "workspace.rkt")
 
 (provide (struct-out input-info)

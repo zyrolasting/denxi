@@ -12,7 +12,6 @@
          "codec.rkt"
          "format.rkt"
          "logged.rkt"
-         "message.rkt"
          "printer.rkt")
 
 (define-runtime-path here "l10n")

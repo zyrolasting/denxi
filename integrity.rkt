@@ -2,7 +2,9 @@
 
 ; Verify integrity of bytes
 
-(require "contract.rkt")
+(require "contract.rkt"
+         "message.rkt"
+         "openssl.rkt")
 
 (provide (struct-out integrity-info)
          (contract-out
@@ -20,13 +22,6 @@
                any/c
                md-bytes-source/c
                $integrity?)]))
-
-(require racket/sequence
-         racket/format
-         "codec.rkt"
-         "file.rkt"
-         "message.rkt"
-         "openssl.rkt")
 
 (define+provide-message $integrity (ok? stage info))
 

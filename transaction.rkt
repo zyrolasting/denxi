@@ -9,8 +9,11 @@
 ; order: (a b c d).  This module does so in a transactional
 ; control flow.
 
-
-(require "contract.rkt")
+(require "cli-flag.rkt"
+         "contract.rkt"
+         "exn.rkt"
+         "logged.rkt"
+         "message.rkt")
 
 (provide
  (contract-out
@@ -23,14 +26,6 @@
    (-> (listof cli-flag-state?)
        (hash/c procedure? (-> any/c logged?))
        (listof (-> logged?)))]))
-
-
-(require "cli-flag.rkt"
-         "exn.rkt"
-         "logged.rkt"
-         "message.rkt"
-         "package.rkt")
-
 
 (define (transact actions commit rollback)
   (call/cc

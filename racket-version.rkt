@@ -27,8 +27,13 @@
 (define racket-version-ranges/c
   (listof racket-version-range/c))
 
+(require racket/contract
+         syntax/parse
+         version/utils
+         "exn.rkt"
+         "l10n.rkt"
+         "string.rkt")
 
-(require racket/contract)
 (provide racket-version-selection
          (contract-out
           [UNBOUNDED_RACKET_VERSION non-empty-string?]
@@ -50,14 +55,6 @@
            (-> valid-version?
                racket-version-ranges/c
                current-racket-version-relationship/c)]))
-
-
-(require syntax/parse
-         version/utils
-         "exn.rkt"
-         "l10n.rkt"
-         "string.rkt")
-
 
 (define-exn exn:fail:xiden:invalid-racket-version-interval exn:fail:xiden (lo hi))
 

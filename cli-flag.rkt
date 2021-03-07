@@ -15,7 +15,17 @@
 ; named after its corresponding setting.
 ;
 
-(require "contract.rkt")
+(require (for-syntax racket/base
+                     syntax/stx)
+         racket/cmdline
+         racket/format
+         racket/sandbox
+         "contract.rkt"
+         "l10n.rkt"
+         "pkgdef/static.rkt"
+         "rc.rkt"
+         "setting.rkt"
+         "string.rkt")
 
 (provide (struct-out cli-flag)
          (struct-out cli-flag-state)
@@ -36,15 +46,6 @@
            (-> (listof cli-flag-state?)
                (-> any)
                any)]))
-
-(require racket/cmdline
-         racket/format
-         racket/sandbox
-         "l10n.rkt"
-         "pkgdef/static.rkt"
-         "rc.rkt"
-         "setting.rkt"
-         "string.rkt")
 
 (struct cli-flag
   (setting kind additional-flag-strings arity convert help-strings)
@@ -157,7 +158,6 @@
 
 (define all-flags null)
 
-(require (for-syntax racket/base syntax/stx))
 (define-syntax (flag-out stx)
   (syntax-case stx ()
     [(_ [id alts ...] expr)

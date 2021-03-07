@@ -5,9 +5,7 @@
 (provide (all-defined-out)
          (all-from-out racket/path))
 
-(require racket/function
-         racket/list
-         racket/path
+(require racket/path
          racket/set)
 
 (define (../ path)

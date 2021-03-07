@@ -2,7 +2,11 @@
 
 ; Authenticate source of bytes.
 
-(require "contract.rkt")
+(require "contract.rkt"
+         "file.rkt"
+         "integrity.rkt"
+         "message.rkt"
+         "openssl.rkt")
 
 (define siginfo-variant/c (or/c bytes? string?))
 
@@ -27,19 +31,6 @@
                (or/c #f well-formed-signature-info/c)
                (or/c #f well-formed-integrity-info/c)
                $signature?)]))
-
-
-
-(require racket/sequence
-         racket/format
-         racket/port
-         "codec.rkt"
-         "file.rkt"
-         "integrity.rkt"
-         "message.rkt"
-         "openssl.rkt"
-         "url.rkt")
-
 
 (define+provide-message $signature (ok? stage public-key-path))
 

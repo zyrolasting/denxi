@@ -2,27 +2,26 @@
 
 ; Extract archives with minimal user involvement.
 
-(require racket/contract)
-
-(provide
- (contract-out
-  [extract (-> (or/c path-string? input-port?) (logged/c void?))]
-  [extract-input (->* (string?) (#:keep? any/c) logged?)]))
-
-(require racket/format
-         racket/match
-         racket/path
-         racket/string
-         file/tar
+(require file/tar
          file/untar
          file/untgz
          file/unzip
-         "file.rkt"
+         racket/contract
+         racket/file
+         racket/format
+         racket/match
+         racket/path
+         racket/string
          "input-info.rkt"
          "logged.rkt"
          "message.rkt"
          "monad.rkt"
          "plugin.rkt")
+
+(provide
+ (contract-out
+  [extract (-> (or/c path-string? input-port?) (logged/c void?))]
+  [extract-input (->* (string?) (#:keep? any/c) logged?)]))
 
 (define+provide-message $extract-report (status target))
 

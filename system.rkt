@@ -1,6 +1,12 @@
 #lang racket/base
 
-(require "contract.rkt")
+(require racket/generic
+         racket/port
+         racket/system
+         syntax/parse
+         "contract.rkt"
+         "logged.rkt"
+         "message.rkt")
 
 (provide (all-from-out racket/system)
          os-sym
@@ -15,14 +21,6 @@
                      #:stdin (or/c #f (and/c output-port? file-stream-port?)))
                     #:rest (listof path-string?)
                     logged?)]))
-
-
-(require racket/generic
-         racket/port
-         racket/system
-         syntax/parse
-         "logged.rkt"
-         "message.rkt")
 
 (define ALL_OS_SYMS '(unix windows macosx))
 

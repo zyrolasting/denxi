@@ -5,26 +5,19 @@
 (provide (all-defined-out)
          (all-from-out racket/file))
 
-(require racket/file
+(require file/glob
+         racket/file
          racket/format
          racket/function
          racket/generator
-         racket/list
-         racket/path
          racket/port
-         racket/set
          racket/sequence
-         file/glob
          "codec.rkt"
          "logged.rkt"
          "message.rkt"
          "path.rkt"
-         "query.rkt"
-         "setting.rkt"
-         "string.rkt"
          "url.rkt"
          "workspace.rkt")
-
 
 (define+provide-message $path-not-found (pattern wrt))
 

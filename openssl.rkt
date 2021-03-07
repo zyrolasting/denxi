@@ -1,6 +1,9 @@
 #lang racket/base
 
-(require "contract.rkt")
+(require racket/format
+         racket/port
+         "contract.rkt"
+         "exn.rkt")
 
 (provide run-openssl-command
          openssl
@@ -16,18 +19,6 @@
            (-> md-bytes-source/c
                md-algorithm/c
                bytes?)]))
-
-(require racket/file
-         racket/format
-         racket/function
-         racket/path
-         racket/port
-         racket/system
-         "contract.rkt"
-         "exn.rkt"
-         "query.rkt"
-         "string.rkt"
-         "url.rkt")
 
 (define-exn exn:fail:xiden:openssl exn:fail:xiden (exit-code output))
 

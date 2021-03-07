@@ -2,7 +2,12 @@
 
 ; Define a data type to match against package definitions.
 
-(require "contract.rkt")
+(require racket/function
+         racket/match
+         "contract.rkt"
+         "format.rkt"
+         "string.rkt"
+         "version.rkt")
 
 (provide (struct-out parsed-package-query)
          (contract-out
@@ -24,15 +29,6 @@
                                           (#:default-bounds boundary-flags-string?)
                                           (values revision-number?
                                                   revision-number?))]))
-
-
-(require racket/function
-         racket/match
-         "format.rkt"
-         "logged.rkt"
-         "message.rkt"
-         "string.rkt"
-         "version.rkt")
 
 (struct parsed-package-query
   (provider-name

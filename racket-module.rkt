@@ -2,7 +2,22 @@
 
 ; Logged procedures for static operations on Racket modules
 
-(require "contract.rkt")
+(require (only-in racket/exn
+                  exn->string)
+         (only-in racket/format
+                  ~s)
+         (only-in racket/function
+                  curry)
+         (only-in syntax/modread
+                  check-module-form
+                  with-module-reading-parameterization)
+         syntax/parse
+         "contract.rkt"
+         "input-info.rkt"
+         "logged.rkt"
+         "message.rkt"
+         "monad.rkt"
+         "system.rkt")
 
 (provide
  (struct-out bare-racket-module)
@@ -27,28 +42,6 @@
                [keep-standalone-racket-module
                 (->* (string?) (#:compile-with (or/c path-string? #f))
                      logged?)]))
-
-
-
-(require (only-in racket/exn exn->string)
-         (only-in racket/format ~s)
-         (only-in racket/function curry)
-         (only-in racket/match match)
-         (only-in syntax/modread
-                  check-module-form
-                  with-module-reading-parameterization)
-         syntax/parse
-         "codec.rkt"
-         "integrity.rkt"
-         "input-info.rkt"
-         "logged.rkt"
-         "message.rkt"
-         "monad.rkt"
-         "path.rkt"
-         "signature.rkt"
-         "string.rkt"
-         "system.rkt")
-
 
 (define+provide-message $racket-module-read-error $message (variant reason context))
 

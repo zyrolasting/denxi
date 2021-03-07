@@ -1,10 +1,8 @@
 #lang racket/base
 
-(require racket/contract
-         racket/function
+(require racket/function
          racket/match
          "format.rkt"
-         "message.rkt"
          "path.rkt"
          "plugin.rkt"
          "query.rkt"

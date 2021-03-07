@@ -14,7 +14,27 @@
 ; never include user input in any string processing here, and
 ; never provide */unsafe procedures from this module.
 
-(require racket/contract)
+(require (for-syntax racket/base
+                     racket/string
+                     racket/syntax)
+         db
+         racket/contract
+         racket/function
+         racket/generic
+         racket/match
+         racket/sequence
+         racket/vector
+         "codec.rkt"
+         "file.rkt"
+         "format.rkt"
+         "message.rkt"
+         "openssl.rkt"
+         "path.rkt"
+         "port.rkt"
+         "query.rkt"
+         "string.rkt"
+         "version.rkt"
+         "workspace.rkt")
 
 ; Provided ids include relation structs. See use of define-relation.
 (provide (struct-out record)
@@ -84,33 +104,6 @@
            (-> record? void?)]
           [make-addressable-link
            (-> path-record? path-string? path-record?)]))
-
-
-(require (for-syntax racket/base
-                     racket/string
-                     racket/syntax
-                     syntax/stx)
-         racket/function
-         racket/generic
-         racket/list
-         racket/match
-         racket/sequence
-         racket/stream
-         racket/vector
-         db
-         "codec.rkt"
-         "exn.rkt"
-         "file.rkt"
-         "format.rkt"
-         "message.rkt"
-         "openssl.rkt"
-         "path.rkt"
-         "port.rkt"
-         "query.rkt"
-         "string.rkt"
-         "version.rkt"
-         "workspace.rkt")
-
 
 (define+provide-message $finished-collecting-garbage (bytes-recovered))
 

@@ -4,24 +4,24 @@
 ; and a less-privileged runtime.  This is not a substitute for
 ; OS-level security.
 
-(require "message.rkt")
-(provide restrict)
-(define+provide-message $restrict (name))
-(define+provide-message $restrict:operation $restrict (reporting-guard summary args))
-(define+provide-message $restrict:budget $restrict (kind amount))
-
-(require racket/exn
+(require (only-in net/url-connect
+                  current-https-protocol)
+         racket/exn
          racket/function
          racket/list
-         (only-in net/url-connect current-https-protocol)
          "codec.rkt"
-         "logged.rkt"
          "integrity.rkt"
          "message.rkt"
          "openssl.rkt"
          "path.rkt"
          "port.rkt"
          "workspace.rkt")
+
+(provide restrict)
+
+(define+provide-message $restrict (name))
+(define+provide-message $restrict:operation $restrict (reporting-guard summary args))
+(define+provide-message $restrict:budget $restrict (kind amount))
 
 (define (restrict halt
                   proc

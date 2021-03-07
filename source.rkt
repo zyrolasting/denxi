@@ -2,8 +2,26 @@
 
 ; Define methods for fetching bytes
 
-(require "contract.rkt"
-         "message.rkt")
+(require (for-syntax racket/base
+                     syntax/location
+                     syntax/parse)
+         net/head
+         (only-in net/uri-codec
+                  uri-encode)
+         racket/exn
+         racket/generic
+         racket/match
+         racket/path
+         "contract.rkt"
+         "format.rkt"
+         "logged.rkt"
+         "message.rkt"
+         "openssl.rkt"
+         "plugin.rkt"
+         "port.rkt"
+         "rc.rkt"
+         "string.rkt"
+         "url.rkt")
 
 ; This procedure acts as an interface between a specific method (HTTP,
 ; File read, etc.) and the part of Xiden that reads an estimated number
@@ -51,26 +69,6 @@
 
 ;-----------------------------------------------------------------------
 ; Implementation
-
-(require (for-syntax racket/base
-                     syntax/location
-                     syntax/parse)
-         (only-in net/uri-codec uri-encode)
-         racket/exn
-         racket/generic
-         racket/match
-         racket/path
-         net/head
-         "format.rkt"
-         "logged.rkt"
-         "message.rkt"
-         "openssl.rkt"
-         "plugin.rkt"
-         "port.rkt"
-         "rc.rkt"
-         "string.rkt"
-         "url.rkt")
-
 
 (define (logged-fetch id source p)
   (logged

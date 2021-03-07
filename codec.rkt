@@ -2,10 +2,10 @@
 
 ; Decode and encode byte strings with prescribed algorithms.
 
-(require racket/contract
-         racket/string
-         file/sha1
+(require file/sha1
          net/base64
+         racket/contract
+         racket/string
          "rfc4648.rkt")
 
 (define abbreviated-decode-procedure/c

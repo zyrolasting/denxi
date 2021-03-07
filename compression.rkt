@@ -2,9 +2,9 @@
 
 ; Encapsulate byte (de)compression algorithms
 
-(require racket/contract
+(require file/gunzip
          file/gzip
-         file/gunzip
+         racket/contract
          "exn.rkt")
 
 (provide (contract-out [compress   (->* (input-port? output-port?) (exact-integer?) void?)]

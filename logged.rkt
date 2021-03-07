@@ -3,7 +3,17 @@
 ; Define a monadic type that combines a single value with logged
 ; messages.
 
-(require "contract.rkt")
+(require (for-syntax racket/base)
+         racket/generator
+         racket/list
+         racket/sequence
+         racket/set
+         "contract.rkt"
+         "exn.rkt"
+         "format.rkt"
+         "message.rkt"
+         "monad.rkt")
+
 (provide (struct-out logged)
          SUCCESS
          FAILURE
@@ -34,16 +44,6 @@
            (-> logged?
                (-> $message? $message?)
                logged?)]))
-
-(require racket/list
-         racket/generator
-         racket/sequence
-         racket/set
-         "exn.rkt"
-         "format.rkt"
-         "message.rkt"
-         "monad.rkt"
-         (for-syntax racket/base))
 
 (define SUCCESS (string->uninterned-symbol "SUCCESS"))
 (define FAILURE (string->uninterned-symbol "FAILURE"))

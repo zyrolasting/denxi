@@ -3,7 +3,17 @@
 ; Extend racket/cmdline. cli.rkt defines the CLI in terms of this
 ; module.
 
-(require "contract.rkt")
+(require racket/cmdline
+         racket/vector
+         "cli-flag.rkt"
+         "contract.rkt"
+         "format.rkt"
+         "logged.rkt"
+         "message.rkt"
+         "printer.rkt"
+         "rc.rkt"
+         "setting.rkt"
+         "workspace.rkt")
 
 (define exit-code/c (integer-in 0 255))
 (define exit-handler/c (-> exit-code/c any))
@@ -30,21 +40,6 @@
                argument-parser/c
                exit-handler/c
                any)]))
-
-(require racket/cmdline
-         racket/list
-         racket/vector
-         "cli-flag.rkt"
-         "format.rkt"
-         "logged.rkt"
-         "message.rkt"
-         "monad.rkt"
-         "printer.rkt"
-         "rc.rkt"
-         "setting.rkt"
-         "string.rkt"
-         "workspace.rkt")
-
 
 (define+provide-message $cli $message ())
 (define+provide-message $cli:undefined-command $cli (command))

@@ -2,7 +2,19 @@
 
 ; Define runtime configuration.
 
-(require "contract.rkt")
+(require racket/function
+         racket/path
+         racket/sandbox
+         "codec.rkt"
+         "contract.rkt"
+         "file.rkt"
+         "integrity.rkt"
+         "openssl.rkt"
+         "setting.rkt"
+         "string.rkt"
+         "url.rkt"
+         "workspace.rkt")
+
 (provide
  (contract-out
   [call-with-rcfile
@@ -11,24 +23,6 @@
    (hash/c symbol? setting? #:immutable #t)]
   [dump-xiden-settings
    (-> (hash/c symbol? any/c))]))
-
-
-(require racket/file
-         racket/function
-         racket/match
-         racket/path
-         racket/sandbox
-         (only-in racket/tcp listen-port-number?)
-         "codec.rkt"
-         "exn.rkt"
-         "file.rkt"
-         "integrity.rkt"
-         "message.rkt"
-         "openssl.rkt"
-         "setting.rkt"
-         "string.rkt"
-         "url.rkt"
-         "workspace.rkt")
 
 (define current-xiden-rcfile-cache (make-parameter void))
 

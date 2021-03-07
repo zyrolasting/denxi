@@ -2,24 +2,21 @@
 
 ; Write $message instances to ports
 
-(require "contract.rkt")
+(require racket/fasl
+         racket/list
+         racket/pretty
+         racket/serialize
+         "contract.rkt"
+         "format.rkt"
+         "logged.rkt"
+         "message.rkt"
+         "rc.rkt")
 
 (provide (contract-out
           [write-message-log
            (-> messy-log/c message-formatter/c void?)]
           [write-message
            (->* ($message?) (#:newline? any/c message-formatter/c output-port?) void?)]))
-
-(require racket/date
-         racket/fasl
-         racket/list
-         racket/match
-         racket/pretty
-         racket/serialize
-         "format.rkt"
-         "logged.rkt"
-         "message.rkt"
-         "rc.rkt")
 
 (define+provide-message $verbose (message))
 

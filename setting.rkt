@@ -4,7 +4,10 @@
 ; from several configuration sources. Protect each setting with a
 ; contract.
 
-(require "contract.rkt")
+(require (for-syntax racket/base
+                     syntax/parse)
+         "contract.rkt")
+
 (provide (struct-out setting)
          define-setting
          (contract-out
@@ -14,15 +17,6 @@
                      (listof (cons/c setting? any/c)))
                (-> any)
                any)]))
-
-
-(require (for-syntax racket/base
-                     racket/syntax
-                     syntax/parse
-                     syntax/stx)
-         "string.rkt"
-         "url.rkt")
-
 
 (struct setting (id valid? parameter derived-parameter)
   #:property prop:procedure
