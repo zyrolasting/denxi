@@ -295,11 +295,14 @@ Like @racket[first-available-source], but each string argument is
 coerced to a source using @racket[coerce-source].
 }
 
-@defproc[(coerce-source [variant (or/c string? source?)]) source?]{
-Returns @racket[variant] if it is already a @tech{source}.
+@defproc[(coerce-source [variant (or/c bytes? string? source?)]) source?]{
+Returns a @tech{source} depending on the type of @racket[variant].
 
-Otherwise, returns @racket[(string->source variant)] in terms of the
-@tech{plugin}.
+If @racket[variant] is a @tech{source}, then the returned value is
+@racket[variant].  If @racket[variant] is a string, then the returned
+value is @racket[(string->source variant)] in terms of the
+@tech{plugin}. If @racket[variant] is a byte string, then the returned
+value is @racket[(byte-source variant)].
 }
 
 

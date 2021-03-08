@@ -52,7 +52,7 @@
          (contract-out
           [bind-recursive-fetch
            (-> tap/c exhaust/c (->* (source?) (exhaust/c) any))]
-          [coerce-source (-> (or/c string? source?) source?)]
+          [coerce-source (-> (or/c bytes? string? source?) source?)]
           [exhaust/c contract?]
           [fetch (-> source? tap/c exhaust/c any/c)]
           [identify (-> source? (or/c #f input-port?))]
@@ -218,19 +218,25 @@
 
 (define empty-source (byte-source #""))
 
+
 (define (default-string->source s)
   (if (file-exists? s)
       (file-source s)
       (with-handlers ([values exhausted-source])
         (http-source s))))
 
+
 (define (coerce-source s)
-  ((if (string? s)
-       (plugin-ref 'string->source default-string->source)
-       values) s))
+  (cond [(string? s)
+         ((plugin-ref 'string->source default-string->source) s)]
+        [(bytes? s)
+         (byte-source s)]
+        [(source? s) s]))
+
 
 (define (sources . variants)
   (first-available-source (map coerce-source variants) null))
+
 
 (define-syntax (from-file stx)
   (syntax-parse stx
@@ -303,6 +309,10 @@
 
   (test-tap "Return exact bytes with a byte-source"
             (byte-source #"abc")
+            #"abc")
+
+  (test-tap "Coerce exact bytes to a byte-source"
+            (coerce-source #"abc")
             #"abc")
 
   (test-tap "Allow combining sources"
