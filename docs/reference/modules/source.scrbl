@@ -83,6 +83,9 @@ other systems to compute cache keys and avoid unnecessary calls to
 then that source cannot be identified.
 }
 
+@defthing[source-variant? predicate/c]{
+Returns @racket[#t] if the sole argument is suitable for use in @racket[coerce-source].
+}
 
 @deftogether[(
 @defproc[(logged-fetch [id any/c] [source source?] [tap tap/c]) logged?]
@@ -295,7 +298,7 @@ Like @racket[first-available-source], but each string argument is
 coerced to a source using @racket[coerce-source].
 }
 
-@defproc[(coerce-source [variant (or/c bytes? string? source?)]) source?]{
+@defproc[(coerce-source [variant source-variant?]) source?]{
 Returns a @tech{source} depending on the type of @racket[variant].
 
 If @racket[variant] is a @tech{source}, then the returned value is

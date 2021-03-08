@@ -52,13 +52,14 @@
          (contract-out
           [bind-recursive-fetch
            (-> tap/c exhaust/c (->* (source?) (exhaust/c) any))]
-          [coerce-source (-> (or/c bytes? string? source?) source?)]
+          [coerce-source (-> source-variant? source?)]
           [exhaust/c contract?]
           [fetch (-> source? tap/c exhaust/c any/c)]
           [identify (-> source? (or/c #f input-port?))]
           [logged-fetch (-> any/c source? tap/c logged?)]
           [make-source-key (-> source? (or/c bytes? #f))]
           [source? predicate/c]
+          [source-variant? flat-contract?]
           [sources (->* () #:rest (listof (or/c string? source?)) source?)]
           [tap/c contract?]
           [eval-untrusted-source-expression
@@ -102,6 +103,11 @@
   [fetch source tap fail]
   ; source? -> input-port?
   [identify source])
+
+
+(define source-variant?
+  (or/c bytes? string? source?))
+
 
 (define (make-source-key src)
   (define id (identify src))
@@ -302,6 +308,13 @@
     (test-equal? msg
                  (fetch src run-tap void)
                  expected))
+
+  (test-case "Identify source variant types"
+    (check-true (source-variant? #""))
+    (check-true (source-variant? ""))
+    (check-true (source-variant? (byte-source #"")))
+    (check-false (source-variant? '(#"")))
+    (check-false (source-variant? 1)))
 
   (test-pred "Always fail using exhausted-source"
              void?
