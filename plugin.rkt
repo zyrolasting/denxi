@@ -15,10 +15,10 @@
    (-> symbol? (-> any/c) (-> exn? any) any/c)]))
 
 (require (only-in racket/function const)
-         "rc.rkt")
+         "strict-rc.rkt")
 
 (define (load-from-plugin key fail-thunk on-load-failure)
-  (define maybe-path (XIDEN_PLUGIN_MODULE))
+  (define maybe-path (rc-ref 'XIDEN_PLUGIN_MODULE))
   (if maybe-path
       (with-handlers ([exn:fail? on-load-failure])
         (dynamic-require (if (string? maybe-path)
@@ -43,7 +43,7 @@
     (dynamic-wind void
                   (λ ()
                     (write-to-file #:exists 'truncate/replace plugin plugin-path)
-                    (XIDEN_PLUGIN_MODULE plugin-path proc))
+                    (rc-rebind 'XIDEN_PLUGIN_MODULE plugin-path proc))
                   (λ ()
                     (delete-file plugin-path))))
 
@@ -52,7 +52,7 @@
   (test-exn "Handle plugin load failures"
             exn:fail:filesystem?
             (λ ()
-              (XIDEN_PLUGIN_MODULE wont-load
+              (rc-rebind 'XIDEN_PLUGIN_MODULE wont-load
                (λ ()
                  (load-from-plugin 'whatever
                                    (λ () (fail "Wrong fail thunk called"))

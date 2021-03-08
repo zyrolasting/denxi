@@ -10,7 +10,8 @@
          "format.rkt"
          "logged.rkt"
          "message.rkt"
-         "rc.rkt")
+         "strict-rc.rkt")
+
 
 (provide (contract-out
           [write-message-log
@@ -22,7 +23,7 @@
 
 (define (filter-output m)
   (if ($verbose? m)
-      (and (XIDEN_VERBOSE)
+      (and (rc-ref 'XIDEN_VERBOSE)
            ($verbose-message m))
       m))
 
@@ -46,13 +47,13 @@
   (when maybe-message
     (parameterize ([current-output-port out])
       (define to-send
-        (if (XIDEN_READER_FRIENDLY_OUTPUT)
+        (if (rc-ref 'XIDEN_READER_FRIENDLY_OUTPUT)
             maybe-message
             (formatter maybe-message)))
 
-      (if (XIDEN_FASL_OUTPUT)
+      (if (rc-ref 'XIDEN_FASL_OUTPUT)
           (s-exp->fasl (serialize to-send) (current-output-port))
-          (if (XIDEN_READER_FRIENDLY_OUTPUT)
+          (if (rc-ref 'XIDEN_READER_FRIENDLY_OUTPUT)
               (pretty-write #:newline? newline? to-send)
               ((if newline? displayln display) to-send)))
       (flush-output))))
@@ -89,7 +90,7 @@
                dummy
                #px"Testing: Blah")
 
-  (XIDEN_READER_FRIENDLY_OUTPUT #t
+  (rc-rebind 'XIDEN_READER_FRIENDLY_OUTPUT #t
     (λ ()
       (test-output "Allow reader-friendly output"
                    dummy
@@ -97,7 +98,7 @@
                     (λ (o)
                       (pretty-write #:newline? #t dummy o))))
 
-      (XIDEN_FASL_OUTPUT #t
+      (rc-rebind 'XIDEN_FASL_OUTPUT #t
         (λ ()
           (test-case "Allow FASL output"
             (define in
@@ -109,14 +110,15 @@
                           dummy))))))
 
   (test-case "Control verbose output"
-    (XIDEN_VERBOSE #f
+    (rc-rebind 'XIDEN_VERBOSE #f
       (λ ()
         (test-output "Opt out of verbose output"
                      ($verbose dummy)
                      #"")))
 
-    (parameterize ([(setting-derived-parameter XIDEN_VERBOSE) #t]
-                   [(setting-derived-parameter XIDEN_READER_FRIENDLY_OUTPUT) #t])
-      (test-output "Opt into verbose output"
-                   ($verbose dummy)
-                   #px"\\$show-string"))))
+    (rc-rebind 'XIDEN_VERBOSE #t
+               (λ () (rc-rebind 'XIDEN_READER_FRIENDLY_OUTPUT #t
+                                (λ ()
+                                  (test-output "Opt into verbose output"
+                                               ($verbose dummy)
+                                               #px"\\$show-string")))))))

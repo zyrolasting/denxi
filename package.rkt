@@ -28,8 +28,8 @@
          "query.rkt"
          "racket-module.rkt"
          "racket-version.rkt"
-         "rc.rkt"
          "source.rkt"
+         "strict-rc.rkt"
          "string.rkt"
          "system.rkt"
          "url.rkt"
@@ -95,12 +95,12 @@
   (struct-copy package empty-package fields ...))
 
 (define (install link-path-or-#f output-name-or-#f package-definition-source)
-  (mdo pkg := (get-package #:override-specs (XIDEN_INPUT_OVERRIDES)
+  (mdo pkg := (get-package #:override-specs (rc-ref 'XIDEN_INPUT_OVERRIDES)
                            #:before-new-package (load-plugin-override)
                            package-definition-source
-                           (mebibytes->bytes (XIDEN_FETCH_PKGDEF_SIZE_MB)))
+                           (mebibytes->bytes (rc-ref 'XIDEN_FETCH_PKGDEF_SIZE_MB)))
 
-       (fulfil-package-output #:allow-unsupported-racket? (XIDEN_ALLOW_UNSUPPORTED_RACKET)
+       (fulfil-package-output #:allow-unsupported-racket? (rc-ref 'XIDEN_ALLOW_UNSUPPORTED_RACKET)
                               (or output-name-or-#f DEFAULT_STRING)
                               (or link-path-or-#f (package-name pkg))
                               pkg)

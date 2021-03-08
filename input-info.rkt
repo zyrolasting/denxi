@@ -12,9 +12,9 @@
          "monad.rkt"
          "port.rkt"
          "printer.rkt"
-         "rc.rkt"
          "signature.rkt"
          "source.rkt"
+         "strict-rc.rkt"
          "string.rkt"
          "workspace.rkt")
 
@@ -121,9 +121,9 @@
                 (λ (in est-size)
                   (make-addressable-file
                    #:cache-key (make-source-key (input-info-source info))
-                   #:max-size (mebibytes->bytes (XIDEN_FETCH_TOTAL_SIZE_MB))
-                   #:buffer-size (mebibytes->bytes (XIDEN_FETCH_BUFFER_SIZE_MB))
-                   #:timeout-ms (XIDEN_FETCH_TIMEOUT_MS)
+                   #:max-size (mebibytes->bytes (rc-ref 'XIDEN_FETCH_TOTAL_SIZE_MB))
+                   #:buffer-size (mebibytes->bytes (rc-ref 'XIDEN_FETCH_BUFFER_SIZE_MB))
+                   #:timeout-ms (rc-ref 'XIDEN_FETCH_TIMEOUT_MS)
                    #:on-status (make-on-status (current-message-formatter))
                    (input-info-name info)
                    in est-size))))
@@ -149,7 +149,7 @@
 
 (define (check-input-integrity input file-record messages)
   (define status
-    (check-integrity #:trust-bad-digest (XIDEN_TRUST_BAD_DIGEST)
+    (check-integrity #:trust-bad-digest (rc-ref 'XIDEN_TRUST_BAD_DIGEST)
                      (input-info-integrity input)
                      (build-workspace-path (path-record-path file-record))))
 
@@ -177,14 +177,14 @@
         "/nowhere"))
 
   (define trust-public-key?
-    (if (XIDEN_TRUST_ANY_PUBLIC_KEY)
+    (if (rc-ref 'XIDEN_TRUST_ANY_PUBLIC_KEY)
         (λ (p) #t)
-        (bind-trust-list (XIDEN_TRUSTED_PUBLIC_KEYS))))
+        (bind-trust-list (rc-ref 'XIDEN_TRUSTED_PUBLIC_KEYS))))
 
   (define status
     (check-signature #:public-key-path public-key-path
-                     #:trust-unsigned (XIDEN_TRUST_UNSIGNED)
-                     #:trust-bad-digest (XIDEN_TRUST_BAD_DIGEST)
+                     #:trust-unsigned (rc-ref 'XIDEN_TRUST_UNSIGNED)
+                     #:trust-bad-digest (rc-ref 'XIDEN_TRUST_BAD_DIGEST)
                      #:trust-public-key? trust-public-key?
                      siginfo
                      intinfo))

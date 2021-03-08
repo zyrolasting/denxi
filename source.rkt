@@ -19,7 +19,7 @@
          "openssl.rkt"
          "plugin.rkt"
          "port.rkt"
-         "rc.rkt"
+         "strict-rc.rkt"
          "string.rkt"
          "url.rkt")
 
@@ -191,7 +191,7 @@
                (http-source [request-url (or/c url? url-string?)])
   (with-handlers ([exn? %fail])
     (define-values (in headers-string)
-      (get-pure-port/headers #:redirections (XIDEN_DOWNLOAD_MAX_REDIRECTS)
+      (get-pure-port/headers #:redirections (rc-ref 'XIDEN_DOWNLOAD_MAX_REDIRECTS)
                              #:method #"GET"
                              (if (url? request-url)
                                  request-url
