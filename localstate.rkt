@@ -586,7 +586,7 @@
             (rename-file-or-directory tmp path #t)
             (define path-record (declare-path (find-relative-path (workspace-directory) path) digest))
             (when cache-key
-              (gen-save (path-key-record cache-key (record-id path-record))))
+              (gen-save (path-key-record #f cache-key (record-id path-record))))
 
             path-record)
           (λ () (close-input-port in))))))
