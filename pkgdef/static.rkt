@@ -1,6 +1,6 @@
 #lang racket/base
 
-; Operate on package definitions as a syntax objects or lists.
+; Operate on package definitions as syntax objects or lists.
 
 (require (for-syntax racket/base
                      racket/match)
