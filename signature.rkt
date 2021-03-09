@@ -5,24 +5,25 @@
 (require "contract.rkt"
          "file.rkt"
          "integrity.rkt"
+         "localstate.rkt"
          "message.rkt"
-         "openssl.rkt")
-
-(define siginfo-variant/c (or/c bytes? string?))
+         "openssl.rkt"
+         "source.rkt"
+         "strict-rc.rkt"
+         "workspace.rkt")
 
 (provide (struct-out signature-info)
          (contract-out
           [make-signature-bytes
            (-> bytes? path-string? (or/c #f path-string?) bytes?)]
-          [siginfo-variant/c flat-contract?]
           [signature
-           (-> siginfo-variant/c
-               siginfo-variant/c
+           (-> source-variant?
+               source-variant?
                signature-info?)]
           [well-formed-signature-info/c
            flat-contract?]
-          [get-public-key-path
-           (-> siginfo-variant/c path?)]
+          [fetch-signature-payload
+           (-> source-variant? exhaust/c path-string?)]
           [check-signature
            (-> #:trust-public-key? (-> path-string? any/c)
                #:public-key-path path-string?
@@ -40,13 +41,10 @@
 
 (define well-formed-signature-info/c
   (struct/c signature-info
-            siginfo-variant/c
-            siginfo-variant/c))
+            source-variant?
+            source-variant?))
 
-(define ESTIMATED_SIGNATURE_AND_PUBKEY_MAX_SIZE (* 100 1024))
-
-(define (get-public-key-path variant)
-  (get-cached-file* variant ESTIMATED_SIGNATURE_AND_PUBKEY_MAX_SIZE))
+(define MAX_EXPECTED_SIGNATURE_PAYLOAD_LENGTH 1024)
 
 (define (verify-signature digest public-key-path signature-variant)
   (with-handlers ([exn:fail:xiden:openssl?
@@ -60,7 +58,7 @@
      (run-openssl-command (open-input-bytes digest)
                           "pkeyutl"
                           "-verify"
-                          "-sigfile" (get-cached-file* signature-variant ESTIMATED_SIGNATURE_AND_PUBKEY_MAX_SIZE)
+                          "-sigfile" (fetch-signature-payload signature-variant raise)
                           "-pubin"
                           "-inkey" public-key-path))))
 
@@ -76,6 +74,25 @@
              (append base-args
                      (list "-passin" (format "file:~a" password-path)))
              base-args)))
+
+
+
+(define (fetch-signature-payload source-variant exhaust)
+  (let ([source (coerce-source source-variant)])
+    (fetch source
+           (λ (in est-size)
+             (build-workspace-path
+              (path-record-path
+               (make-addressable-file
+                #:cache-key (make-source-key source)
+                #:max-size MAX_EXPECTED_SIGNATURE_PAYLOAD_LENGTH
+                #:buffer-size MAX_EXPECTED_SIGNATURE_PAYLOAD_LENGTH
+                #:timeout-ms (rc-ref 'XIDEN_FETCH_TIMEOUT_MS)
+                #:on-status void
+                "_"
+                in
+                est-size))))
+           exhaust)))
 
 
 ; ------------------------------------------------------------------------------
@@ -213,7 +230,7 @@
                                (make-digest pubkey-bytes 'sha384)))))
 
       (define-values (public-key-path s)
-        (consider-public-key-trust #:public-key-path (get-public-key-path (signature-info-pubkey siginfo))
+        (consider-public-key-trust #:public-key-path (fetch-signature-payload (signature-info-pubkey siginfo) void)
                                    #:trust-public-key? trust-public-key? siginfo values))
 
       (check-pred file-exists? public-key-path)

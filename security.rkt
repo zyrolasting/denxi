@@ -229,7 +229,7 @@
   (define-runtime-path here ".")
 
   (test-case "Build executable trust profiles"
-    (define my-file  "security.rkt")
+    (define my-file "security.rkt")
     (define my-path (build-path here my-file))
     (define other-path (build-path here "main.rkt"))
 

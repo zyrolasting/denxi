@@ -5,7 +5,8 @@
                     racket/contract
                     xiden/message
                     xiden/integrity
-                    xiden/signature]]
+                    xiden/signature
+                    xiden/source]]
 
 @title{Signature Checking}
 
@@ -25,42 +26,32 @@ Specifically, it reads @italic{unencoded} bytes for a message digest
 (a.k.a. content hash) and verifies a signature from a signature file
 (@tt{SIGFILE}) and a public key file (@tt{PUBKEY}).
 
-This implies that Xiden accepts any format OpenSSL does for
-the signature and public key, but the cipher algorithm used to create
-the signature must support the message digest algorithm used to create
-the digest.
+This implies that Xiden accepts any format OpenSSL does for the
+signature and public key, but the cipher algorithm used to create the
+signature must support the message digest algorithm used to create the
+digest. Xiden does not check if this invariant holds, and will forward
+any errors raised by OpenSSL.
 
 If you create a signature and cannot seem to pass the signature check,
 make sure that you are actually signing the raw bytes for a message
-digest because that's what Xiden checks against. If you use
-a command like @litchar{openssl dgst -sign ...}, then you would be
+digest, not an encoded form of that digest. For example, if you use a
+command like @litchar{openssl dgst -sign ...}, then you would be
 signing an ANS.1-encoded digest. Use @litchar{openssl pkeyutl -binary
-...} instead.
+...}  instead.
+
+In the event a cipher algorithm is compromised, then Xiden will adapt
+by using different OpenSSL commands. The interface documented in this
+section is not expected to change for that reason.
 
 
 @section{Signature Check Bindings}
 
-@defthing[siginfo-variant/c flat-contract? #:value (or/c bytes? string?)]{
-In the context of signature checking, a public key or signature
-can be expressed using a variant value type.
-
-A byte string is used as-is for verfication. This allows you to pass a
-public key or signature as raw bytes directly into a signature check.
-
-@racketblock[(signature-info #"-----BEGIN PUBLIC KEY-----\nMIIBIjAN..." #"*&\2...")]
-
-A Racket string is instead treated as a @tech{source}, so that the
-bytes can be fetched from elsewhere.
-
-@racketblock[(signature-info "https://example.com/public.pem" (from-file "local.sign"))]
-}
-
-@defstruct*[signature-info ([pubkey siginfo-variant/c] [body siginfo-variant/c])]{
+@defstruct*[signature-info ([pubkey source-variant?] [body source-variant?])]{
 Holds an expression of a public key file and the bytes of a signature
 created using a private key.
 }
 
-@defproc[(signature [pubkey siginfo-variant/c] [body siginfo-variant/c]) signature-info?]{
+@defproc[(signature [pubkey source-variant?] [body source-variant?]) signature-info?]{
 An abbreviated @racket[signature-info] constructor for use in @tech{package definitions}.
 }
 
@@ -68,8 +59,15 @@ An abbreviated @racket[signature-info] constructor for use in @tech{package defi
 Recognizes an instance of @racket[signature-info] that is suitable for use in signature checking.
 }
 
-@defproc[(get-public-key-path [variant (or/c string? bytes?)]) path?]{
-Returns a @tech{workspace}-relative path to a public key file. The file may be cached.
+@defproc[(fetch-signature-payload [src source-variant?] [exhaust exhaust/c]) any/c]{
+Like @racket[fetch], except the return value is a path to a possibly
+cached file of limited size, or the value returned from
+@racket[exhaust].
+
+In practice, the file is expected to contain either a public key or a
+signature.  In any case, the file is expected to respect the
+invariants of the OpenSSL command documented at the beginning of this
+section.
 }
 
 @defproc[(check-signature [#:trust-public-key? trust-public-key? (-> path-string? any/c)]

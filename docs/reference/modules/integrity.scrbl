@@ -5,7 +5,8 @@
                     xiden/message
                     xiden/integrity
                     xiden/openssl
-                    xiden/rc]
+                    xiden/rc
+                    xiden/source]
          racket/format
          xiden/integrity
          @for-syntax[racket/base]
@@ -16,7 +17,7 @@
 @defmodule[xiden/integrity]
 
 
-@defstruct*[integrity-info ([algorithm md-algorithm/c] [digest bytes?])]{
+@defstruct*[integrity-info ([algorithm md-algorithm/c] [digest source-variant?])]{
 Represents integrity information for bytes. Given bytes from some
 source, the bytes pass an @tech{integrity check} if they, when applied to
 @racket[algorithm], produce a value @racket[equal?] to
@@ -32,7 +33,7 @@ not verify if the digest length is appropriate for the algorithm.
 }
 
 
-@defproc[(check-integrity [#:trust-bad-digest trust-bad-digest any/c] [intinfo (or/c #f integrity-info?)] [variant md-bytes-source/c]) $integrity?]{
+@defproc[(check-integrity [#:trust-bad-digest trust-bad-digest any/c] [intinfo (or/c #f integrity-info?)] [variant source-variant?]) $integrity?]{
 Performs an @deftech{integrity check}. See @racket[$integrity].
 
 If @racket[trust-bad-digest] is a true value, the integrity check
@@ -68,4 +69,11 @@ Returns a procedure @racket[P], such that @racket[(P
 "/path/to/file")] (for example) is @racket[#t] if the given file
 passes an @tech{integrity check} for one of the
 @racket[integrity-info] structures in @racket[trusted].
+}
+
+@defproc[(make-sourced-digest [variant source-variant]
+                              [algorithm md-algorithm/c]
+                              [exhaust exhaust/c raise]) bytes?]{
+Like @racket[make-digest], except the digest is produced using bytes
+@tech{tapped} from @racket[variant] using @racket[fetch].
 }

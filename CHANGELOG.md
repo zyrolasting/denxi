@@ -24,6 +24,8 @@ This project follows [these versioning rules](https://sagegerard.com/edition-rev
 - Add `fetch` command
 - Simplify `mkinput` command
 - Support source-level caching
+- Allow integrity and signature information to use sources
+
 
 ## [draft:alpha] - 2020-08-02
 

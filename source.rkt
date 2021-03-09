@@ -14,14 +14,17 @@
          racket/path
          "contract.rkt"
          "format.rkt"
+         "localstate.rkt"
          "logged.rkt"
          "message.rkt"
          "openssl.rkt"
          "plugin.rkt"
          "port.rkt"
+         "printer.rkt"
          "strict-rc.rkt"
          "string.rkt"
          "url.rkt")
+
 
 ; This procedure acts as an interface between a specific method (HTTP,
 ; File read, etc.) and the part of Xiden that reads an estimated number
@@ -106,7 +109,7 @@
 
 
 (define source-variant?
-  (or/c bytes? string? source?))
+  (or/c bytes? path? string? source?))
 
 
 (define (make-source-key src)
@@ -237,6 +240,8 @@
          ((plugin-ref 'string->source default-string->source) s)]
         [(bytes? s)
          (byte-source s)]
+        [(path? s)
+         (file-source s)]
         [(source? s) s]))
 
 
@@ -312,6 +317,7 @@
   (test-case "Identify source variant types"
     (check-true (source-variant? #""))
     (check-true (source-variant? ""))
+    (check-true (source-variant? (build-path ".")))
     (check-true (source-variant? (byte-source #"")))
     (check-false (source-variant? '(#"")))
     (check-false (source-variant? 1)))

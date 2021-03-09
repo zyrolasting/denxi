@@ -3,15 +3,27 @@
 ; Verify integrity of bytes
 
 (require "contract.rkt"
+         "file.rkt"
+         "format.rkt"
+         "localstate.rkt"
          "message.rkt"
-         "openssl.rkt")
+         "openssl.rkt"
+         "port.rkt"
+         "source.rkt"
+         "strict-rc.rkt"
+         "workspace.rkt")
 
 (provide (struct-out integrity-info)
          (contract-out
           [integrity
            (-> md-algorithm/c
-               bytes?
+               source-variant?
                integrity-info?)]
+          [make-sourced-digest
+           (->* (source-variant?
+                 md-algorithm/c)
+                (exhaust/c)
+                bytes?)]
           [well-formed-integrity-info/c
            flat-contract?]
           [bind-trust-list
@@ -20,7 +32,7 @@
           [check-integrity
            (-> #:trust-bad-digest any/c
                any/c
-               md-bytes-source/c
+               source-variant?
                $integrity?)]))
 
 (define+provide-message $integrity (ok? stage info))
@@ -29,22 +41,50 @@
 
 (define integrity integrity-info)
 
+(define MAX_EXPECTED_DIGEST_LENGTH 128)
+
 (define (digest-length-ok? info)
   (equal? (bytes-length (integrity-info-digest info))
           (bytes-length (make-digest #"whatever"
                                      (integrity-info-algorithm info)))))
 
-
 (define well-formed-integrity-info/c
   (struct/c integrity-info
             md-algorithm/c
-            bytes?))
+            source-variant?))
 
 
 (define (bind-trust-list trusted)
-  (λ (public-key-path)
+  (λ (path)
     (for/or ([integrity trusted])
-      ($integrity-ok? (check-integrity #:trust-bad-digest #f integrity public-key-path)))))
+      ($integrity-ok? (check-integrity #:trust-bad-digest #f integrity path)))))
+
+
+(define (fetch-digest intinfo exhaust)
+  (let ([source (coerce-source (integrity-info-digest intinfo))])
+    (fetch source
+           (λ (in est-size)
+             (file->bytes
+              (build-workspace-path
+               (path-record-path
+                (make-addressable-file
+                 #:cache-key (make-source-key source)
+                 #:max-size MAX_EXPECTED_DIGEST_LENGTH
+                 #:buffer-size MAX_EXPECTED_DIGEST_LENGTH
+                 #:timeout-ms (rc-ref 'XIDEN_FETCH_TIMEOUT_MS)
+                 #:on-status void
+                 "_"
+                 in
+                 est-size)))))
+           exhaust)))
+
+
+(define (make-sourced-digest variant algorithm [exhaust raise])
+  (if (input-port? variant)
+      (make-digest variant algorithm)
+      (fetch (coerce-source variant)
+             (λ (in est-size) (make-digest in algorithm))
+             exhaust)))
 
 
 ;; -------------------------------------------------------------------------------
@@ -65,10 +105,12 @@
 
 
 (define (consider-digest-match intinfo variant)
-  (make-$integrity (equal? (integrity-info-digest intinfo)
-                           (make-digest variant (integrity-info-algorithm intinfo)))
-                   consider-digest-match
-                   intinfo))
+  (call/cc
+   (λ (abort)
+     (define (return v)
+       (make-$integrity v consider-digest-match intinfo))
+     (return (equal? (fetch-digest intinfo (λ _ (return #f)))
+                     (make-sourced-digest variant (integrity-info-algorithm intinfo)))))))
 
 
 (define (check-integrity #:trust-bad-digest trust-bad-digest intinfo variant)
@@ -83,6 +125,7 @@
 
 (module+ test
   (require racket/function
+           racket/runtime-path
            rackunit)
 
   ; Coverage info should flag this as uncovered when tests are passing.
@@ -93,6 +136,16 @@
     (integrity-info algorithm
                     (make-digest (string->bytes/utf-8 (symbol->string algorithm))
                                  algorithm)))
+
+  (define-runtime-path integrity.rkt "integrity.rkt")
+  (define-runtime-path main.rkt "main.rkt")
+
+  (test-case "Bind trust in specific paths"
+    (define trust?
+      (bind-trust-list
+       (list (integrity-info 'sha1 (make-digest integrity.rkt 'sha1)))))
+    (check-true (trust? integrity.rkt))
+    (check-false (trust? main.rkt)))
 
   (test-case "Create integrity information"
     (for ([algorithm (in-list md-algorithms)])

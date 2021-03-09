@@ -39,11 +39,14 @@
     sha512-224
     sha512-256))
 
+
 (define md-bytes-source/c
   (or/c path-string? bytes? input-port?))
 
+
 (define md-algorithm/c
   (apply or/c md-algorithms))
+
 
 (define (make-digest variant algorithm)
   (cond [(path-string? variant)
@@ -52,13 +55,7 @@
         [(bytes? variant)
          (make-digest (open-input-bytes variant) algorithm)]
         [(input-port? variant)
-         (run-openssl-command variant
-                              "dgst"
-                              "-binary"
-                              (~a "-" algorithm))]
-        [else (raise-argument-error 'make-digest
-                                    "A path, bytes, or an input port"
-                                    variant)]))
+         (run-openssl-command variant "dgst" "-binary" (~a "-" algorithm))]))
 
 
 (define (run-openssl-command #:timeout [delay-seconds 3] stdin-source . args)

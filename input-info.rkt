@@ -173,7 +173,8 @@
   ; use the path.
   (define public-key-path
     (if (signature-info? siginfo)
-        (get-public-key-path (signature-info-pubkey siginfo))
+        (fetch-signature-payload (signature-info-pubkey siginfo)
+                                 (λ _ "/nowhere"))
         "/nowhere"))
 
   (define trust-public-key?
