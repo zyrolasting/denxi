@@ -115,7 +115,8 @@
       (k public-key-path siginfo)
       ($signature #f
                   (object-name consider-public-key-trust)
-                  (file->bytes public-key-path))))
+                  (and (file-exists? public-key-path)
+                       (file->bytes public-key-path)))))
 
 (define (consider-signature public-key-path intinfo siginfo)
   ($signature (verify-signature (integrity-info-digest intinfo)
@@ -221,7 +222,7 @@
     (test-equal? "Do not implicitly trust any public key"
                  (consider-public-key-trust #:trust-public-key? (λ (p) #f)
                                             #:public-key-path "/tmp/junk" siginfo fails)
-                 ($signature #f (object-name consider-public-key-trust) "/tmp/junk"))
+                 ($signature #f (object-name consider-public-key-trust) #f))
 
     (test-case "Continue when trusting a public key"
       (define trust-public-key?
