@@ -14,6 +14,7 @@ setup-doc:
 	raco scribble +m --markdown --dest-name INSTALL docs/guide/setup.scrbl
 
 test: setup
+	rm -rf xiden-workspace
 	raco test -j 8 -c xiden
 
 exe: build test

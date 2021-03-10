@@ -369,7 +369,6 @@
       (define expected-digest-base32 "0rsd0k4es4dks32empq1we4gh8======")
       (define expected-digest-expr `(base32 ,expected-digest-base32))
       (define expected-digest (base32 expected-digest-base32))
-      (define public-key-source "https://example.com/pubkey")
       (define signature-base32
         (string-join
          '("q00q65n5tja2bdqgkv03qjwt3rapw2zcwxtf98pm8rtj26gdkgb2"
@@ -387,7 +386,7 @@
          ""))
 
       (define expected-integrity-info (integrity md-algo (base32 expected-digest-base32)))
-      (define expected-signature-info (signature public-key-source (base32 signature-base32)))
+      (define expected-signature-info (signature test-public-key-path (base32 signature-base32)))
 
       (define-values (flags exit-code msg)
         (call-with-input-file test-dummy-file-path
@@ -397,7 +396,7 @@
                                           (mkflag --generated-input-name) "boo"
                                           (mkflag --md) "md5"
                                           (mkflag --signer)
-                                          public-key-source
+                                          test-public-key-path
                                           test-private-key-path
                                           test-private-key-password-path
                                           "user-source1"
@@ -410,7 +409,7 @@
                      `(input "boo"
                              (sources "user-source1" "user-source2")
                              (integrity ',md-algo (base32 ,expected-digest-base32))
-                             (signature ,public-key-source (base32 ,signature-base32)))))
+                             (signature ,test-public-key-path (base32 ,signature-base32)))))
 
       (test-true "Generate integrity expression that actually reflects content"
         ($integrity-ok?
@@ -419,6 +418,7 @@
           #:trust-bad-digest #f
           (integrity 'md5 (base32 expected-digest-base32))
           (build-path private/ "dummy"))))
+
 
       (test-true "Generate signature that matches the digest"
        ($signature-ok?

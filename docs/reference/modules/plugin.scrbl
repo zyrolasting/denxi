@@ -61,6 +61,24 @@ Defaults to
 ]
 }
 
+@defproc[(verify-signature [intinfo integrity-info?]
+                           [public-key-path path-string?]
+                           [signature-path path-string?]) boolean?]{
+Returns @racket[#t] if Xiden may assume that the signature was signed
+by a private key corresponding to the public key. Making this
+procedure always return @racket[#t] is equivalent to setting
+@racket[XIDEN_TRUST_UNSIGNED] to @racket[#t].
+
+The default implementation is a procedure that uses the host's OpenSSL
+installation to verify the signature.
+
+@racket[intinfo] is set to the integrity information for the signed
+data.
+
+You may assume that the public key is trusted if control reaches this
+procedure in the context of a command line invocation.
+}
+
 
 @defproc[(get-extract-procedure [path path-string?]) (-> input-port? void?)]{
 Return a procedure used to extract files from the archive located at

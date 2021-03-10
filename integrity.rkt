@@ -24,6 +24,8 @@
                  md-algorithm/c)
                 (exhaust/c)
                 bytes?)]
+          [fetch-digest
+           (-> well-formed-integrity-info/c exhaust/c any/c)]
           [well-formed-integrity-info/c
            flat-contract?]
           [bind-trust-list

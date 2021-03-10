@@ -8,6 +8,7 @@
          "localstate.rkt"
          "message.rkt"
          "openssl.rkt"
+         "plugin.rkt"
          "source.rkt"
          "strict-rc.rkt"
          "workspace.rkt")
@@ -44,23 +45,22 @@
             source-variant?
             source-variant?))
 
-(define MAX_EXPECTED_SIGNATURE_PAYLOAD_LENGTH 1024)
+(define MAX_EXPECTED_SIGNATURE_PAYLOAD_LENGTH 24000)
 
-(define (verify-signature digest public-key-path signature-variant)
+(define (default-verify-signature intinfo siginfo)
   (with-handlers ([exn:fail:xiden:openssl?
                    (λ (e) (if (regexp-match? #rx"Signature Verification Failure"
                                              (exn:fail:xiden:openssl-output e))
                               #f
                               (raise e)))])
-
     (regexp-match?
      #rx#"Success"
-     (run-openssl-command (open-input-bytes digest)
+     (run-openssl-command (open-input-bytes (fetch-digest intinfo raise))
                           "pkeyutl"
                           "-verify"
-                          "-sigfile" (fetch-signature-payload signature-variant raise)
+                          "-sigfile" (fetch-signature-payload (signature-info-body siginfo) raise)
                           "-pubin"
-                          "-inkey" public-key-path))))
+                          "-inkey" (fetch-signature-payload (signature-info-pubkey siginfo) raise)))))
 
 
 (define (make-signature-bytes digest private-key-path password-path)
@@ -118,12 +118,11 @@
                   (and (file-exists? public-key-path)
                        (file->bytes public-key-path)))))
 
-(define (consider-signature public-key-path intinfo siginfo)
-  ($signature (verify-signature (integrity-info-digest intinfo)
-                                public-key-path
-                                (signature-info-body siginfo))
+(define (consider-signature intinfo siginfo)
+  ($signature ((plugin-ref 'verify-signature default-verify-signature) intinfo siginfo)
               (object-name consider-signature)
-              public-key-path))
+              #f))
+
 
 (define (check-signature #:trust-public-key? trust-public-key?
                          #:public-key-path public-key-path
@@ -137,7 +136,7 @@
       (λ _
         (consider-public-key-trust #:trust-public-key? trust-public-key? #:public-key-path public-key-path siginfo
           (λ _
-            (consider-signature public-key-path intinfo siginfo))))))))
+            (consider-signature intinfo siginfo))))))))
 
 
 
@@ -245,17 +244,19 @@
       (check-eq? s siginfo)
 
       (test-equal? "Find valid signature"
-                   (consider-signature public-key-path intinfo siginfo)
-                   ($signature #t (object-name consider-signature) public-key-path))
+                   (consider-signature intinfo siginfo)
+                   ($signature #t (object-name consider-signature) #f))
 
       (test-equal? "Catch tampered integrity as signature mismatch"
-                   (consider-signature public-key-path (integrity-info 'sha384 #"different") siginfo)
-                   ($signature #f (object-name consider-signature) public-key-path))
+                   (consider-signature (integrity-info 'sha384 #"different") siginfo)
+                   ($signature #f (object-name consider-signature) #f))
 
       (test-equal? "Catch tampered signature as signature mismatch"
-                   (consider-signature public-key-path intinfo (signature-info pubkey-bytes #"different"))
-                   ($signature #f (object-name consider-signature) public-key-path))
+                   (consider-signature intinfo (signature-info pubkey-bytes #"different"))
+                   ($signature #f (object-name consider-signature) #f))
 
       (test-exn "Don't hide OpenSSL errors"
                 exn:fail:xiden:openssl?
-                (λ () (consider-signature "garbage!" intinfo siginfo))))))
+                (λ () (consider-signature intinfo
+                                          (struct-copy signature-info siginfo
+                                                       [pubkey #"garbage"])))))))

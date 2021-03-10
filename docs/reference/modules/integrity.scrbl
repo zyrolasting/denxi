@@ -33,6 +33,13 @@ not verify if the digest length is appropriate for the algorithm.
 }
 
 
+@defproc[(fetch-digest [intinfo well-formed-integrity-info/c] [exhaust exhaust/c]) any/c]{
+Like @racket[fetch], except the raw bytes of a message digest are
+sourced from @racket[(integrity-info-digest intinfo)] and returned as
+a @racket[bytes?] value. If the source is exhausted, then this returns
+the value from @racket[exhaust].
+}
+
 @defproc[(check-integrity [#:trust-bad-digest trust-bad-digest any/c] [intinfo (or/c #f integrity-info?)] [variant source-variant?]) $integrity?]{
 Performs an @deftech{integrity check}. See @racket[$integrity].
 

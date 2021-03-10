@@ -26,6 +26,7 @@ This project follows [these versioning rules](https://sagegerard.com/edition-rev
 - Support source-level caching
 - Allow integrity and signature information to use sources
 - Require trust in cryptographic hash functions
+- Allow signature verification via plugin
 
 
 ## [draft:alpha] - 2020-08-02
