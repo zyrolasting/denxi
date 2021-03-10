@@ -57,6 +57,9 @@
     [(XIDEN_TRUST_UNVERIFIED_HOST)
      "Download from any server without authenticating"]
 
+    [(XIDEN_TRUST_MESSAGE_DIGEST_ALGORITHMS)
+     "Trust cryptographic hash function implementations from OpenSSL"]
+
     [(XIDEN_TRUST_BAD_DIGEST)
      "(DANGEROUS) Trust any input."]
 
