@@ -41,19 +41,53 @@ on a new Xiden installation, then this command will fail with the
 following message in the report:
 
 @verbatim|{
+default.tgz: integrity violation: not trusting CHF sha384. To bypass, add it to XIDEN_TRUST_MESSAGE_DIGEST_ALGORITHMS
+}|
+
+Remember when we made an integrity expression? We defined a SHA-384
+digest. Xiden is paranoid, and will not proceed with any operation
+that it cannot trace back to your affirmative consent. So if you
+didn't say that you trusted SHA-384 digests, then Xiden rejects the
+input.
+
+As an exercise, use @secref{config} to edit your configuration
+according to the error. You should end up with a file containing this
+expression.
+
+@racketblock[
+(define XIDEN_TRUST_MESSAGE_DIGEST_ALGORITHMS '(sha384))
+]
+
+When you are ready, run @litchar{xiden do +a definition.rkt} again.
+
+If you see the same message, make sure your configuration file is
+stored in the right place, and that you followed @secref{config}.
+
+If you did this correctly, then you'll get a different message.
+
+
+@verbatim|{
 default.tgz: https://sagegerard.com/xiden-tutorial/default.tgz: signature violation: public key not trusted. To trust this key, add this to XIDEN_TRUSTED_PUBLIC_KEYS:
 (integrity 'sha384 (base64 "n2Ac8K56quwznmSJFZZtnZFxL1ck16hUf+Ule2jd1bHGMJy/EiK2Vc2ibCITnyM0"))
 }|
 
-Xiden is paranoid. It will not proceed with any operation that it cannot trace
-back to your affirmative consent. This message is telling you that it refused
-to use an input because you never said that you trusted the public key used to
-verify @racket{default.tgz}'s signature.
 
-As an exercise, copy the @racket[integrity] expression to your clipboard and
-use @secref{config} to edit your configuration. When you are ready, run
-@litchar{xiden do +a definition.rkt} again. If you see a symbolic link appear
-in the current directory called @tt{my-first-package}, then you did it!
+This message is telling you that it refused to use an input because
+you never said that you trusted the public key used to verify
+@racket{default.tgz}'s signature. Copy the @racket[integrity]
+expression to your clipboard and use @secref{config} to edit your
+configuration once more.
+
+You can probably see that every decision made when writing a package
+definition corresponds to an explicit act of user consent. If this
+seems too inconvenient, Xiden can be adjusted to offer trust over an
+entire topic. This is not a good habit, though. You should leverage
+the zero-trust configuration to interactively add trust only for what
+you expressly want. This takes more work, but it helps keep you safe.
+
+When you are ready, run @litchar{xiden do +a definition.rkt} again. If
+you see a symbolic link appear in the current directory called
+@tt{my-first-package}, then you did it!
 
 
 @subsection{What's with the Link?}

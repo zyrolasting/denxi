@@ -150,6 +150,11 @@ When not @racket[#f], the given module path will be used in @racket[dynamic-requ
 to load extensions.
 }
 
+@defsetting*[XIDEN_TRUST_MESSAGE_DIGEST_ALGORITHMS]{
+A list of trusted cryptographic hash function implementations in
+OpenSSL.
+}
+
 @defsetting*[XIDEN_TRUST_UNSIGNED]{
 @bold{Dangerous}. When true, trust any input that lacks a signature.
 }

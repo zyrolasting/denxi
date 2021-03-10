@@ -214,6 +214,13 @@
 
 
 ; Multi flags
+(flag-out [+c ++trust-chf ++trust-message-digest-algorithm]
+          (cli-flag XIDEN_TRUST_MESSAGE_DIGEST_ALGORITHMS
+                    'multi null 1 (λ (flag algo)
+                                    (cons (string->symbol algo)
+                                          (XIDEN_TRUST_MESSAGE_DIGEST_ALGORITHMS)))
+                    '("md-algorithm")))
+
 (flag-out [+p ++trust-public-key]
           (cli-flag XIDEN_TRUSTED_PUBLIC_KEYS
                     'multi null 1 (λ (flag integrity-expr)

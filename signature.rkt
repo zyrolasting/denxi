@@ -230,8 +230,15 @@
                                (make-digest pubkey-bytes 'sha384)))))
 
       (define-values (public-key-path s)
-        (consider-public-key-trust #:public-key-path (fetch-signature-payload (signature-info-pubkey siginfo) void)
-                                   #:trust-public-key? trust-public-key? siginfo values))
+        (rc-rebind 'XIDEN_TRUST_MESSAGE_DIGEST_ALGORITHMS '(sha384)
+                   (λ ()
+                     (consider-public-key-trust
+                      #:public-key-path
+                      (fetch-signature-payload (signature-info-pubkey siginfo)
+                                               (λ (e) (values e e)))
+                      #:trust-public-key? trust-public-key?
+                      siginfo
+                      values))))
 
       (check-pred file-exists? public-key-path)
       (check-eq? s siginfo)

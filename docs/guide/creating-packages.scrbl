@@ -329,10 +329,13 @@ persist after a build for run-time use. More on that later.
 
 If you are not familiar with integrity checking, just know that there
 are functions to take a file and turn it into a fixed-length byte
-string called a @italic{digest}.  If two files produce the same
-digest, then we can assume the files are the same. That is, unless the
-function itself has a @italic{collision}, where two different files
-produce the same digest. This is a sign to use a different function!
+string called a @italic{digest}.  These functions are called
+cryptographic hash functions (CHFs), but the documentation may also
+refer to them as message digest algorithms. If two files produce the
+same digest, then we can assume the files are the same. That is,
+unless the function itself has a @italic{collision}, where two
+different files produce the same digest. This is a sign to use a
+different function!
 
 The function we're using in this case is SHA-384, which we represent
 here as @racket[sha384]. Since it's hard to type the exact bytes of a
@@ -341,6 +344,13 @@ copy and paste from elsewhere.  Here we tell Xiden that the
 SHA-384 digest of @racket{default.tgz} comes from a hex string. That
 tells Xiden how to translate the digest as a string back to
 bytes for comparison.
+
+Note that just because we use SHA-384 does not mean the end-user
+trusts it. CHFs have a shelf-life since attackers can find a way to
+induce a collision. For that reason, Xiden does not leave it to
+package authors to decide what CHF is best for the user. In fact, by
+the time you read this, SHA-384 might be an ill-advised selection for
+most programs.
 
 
 @subsubsection{Creating an Integrity Expression}

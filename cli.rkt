@@ -94,6 +94,7 @@
                             ++install-abbreviated
                             ++install-default
                             ++trust-public-key
+                            ++trust-chf
                             ++input-override
                             --fetch-total-size
                             --fetch-buffer-size
@@ -414,6 +415,7 @@
       (test-true "Generate integrity expression that actually reflects content"
         ($integrity-ok?
          (check-integrity
+          #:trust-message-digest-algorithms '(md5)
           #:trust-bad-digest #f
           (integrity 'md5 (base32 expected-digest-base32))
           (build-path private/ "dummy"))))

@@ -298,6 +298,13 @@
    (format (~a "integrity ~a: ~a")
            (if ok? "ok" "violation")
            (case stage
+             [(consider-chf-trust)
+              (if ok?
+                  (format "trusting CHF ~a" (integrity-info-algorithm intinfo))
+                  (format "not trusting CHF ~a. To bypass, add it to ~a"
+                          (integrity-info-algorithm intinfo)
+                          (setting-id XIDEN_TRUST_MESSAGE_DIGEST_ALGORITHMS)))]
+
              [(consider-digest-trust)
               (if ok?
                   "trusting implicitly"

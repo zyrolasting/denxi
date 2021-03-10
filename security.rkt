@@ -224,7 +224,8 @@
 
 (module+ test
   (require racket/runtime-path
-           rackunit)
+           rackunit
+           "strict-rc.rkt")
 
   (define-runtime-path here ".")
 
@@ -253,8 +254,11 @@
     (check-false (trusts-nothing my-path))
     (check-false (trusts-nothing other-path))
 
-    (check-true  (trusts-exact-things my-path))
-    (check-false (trusts-exact-things other-path))
+    (rc-rebind 'XIDEN_TRUST_MESSAGE_DIGEST_ALGORITHMS
+               '(sha1)
+               (λ ()
+                 (check-true  (trusts-exact-things my-path))
+                 (check-false (trusts-exact-things other-path))))
 
     (check-true  (trusts-hosted-things my-path))
     (check-false (trusts-hosted-things other-path)))

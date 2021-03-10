@@ -150,6 +150,7 @@
 (define (check-input-integrity input file-record messages)
   (define status
     (check-integrity #:trust-bad-digest (rc-ref 'XIDEN_TRUST_BAD_DIGEST)
+                     #:trust-message-digest-algorithms (rc-ref 'XIDEN_TRUST_MESSAGE_DIGEST_ALGORITHMS)
                      (input-info-integrity input)
                      (build-workspace-path (path-record-path file-record))))
 

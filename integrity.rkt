@@ -31,6 +31,7 @@
                (-> path-string? boolean?))]
           [check-integrity
            (-> #:trust-bad-digest any/c
+               #:trust-message-digest-algorithms (listof md-algorithm/c)
                any/c
                source-variant?
                $integrity?)]))
@@ -57,7 +58,10 @@
 (define (bind-trust-list trusted)
   (λ (path)
     (for/or ([integrity trusted])
-      ($integrity-ok? (check-integrity #:trust-bad-digest #f integrity path)))))
+      ($integrity-ok? (check-integrity
+                       #:trust-bad-digest #f
+                       #:trust-message-digest-algorithms (rc-ref 'XIDEN_TRUST_MESSAGE_DIGEST_ALGORITHMS)
+                       integrity path)))))
 
 
 (define (fetch-digest intinfo exhaust)
@@ -95,6 +99,10 @@
       (make-$integrity #t consider-digest-trust intinfo)
       (k)))
 
+(define (consider-chf-trust #:trust-message-digest-algorithms trust-message-digest-algorithms intinfo k)
+  (if (member (integrity-info-algorithm intinfo) trust-message-digest-algorithms)
+      (k)
+      (make-$integrity #f consider-chf-trust intinfo)))
 
 (define (consider-integrity-info #:trust-unknown-digest trust-unknown-digest intinfo k)
   (if (well-formed-integrity-info/c intinfo)
@@ -113,10 +121,11 @@
                      (make-sourced-digest variant (integrity-info-algorithm intinfo)))))))
 
 
-(define (check-integrity #:trust-bad-digest trust-bad-digest intinfo variant)
+(define (check-integrity #:trust-bad-digest trust-bad-digest #:trust-message-digest-algorithms trust-message-digest-algorithms intinfo variant)
   (consider-digest-trust #:trust-bad-digest trust-bad-digest intinfo
    (λ () (consider-integrity-info #:trust-unknown-digest trust-bad-digest intinfo
-      (λ () (consider-digest-match intinfo variant))))))
+     (λ () (consider-chf-trust #:trust-message-digest-algorithms trust-message-digest-algorithms intinfo
+       (λ () (consider-digest-match intinfo variant))))))))
 
 
 (define (make-$integrity ok? p intinfo)
@@ -144,8 +153,26 @@
     (define trust?
       (bind-trust-list
        (list (integrity-info 'sha1 (make-digest integrity.rkt 'sha1)))))
-    (check-true (trust? integrity.rkt))
-    (check-false (trust? main.rkt)))
+    (rc-rebind 'XIDEN_TRUST_MESSAGE_DIGEST_ALGORITHMS '(sha1)
+               (λ ()
+                 (check-true (trust? integrity.rkt))
+                 (check-false (trust? main.rkt)))))
+
+  (test-true "Trust only certain CHFs"
+             (consider-chf-trust #:trust-message-digest-algorithms '(md5)
+                                 (integrity-info 'md5 #"")
+                                 (λ () #t)))
+
+
+  (let ([info (integrity-info 'sha1 #"")])
+    (test-equal? "Distrust uncited CHFs"
+                 (consider-chf-trust #:trust-message-digest-algorithms '(md5)
+                                     info
+                                     fails)
+                 ($integrity #f
+                             (object-name consider-chf-trust)
+                             info)))
+
 
   (test-case "Create integrity information"
     (for ([algorithm (in-list md-algorithms)])
@@ -158,9 +185,9 @@
                    (consider-digest-trust #:trust-bad-digest #t info fails)
                    ($integrity #t (object-name consider-digest-trust) info))
 
-      (test-eq? "Proceed with integrity checking"
-                (consider-digest-trust #:trust-bad-digest #f info (λ () 1))
-                1)
+      (test-true "Proceed with integrity checking"
+                 (consider-digest-trust #:trust-bad-digest #f info (λ () #t)))
+
 
       (test-case "Flag ill-formed integrity info as an unknown digest"
         (define (test-unknown v)

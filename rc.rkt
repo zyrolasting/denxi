@@ -116,6 +116,7 @@
 (define-xiden-setting XIDEN_TIME_LIMIT_S (>=/c 0) (* 5 60))
 (define-xiden-setting XIDEN_TRUSTED_EXECUTABLES (listof well-formed-integrity-info/c) null)
 (define-xiden-setting XIDEN_TRUSTED_PUBLIC_KEYS (listof well-formed-integrity-info/c) null)
+(define-xiden-setting XIDEN_TRUST_MESSAGE_DIGEST_ALGORITHMS (listof md-algorithm/c) null)
 (define-xiden-setting XIDEN_TRUST_ANY_EXECUTABLE boolean? #f)
 (define-xiden-setting XIDEN_TRUST_ANY_PUBLIC_KEY boolean? #f)
 (define-xiden-setting XIDEN_TRUST_BAD_DIGEST boolean? #f)

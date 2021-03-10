@@ -25,6 +25,7 @@ This project follows [these versioning rules](https://sagegerard.com/edition-rev
 - Simplify `mkinput` command
 - Support source-level caching
 - Allow integrity and signature information to use sources
+- Require trust in cryptographic hash functions
 
 
 ## [draft:alpha] - 2020-08-02
