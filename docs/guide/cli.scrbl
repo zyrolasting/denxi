@@ -67,7 +67,7 @@ If you did this correctly, then you'll get a different message.
 
 
 @verbatim|{
-default.tgz: https://sagegerard.com/xiden-tutorial/default.tgz: signature violation: public key not trusted. To trust this key, add this to XIDEN_TRUSTED_PUBLIC_KEYS:
+default.tgz: signature violation: public key not trusted. To trust this key, add this to XIDEN_TRUSTED_PUBLIC_KEYS:
 (integrity 'sha384 (base64 "n2Ac8K56quwznmSJFZZtnZFxL1ck16hUf+Ule2jd1bHGMJy/EiK2Vc2ibCITnyM0"))
 }|
 
@@ -78,10 +78,9 @@ you never said that you trusted the public key used to verify
 expression to your clipboard and use @secref{config} to edit your
 configuration once more.
 
-You can probably see that every decision made when writing a package
-definition corresponds to an explicit act of user consent. If this
-seems too inconvenient, Xiden can be adjusted to offer trust over an
-entire topic. This is not a good habit, though. You should leverage
+This back and forth is intended to encourage explicit consent. If this
+is too inconvenient for you, Xiden can be adjusted to offer trust over
+an entire topic. This is not a good habit, though. You should leverage
 the zero-trust configuration to interactively add trust only for what
 you expressly want. This takes more work, but it helps keep you safe.
 

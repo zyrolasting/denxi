@@ -115,7 +115,7 @@
       (k public-key-path siginfo)
       ($signature #f
                   (object-name consider-public-key-trust)
-                  public-key-path)))
+                  (file->bytes public-key-path))))
 
 (define (consider-signature public-key-path intinfo siginfo)
   ($signature (verify-signature (integrity-info-digest intinfo)

@@ -265,7 +265,7 @@
                (string-join (map format-message errors)
                             "\n")))]
 
-  [($signature ok? stage public-key-path)
+  [($signature ok? stage public-key)
    (format (~a "signature ~a: ~a")
            (if ok? "ok" "violation")
            (case stage
@@ -286,7 +286,7 @@
                   (format (~a "public key not trusted. To trust this key, add this to ~a:~n"
                               "(integrity 'sha384 (base64 ~s))")
                           (setting-id XIDEN_TRUSTED_PUBLIC_KEYS)
-                          (~a (encode 'base64 (make-digest public-key-path 'sha384)))))]
+                          (~a (encode 'base64 (make-digest public-key 'sha384)))))]
 
              [(consider-signature)
               (if ok?
