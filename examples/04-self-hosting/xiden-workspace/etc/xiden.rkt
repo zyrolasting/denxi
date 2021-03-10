@@ -11,3 +11,6 @@
 ; Trust the _exact_ Racket executable created by the input script.
 (define XIDEN_TRUST_EXECUTABLES
   (list (integrity 'sha384 (base64 "SxPU+tB4Pskzsjj9NT8L7a7S5iCXQWBk1ZGZgYCINXuQcFIxjLepin5FE+MzsAYE"))))
+
+(define XIDEN_TRUST_MESSAGE_DIGEST_ALGORITHMS
+  '(sha384))
