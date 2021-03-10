@@ -179,15 +179,15 @@ OpenSSL.
 @bold{Dangerous}. When true, trust any public key used to verify a signature.
 }
 
-@defsetting[XIDEN_TRUSTED_PUBLIC_KEYS (listof well-formed-integrity-info/c)]{
+@defsetting[XIDEN_TRUST_PUBLIC_KEYS (listof well-formed-integrity-info/c)]{
 A list of integrity information used to verify public keys. If a
 public key fetched for an input passes the integrity check for an
-element of @racket[XIDEN_TRUSTED_PUBLIC_KEYS], then the public key is
+element of @racket[XIDEN_TRUST_PUBLIC_KEYS], then the public key is
 considered trustworthy.
 }
 
-@defsetting[XIDEN_TRUSTED_EXECUTABLES (listof well-formed-integrity-info/c)]{
-Like @racket[XIDEN_TRUSTED_PUBLIC_KEYS], but used to verify
+@defsetting[XIDEN_TRUST_EXECUTABLES (listof well-formed-integrity-info/c)]{
+Like @racket[XIDEN_TRUST_PUBLIC_KEYS], but used to verify
 executables a @tech{package} tries to use when creating a subprocess.
 
 Beware: Any executable listed here inherits the OS-level permissions
@@ -198,8 +198,8 @@ Xiden launcher or a sufficiently flexible Racket launcher, a
 configuration.
 }
 
-@defsetting*[XIDEN_TRUSTED_HOST_EXECUTABLES]{
-Like @racket[XIDEN_TRUSTED_EXECUTABLES], except this setting is a list
+@defsetting*[XIDEN_TRUST_HOST_EXECUTABLES]{
+Like @racket[XIDEN_TRUST_EXECUTABLES], except this setting is a list
 of names. Xiden will allow execution of a file if its normalized path
 equals the value of @racket[find-executable-path] for an element of
 that list. You may need to add multiple entries to account for

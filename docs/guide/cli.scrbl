@@ -67,7 +67,7 @@ If you did this correctly, then you'll get a different message.
 
 
 @verbatim|{
-default.tgz: signature violation: public key not trusted. To trust this key, add this to XIDEN_TRUSTED_PUBLIC_KEYS:
+default.tgz: signature violation: public key not trusted. To trust this key, add this to XIDEN_TRUST_PUBLIC_KEYS:
 (integrity 'sha384 (base64 "n2Ac8K56quwznmSJFZZtnZFxL1ck16hUf+Ule2jd1bHGMJy/EiK2Vc2ibCITnyM0"))
 }|
 

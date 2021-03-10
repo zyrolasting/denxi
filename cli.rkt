@@ -74,11 +74,11 @@
                                  planned
                                  #:memory-limit (XIDEN_MEMORY_LIMIT_MB)
                                  #:time-limit (XIDEN_TIME_LIMIT_S)
-                                 #:trusted-executables (XIDEN_TRUSTED_EXECUTABLES)
+                                 #:trusted-executables (XIDEN_TRUST_EXECUTABLES)
                                  #:allowed-envvars (XIDEN_ALLOW_ENV)
                                  #:trust-unverified-host? (XIDEN_TRUST_UNVERIFIED_HOST)
                                  #:trust-any-executable? (XIDEN_TRUST_ANY_EXECUTABLE)
-                                 #:implicitly-trusted-host-executables (XIDEN_TRUSTED_HOST_EXECUTABLES)
+                                 #:implicitly-trusted-host-executables (XIDEN_TRUST_HOST_EXECUTABLES)
                                  #:workspace (workspace-directory)
                                  #:gc-period 30
                                  #:name name)

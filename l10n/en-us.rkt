@@ -66,13 +66,13 @@
     [(XIDEN_TRUST_ANY_EXECUTABLE)
      "(DANGEROUS) Trust any executable"]
 
-    [(XIDEN_TRUSTED_HOST_EXECUTABLES)
+    [(XIDEN_TRUST_HOST_EXECUTABLES)
      "Trust executable file with given name if it can be found using find-executable-path"]
 
-    [(XIDEN_TRUSTED_PUBLIC_KEYS)
+    [(XIDEN_TRUST_PUBLIC_KEYS)
      "Trust a given public key using integrity information"]
 
-    [(XIDEN_TRUSTED_EXECUTABLES)
+    [(XIDEN_TRUST_EXECUTABLES)
      "Trust an executable using integrity information"]
 
     [(XIDEN_FASL_OUTPUT)
@@ -285,7 +285,7 @@
                   "basing trust in input on trust in public key"
                   (format (~a "public key not trusted. To trust this key, add this to ~a:~n"
                               "(integrity 'sha384 (base64 ~s))")
-                          (setting-id XIDEN_TRUSTED_PUBLIC_KEYS)
+                          (setting-id XIDEN_TRUST_PUBLIC_KEYS)
                           (~a (encode 'base64 (make-digest public-key 'sha384)))))]
 
              [(consider-signature)
@@ -391,7 +391,7 @@
                    "(integrity 'sha384 (base64 ~s))")
                (restrict-preamble name)
                path
-               (setting-id XIDEN_TRUSTED_EXECUTABLES)
+               (setting-id XIDEN_TRUST_EXECUTABLES)
                (~a (encode 'base64 (make-digest path 'sha384))))
        (~a "Unauthorized attempt to execute non-existant " path))]
 

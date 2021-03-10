@@ -222,23 +222,23 @@
                     '("md-algorithm")))
 
 (flag-out [+p ++trust-public-key]
-          (cli-flag XIDEN_TRUSTED_PUBLIC_KEYS
+          (cli-flag XIDEN_TRUST_PUBLIC_KEYS
                     'multi null 1 (λ (flag integrity-expr)
                                     (cons (arg->value/evaluated flag integrity-expr)
-                                          (XIDEN_TRUSTED_PUBLIC_KEYS)))
+                                          (XIDEN_TRUST_PUBLIC_KEYS)))
                     '("integrity-expr")))
 
 (flag-out [+x ++trust-executable ++trust-exe]
-          (cli-flag XIDEN_TRUSTED_EXECUTABLES
+          (cli-flag XIDEN_TRUST_EXECUTABLES
                     'multi null 1 (λ (flag integrity-expr)
                                     (cons (arg->value/evaluated flag integrity-expr)
-                                          (XIDEN_TRUSTED_EXECUTABLES)))
+                                          (XIDEN_TRUST_EXECUTABLES)))
                     '("integrity-expr")))
 
 (flag-out [+t ++trust-host-executable]
-          (cli-flag XIDEN_TRUSTED_HOST_EXECUTABLES
+          (cli-flag XIDEN_TRUST_HOST_EXECUTABLES
                     'multi null 1 (λ (flag name)
-                                    (cons name (XIDEN_TRUSTED_HOST_EXECUTABLES)))
+                                    (cons name (XIDEN_TRUST_HOST_EXECUTABLES)))
                     '("file-name")))
 
 (flag-out [+s ++install-source]
