@@ -188,7 +188,6 @@
                      #:trust-unsigned (rc-ref 'XIDEN_TRUST_UNSIGNED)
                      #:trust-bad-digest (rc-ref 'XIDEN_TRUST_BAD_DIGEST)
                      #:trust-public-key? trust-public-key?
-                     #:command-template (rc-ref 'XIDEN_VERIFY_SIGNATURE_COMMAND_TEMPLATE)
                      siginfo
                      intinfo))
 

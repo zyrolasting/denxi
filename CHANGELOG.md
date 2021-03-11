@@ -27,6 +27,7 @@ This project follows [these versioning rules](https://sagegerard.com/edition-rev
 - Allow integrity and signature information to use sources
 - Require trust in cryptographic hash functions
 - Allow signature verification via plugin
+- Merge rcfile functionality into plugin
 
 
 ## [draft:alpha] - 2020-08-02

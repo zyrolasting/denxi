@@ -78,14 +78,12 @@
 ; Capture the runtime configuration once so that it can be reused
 ; for more than just a command line handler.
 (define (build-runtime-configuration flags)
-  (call-with-rcfile
+  (call-with-bound-cli-flags
+   flags
    (λ ()
-     (call-with-bound-cli-flags
-      flags
-      (λ ()
-        (for/hash ([(sym val) (dump-xiden-settings)])
-          (values (hash-ref XIDEN_SETTINGS sym)
-                  val)))))))
+     (for/hash ([(sym val) (dump-xiden-settings)])
+       (values (hash-ref XIDEN_SETTINGS sym)
+               val)))))
 
 
 

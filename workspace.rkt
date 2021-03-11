@@ -9,7 +9,8 @@
          path-in-workspace?
          CONVENTIONAL_WORKSPACE_NAME
          workspace-directory/c
-         show-workspace-envvar-error?)
+         show-workspace-envvar-error?
+         call-with-ephemeral-workspace)
 
 (require racket/contract
          racket/file
@@ -85,40 +86,42 @@
   (equal? simplified (build-workspace-path rel-path)))
 
 
+(define (call-with-ephemeral-workspace proc)
+  (let ([t (make-temporary-file "~a" 'directory)])
+    (dynamic-wind void
+                  (λ () (parameterize ([workspace-directory t]) (proc t)))
+                  (λ () (delete-directory/files #:must-exist? #f t)))))
+
+
 (module+ test
   (require racket/file
            rackunit)
 
-
-  (define (tmp p #:dir? dir?)
-    (define tmpfile (make-temporary-file "~a" (and dir? 'directory)))
+  (define (tmp p)
+    (define tmpfile (make-temporary-file "~a"))
     (dynamic-wind void
                   (λ () (p tmpfile))
-                  (λ ()
-                    (if (directory-exists? tmpfile)
-                        (delete-directory/files tmpfile)
-                        (delete-file tmpfile)))))
+                  (λ () (delete-file tmpfile))))
 
   (test-case "Can find workspace directory"
     (define wsn CONVENTIONAL_WORKSPACE_NAME)
     (define (build-complete-simple-path . args)
       (simplify-path (path->complete-path (apply build-path args))))
+    (call-with-ephemeral-workspace
+     (λ (tmpdir)
+       (parameterize ([current-directory tmpdir])
+         (define right-here (build-complete-simple-path wsn))
+         (define deeper (build-complete-simple-path "depeer/deeper" wsn))
+         (define within-ws (build-complete-simple-path wsn wsn))
 
-    (tmp #:dir? #t
-         (λ (tmpdir)
-           (parameterize ([current-directory tmpdir])
-             (define right-here (build-complete-simple-path wsn))
-             (define deeper (build-complete-simple-path "depeer/deeper" wsn))
-             (define within-ws (build-complete-simple-path wsn wsn))
+         (make-directory* right-here)
+         (make-directory* deeper)
+         (make-directory* within-ws)
 
-             (make-directory* right-here)
-             (make-directory* deeper)
-             (make-directory* within-ws)
-
-             (check-equal? (find-workspace-directory) right-here)
-             (check-equal? (find-workspace-directory "deeper") right-here)
-             (check-equal? (find-workspace-directory wsn) within-ws)
-             (check-equal? (find-workspace-directory "depeer/deeper") deeper)))))
+         (check-equal? (find-workspace-directory) right-here)
+         (check-equal? (find-workspace-directory "deeper") right-here)
+         (check-equal? (find-workspace-directory wsn) within-ws)
+         (check-equal? (find-workspace-directory "depeer/deeper") deeper)))))
 
   (test-exn "Guard against existing file paths"
             exn:fail:contract?
@@ -130,9 +133,10 @@
 
   (test-exn "Guard against links"
             exn:fail:contract?
-            (λ () (tmp #:dir? #t
-                       (λ (p)
-                         (tmp (λ (l)
-                                (delete-file l)
-                                (make-file-or-directory-link p l)
-                                (workspace-directory l))))))))
+            (λ () (tmp
+                   (λ (p)
+                     (tmp
+                      (λ (l)
+                        (delete-file l)
+                        (make-file-or-directory-link p l)
+                        (workspace-directory l))))))))

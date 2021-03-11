@@ -5,7 +5,9 @@
 ;
 ; Warning: Plugins run in Xiden's process.
 
-(require racket/contract)
+(require racket/contract
+         racket/function
+         "workspace.rkt")
 
 (provide
  (contract-out
@@ -14,46 +16,50 @@
   [load-from-plugin
    (-> symbol? (-> any/c) (-> exn? any) any/c)]))
 
-(require (only-in racket/function const)
-         "strict-rc.rkt")
+
+(define (get-plugin-path [wrt (workspace-directory)])
+  (build-workspace-path "etc/xiden.rkt"))
+
 
 (define (load-from-plugin key fail-thunk on-load-failure)
-  (define maybe-path (rc-ref 'XIDEN_PLUGIN_MODULE))
-  (if maybe-path
-      (with-handlers ([exn:fail? on-load-failure])
-        (dynamic-require (if (string? maybe-path)
-                             (string->path maybe-path)
-                             maybe-path)
-                         key
-                         fail-thunk))
-      (fail-thunk)))
+  (with-handlers ([exn:fail? on-load-failure])
+    (dynamic-require (get-plugin-path) key fail-thunk)))
+
 
 (define (plugin-ref key default-value)
-  (load-from-plugin key
-                    (const default-value)
-                    (const default-value)))
+  (let ([fail (const default-value)])
+    (load-from-plugin key fail fail)))
+
 
 (module+ test
   (provide call-with-plugin)
   (require racket/file
+           racket/path
            rackunit)
 
   (define (call-with-plugin plugin proc)
-    (define plugin-path (make-temporary-file))
-    (dynamic-wind void
-                  (λ ()
-                    (write-to-file #:exists 'truncate/replace plugin plugin-path)
-                    (rc-rebind 'XIDEN_PLUGIN_MODULE plugin-path proc))
-                  (λ ()
-                    (delete-file plugin-path))))
+    (call-with-ephemeral-workspace
+     (λ (ws)
+       (define plugin-path (get-plugin-path ws))
+       (make-directory* (path-only plugin-path))
+       (write-to-file #:exists 'truncate/replace plugin plugin-path)
+       (proc))))
 
   (define wont-load (find-system-path 'temp-dir))
+
+  (test-case "Define plugin path in terms of workspace"
+    (define /a (parameterize ([workspace-directory "/a"]) (get-plugin-path)))
+    (define /b (parameterize ([workspace-directory "/b"]) (get-plugin-path)))
+    (check-pred complete-path? /a)
+    (check-pred complete-path? /b)
+    (check-not-equal? /a /b))
   
   (test-exn "Handle plugin load failures"
             exn:fail:filesystem?
             (λ ()
-              (rc-rebind 'XIDEN_PLUGIN_MODULE wont-load
-               (λ ()
+              (call-with-ephemeral-workspace
+               (λ (ws)
+                 (make-directory* (get-plugin-path ws))
                  (load-from-plugin 'whatever
                                    (λ () (fail "Wrong fail thunk called"))
                                    raise)

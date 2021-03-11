@@ -96,7 +96,7 @@
 
 (define (install link-path-or-#f output-name-or-#f package-definition-source)
   (mdo pkg := (get-package #:override-specs (rc-ref 'XIDEN_INPUT_OVERRIDES)
-                           #:before-new-package (load-plugin-override)
+                           #:before-new-package (plugin-ref 'before-new-package values)
                            package-definition-source
                            (mebibytes->bytes (rc-ref 'XIDEN_FETCH_PKGDEF_SIZE_MB)))
 
@@ -189,10 +189,6 @@
                                            (min max-size est-size)
                                            #f))))
 
-(define (load-plugin-override)
-  (load-from-plugin 'before-new-package
-                    (λ () values)
-                    raise))
 
 
 (module+ test

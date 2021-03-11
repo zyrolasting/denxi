@@ -54,6 +54,14 @@ Like @racket[build-path], but the base of the returned path is
 @racket[(workspace-directory)].
 }
 
+@defproc[(call-with-ephemeral-workspace [proc (-> path? any)]) any]{
+Calls @racket[proc] in a @tech/reference{parameterization} where
+@racket[(current-workspace)] is a temporary directory. The same path
+is passed as the first argument to @racket[proc]. That directory and
+its contents will be deleted when control leaves @racket[proc], if it
+still exists.
+}
+
 @section[#:tag "workspace-selection"]{Selecting a Workspace}
 
 When Xiden starts, it selects a value to install in

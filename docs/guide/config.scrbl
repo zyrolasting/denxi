@@ -12,20 +12,24 @@
          #:doc '(lib "xiden/docs/reference/xiden-reference.scrbl")]]
 
 You can configure @tt{xiden} using environment variables, the command
-line interface, and/or a runtime configuration file. Every setting has
-only one name, and a contract for accepted Racket values.
+line interface, and/or a @tech{plugin}. Every setting has only one
+name, and a contract for accepted Racket values.
 
 The @change-val section covers how to change the value of a setting.
 
-@section{Runtime Configuration File}
 
-Each @tech{workspace} can have its own runtime configuration file, or rcfile.
-When Xiden selects a @tech{workspace} directory, it will load
-@litchar{etc/xiden.rkt} and use it as a source of setting values. Here's an
-example of what that file might look like:
+@section{Plugins}
+
+A @deftech{plugin} is a Racket module located at
+@litchar{etc/xiden.rkt} with respect to a @tech{workspace}.  Xiden
+loads plugins dynamically to customize and extend its behavior.
+
+Here's an example of what a plugin might look like:
 
 @racketmod[
-xiden/rcfile
+racket/base
+
+(provide (all-defined-out))
 
 (define XIDEN_MEMORY_LIMIT_MB 200)
 (define XIDEN_TIME_LIMIT_S 300)
@@ -38,6 +42,12 @@ xiden/rcfile
 (define XIDEN_FASL_OUTPUT #f)
 (define XIDEN_FETCH_TIMEOUT_MS 3000)
 ]
+
+Plugins are not restricted in what they can do, which means that you
+need to vet third party code more carefully when its used in that
+context. However, where Xiden restricts its own privileges in normal
+operation, procedures provided by the plugin will be subject to those
+restrictions.
 
 
 @section{Why Allow Verbose Commands?}
@@ -94,21 +104,21 @@ $ xiden -v "#t" ...
 @racket[XIDEN_WORKSPACE] defines the directory to use as the @tech{workspace}.
 
 @racket[XIDEN_WORKSPACE] can only be set using the environment
-variable of the same name. This is because all other settings check a
-@tech{workspace}-specific configuration file, and that file cannot be
-known until @racket[XIDEN_WORKSPACE] is set.
+variable of the same name. This is because all other settings come
+from a @tech{plugin}, and the plugin's location cannot be known until
+@racket[XIDEN_WORKSPACE] is set.
 
 @racket[XIDEN_WORKSPACE] must be a @racket[complete-path?]. If the
 path points to an existing entry on the filesystem, then that entry
 must be a directory. If the path points to no existing entry, then
 @tt{xiden} will create a directory at that path.
 
+
 @section[#:tag "trusting-pubkeys"]{Trusting Public Keys and Executables}
 
-You can use Xiden's integrity checking system to specify
-public keys and executables that you trust. You specify the integrity
-information the same way that you would for an input in a
-@tech{package definition}.
+You can use Xiden's integrity expressions to specify public keys and
+executables that you trust. You specify the integrity information the
+same way that you would for an input in a @tech{package definition}.
 
 This example value for @racket[XIDEN_TRUST_PUBLIC_KEYS] includes the
 integrity information for my own public key located at

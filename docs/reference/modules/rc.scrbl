@@ -34,27 +34,17 @@ the method before it.
 @itemlist[
 @item{Do nothing. Every setting has a hard-coded default.}
 @item{Set an environment variable, e.g. @litchar{export XIDEN_VERBOSE="#t"}.}
-@item{Open an @tech{rcfile} and add @racket[(define XIDEN_VERBOSE #t)].}
+@item{Provide the value from a @tech{plugin}, e.g. @racket[(define XIDEN_VERBOSE #t)].}
 @item{When applicable, use @litchar{--XIDEN_VERBOSE '#t'} in a command line (or an alternative flag).}
 @item{In a program, use @racket[(XIDEN_VERBOSE #t (lambda () ...))].}
 ]
 
-@include-section{rcfile.scrbl}
 
 @section{Runtime Configuration API}
 
 @defthing[XIDEN_SETTINGS (hash/c symbol? setting? #:immutable #t)]{
 A hash table of all defined @tech{settings}, such that the key for
 each setting is @racket[(setting-id S)].
-}
-
-@defproc[(call-with-rcfile [thunk (-> any)]) any]{
-Calls @racket[thunk] in a @tech/reference{parameterization} where
-fallback values for @tech{settings} consider values from the
-@tech{target rcfile}.
-
-Each call to @racket[call-with-rcfile] reads the content of the
-@tech{target rcfile} into memory.
 }
 
 @defproc[(dump-xiden-settings) (hash/c symbol? any/c)]{
@@ -145,10 +135,6 @@ Like @racket[XIDEN_INSTALL_SOURCES], except each list only needs two strings:
 The output is assumed to be @racket{default}.
 }
 
-@defsetting*[XIDEN_PLUGIN_MODULE]{
-When not @racket[#f], the given module path will be used in @racket[dynamic-require]
-to load extensions.
-}
 
 @defsetting*[XIDEN_TRUST_MESSAGE_DIGEST_ALGORITHMS]{
 A list of trusted cryptographic hash function implementations in

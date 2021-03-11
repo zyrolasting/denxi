@@ -1,4 +1,6 @@
-#lang xiden/rcfile
+#lang racket/base
+
+(provide (all-defined-out))
 
 ; Trust any `sh' executable that can be found in the host's PATH.
 (define XIDEN_TRUST_HOST_EXECUTABLES
