@@ -5,8 +5,7 @@
 (provide (all-defined-out)
          (all-from-out racket/path))
 
-(require racket/path
-         racket/set)
+(require racket/path)
 
 (define (../ path)
   (simplify-path (build-path path 'up)))
@@ -25,11 +24,12 @@
   (require racket/file
            rackunit)
 
+  (test-case "Do not bypass root directory in upward traversals"
+    (for ([root (filesystem-root-list)])
+      (check-equal? root (../ root))))
+
   (test-case "Detect path prefixes"
-    (define path=>prefix
-      '(("/a/b/c" . "/a/b")
-        ("/a/b/c" . "/a/b/c/../..")
-        ("." . "..")))
-    (for ([pair (in-list path=>prefix)])
-      (check-true (path-prefix? (car pair) (cdr pair)))
-      (check-false (path-prefix? (cdr pair) (car pair))))))
+    (define paths '("/a/b/c" "."))
+    (for ([p (in-list paths)])
+      (check-true (path-prefix? p (../ p)))
+      (check-false (path-prefix? (../ p) p)))))
