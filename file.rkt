@@ -101,47 +101,6 @@
                 (λ () (delete-file tmp))))
 
 
-(define (get-cached-file name dirname make!)
-  (define tmp (build-workspace-path "tmp" dirname))
-  (unless (file-exists? tmp)
-    (make-directory* (path-only tmp))
-    (make! tmp))
-  tmp)
-
-
-(define (copy-limited-port-to-file! path in limit)
-  (call-with-output-file path #:exists 'truncate/replace
-    (λ (out)
-      (copy-port (if (eq? limit +inf.0)
-                     in
-                     (make-limited-input-port in limit))
-                 out)
-      (close-input-port in))))
-
-
-(define (get-cached-file* variant [limit +inf.0])
-  (cond [(bytes? variant)
-         (get-cached-file "bytes"
-          (coerce-string (encode 'base32 (subbytes variant 0 (min 64 (bytes-length variant)))))
-          (λ (path)
-            (copy-limited-port-to-file! path (open-input-bytes variant) limit)))]
-
-        [(file-exists? variant)
-         variant]
-
-        [(url-string? variant)
-         (get-cached-file
-          variant
-          (coerce-string (encode 'base32 variant))
-          (λ (path)
-            (copy-limited-port-to-file! path (get-pure-port (string->url variant)) limit)))]
-
-        [else
-         (raise-user-error (format (~a "Cannot understand byte source ~v~n"
-                                       "  Expected a path to a file, bytes, or URL (as a string).")
-                                   variant))]))
-
-
 (define-syntax-rule (with-temporary-directory body ...)
   (call-with-temporary-directory
    (λ (tmp-dir) body ...)))
