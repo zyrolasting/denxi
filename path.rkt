@@ -21,15 +21,15 @@
          (equal? (list-ref maybe-prefixed index)
                  el))))
 
+(module+ test
+  (require racket/file
+           rackunit)
 
-(define (path-cycles? path [previous #f] [encountered (set)])
-  ; Do not let simplify-path consult filesystem, because that would
-  ; follow any link present. We would not get its identity then.
-  (define simple (simplify-path path #f))
-  (define id (file-or-directory-identity simple #t))
-  (cond [(equal? id previous) #f] ; Checks for root directory, given call below.
-        [(set-member? encountered id)]
-        [else
-         (path-cycles? (build-path simple 'up)
-                       id
-                       (set-add encountered id))]))
+  (test-case "Detect path prefixes"
+    (define path=>prefix
+      '(("/a/b/c" . "/a/b")
+        ("/a/b/c" . "/a/b/c/../..")
+        ("." . "..")))
+    (for ([pair (in-list path=>prefix)])
+      (check-true (path-prefix? (car pair) (cdr pair)))
+      (check-false (path-prefix? (cdr pair) (car pair))))))

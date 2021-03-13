@@ -52,23 +52,6 @@
     (delete-file path)))
 
 
-(define (in-acyclic-directory start-dir [use-dir? (λ _ #t)])
-  (in-directory start-dir
-                (λ (p) (if (link-exists? p)
-                           (not (path-cycles? p))
-                           (use-dir? p)))))
-
-
-(define (in-racket-modules start-path)
-  (sequence-filter (λ (p)
-                     (and (not (link-exists? p))
-                          (not (equal? (path->string (file-name-from-path p))
-                                       CONVENTIONAL_WORKSPACE_NAME))
-                          (file-exists? p)
-                          (member (path-get-extension p)
-                                  '(#".rkt" #".ss" #".scrbl"))))
-                   (in-acyclic-directory start-path)))
-
 
 (define (in-matching-files patterns start-dir)
   (in-generator
@@ -77,11 +60,6 @@
      (when (and (file-exists? rel-path)
                 (ormap (λ (p) (regexp-match? p rel-path)) patterns))
        (yield rel-path)))))
-
-
-(define (in-workspace)
-  (in-acyclic-directory (build-workspace-path)
-                        (λ (p) (not (member (path->string (file-name-from-path p)) '(".git"))))))
 
 
 (define (make-link/clobber to link-path)
