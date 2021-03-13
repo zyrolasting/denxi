@@ -60,9 +60,16 @@
   (λ _ (dynamic-require (get-module-path "en-us") sym)))
 
 (module+ test
-  (require rackunit)
+  (require rackunit
+           "message.rkt")
+
+  (test-not-exn "Americentric fallback is always available"
+                (λ ()
+                  (check-pred procedure? (americentric-fallback 'format-message/locale))
+                  (check-pred procedure? (americentric-fallback 'get-string))))
 
   (test-case "Can get formatter on current system"
     (define formatter (get-message-formatter))
     (check-pred procedure? formatter)
-    (check-eq? (procedure-arity formatter) 1)))
+    (check-eq? (procedure-arity formatter) 1)
+    (check-equal? (formatter ($show-string "a")) "a")))
