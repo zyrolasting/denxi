@@ -242,6 +242,14 @@
   (define (station-link-guard l p)
     (station-security-guard void void l p))
 
+  (test-case "Terminate thread at end of procedure"
+    (define useless (thread (λ () (sync never-evt))))
+    (call-with-managed-thread useless
+                              (λ (th)
+                                (check-eq? th useless)
+                                (check-pred thread-running? th)))
+    (check-pred thread-dead? useless))
+
   (test-exn "Restrict listening for network connections"
             (λ (e)
               (match e
