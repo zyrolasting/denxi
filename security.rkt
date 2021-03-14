@@ -6,6 +6,7 @@
 
 (require (only-in net/url-connect
                   current-https-protocol)
+         racket/contract
          racket/exn
          racket/function
          racket/list
@@ -241,6 +242,12 @@
 
   (define (station-link-guard l p)
     (station-security-guard void void l p))
+
+  (test-case "Prescribe write directories per-workspace"
+    (define writeables (get-writeable-workspace-directories))
+    (check-pred (non-empty-listof complete-path?) writeables)
+    (check-equal? (get-writeable-workspace-directories (workspace-directory))
+                  writeables))
 
   (test-case "Terminate thread at end of procedure"
     (define useless (thread (λ () (sync never-evt))))
