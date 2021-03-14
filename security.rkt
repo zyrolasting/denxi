@@ -203,12 +203,9 @@
 
 
 (define (make-link-guard name workspace)
-  (define (path-ok? p)
-    (path-prefix? (simplify-path (if (complete-path? p) p (build-path workspace p)))
-                  workspace))
-
   (λ (op link-path target-path)
-    (unless (path-ok? (normalize-path target-path))
+    (define simple (simplify-path (path->complete-path target-path workspace)))
+    (unless (path-prefix? simple workspace)
       (raise ($restrict:operation name
                                   'link
                                   'blocked-link
@@ -223,11 +220,65 @@
 
 
 (module+ test
-  (require racket/runtime-path
+  (require racket/match
+           racket/runtime-path
            rackunit
+           "file.rkt"
            "strict-rc.rkt")
 
   (define-runtime-path here ".")
+
+  (define (station-security-guard f n l continue)
+    (parameterize ([current-security-guard
+                    (make-security-guard (current-security-guard) f n l)])
+      (continue)))
+
+  (define (station-file-guard f p)
+    (station-security-guard f void void p))
+
+  (define (station-network-guard n p)
+    (station-security-guard void n void p))
+
+  (define (station-link-guard l p)
+    (station-security-guard void void l p))
+
+  (test-exn "Restrict listening for network connections"
+            (λ (e)
+              (match e
+                [($restrict:operation "_" 'network 'blocked-listen _) #t]
+                [_ #f]))
+            (λ ()
+              (station-network-guard (make-network-guard "_")
+                                     (λ ()
+                                       (local-require racket/tcp)
+                                       (tcp-listen 9000)))))
+
+  (test-case "Restrict link creation to files in workspaces"
+    (call-with-temporary-directory
+     (λ (dir)
+       (station-link-guard
+        (make-link-guard "_" dir)
+        (λ ()
+          (define link-path (build-path dir "link"))
+          (define target-path (build-path dir "target"))
+          (define (ln t)
+            (make-file-or-directory-link t link-path))
+
+          ; The security guard only objects if a symlink points
+          ; outside to a non-child of `dir`.
+          (check-exn
+           (λ (e)
+             (match e
+               [($restrict:operation "_" 'link 'blocked-link _) #t]
+               [_ #f]))
+           (λ ()
+             ; Using two 'up arguments because the guard sees only
+             ; a trailing slash difference for some reason.
+             (ln (build-path target-path 'up 'up))))
+
+          (check-not-exn
+           (λ () (ln target-path))))))))
+
 
   (test-case "Build executable trust profiles"
     (define my-file "security.rkt")
