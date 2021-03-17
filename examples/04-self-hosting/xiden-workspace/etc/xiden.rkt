@@ -1,5 +1,8 @@
 #lang racket/base
 
+(require xiden/codec
+         xiden/integrity)
+
 (provide (all-defined-out))
 
 ; Trust any `sh' executable that can be found in the host's PATH.
