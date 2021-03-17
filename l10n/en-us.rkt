@@ -381,8 +381,9 @@
            path)]
 
   [($restrict:operation name 'link 'blocked-link (list _ link-path target-path))
-   (format (~a "~a it tried to create a link at ~a (target: ~a)~n"
-               "Packages can only create links in their workspace.")
+   (format (~a "~a it tried to create a link outside of an allowed directory.~n"
+               "  link path: ~a~n"
+               "  target: ~a~n")
            (restrict-preamble name)
            link-path
            target-path)]
