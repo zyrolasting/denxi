@@ -204,9 +204,9 @@
 
 
 (define (make-link-guard name workspace)
-  (λ (op link-path target-path)
-    (define simple (simplify-path (path->complete-path target-path workspace)))
-    (unless (path-prefix? simple workspace)
+  (λ (op link-path maybe-complete-target-path)
+    (define target-path (simple-form-path maybe-complete-target-path))
+    (unless (path-prefix? target-path workspace)
       (raise ($restrict:operation name
                                   'link
                                   'blocked-link
