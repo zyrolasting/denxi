@@ -13,4 +13,4 @@
 ; Paste the expression from Step 4 into this list. This is how you
 ; tell Xiden that you trust a public key. Note that this list is not
 ; quoted!
-(define XIDEN_TRUST_PUBLIC_KEYS (list)))
+(define XIDEN_TRUST_PUBLIC_KEYS (list))
