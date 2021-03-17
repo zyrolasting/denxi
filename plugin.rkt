@@ -28,7 +28,7 @@
 
 (define (plugin-ref key default-value)
   (let ([fail (const default-value)])
-    (load-from-plugin key fail fail)))
+    (load-from-plugin key fail raise)))
 
 
 (module+ test
