@@ -27,8 +27,9 @@
 
 
 (define (plugin-ref key default-value)
-  (let ([fail (const default-value)])
-    (load-from-plugin key fail raise)))
+  (with-handlers ([exn:fail:filesystem:missing-module? (λ _ default-value)])
+    (let ([fail (const default-value)])
+      (load-from-plugin key fail raise))))
 
 
 (module+ test
