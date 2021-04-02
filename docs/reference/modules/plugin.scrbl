@@ -5,6 +5,7 @@
                     racket/function
                     xiden/rc
                     xiden/source
+                    xiden/package
                     xiden/plugin
                     xiden/racket-module]
                     "../../shared.rkt"]
@@ -121,4 +122,22 @@ This creates builds that will not terminate. Even if Xiden downloads a
 new package definition from @racket{https://example.com/other.rkt}, it
 will only be replaced by another instance of the same data returned
 from @racket[before-new-package].
+}
+
+
+@defproc[(override-package [p package?] [arg any/c] ...) package?]{
+Replaces one package with another. Xiden applies
+@racket[override-package] when evaluating @racket[comission] terms in
+a package definition. The first argument is always a package with a
+state built by preceding terms. If you do not wish to impact the
+package at all, just return @racket[p].
+
+The remaining arguments (be they keyword arguments or formal
+arguments) depend on the implementation of @racket[override-package],
+since @racket[comission] simply forwards the user's arguments to it.
+
+@racket[override-package] is useful for computing a complete package
+definition in terms of limited data and prescribed conventions. It may
+be easier to define @racket[override-package] than to write a new
+module language or reader extension.
 }

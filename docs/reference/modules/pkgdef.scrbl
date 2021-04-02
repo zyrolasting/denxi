@@ -30,6 +30,35 @@ provided from the module as @racket[pkg].
 
 @section[#:tag "pkgdef-terms"]{Package Definition Terms}
 
+@defform[(comission anything ...)]{
+Comissions a new package from the installed @tech{plugin}.
+
+@racket[comission] expands to @racket[(override-package P anything ...)],
+where @racket[override-package] is defined by the corresponding
+@tech{plugin}, and @racketid[P] is the current state of the package
+during evaluation of terms.
+
+If @racket[override-package] is not defined, then @racket[comission]
+has no effect. Any package definition using @racket[comission] might
+not function without a compatible plugin installed in the
+@tech{workspace}.
+
+@racketmod[xiden
+(code:comment "This example invokes the plugin during evaluation")
+(code:comment "The plugin will see the provider, package, and edition name, but not the revision.")
+(provider "example.com")
+(package "anvil")
+(edition "heavy")
+(comission)
+(revision-number 1)
+]
+
+@racketmod[xiden
+(code:comment "This example invokes the plugin with arguments")
+(comission "anvil" #:verbose? #t)
+]
+}
+
 @defform*[((define id value)
            (define (id formals ...) body ...))]{
 @racket[define] is allowed in module context to bind procedures and

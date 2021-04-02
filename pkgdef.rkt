@@ -10,6 +10,7 @@
          byte-source
          catalog-source
          coerce-source
+         comission
          define
          description
          edition
@@ -79,6 +80,7 @@
          "logged.rkt"
          "monad.rkt"
          "package.rkt"
+         "plugin.rkt"
          "racket-module.rkt"
          "setting.rkt"
          "signature.rkt"
@@ -170,6 +172,13 @@
   (λ (st)
     (set-field st inputs
                (cons (make-input-info name . args) (package-inputs st)))))
+
+(define-modifier (comission form ...+)
+  (λ (st)
+    (let ([modify (plugin-ref 'override-package #f)])
+      (if modify
+          (modify st form ...)
+          st))))
 
 (define-modifier (metadatum name:id v:string)
   (λ (st)
