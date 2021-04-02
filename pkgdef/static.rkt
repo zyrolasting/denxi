@@ -29,7 +29,7 @@
           [make-input-expression
            (->* ((or/c path-string? input-port?)
                  (-> bytes? path-string? (non-empty-listof any/c))
-                 string?
+                 (or/c #f non-empty-string? (non-empty-listof any/c))
                  path-string?)
                 (#:local-name string?
                  #:md-algorithm md-algorithm/c
@@ -51,7 +51,7 @@
                bare-pkgdef?)]
           [autocomplete-inputs
            (->* (bare-racket-module?
-                 #:public-key-source (or/c #f non-empty-string?)
+                 #:public-key-source (or/c #f non-empty-string? (non-empty-listof any/c))
                  #:private-key-path (or/c #f path-string?)
                  #:find-data procedure?)
                 (#:default-name non-empty-string?
@@ -62,7 +62,7 @@
                 bare-racket-module?)]
           [autocomplete-input-expression
            (->* (any/c
-                 #:public-key-source (or/c #f non-empty-string?)
+                 #:public-key-source (or/c #f non-empty-string? (non-empty-listof any/c))
                  #:private-key-path (or/c #f path-string?)
                  #:find-data procedure?)
                 (#:default-name non-empty-string?

@@ -136,7 +136,7 @@ arguments.
          [#:byte-encoding byte-encoding (or/c #f xiden-encoding/c) 'base64]
          [#:md-algorithm message-digest-algorithm md-algorithm/c 'sha384]
          [make-sources (-> bytes? path-string? (non-empty-listof any/c))]
-         [public-key-source string?]
+         [public-key-source (or/c #f non-empty-string? (non-empty-listof any/c))]
          [private-key-path path-string?]
          [private-key-password-path (or/c #f path-string?) #f])
          list?]{
@@ -218,7 +218,7 @@ This allows authors to define several inputs the same way.
 @defproc[(autocomplete-input-expression
            [expr any/c]
            [#:default-name default-name non-empty-string? DEFAULT_STRING]
-           [#:public-key-source public-key-source non-empty-string?]
+           [#:public-key-source public-key-source (or/c #f non-empty-string? (non-empty-listof any/c))]
            [#:find-data find-data procedure?]
            [#:private-key-path private-key-path path-string?]
            [#:byte-encoding byte-encoding (or/c #f xiden-encoding/c) 'base64]
@@ -250,7 +250,7 @@ Equivalent to
 
 @defproc[(autocomplete-inputs [stripped bare-racket-module?]
                               [#:default-name default-name non-empty-string? DEFAULT_STRING]
-                              [#:public-key-source public-key-source non-empty-string?]
+                              [#:public-key-source public-key-source (or/c #f non-empty-string? (non-empty-listof any/c))]
                               [#:find-data find-data procedure?]
                               [#:private-key-path private-key-path path-string?]
                               [#:byte-encoding byte-encoding (or/c #f xiden-encoding/c) 'base64]
