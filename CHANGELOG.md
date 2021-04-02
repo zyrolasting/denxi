@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format of this file is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 This project follows [these versioning rules](https://sagegerard.com/edition-revision-versioning.html).
 
-## [draft:beta] - 2020-03-17
+## [draft:beta] - 2021-03-17
 
 - Can now extract from any archive format using a plugin
 - Can now extract from both `.tar.gz` and `.tgz`, not just the latter.
