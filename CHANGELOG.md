@@ -62,6 +62,6 @@ This project follows [these versioning rules](https://sagegerard.com/edition-rev
     - GET file from URN's NSS
 
 
-[Unreleased]: https://github.com/zyrolasting/xiden/compare/alpha...HEAD
+[Unreleased]: https://github.com/zyrolasting/xiden/compare/beta...HEAD
 [draft:alpha]: https://github.com/zyrolasting/xiden/releases/tag/alpha
 [draft:beta]: https://github.com/zyrolasting/xiden/releases/tag/beta
