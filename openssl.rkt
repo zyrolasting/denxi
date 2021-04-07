@@ -13,6 +13,8 @@
            (non-empty-listof symbol?)]
           [md-algorithm/c
            flat-contract?]
+          [DEFAULT_CHF
+           md-algorithm/c]
           [md-bytes-source/c
            flat-contract?]
           [make-digest
@@ -47,6 +49,7 @@
 (define md-algorithm/c
   (apply or/c md-algorithms))
 
+(define DEFAULT_CHF 'sha3-384)
 
 (define (make-digest variant algorithm)
   (cond [(path-string? variant)

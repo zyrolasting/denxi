@@ -15,6 +15,13 @@
 OpenSSL is an implicitly-trusted dependency that Xiden invokes as a
 subprocess.
 
+@defthing[DEFAULT_CHF md-algorithm/c #:value 'sha3-384]{
+A fallback cryptographic hash function.
+
+This value is subject to change for security reasons, and is not
+guarenteed to be available in the installed OpenSSL implementation.
+}
+
 @defthing[md-algorithm/c flat-contract? #:value (apply or/c md-algorithms)]{
 A contract that accepts one of the symbols in @racket[md-algorithms].
 }
