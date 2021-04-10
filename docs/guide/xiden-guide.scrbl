@@ -24,7 +24,9 @@ To track Xiden's progress as a project, see @secref{project}.
 @include-section{workspace.scrbl}
 @include-section{config.scrbl}
 @include-section{cli.scrbl}
+@include-section{versioning.scrbl}
 @include-section{queries.scrbl}
 @include-section{catalog.scrbl}
+@include-section{perfecting-packages.scrbl}
 @include-section{security.scrbl}
 @include-section{project.scrbl}
