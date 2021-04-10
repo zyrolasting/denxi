@@ -22,11 +22,11 @@ same level of privilege as the OS-level user. This means that a plugin
 may freely reconfigure Xiden, if not outright harm a system.
 
 @defproc[(load-from-plugin [key symbol?] [fail-thunk (-> any)] [on-load-failure (-> exn:fail? any)]) any]{
-Evaluates as @racket[(dynamic-require (XIDEN_PLUGIN_MODULE) key fail-thunk)].
+Evaluates as @racket[(dynamic-require P key fail-thunk)], where
+@racketid[P] is the path to the @tech{plugin}.
 
-If @racket[(XIDEN_PLUGIN_MODULE)] fails to load,
-@racket[load-from-plugin] returns the result of
-@racket[on-load-failure] applied to the relevant exception.
+If the plugin fails to load, @racket[load-from-plugin] returns the
+result of @racket[on-load-failure] applied to the relevant exception.
 }
 
 @defproc[(plugin-ref [key symbol?] [default-value any/c]) any/c]{
