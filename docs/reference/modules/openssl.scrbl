@@ -34,7 +34,8 @@ Given @racket[(bytes? V)] or @racket[(input-port? V)], the bytes are drawn direc
 }
 
 @defthing[md-algorithms (listof symbol?)]{
-A list of symbols that represent supported message digest algorithms.
+A list of symbols that represent supported message digest algorithms,
+a.k.a. cryptographic hash functions.
 
 Bound to @typeset-code[(pretty-format #:mode 'print md-algorithms)]
 }
