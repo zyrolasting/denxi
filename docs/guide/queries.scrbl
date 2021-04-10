@@ -10,16 +10,19 @@ string.
 
 @section{Simple Queries}
 
-In the simplest case, a @tech{package query} contains only a provider
-name and a package name, like @tt{example.com:calculator}. Such a
-query is understood to mean "the @tt{calculator} package provided by
-@tt{example.com}".
+A @tech{package query} looks like @tt{example.com:calculator}, and
+that one is understood to mean “the @tt{calculator} package provided
+by @tt{example.com}.”
 
 Why not just say @tt{calculator}? Because providers are presumed
 unique, and using a verifiable identity to scope packages helps
 establish a name for your software across hosts. It also establishes a
 basis for comparison when two developers use the same package name
 but deliver different work.
+
+Field positions are important. You can still create a query for just
+@tt{calculator}, but @tt{calculator} would be intepreted as the
+provider, and not the package name.
 
 
 @section{Specifying an Edition}
@@ -108,36 +111,17 @@ example.com:calculator:scientific:3:3:ee
 
 @section{Omitting Information}
 
-You may omit certain fields for convenience and to accept
-defaults. Two contiguous colons will set the associated field to the
-empty string. Any contiguous colon sequence at the end of a query is
-implied and does not need to be typed.
+You may omit fields in @tech{package queries}. Two contiguous colons
+will set the associated field to the empty string. Any contiguous
+colon sequence at the end of a query is implied and does not need to
+be typed.
 
 @verbatim|{
 example.com:calculator::production
 }|
 
-Provider names and package names are required, but Xiden
-interprets other empty strings as unset values in a query. When
-searching for packages, it will use default values according to the
-following rules:
+In fact, even the empty string is a valid @tech{package query}.
+Therefore @racket[""] and @racket[":::"] parse the same way.
 
-@itemlist[
-
-@item{If no edition is set, Xiden will assume the edition is @racket{default}.}
-
-@item{If no revision is set, Xiden will use the largest available revision number.}
-
-@item{If a minimum revision is set, but not a maximum, Xiden
-will assume the maximum revision is equal to the minimum revision
-(creating a request for an exact revision).}
-
-@item{If no interval boundaries are set, Xiden will assume @racket{ii}.}
-
-]
-
-By these rules, @tt{example.com:calculator:teacher:1} matches only
-revision @racket[1] of a calculator's teacher edition. When searching
-for multiple packages, omitting information will cause Xiden
-to match against more packages. In that case, omitting revision
-information will result in matching against all revisions.
+Xiden has no opinion on how to handle empty fields. @tech{Catalogs}
+may autocomplete package queries with conventional defaults.
