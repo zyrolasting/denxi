@@ -188,6 +188,7 @@
 (flag-out [--byte-encoding] (cli-flag/unary XIDEN_BYTE_ENCODING arg->value "byte-encoding"))
 (flag-out [--md] (cli-flag/unary XIDEN_MESSAGE_DIGEST_ALGORITHM arg->value "algorithm"))
 (flag-out [-g --generated-input-name] (cli-flag/unary XIDEN_GENERATED_INPUT_NAME keep "name"))
+(flag-out [-u --default-catalog-base-url] (cli-flag/unary XIDEN_DEFAULT_CATALOG_BASE_URL keep "url"))
 (flag-out [--signer]
           (cli-flag XIDEN_SIGNER 'once-each null 3
                     (λ (flag public-key-source private-key-path password-path)

@@ -30,6 +30,9 @@
     [(no-user-facing-sources)
      "no useable sources are defined for the end user"]
 
+    [(XIDEN_DEFAULT_CATALOG_BASE_URL)
+     "Base URL used for the default catalog"]
+
     [(XIDEN_MEMORY_LIMIT_MB)
      "Memory limit for the process"]
 

@@ -46,6 +46,7 @@
         ++envvar
         ++trust-executable
         ++trust-host-executable
+        --default-catalog-base-url
         --fasl-output
         --memory-limit
         --reader-friendly-output

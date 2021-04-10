@@ -84,6 +84,12 @@ values and command-line flags.
     [(_ s pre-content ...)
       #`(defsetting s #,(infer-contract-expr stx (eval #'s)) pre-content ...)]))
 
+@defsetting*[XIDEN_DEFAULT_CATALOG_BASE_URL]{
+Defines the @racket[base-url] argument for
+@racket[set-catalog-http-host] in the context of
+@racket[(get-default-catalog)].
+}
+
 @defsetting*[XIDEN_MEMORY_LIMIT_MB]{
 Defines a memory limit for a custodian managing process resources, in
 mebibytes.  If this is too low, then it is possible for Xiden to halt
