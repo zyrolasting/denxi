@@ -10,6 +10,7 @@
                     xiden/query
                     xiden/source
                     xiden/string
+                    xiden/url
                     xiden/version]]
 
 @title{Catalogs}
