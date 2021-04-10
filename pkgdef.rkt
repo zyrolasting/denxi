@@ -8,10 +8,10 @@
          base32
          base64
          byte-source
-         catalog-source
          coerce-source
          comission
          define
+         dependencies
          description
          edition
          extract
@@ -179,6 +179,12 @@
       (if modify
           (modify st form ...)
           st))))
+
+(define-modifier (dependencies query:string ...+)
+  (λ (st)
+    (add-catalogged-inputs (plugin-ref 'canonical-catalog (get-default-catalog))
+                           st
+                           (list query ...))))
 
 (define-modifier (metadatum name:id v:string)
   (λ (st)
