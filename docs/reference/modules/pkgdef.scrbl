@@ -3,11 +3,14 @@
 @require[@for-label[racket/base
                     racket/contract
                     racket/string
+                    xiden/catalog
                     xiden/file
                     xiden/input-info
                     xiden/logged
                     xiden/package
+                    xiden/query
                     xiden/rc
+                    xiden/version
                     @only-in[xiden/url url-string?]
                     @except-in[xiden/pkgdef #%module-begin]]
          @for-syntax[racket/base
