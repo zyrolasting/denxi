@@ -199,21 +199,27 @@
 (define-source #:key http-source-request-url
                (http-source [request-url (or/c url? url-string?)])
   (with-handlers ([exn? %fail])
-    (define-values (in headers-string)
-      (get-pure-port/headers #:redirections (rc-ref 'XIDEN_DOWNLOAD_MAX_REDIRECTS)
-                             #:method #"GET"
-                             (if (url? request-url)
-                                 request-url
-                                 (string->url request-url))))
-
-    (define content-length-pair
-      (assf (λ (el) (equal? (string-downcase el) "content-length"))
-            (extract-all-fields headers-string)))
-
-    (%tap in
-          (if content-length-pair
-              (string->number (or (cdr content-length-pair) "+inf.0"))
-              +inf.0))))
+    (define coerced-url
+      (if (url? request-url)
+          request-url
+          (string->url request-url)))
+    (if (equal? (url-scheme coerced-url) "file")
+        (let ([path-els (map path/param-path (url-path coerced-url))])
+          (%fetch (file-source (apply build-path
+                                      (if (and (not (equal? (system-type 'os) 'windows))
+                                               (url-path-absolute? coerced-url))
+                                          (cons "/" path-els)
+                                          path-els)))))
+        (let*-values ([(in headers-string)
+                       (get-pure-port/headers #:redirections (rc-ref 'XIDEN_DOWNLOAD_MAX_REDIRECTS)                                        #:method #"GET"
+                                              coerced-url)]
+                      [(content-length-pair)
+                       (assf (λ (el) (equal? (string-downcase el) "content-length"))
+                             (extract-all-fields headers-string))])
+          (%tap in
+                (if content-length-pair
+                    (string->number (or (cdr content-length-pair) "+inf.0"))
+                    +inf.0))))))
 
 
 (define-source #:key http-mirrors-source-request-urls
@@ -352,16 +358,21 @@
                                                        (this-expression-file-name))))
 
 
-  (test-true "Fetch from file"
+  (test-case "Fetch from file"
     (call-with-temporary-file
      (λ (tmp-path)
        (display-to-file #:exists 'truncate/replace "123" tmp-path)
-       (fetch (file-source tmp-path)
-              (λ (in est-size)
-                (and (equal? (read in) 123)
-                     (<= (abs (- est-size (file-size tmp-path)))
-                         (* 20 1024))))
-              (λ _ #f)))))
+
+       (define (tap in est-size)
+         (and (equal? (read in) 123)
+              (<= (abs (- est-size (file-size tmp-path)))
+                  (* 20 1024))))
+
+       (check-true (fetch (file-source tmp-path) tap values))
+       (test-true "Fetch file via http-source"
+                  (fetch (http-source (~a "file://" tmp-path))
+                         tap
+                         values)))))
 
 
   (test-case "Fetch over HTTP"
@@ -389,7 +400,7 @@
       #t)
 
     (define (check s)
-      (check-true (fetch s tap (λ _ #f))))
+      (check-true (fetch s tap values)))
 
     (dynamic-wind void
                   (λ ()
