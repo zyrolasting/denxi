@@ -4,7 +4,6 @@
          racket/function
          racket/match
          racket/promise
-         net/url
          "codec.rkt"
          "format.rkt"
          "input-info.rkt"
@@ -18,6 +17,7 @@
          "source.rkt"
          "strict-rc.rkt"
          "string.rkt"
+         "url.rkt"
          "version.rkt")
 
 (provide
@@ -75,6 +75,10 @@
   [set-catalog-filesystem-directory
    (-> catalog?
        complete-path?
+       catalog?)]
+  [set-catalog-http-host
+   (-> catalog?
+       (or/c url? url-string?)
        catalog?)]))
 
 

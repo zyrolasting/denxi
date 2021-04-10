@@ -84,10 +84,17 @@ values and command-line flags.
     [(_ s pre-content ...)
       #`(defsetting s #,(infer-contract-expr stx (eval #'s)) pre-content ...)]))
 
-@defsetting*[XIDEN_DEFAULT_CATALOG_BASE_URL]{
+@defthing[#:kind "setting"
+          XIDEN_DEFAULT_CATALOG_BASE_URL
+          url-string?]{
 Defines the @racket[base-url] argument for
 @racket[set-catalog-http-host] in the context of
 @racket[(get-default-catalog)].
+
+The default value is the result of the following expression:
+
+@racketblock[
+(~a "file://" (build-path (find-system-path 'home-dir) "xiden-catalog"))]
 }
 
 @defsetting*[XIDEN_MEMORY_LIMIT_MB]{
