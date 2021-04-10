@@ -422,7 +422,7 @@ definition, using @litchar{Content-Type: application/octet-stream} or
 }
 
 @item{
-@litchar{GET /P/K/E/N.CHF.sig} the signature bytes for a digest, using
+@litchar{GET /P/K/E/N.CHF.sig} yields the signature bytes for a digest, using
 @litchar{Content-Type: application/octet-stream}.
 }
 
