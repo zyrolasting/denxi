@@ -3,6 +3,7 @@
 @(require (for-label racket
                      racket/fasl
                      racket/serialize
+                     xiden/catalog
                      xiden/integrity
                      xiden/rc
                      xiden/setting
