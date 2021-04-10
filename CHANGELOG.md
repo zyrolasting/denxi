@@ -9,6 +9,9 @@ This project follows [these versioning rules](https://sagegerard.com/edition-rev
 ## Unreleased
 
 - Add default CHF that is subject to change
+- Support `file://` URLs in `http-source`
+- Make catalogs more useful: Request packages using a base URL and/or
+  highly-abbreviated queries
 
 
 ## [draft:beta] - 2021-03-17
