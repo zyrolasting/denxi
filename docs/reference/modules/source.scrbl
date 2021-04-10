@@ -276,6 +276,10 @@ A @tech{source} that, when @tech{tapped}, yields bytes from an HTTP
 response body. The response comes from a GET request to
 @racket[request-url], and the body is only used for a 2xx response.
 
+If @racket[request-url] has the @racket{file} scheme, then
+@racket[http-source] behaves like @racket[file-source]. In this case,
+only the URL path is used from @racket[request-url].
+
 If the source is @tech{exhausted}, it yields a relevant exception.
 
 The behavior of the source is impacted by @racket[XIDEN_DOWNLOAD_MAX_REDIRECTS].
