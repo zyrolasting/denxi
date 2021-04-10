@@ -69,6 +69,10 @@ common values. All @racket[define]s are hoisted above all other terms
 before evaluation.
 }
 
+@defform[(dependencies query ...) #:contracts ([query package-query?])]{
+Updates the package using @racket[add-catalogged-inputs] and the
+catalog defined by the @tech{plugin}.
+}
 
 @defform[(description string-fragment ...) #:contracts ([string-fragment non-empty-string?])]{
 Sets @racket[package-description].

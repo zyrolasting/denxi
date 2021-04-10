@@ -8,6 +8,7 @@
                     syntax/modread
                     xiden/codec
                     xiden/integrity
+                    xiden/openssl
                     xiden/pkgdef/static
                     xiden/racket-module
                     xiden/string]

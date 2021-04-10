@@ -3,6 +3,7 @@
 @require[@for-label[racket/base
                     racket/contract
                     racket/function
+                    xiden/catalog
                     xiden/rc
                     xiden/source
                     xiden/package
@@ -39,10 +40,13 @@ references to user-defined extensions. The bindings defined below are
 not provided by Xiden, but are instead provided by a
 @tech{plugin} to support the written behavior.
 
-@defthing[catalog catalog?]{
+@defthing[canonical-catalog catalog?]{
 A @tech{catalog} used to resolve package queries.
 
-Defaults to @racket[default-catalog].
+The catalog instance is considered authoratative.  You may incorporate
+many catalogs into that one instance.
+
+Defaults to @racket[(get-default-catalog)].
 }
 
 @defproc[(string->source [user-string string?]) source?]{
