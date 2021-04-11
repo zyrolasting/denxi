@@ -132,8 +132,8 @@ An @deftech{abstract package input} (or just “abstract input”) is a
 @racketblock[(input "server.rkt")]
 
 By contrast, @deftech{concrete package inputs} are package inputs that
-include a @tech{source}. A concrete package input does not have to
-include integrity information or a signature.
+include a @tech/xiden-reference{source}. A concrete package input does
+not have to include integrity information or a signature.
 
 Abstract inputs cannot be used to fetch exact bytes. Use them to
 require the end user to define their own implementation for
