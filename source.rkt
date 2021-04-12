@@ -39,6 +39,7 @@
 
 (define+provide-message $fetch (id errors))
 (define+provide-message $bad-source-eval (reason datum context))
+(define+provide-message $untrusted-cert (url original-exn))
 
 (provide define-source
          empty-source
@@ -198,11 +199,17 @@
 
 (define-source #:key http-source-request-url
                (http-source [request-url (or/c url? url-string?)])
-  (with-handlers ([exn? %fail])
-    (define coerced-url
-      (if (url? request-url)
-          request-url
-          (string->url request-url)))
+  (define coerced-url
+    (if (url? request-url)
+        request-url
+        (string->url request-url)))
+  (with-handlers ([exn:fail:network?
+                   (λ (network-exn)
+                     (if (regexp-match? #rx"certificate verify failed"
+                                        (exn-message network-exn))
+                         (%fail ($untrusted-cert coerced-url network-exn))
+                         (%fail network-exn)))]
+                  [exn? %fail])
     (if (equal? (url-scheme coerced-url) "file")
         (let ([path-els (map path/param-path (url-path coerced-url))])
           (%fetch (file-source (apply build-path

@@ -221,6 +221,14 @@
                                           (XIDEN_TRUST_MESSAGE_DIGEST_ALGORITHMS)))
                     '("md-algorithm")))
 
+(flag-out [++trust-cert]
+          (cli-flag XIDEN_TRUST_CERTIFICATES
+                    'multi null 1
+                    (λ (flag cert-path)
+                      (cons (expand-user-path cert-path)
+                            (XIDEN_TRUST_CERTIFICATES)))
+                    '("path")))
+
 (flag-out [+p ++trust-public-key]
           (cli-flag XIDEN_TRUST_PUBLIC_KEYS
                     'multi null 1 (λ (flag integrity-expr)

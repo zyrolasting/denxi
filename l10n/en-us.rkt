@@ -30,6 +30,9 @@
     [(no-user-facing-sources)
      "no useable sources are defined for the end user"]
 
+    [(XIDEN_TRUST_CERTIFICATES)
+     "Certificate file to trust when establishing HTTPS connections"]
+
     [(XIDEN_DEFAULT_CATALOG_BASE_URL)
      "Base URL used for the default catalog"]
 
@@ -419,6 +422,20 @@
               (format "security violation: ~s" context)]
              [(invariant) "expression did not produce a source"]
              [else "unknown reason"]))]
+
+  [($untrusted-cert uri original-exn)
+   (format (~a "Could not connect to a server due to an untrusted certificate.~n"
+               "~n  ~a~n~n"
+               "If you trust those running the servers at ~a, download the~n"
+               "certificate from a location that your operating system trusts ~n"
+               "(to mitigate the risk of man-in-the-middle attacks), then add ~n"
+               "that certificate to ~a.~n~n"
+               "Original error follows:~n"
+               "~a")
+           (url->string uri)
+           (url-host uri)
+           (setting-id XIDEN_TRUST_CERTIFICATES)
+           (exn->string original-exn))]
 
   [($cycle key)
    (format "Found cycle at ~s. You may have a circular dependency." key)])

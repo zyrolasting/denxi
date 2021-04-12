@@ -5,10 +5,12 @@
 (require racket/match
          racket/path
          racket/sequence
+         "catalog.rkt"
          "cli-flag.rkt"
          "cmdline.rkt"
          "codec.rkt"
          "format.rkt"
+         "input-info.rkt"
          "integrity.rkt"
          "l10n.rkt"
          "localstate.rkt"
@@ -18,6 +20,7 @@
          "openssl.rkt"
          "package.rkt"
          "pkgdef/static.rkt"
+         "plugin.rkt"
          "port.rkt"
          "printer.rkt"
          "query.rkt"
@@ -46,6 +49,7 @@
         ++envvar
         ++trust-executable
         ++trust-host-executable
+        ++trust-cert
         --default-catalog-base-url
         --fasl-output
         --memory-limit
@@ -79,6 +83,7 @@
                                  #:allowed-envvars (XIDEN_ALLOW_ENV)
                                  #:trust-unverified-host? (XIDEN_TRUST_UNVERIFIED_HOST)
                                  #:trust-any-executable? (XIDEN_TRUST_ANY_EXECUTABLE)
+                                 #:trust-certificates (XIDEN_TRUST_CERTIFICATES)
                                  #:implicitly-trusted-host-executables (XIDEN_TRUST_HOST_EXECUTABLES)
                                  #:workspace (workspace-directory)
                                  #:gc-period 30

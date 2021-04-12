@@ -10,6 +10,7 @@
          racket/exn
          racket/function
          racket/list
+         openssl
          "codec.rkt"
          "integrity.rkt"
          "message.rkt"
@@ -33,6 +34,7 @@
                   #:trust-unverified-host? trust-unverified-host?
                   #:trust-any-executable? trust-any-executable?
                   #:implicitly-trusted-host-executables implicitly-trusted-host-executables
+                  #:trust-certificates trust-certificates
                   #:workspace workspace
                   #:gc-period gc-period
                   #:name [name (or (object-name proc) "")])
@@ -59,6 +61,7 @@
                           (make-envvar-subset allowed-envvars)
                           plan
                           (if trust-unverified-host? 'auto 'secure)
+                          trust-certificates
                           proc)
       (λ (worker-thread)
         (unless (sync/timeout time-limit worker-thread)
@@ -69,7 +72,13 @@
 ;-------------------------------------------------------------------------------
 ; Control
 
-(define (make-worker-thread name memory-limit security-guard envvars plan https-protocol proc)
+(define (make-worker-thread name
+                            memory-limit
+                            security-guard
+                            envvars plan
+                            https-protocol
+                            trust-certificates
+                            proc)
   (thread
    (λ ()
      (call-with-custom-custodian memory-limit
@@ -80,7 +89,10 @@
                          (λ (e) (plan 1 ($show-string (exn->string e))))])
           (parameterize ([current-environment-variables envvars]
                          [current-https-protocol https-protocol]
-                         [current-security-guard security-guard])
+                         [current-security-guard security-guard]
+                         [ssl-default-verify-sources
+                          (append trust-certificates
+                                  (ssl-default-verify-sources))])
             (call-with-values (λ () (call/cc proc))
                               plan))))))))
 

@@ -29,4 +29,5 @@
    "../source.rkt"
    "../string.rkt"
    "../system.rkt"
+   "../url.rkt"
    "../workspace.rkt")

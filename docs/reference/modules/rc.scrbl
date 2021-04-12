@@ -163,6 +163,13 @@ OpenSSL.
 @bold{Dangerous}. When true, trust any input that has a signature that does not match the input's integrity information.
 }
 
+@defsetting*[XIDEN_TRUST_CERTIFICATES]{
+A list of paths to server certificates that Xiden will trust in
+addition to those available in the operating system. This option is
+safer than @racket[XIDEN_TRUST_UNVERIFIED_HOST] so long as the
+certificates are verified by a trusted party.
+}
+
 @defsetting*[XIDEN_TRUST_UNVERIFIED_HOST]{
 @bold{Dangerous}. When true, trust any server that was not authenticated using available certificates.
 }

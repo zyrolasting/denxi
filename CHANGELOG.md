@@ -12,7 +12,7 @@ This project follows [these versioning rules](https://sagegerard.com/edition-rev
 - Support `file://` URLs in `http-source`
 - Make catalogs more useful: Request packages using a base URL and/or
   highly-abbreviated queries
-
+- Add setting for trusting server certificates outside of the OS trust store.
 
 ## [draft:beta] - 2021-03-17
 
