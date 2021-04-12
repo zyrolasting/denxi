@@ -135,10 +135,12 @@
 (define (resolve-revision-interval #:default-bounds [default-bounds "ii"] query revision->revision-number)
   (let ([bounds (if (boundary-flags-string? (parsed-package-query-interval-bounds query))
                     (parsed-package-query-interval-bounds query)
-                    default-bounds)])
+                    default-bounds)]
+        [lo-variant (revision->revision-number #f (parsed-package-query-revision-min query))]
+        [hi-variant (revision->revision-number #t (parsed-package-query-revision-max query))])
     (make-revision-interval
-     (coerce-revision-number (revision->revision-number #f (parsed-package-query-revision-min query)))
-     (coerce-revision-number (revision->revision-number #t (parsed-package-query-revision-max query)))
+     (and lo-variant (coerce-revision-number lo-variant))
+     (and hi-variant (coerce-revision-number hi-variant))
      #:lo-exclusive (boundary-flag->boolean (string-ref bounds 0))
      #:hi-exclusive (boundary-flag->boolean (string-ref bounds 1)))))
 
