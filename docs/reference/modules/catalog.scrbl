@@ -116,6 +116,17 @@ behave differently if @racket[XIDEN_DEFAULT_CATALOG_BASE_URL] changes
 in between.
 }
 
+@defstruct[catalog-source ([query package-query-variant?])]{
+A @tech{source} that consults the @tech{plugin}'s provided
+@tech{catalog}. When @tech{tapped}, the source provides bytes for a
+package definition.
+
+@racket[catalog-source] lazily generates a @tech{package input} with
+integrity and signature information under the current @tech{runtime
+configuration}. If the package definition does not pass configured
+security checks, the source is @tech{exhausted}.
+}
+
 
 @defproc[(autocomplete-parsed-package-query [cat catalog?]
                                             [query parsed-package-query?])
@@ -418,12 +429,12 @@ definition, using @litchar{Content-Type: application/octet-stream} or
 }
 
 @item{
-@litchar{GET /P/K/E/N.CHF} yields a digest's raw bytes, using
+@litchar{GET /P/K/E/#.CHF} yields a digest's raw bytes, using
 @litchar{Content-Type: application/octet-stream}.
 }
 
 @item{
-@litchar{GET /P/K/E/N.CHF.sig} yields the signature bytes for a digest, using
+@litchar{GET /P/K/E/#.CHF.sig} yields the signature bytes for a digest, using
 @litchar{Content-Type: application/octet-stream}.
 }
 

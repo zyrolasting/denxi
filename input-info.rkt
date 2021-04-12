@@ -20,6 +20,8 @@
 
 (provide (struct-out input-info)
          (contract-out
+          [fetch-exact-input/cached
+           (-> concrete-input-info/c logged?)]
           [resolve-input
            (-> concrete-input-info/c logged?)]
           [well-formed-input-info/c
@@ -99,11 +101,15 @@
   ($use (delete-file (input-info-name input))))
 
 (define (resolve-input info)
-  (mdo pathrec-or-#f  := (logged-unit (find-existing-path-record info))
+  (mdo file-record    := (fetch-exact-input/cached info)
        link-name      := (logged-unit (input-info-name info))
-       file-record    := (fetch-exact-input info pathrec-or-#f)
        link-record    := (logged-unit (make-addressable-link file-record link-name))
        (logged-unit link-name)))
+
+(define (fetch-exact-input/cached info)
+  (mdo pathrec-or-#f  := (logged-unit (find-existing-path-record info))
+       file-record    := (fetch-exact-input info pathrec-or-#f)
+       (logged-unit file-record)))
 
 (define (fetch-exact-input info pathrec-or-#f)
   (if (path-record? pathrec-or-#f)

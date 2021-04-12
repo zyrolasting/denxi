@@ -8,6 +8,9 @@
          "format.rkt"
          "input-info.rkt"
          "integrity.rkt"
+         "l10n.rkt"
+         "localstate.rkt"
+         "logged.rkt"
          "openssl.rkt"
          "package.rkt"
          "path.rkt"
@@ -18,10 +21,12 @@
          "strict-rc.rkt"
          "string.rkt"
          "url.rkt"
-         "version.rkt")
+         "version.rkt"
+         "workspace.rkt")
 
 (provide
  (except-out (struct-out catalog) catalog)
+ (except-out (struct-out catalog-source) catalog-source)
  (contract-out
   [catalog
    (-> (-> string?)
@@ -41,6 +46,9 @@
        (-> resolved-package-query? (or/c #f source?))
        (-> resolved-package-query? (or/c #f source?))
        catalog?)]
+  [catalog-source
+   (-> package-query-variant?
+       catalog-source?)]
   [get-default-catalog (-> catalog?)]
   [add-catalogged-inputs
    (-> catalog? package? (listof package-query-variant?) package?)]
@@ -52,6 +60,19 @@
    (->* (catalog? parsed-package-query?)
         (#:force-complete-interval? any/c)
         (or/c #f resolved-package-query?))]
+  [find-input-info
+   (->* (catalog?
+         package-query-variant?)
+        (string?)
+        input-info?)]
+  [find-integrity-info
+   (-> catalog?
+       package-query-variant?
+       integrity-info?)]
+  [find-signature-info
+   (-> catalog?
+       package-query-variant?
+       signature-info?)]
   [find-package-definition
    (-> catalog?
        package-query-variant?
@@ -113,6 +134,20 @@
               #f
               #f))
    (rc-ref 'XIDEN_DEFAULT_CATALOG_BASE_URL)))
+
+(define-source #:key catalog-source-query (catalog-source [query package-query-variant?])
+  (define input
+    (find-input-info (plugin-ref 'canonical-catalog (get-default-catalog))
+                     query))
+
+  (writeln (url->string (http-source-request-url (integrity-info-digest (input-info-integrity input)))))
+
+  (define value
+    (run+print-log (fetch-exact-input/cached input)))
+
+  (if (eq? value FAILURE)
+      (%fail (void))
+      (%fetch (file-source (build-workspace-path (path-record-path value))))))
 
 
 (define (autocomplete-parsed-package-query cat query)
@@ -183,7 +218,7 @@
     (define rln (string->number rl))
     (define rhn (string->number rh))
     (let loop ([index rhn])
-      (define path (~a (build-catalog-path pr pk ed index) ".rkt"))
+      (define path (build-catalog-path pr pk ed index))
       (cond [(file-exists? path)
              (file-source (apply ~a path suffix))]
             [(< index rln)
@@ -194,7 +229,7 @@
                [get-revision-number
                 get-revision-number]
                [get-package-definition-source
-                (λ (q) (get-source q ""))]
+                (λ (q) (get-source q))]
                [get-package-definition-digest-source
                 (λ (q) (get-source q "." ((catalog-get-package-definition-chf cat) q)))]
                [get-package-definition-public-key-source
@@ -207,52 +242,71 @@
 
 
 (define (set-catalog-http-host cat base-url-variant)
-  (define base-url
-    (if (string? base-url-variant)
-        (string->url base-url-variant)
-        base-url-variant))
+  (define make-http-source
+    (let ([base-url (coerce-url base-url-variant)])
+      (λ path-elements
+        (http-source
+         (struct-copy url base-url
+                      [path
+                       (append (url-path base-url)
+                               (map (λ (e) (path/param e null))
+                                    path-elements))])))))
 
-  (define (make-url . els)
-    (struct-copy url base-url
-                 [path
-                  (append (url-path base-url)
-                          (map (λ (el) (path/param (~a el) null))
-                               els))]))
+  (define (make-definition-relative-source resolved-query . file-suffix)
+    (make-http-source (parsed-package-query-provider-name resolved-query)
+                      (parsed-package-query-package-name resolved-query)
+                      (parsed-package-query-edition-name resolved-query)
+                      (apply ~a file-suffix)))
 
-  (define (get-source . els)
-    (http-source (apply make-url els)))
-
-  (define (get-revision-number provider package edition revision)
-    (fetch (get-source provider package edition (~a revision ".rkt"))
+  (define/contract (get-revision-number provider package edition revision)
+    (-> string? string? string? string? (or/c #f string?))
+    (fetch (make-http-source provider package edition revision)
            (λ (in est-size)
-             (define rx-match (regexp-match #px"\\(define revision-number (\\d+)\\)" in))
+             (define rx-match (regexp-match #px"\\(revision-number (\\d+)\\)" in))
              (close-input-port in)
              (and rx-match
                   (coerce-string (cadr rx-match))))
-           (λ (e)
-             (displayln (exn->string e))
-             #f)))
+           raise))
 
-  (define (query->list q)
-    (map (λ (a) (a q))
-         (list parsed-package-query-provider-name
-               parsed-package-query-package-name
-               parsed-package-query-edition-name
-               parsed-package-query-revision-max)))
+  (define/contract (get-package-definition-source resolved-query)
+    (-> resolved-package-query? (or/c #f source?))
+    (make-definition-relative-source resolved-query
+                                     (parsed-package-query-revision-max resolved-query)))
+
+
+  (define/contract (get-package-definition-digest-source resolved-query)
+    (-> resolved-package-query? (or/c #f source?))
+    (make-definition-relative-source resolved-query
+                                     (parsed-package-query-revision-max resolved-query)
+                                     "."
+                                     ((catalog-get-package-definition-chf cat)
+                                      resolved-query)))
+
+  (define/contract (get-package-definition-public-key-source resolved-query)
+    (-> resolved-package-query? (or/c #f source?))
+    (make-http-source (parsed-package-query-provider-name resolved-query)
+                      "public-key"))
+
+  (define/contract (get-package-definition-signature-source resolved-query)
+    (-> resolved-package-query? (or/c #f source?))
+    (make-definition-relative-source resolved-query
+                                     (parsed-package-query-revision-max resolved-query)
+                                     "."
+                                     ((catalog-get-package-definition-chf cat)
+                                      resolved-query)
+                                     ".sig"))
 
   (struct-copy catalog cat
                [get-revision-number
                 get-revision-number]
                [get-package-definition-source
-                (λ (q) (get-source q ""))]
+                get-package-definition-source]
                [get-package-definition-digest-source
-                (λ (q) (get-source q "." ((catalog-get-package-definition-chf cat) q)))]
+                get-package-definition-digest-source]
                [get-package-definition-public-key-source
-                (λ (q) (get-source
-                        (parsed-package-query-provider-name q)
-                        "public-key"))]
+                get-package-definition-public-key-source]
                [get-package-definition-signature-source
-                (λ (q) (get-source q "." ((catalog-get-package-definition-chf cat) q) ".sig"))]))
+                get-package-definition-signature-source]))
 
 
 
@@ -299,8 +353,8 @@
                              queries))]))
 
 
-(define (find-input-info cat query)
-  (input-info query
+(define (find-input-info cat query [name (string-replace query ":" "_")])
+  (input-info name
               (find-package-definition cat query)
               (find-integrity-info cat query)
               (find-signature-info cat query)))
