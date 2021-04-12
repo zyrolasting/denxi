@@ -108,7 +108,7 @@
                                 (apply (cli-flag-convert c) formals)
                                 expects-applied-setting)))))
          (add1 (cli-flag-arity c)))
-        (cons (format "~n    ~a" (get-localized-string (setting-id (cli-flag-setting c))))
+        (cons (format "~n    ~a~n" (get-localized-string (setting-id (cli-flag-setting c))))
               (cli-flag-help-strings c))))
 
 
