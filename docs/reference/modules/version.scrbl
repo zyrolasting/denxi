@@ -62,7 +62,8 @@ Returns a revision number string in terms of a variant type.
                                  [hi (or/c revision-number? #f)]
                                  [#:lo-exclusive lo-exclusive any/c]
                                  [#:hi-exclusive hi-exclusive any/c])
-                                 (values revision-number? revision-number?)]{
+                                 (values (or/c #f revision-number?)
+                                         (or/c #f revision-number?))]{
 Creates a possibly invalid integer interval using
 
 @racketblock[

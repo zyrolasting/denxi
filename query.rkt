@@ -27,8 +27,8 @@
           [resolve-revision-interval (->* (parsed-package-query? (-> boolean? string?
                                                                      (or/c #f revision-number-variant?)))
                                           (#:default-bounds boundary-flags-string?)
-                                          (values revision-number?
-                                                  revision-number?))]))
+                                          (values (or/c #f revision-number?)
+                                                  (or/c #f revision-number?)))]))
 
 (struct parsed-package-query
   (provider-name

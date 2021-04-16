@@ -17,7 +17,8 @@
                             (or/c #f revision-number?)
                             #:lo-exclusive boolean?
                             #:hi-exclusive boolean?
-                            (values revision-number? revision-number?))]))
+                            (values (or/c #f revision-number?)
+                                    (or/c #f revision-number?)))]))
 
 (define (revision-number-string? v)
   (and (string? v)
