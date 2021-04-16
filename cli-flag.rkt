@@ -344,7 +344,7 @@
     (match-define (list flag-strings handler help-strings) (cli-flag->flag-spec TEST_SETTING/flag))
     (check-equal? (sort #:key string-length (cli-flag-strings TEST_SETTING/flag) <) flag-strings)
     (check-equal? (procedure-arity handler) (add1 (cli-flag-arity TEST_SETTING/flag)))
-    (check-equal? help-strings '("\n    #<void>" "value"))
+    (check-equal? help-strings '("\n    #<void>\n" "value"))
 
     (match-define (cli-flag-state flag-string cli-flag-inst args-bound) (handler "-t" "+inf.0"))
     (check-equal? flag-string "-t")
