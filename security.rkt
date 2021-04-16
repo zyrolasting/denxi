@@ -60,7 +60,7 @@
                           security-guard
                           (make-envvar-subset allowed-envvars)
                           plan
-                          (if trust-unverified-host? 'auto 'secure)
+                          trust-unverified-host?
                           trust-certificates
                           proc)
       (λ (worker-thread)
@@ -76,7 +76,7 @@
                             memory-limit
                             security-guard
                             envvars plan
-                            https-protocol
+                            trust-unverified-host?
                             trust-certificates
                             proc)
   (thread
@@ -88,14 +88,27 @@
                         [exn?
                          (λ (e) (plan 1 ($show-string (exn->string e))))])
           (parameterize ([current-environment-variables envvars]
-                         [current-https-protocol https-protocol]
-                         [current-security-guard security-guard]
-                         [ssl-default-verify-sources
-                          (append trust-certificates
-                                  (ssl-default-verify-sources))])
+                         [current-https-protocol
+                          (make-ssl-context trust-certificates
+                                            trust-unverified-host?)]
+                         [current-security-guard security-guard])
             (call-with-values (λ () (call/cc proc))
                               plan))))))))
 
+
+(define (make-ssl-context trust-certificates trust-unverified-host?)
+  (define ctx (ssl-make-client-context 'auto))
+  (unless trust-unverified-host?
+    (ssl-load-default-verify-sources! ctx)
+    (for ([source (in-list trust-certificates)])
+      (ssl-load-verify-source! ctx source))
+    (ssl-set-verify! ctx #t)
+    (ssl-set-verify-hostname! ctx #t)
+    ; No weak cipher suites
+    (ssl-set-ciphers! ctx "DEFAULT:!aNULL:!eNULL:!LOW:!EXPORT:!SSLv2")
+    ; Seal context so further changes cannot weaken it
+    (ssl-seal-context! ctx)
+    ctx))
 
 ;-------------------------------------------------------------------------------
 ; Memory management
