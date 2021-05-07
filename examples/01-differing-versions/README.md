@@ -2,7 +2,7 @@
 sees them as providing different bindings. We can use Xiden to control
 the bindings Racket sees without changing `program.rkt`.
 
-1. Run `racket launch.rkt do +a defn.rkt` in this directory. You should see a symlink called `default` appear.
+1. Run `racket launch.rkt do +a defn.rkt` in this directory. You should see a symlink appear.
 2. Run `racket program.rkt` again. You should see it print `different`, indicating the bindings are different.
 
 
