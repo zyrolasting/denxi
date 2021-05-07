@@ -18,7 +18,7 @@
                (logged/c void?))]
           [keep-input
            (-> string?
-               (logged/c path?))]
+               (logged/c path-string?))]
           [find-input
            (-> (listof package-input?)
                path-string?
