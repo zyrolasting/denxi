@@ -18,10 +18,9 @@
          "logged.rkt"
          "message.rkt"
          "openssl.rkt"
-         "plugin.rkt"
          "port.rkt"
          "printer.rkt"
-         "strict-rc.rkt"
+         "setting.rkt"
          "string.rkt"
          "url.rkt")
 
@@ -40,6 +39,12 @@
 (define+provide-message $fetch (id errors))
 (define+provide-message $bad-source-eval (reason datum context))
 (define+provide-message $untrusted-cert (url original-exn))
+
+(define+provide-setting XIDEN_DOWNLOAD_MAX_REDIRECTS exact-nonnegative-integer? 2)
+(define+provide-setting XIDEN_FETCH_BUFFER_SIZE_MB (real-in 0.1 20) 10)
+(define+provide-setting XIDEN_FETCH_PKGDEF_SIZE_MB (real-in 0.1 20) 0.1)
+(define+provide-setting XIDEN_FETCH_TIMEOUT_MS (real-in 100 (* 1000 10)) 3000)
+(define+provide-setting XIDEN_FETCH_TOTAL_SIZE_MB (or/c +inf.0 real?) 100)
 
 (provide define-source
          empty-source
@@ -66,10 +71,10 @@
           [source-variant? flat-contract?]
           [sources (->* () #:rest (listof (or/c string? source?)) source?)]
           [tap/c contract?]
+          [current-string->source
+           (parameter/c (-> string? source?))]
           [eval-untrusted-source-expression
            (->* (any/c) (namespace?) logged?)]))
-
-
 
 ;-----------------------------------------------------------------------
 ; Implementation
@@ -115,7 +120,7 @@
 
 (define (make-source-key src)
   (define id (identify src))
-  (and id (make-digest id 'sha384)))
+  (and id (make-digest id DEFAULT_CHF)))
 
 
 (define (coerce-key-port variant)
@@ -193,8 +198,7 @@
                (file-source [path path-string?])
   (with-handlers ([exn:fail:filesystem? %fail])
     (%tap (open-input-file path)
-          (+ (* 20 1024) ; for Mac OS resource forks
-             (file-size path)))))
+          (file-size path))))
 
 
 (define-source #:key http-source-request-url
@@ -218,8 +222,10 @@
                                           (cons "/" path-els)
                                           path-els)))))
         (let*-values ([(in headers-string)
-                       (get-pure-port/headers #:redirections (rc-ref 'XIDEN_DOWNLOAD_MAX_REDIRECTS)                                        #:method #"GET"
-                                              coerced-url)]
+                       (get-pure-port/headers
+                        #:redirections (XIDEN_DOWNLOAD_MAX_REDIRECTS)
+                        #:method #"GET"
+                        coerced-url)]
                       [(content-length-pair)
                        (assf (λ (el) (equal? (string-downcase el) "content-length"))
                              (extract-all-fields headers-string))])
@@ -248,9 +254,13 @@
         (http-source s))))
 
 
+(define current-string->source
+  (make-parameter default-string->source))
+
+
 (define (coerce-source s)
   (cond [(string? s)
-         ((plugin-ref 'string->source default-string->source) s)]
+         ((current-string->source) s)]
         [(bytes? s)
          (byte-source s)]
         [(path? s)
@@ -260,6 +270,16 @@
 
 (define (sources . variants)
   (first-available-source (map coerce-source variants) null))
+
+
+(define (normalize-source src [budget +inf.0])
+  (fetch (coerce-source src)
+         (λ (in est-size)
+           (if (> est-size budget)
+               (begin (close-input-port in)
+                      src)
+               (port->bytes in)))
+         raise))
 
 
 (define-syntax (from-file stx)
@@ -312,8 +332,7 @@
            mzlib/etc
            "file.rkt"
            "setting.rkt"
-           (submod "logged.rkt" test)
-           (submod "plugin.rkt" test))
+           (submod "logged.rkt" test))
 
   (define (run-tap in est)
     (define out (open-output-bytes))
@@ -417,24 +436,15 @@
                     (kill-thread th)
                     (tcp-close listener))))
 
-  (test-case "Fetch using plugin"
+  (test-case "Fetch using custom coercion rule"
     (define greeting "Hello, world")
-    (define plugin-module-datum
-      '(module mods racket/base
-         (require xiden/source)
-         (provide string->source)
-         (define (string->source str)
-           (text-source str))))
-
-    (call-with-plugin
-     plugin-module-datum
-     (λ ()
-       (fetch (coerce-source greeting)
-              (λ (in est)
-                (define str (port->string in))
-                (check-equal? str greeting)
-                (check-equal? est (bytes-length (string->bytes/utf-8 greeting))))
-              (λ (v) (fail "Dummy plugin source should not be exhausted"))))))
+    (parameterize ([current-string->source text-source])
+      (fetch (coerce-source greeting)
+             (λ (in est)
+               (define str (port->string in))
+               (check-equal? str greeting)
+               (check-equal? est (bytes-length (string->bytes/utf-8 greeting))))
+             (λ (v) (fail "Coerced source should not be exhausted")))))
 
   (define-namespace-anchor ns-anchor)
   (define test-ns (namespace-anchor->namespace ns-anchor))

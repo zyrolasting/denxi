@@ -6,8 +6,7 @@
                     xiden/l10n
                     xiden/logged
                     xiden/message
-                    xiden/printer
-                    xiden/rc]
+                    xiden/printer]
          "../../shared.rkt"]
 
 @title{Localization}

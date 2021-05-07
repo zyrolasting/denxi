@@ -6,7 +6,8 @@
          syntax/parse
          "contract.rkt"
          "logged.rkt"
-         "message.rkt")
+         "message.rkt"
+         "setting.rkt")
 
 (provide (all-from-out racket/system)
          os-sym
@@ -21,6 +22,8 @@
                      #:stdin (or/c #f (and/c output-port? file-stream-port?)))
                     #:rest (listof path-string?)
                     logged?)]))
+
+(define+provide-setting XIDEN_SUBPROCESS_TIMEOUT_S (>=/c 0) (* 30 60))
 
 (define ALL_OS_SYMS '(unix windows macosx))
 

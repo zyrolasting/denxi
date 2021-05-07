@@ -14,21 +14,16 @@
 
 (define build-deps '("net-doc" "racket-doc"))
 
-(define racket-launcher-names '("xiden"))
-(define racket-launcher-libraries '("cli.rkt"))
-
 (define test-omit-paths
-  '("examples"))
+  '("examples"
+    "docs"))
 
 (define compile-omit-paths
   '("examples"))
 
 (define scribblings
-  '(("docs/reference/xiden-reference.scrbl" (multi-page) (tool-library))
-    ("docs/guide/xiden-guide.scrbl" (multi-page) (tool))))
-
-(define raco-commands
-  '(("zcpkg"
-     (submod xiden/cli main)
-     "manage dependencies without side-effects on the installation"
-     70)))
+  '(("docs/index/xiden-index.scrbl" () (tool))
+    ("docs/reference/xiden-reference.scrbl" (multi-page) (tool-library))
+    ("docs/guide/xiden-guide.scrbl" (multi-page) (other))
+    ("docs/practices/xiden-practices.scrbl" (multi-page) (other))
+    ("docs/tutorials/xiden-tutorials.scrbl" (multi-page) (other))))

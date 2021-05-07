@@ -14,8 +14,7 @@
         "  gc      Collect garbage"
         "  show    Print report"
         "  fetch   Transfer bytes from source"
-        "  mkint   Make integrity info for bytes"
-        "  mkinput Make input expression")]
+        "  mkint   Make integrity info for bytes")]
 
     [(show-command-help)
      (L "where <what> is one of"
@@ -161,6 +160,12 @@
                (car r)))]))
 
 
+(define (make-$package-query-canon-preamble user-query autocompleted-query)
+  (~a "Failed to create canonical package query.\n"
+      "  user query:" (~s user-query) "\n"
+      "  autocompletion: " (~s autocompleted-query) "\n"))
+
+
 (define+provide-message-formatter format-message/locale
   [($regarding name v)
    (format "~a: ~a"
@@ -180,11 +185,6 @@
 
   [($cli:undefined-command m)
    (format "Unrecognized command: ~s. Run with -h for usage information.~n" m)]
-
-  [($invalid-workspace-envvar)
-   (format "Ignoring envvar value for XIDEN_WORKSPACE: ~a~n  falling back to ~a"
-           (getenv "XIDEN_WORKSPACE")
-           (workspace-directory))]
 
   [($racket-module-read-error variant reason content)
    (case reason
@@ -414,6 +414,10 @@
    (format "Input not found: ~s"
            name)]
 
+  [($dig:no-artifact hint)
+   (format "Artifact not found using: ~v"
+           hint)]
+
   [($bad-source-eval reason datum context)
    (format "Cannot evaluate alleged source expression: ~e~n  ~a"
            datum
@@ -438,4 +442,28 @@
            (exn->string original-exn))]
 
   [($cycle key)
-   (format "Found cycle at ~s. You may have a circular dependency." key)])
+   (format "Found cycle at ~s. You may have a circular dependency." key)]
+
+  [($package-query-canon:backwards user-query autocompleted-query lo hi)
+   (~a (make-$package-query-canon-preamble user-query autocompleted-query)
+       "Resolved backwards interval {" lo " .. " hi "}")]
+
+  [($package-query-canon:no-minimum uq aq hint)
+   (~a (make-$package-query-canon-preamble uq aq)
+       "Unresolved minimum revision:" hint)]
+
+  [($package-query-canon:no-maximum uq aq hint)
+   (~a (make-$package-query-canon-preamble uq aq)
+       "Unresolved maximum revision:" hint)]
+
+  [($package-query-canon:no-selection uq aq minimum maximum hint)
+   (~a (make-$package-query-canon-preamble uq aq)
+       "Failed to select best fit in {" minimum "..." maximum "}\n"
+       "Value: " hint)]
+
+  [($package-query-canon:oob uq aq minimum maximum selection)
+   (~a (make-$package-query-canon-preamble uq aq)
+       "Query is limited to {" minimum "..." maximum "},\n"
+       "but canon selected: " selection "\n"
+       "This is likely a bug with the service.\n"
+       "Please report it to the maintainer.")])

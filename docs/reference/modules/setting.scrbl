@@ -1,25 +1,38 @@
 #lang scribble/manual
 
-@(require (for-label racket/base racket/contract xiden/rc xiden/setting)
+@(require (for-label racket/base racket/contract xiden/setting)
           (for-syntax "../../shared.rkt"
                       racket
                       syntax/stx
-                      xiden/rc
                       xiden/setting
                       xiden/cli-flag)
-          xiden/rc
           xiden/setting
           xiden/cli-flag
           "../../shared.rkt")
 
-@title{Settings}
+@title[#:tag "settings"]{Settings}
 
 @defmodule[xiden/setting]
 
 A @deftech{setting} is an instance of the @racket[setting]
-@tech/reference{structure}.  Settings are used as a canonical source
-of dynamically bound values, along with validation information and
-contextual help.
+@tech/reference{structure} type.  Settings are used as a canonical
+source of dynamically bound values, along with validation information
+and contextual help.
+
+Xiden dynamically binds values to settings when launched. A
+@deftech{runtime configuration} is a @tech/reference{parameterization}
+with values for these settings.
+
+Here are some ways to change a setting. Each method overrides the
+method before it.
+
+@itemlist[
+@item{Do nothing. Every setting has a hard-coded default.}
+@item{Set an environment variable, e.g. @litchar{export XIDEN_VERBOSE="#t"}. This changes the default value of the named setting.}
+@item{Override the value in a @tech{launcher}}
+@item{When applicable, use @litchar{--XIDEN_VERBOSE '#t'} in a command line (or an alternative flag).}
+]
+
 
 @defstruct*[setting ([id symbol?] [valid? predicate/c] [parameter parameter?] [derived-parameter parameter?])]{
 Defines a @tech{setting}. You likely do not need to create an instance

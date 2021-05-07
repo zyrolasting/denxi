@@ -12,13 +12,22 @@
                         (-> revision-number-variant? revision-number?)]
                        [coerce-revision-number-string
                         (-> revision-number-variant? revision-number-string?)]
-                       [make-revision-interval
-                        (-> (or/c #f revision-number?)
-                            (or/c #f revision-number?)
-                            #:lo-exclusive boolean?
-                            #:hi-exclusive boolean?
-                            (values (or/c #f revision-number?)
-                                    (or/c #f revision-number?)))]))
+                       [make-minimum-revision-number
+                        (-> revision-number? #:exclusive? any/c revision-number?)]
+                       [make-maximum-revision-number
+                        (-> revision-number? #:exclusive? any/c revision-number?)]
+                       [find-latest-available-revision-number
+                        (-> (-> revision-number? any/c)
+                            revision-number?
+                            revision-number?
+                            (or/c #f revision-number?))]
+                       [find-oldest-available-revision-number
+                        (-> (-> revision-number? any/c)
+                            revision-number?
+                            revision-number?
+                            (or/c #f revision-number?))]))
+
+
 
 (define (revision-number-string? v)
   (and (string? v)
@@ -40,9 +49,29 @@
       v
       (string->number v)))
 
-(define (make-revision-interval lo hi #:lo-exclusive lo-exclusive? #:hi-exclusive hi-exclusive?)
-  (values (if (and lo lo-exclusive?) (add1 lo) lo)
-          (if (and hi hi-exclusive?) (sub1 hi) hi)))
+(define (make-minimum-revision-number lo-boundary #:exclusive? exclusive?)
+  (if exclusive?
+      (add1 lo-boundary)
+      lo-boundary))
+
+(define (make-maximum-revision-number hi-boundary #:exclusive? exclusive?)
+  (if exclusive?
+      (max 0 (sub1 hi-boundary))
+      hi-boundary))
+
+
+(define (find-latest-available-revision-number available? lo hi)
+  (cond [(< hi lo) #f]
+        [(available? hi) hi]
+        [else (find-latest-available-revision-number
+               available? lo (sub1 hi))]))
+
+(define (find-oldest-available-revision-number available? lo hi)
+  (cond [(> lo hi) #f]
+        [(available? lo) lo]
+        [else (find-oldest-available-revision-number
+               available? (add1 lo) hi)]))
+
 
 (module+ test
   (require racket/sequence rackunit)
@@ -82,21 +111,35 @@
   (test-false "Reject alphanumeric"
               (revision-number-string? "70O"))
 
-  (test-case "Create revision intervals"
-    (define (? lo hi le he el eh)
-      (call-with-values (λ () (make-revision-interval lo hi #:lo-exclusive le #:hi-exclusive he))
-                        (λ (al ah)
-                          (check-equal? al el)
-                          (check-equal? ah eh))))
-    ; Normal operation
-    (? 0 0 #f #f 0 0)
-    (? 0 0 #t #f 1 0)
-    (? 0 0 #f #t 0 -1)
-    (? 0 0 #t #t 1 -1)
+  (test-equal? "Create minimum revision number using inclusive boundary"
+               (make-minimum-revision-number 73 #:exclusive? #f)
+               73)
 
-    ; Confirm that missing data still appears missing
-    (? #f #f #f #f #f #f)
-    (? #f #f #t #f #f #f)
-    (? #f #f #f #t #f #f)
-    (?  1 #f #t #t 2  #f)
-    (? #f  1 #f #t #f 0)))
+  (test-equal? "Create minimum revision number using exclusive boundary"
+               (make-minimum-revision-number 73 #:exclusive? #t)
+               74)
+
+  (test-equal? "Create maximum revision number using inclusive boundary"
+               (make-maximum-revision-number 73 #:exclusive? #f)
+               73)
+
+  (test-equal? "Create maximum revision number using exclusive boundary"
+               (make-maximum-revision-number 73 #:exclusive? #t)
+               72)
+
+  (test-equal? "Create maximum revision number, preventing a negative result"
+               (make-maximum-revision-number 0 #:exclusive? #t)
+               0)
+
+  (test-case "Search revision numbers by availability"
+    (define available '(0 8 31 11 99))
+    (define (available? v) (member v available))
+
+    (check-equal? (find-latest-available-revision-number available? 0 10) 8)
+    (check-equal? (find-latest-available-revision-number available? 0 8) 8)
+    (check-equal? (find-latest-available-revision-number available? 0 7) 0)
+    (check-equal? (find-latest-available-revision-number available? 0 100) 99)
+
+    (check-equal? (find-oldest-available-revision-number available? 0 10) 0)
+    (check-equal? (find-oldest-available-revision-number available? 1 100) 8)
+    (check-equal? (find-oldest-available-revision-number available? 9 100) 11)))

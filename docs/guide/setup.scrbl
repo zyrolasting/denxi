@@ -94,9 +94,5 @@ directory, then you are in the right place.
 If you have GNU Make installed, then just run @litchar{make}. Otherwise,
 open @tt{Makefile} and run the commands defined by the @tt{build} target.
 
-If successful, then @tt{xiden} should now work as a command in your shell. If
-not, check your @tt{PATH} to make sure that it includes the directory where
-@tt{raco setup} creates launchers on your disk.
-
-Alternatively, you can access the same command line interface using the
-@litchar{raco zcpkg} (“zero collection package”) command.
+If successful, then the @tt{racket -l xiden} command will run without
+error.

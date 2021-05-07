@@ -4,14 +4,16 @@
   (begin (begin (provide (all-from-out s))
                 (require s)) ...))
 
-(r "../archive.rkt"
+(r "../artifact.rkt"
+   "../archive.rkt"
    "../cli-flag.rkt"
    "../cmdline.rkt"
+   "../dig.rkt"
    "../codec.rkt"
    "../exn.rkt"
    "../file.rkt"
    "../format.rkt"
-   "../input-info.rkt"
+   "../input.rkt"
    "../integrity.rkt"
    "../localstate.rkt"
    "../logged.rkt"
@@ -20,14 +22,13 @@
    "../package.rkt"
    "../printer.rkt"
    "../port.rkt"
+   "../query.rkt"
    "../racket-module.rkt"
    "../racket-version.rkt"
-   "../rc.rkt"
    "../security.rkt"
    "../setting.rkt"
    "../signature.rkt"
    "../source.rkt"
    "../string.rkt"
    "../system.rkt"
-   "../url.rkt"
-   "../workspace.rkt")
+   "../url.rkt")

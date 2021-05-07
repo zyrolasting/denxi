@@ -3,7 +3,8 @@
 (require racket/format
          racket/port
          "contract.rkt"
-         "exn.rkt")
+         "exn.rkt"
+         "setting.rkt")
 
 (provide run-openssl-command
          openssl
@@ -18,9 +19,9 @@
           [md-bytes-source/c
            flat-contract?]
           [make-digest
-           (-> md-bytes-source/c
-               md-algorithm/c
-               bytes?)]))
+           (->* (md-bytes-source/c)
+                (md-algorithm/c)
+                bytes?)]))
 
 (define-exn exn:fail:xiden:openssl exn:fail:xiden (exit-code output))
 
@@ -49,9 +50,14 @@
 (define md-algorithm/c
   (apply or/c md-algorithms))
 
+
+(define+provide-setting XIDEN_TRUST_MESSAGE_DIGEST_ALGORITHMS (listof md-algorithm/c) null)
+
+
 (define DEFAULT_CHF 'sha3-384)
 
-(define (make-digest variant algorithm)
+
+(define (make-digest variant [algorithm DEFAULT_CHF])
   (cond [(path-string? variant)
          (call-with-input-file (expand-user-path variant)
            (λ (i) (make-digest i algorithm)))]

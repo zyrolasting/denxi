@@ -8,11 +8,14 @@ This project follows [these versioning rules](https://sagegerard.com/edition-rev
 
 ## Unreleased
 
+- Switch to launcher-centric workflow for users
 - Add default CHF that is subject to change
 - Support `file://` URLs in `http-source`
 - Make catalogs more useful: Request packages using a base URL and/or
   highly-abbreviated queries
 - Add setting for trusting server certificates outside of the OS trust store.
+- Refactor to allow dynamically-computed inputs
+
 
 ## [draft:beta] - 2021-03-17
 

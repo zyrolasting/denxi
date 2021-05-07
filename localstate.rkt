@@ -32,13 +32,26 @@
          "path.rkt"
          "port.rkt"
          "query.rkt"
+         "setting.rkt"
          "string.rkt"
-         "version.rkt"
-         "workspace.rkt")
+         "version.rkt")
+
+(define workspace-directory/c
+  (and/c complete-path?
+         (or/c directory-exists?
+               (and/c (not/c file-exists?)
+                      (not/c directory-exists?)
+                      (not/c link-exists?)))))
 
 ; Provided ids include relation structs. See use of define-relation.
 (provide (struct-out record)
+         build-workspace-path
+         make-workspace-path-builder
+         path-in-workspace?
+         call-with-ephemeral-workspace
          (contract-out
+          [workspace-directory/c
+           flat-contract?]
           [xiden-collect-garbage
            (-> exact-nonnegative-integer?)]
           [in-all-installed
@@ -98,7 +111,7 @@
                 (#:cache-key (or/c bytes? #f))
                path-record?)]
           [make-addressable-directory
-           (-> (non-empty-listof input-port?)
+           (-> directory-exists?
                path-record?)]
           [delete-record
            (-> record? void?)]
@@ -106,15 +119,82 @@
            (-> path-record? path-string? path-record?)]))
 
 (define+provide-message $finished-collecting-garbage (bytes-recovered))
+(define+provide-setting XIDEN_WORKSPACE workspace-directory/c
+  (build-path (find-system-path 'home-dir)
+              "xiden-workspace"))
 
 ;----------------------------------------------------------------------------------
 ; Relevant Paths
 
+(define (build-workspace-path . path-elements)
+  (apply build-path
+         (XIDEN_WORKSPACE)
+         path-elements))
+
+
+(define (make-workspace-path-builder base)
+  (λ paths
+    (define dir (build-workspace-path base))
+    (make-directory* dir)
+    (apply build-path dir paths)))
+
+
+(define (path-in-workspace? path)
+  (define simplified (simple-form-path path))
+  (define rel-path
+    (find-relative-path
+     #:more-than-same? #f
+     (path->directory-path (build-workspace-path))
+     simplified))
+
+  (equal? simplified (build-workspace-path rel-path)))
+
+
+(define (call-with-ephemeral-workspace proc)
+  (let ([t (make-temporary-file "~a" 'directory)])
+    (dynamic-wind void
+                  (λ () (XIDEN_WORKSPACE t (λ () (proc t))))
+                  (λ () (delete-directory/files #:must-exist? #f t)))))
+
+
+(module+ test
+  (require rackunit)
+  (provide test-workspace)
+
+  (define-syntax-rule (test-workspace message body ...)
+    (test-case message
+      (call-with-temporary-directory
+       #:cd? #t
+       (λ (tmp-dir)
+         (XIDEN_WORKSPACE tmp-dir
+                          (λ () body ...))))))
+  
+  (define (tmp p)
+    (define tmpfile (make-temporary-file "~a"))
+    (dynamic-wind void
+                  (λ () (p tmpfile))
+                  (λ () (delete-file tmpfile))))
+
+  (test-exn "Guard against existing file paths"
+            exn:fail:contract?
+            (λ () (tmp XIDEN_WORKSPACE)))
+
+  (test-exn "Guard against links"
+            exn:fail:contract?
+            (λ () (tmp
+                   (λ (p)
+                     (tmp
+                      (λ (l)
+                        (delete-file l)
+                        (make-file-or-directory-link p l)
+                        (XIDEN_WORKSPACE l))))))))
+
+
 (define current-get-localstate-path ; Is a parameter for testing reasons.
-  (make-parameter (λ () (build-workspace-path "var/xiden/db"))))
+  (make-parameter (λ () (build-workspace-path "db"))))
 
 (define build-object-path
-  (make-workspace-path-builder "var/xiden/objects"))
+  (make-workspace-path-builder "objects"))
 
 (define (build-addressable-path digest)
   (build-object-path (encoded-file-name digest)))
@@ -342,7 +422,7 @@
 ; until the root cause gets fixed.
 
 (define (xiden-collect-garbage)
-  (parameterize ([current-directory (workspace-directory)]
+  (parameterize ([current-directory (XIDEN_WORKSPACE)]
                  [current-security-guard (make-gc-security-guard)])
     (if (directory-exists? (current-directory))
         (let loop ([bytes-recovered 0] [extra? #t])
@@ -377,6 +457,12 @@
                        #f))
 
 
+(define (find-path-digest path)
+  (define record (find-exactly-one (path-record #f (~a path) #f #f)))
+  (if (path-record? record)
+      (path-record-digest record)
+      #f))
+
 
 (define (in-unreferenced-paths)
   (define referenced-paths
@@ -404,7 +490,7 @@
 ; Not atomic, but can be used again unless the database itself is corrupted.
 (define (delete-unreferenced-objects! [dir (build-object-path)])
   (for/sum ([path (in-list (directory-list dir #:build? #t))])
-    (if (find-path-record (find-relative-path (workspace-directory) path))
+    (if (find-path-record (find-relative-path (XIDEN_WORKSPACE) path))
         0
         (cond [(directory-exists? path)
                (define recovered (delete-unreferenced-objects! path))
@@ -584,19 +670,20 @@
             (define path (build-addressable-path digest))
             (make-directory* (path-only path))
             (rename-file-or-directory tmp path #t)
-            (define path-record (declare-path (find-relative-path (workspace-directory) path) digest))
+            (define path-record
+              (declare-path (find-relative-path (XIDEN_WORKSPACE) path)
+                            digest))
             (when cache-key
               (gen-save (path-key-record #f cache-key (record-id path-record))))
 
             path-record)
           (λ () (close-input-port in))))))
 
-
-(define (make-addressable-directory digest-ports)
-  (define digest (make-digest (apply input-port-append #t digest-ports) 'sha384))
+(define (make-addressable-directory directory)
+  (define digest (make-directory-digest directory))
   (define path (build-addressable-path digest))
-  (make-directory* path)
-  (declare-path (find-relative-path (workspace-directory) path)
+  (rename-file-or-directory directory path)
+  (declare-path (find-relative-path (XIDEN_WORKSPACE) path)
                 digest))
 
 
@@ -640,14 +727,16 @@
                      (unless (error-code-equal? 2067 e)
                        (raise e))
                      (find-exactly-one (make-file-path-record normalized #f)))])
-    (gen-save (make-link-path-record normalized
-                                     (record-id target-path-record)))))
+    (gen-save (path-record sql-null
+                           normalized
+                           (path-record-digest target-path-record)
+                           (record-id target-path-record)))))
 
 
 (define (make-link-path #:link-in-workspace? link-in-workspace? link-path)
   (let ([simple (simple-form-path link-path)])
     (if link-in-workspace?
-        (find-relative-path (workspace-directory) simple)
+        (find-relative-path (XIDEN_WORKSPACE) simple)
         simple)))
 
 
@@ -666,13 +755,6 @@
                (normalize-path-for-db path)
                digest
                sql-null))
-
-
-(define (make-link-path-record path path-id)
-  (path-record sql-null
-               path
-               sql-null
-               path-id))
 
 
 (define (find-path-record variant)
@@ -729,6 +811,35 @@
       path
       (path->string path)))
 
+
+(define (make-directory-digest dir [chf DEFAULT_CHF])
+  (make-digest
+   (sequence-fold
+    (λ (accum path)
+      (make-digest
+       (input-port-append
+        #t
+        (open-input-bytes accum)
+        (open-input-bytes
+         (let ([other-digest (find-path-digest path)])
+           (cond [other-digest other-digest]
+                 [(directory-exists? path)
+                  (make-directory-digest path chf)]
+                 [(file-exists? path)
+                  (make-file-digest path chf)]
+                 ; TODO: Is this a good idea?
+                 [else #""]))))
+       chf))
+    (string->bytes/utf-8 (~a (file-name-from-path dir)))
+    (in-directory dir))))
+
+
+(define (make-file-digest path [chf DEFAULT_CHF])
+  (make-digest
+   (input-port-append #t
+                      (open-input-string (~a (file-name-from-path path)))
+                      (open-input-file path))
+   chf))
 
 
 ;----------------------------------------------------------------------------------
@@ -826,12 +937,12 @@
      (define package-id  (q (package-record  #f package-name provider-id)))
      (define edition-id  (q (edition-record  #f edition-name package-id)))
 
-     (define-values (lo hi)
-       (resolve-revision-interval
-        query
-        (λ (_ rev)
-          (string->number (~a (or (find-revision-number rev edition-id)
-                                  (fail)))))))
+     (define (find rev)
+       (string->number (~a (or (find-revision-number rev edition-id)
+                               (fail)))))
+
+     (define lo (resolve-minimum-revision query find))
+     (define hi (resolve-maximum-revision query find))
 
      (when (< hi lo)
        (fail))
@@ -894,8 +1005,6 @@
 
 
 (module+ test
-  (require rackunit)
-
   (define (run-db-test msg p)
     (test-case msg
       (define t (make-temporary-file))
@@ -914,6 +1023,9 @@
     (define expected (path-record 1 "a/b/c" #"digest" sql-null))
     (check-equal? (find-exactly-one (path-record #f "a/b/c" #f #f))
                   expected)
+
+    (check-equal? (find-path-digest "a/b/c")
+                  #"digest")
 
     (test-case "Return existing records when trying to save a duplicate path"
       (check-equal? (declare-path "a/b/c" #"different")
@@ -953,7 +1065,7 @@
     (define outrec
       (declare-output "example.com"
                       "widget"
-                      "default"
+                      DEFAULT_STRING
                       12
                       revision-names
                       "lib"

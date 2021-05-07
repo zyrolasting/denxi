@@ -16,8 +16,7 @@
          "logged.rkt"
          "message.rkt"
          "path.rkt"
-         "url.rkt"
-         "workspace.rkt")
+         "url.rkt")
 
 (define+provide-message $path-not-found (pattern wrt))
 
@@ -104,52 +103,3 @@
 (define-syntax-rule (with-temporary-directory body ...)
   (call-with-temporary-directory
    (λ (tmp-dir) body ...)))
-
-
-(module+ test
-  (provide temp-fs dir >> test-workspace)
-  (require rackunit
-           racket/set
-           (for-syntax racket/base))
-
-
-  (define-syntax-rule (test-workspace message body ...)
-    (test-case message
-      (call-with-temporary-directory
-       #:cd? #t
-       (λ (tmp-dir)
-         (parameterize ([workspace-directory tmp-dir])
-           body ...)))))
-
-  (define (display-to-temp-file content)
-    (define path (make-temporary-file "~a"))
-    (display-to-file #:exists 'truncate/replace content path)
-    path)
-
-  (define-syntax-rule (temp-fs expr ...)
-    (let ([tmpdir (make-temporary-file "~a" 'directory)])
-      (parameterize ([current-directory tmpdir])
-        expr ...
-        (delete-directory/files tmpdir))))
-
-  (define-syntax (dir stx)
-    (syntax-case stx ()
-      [(_ kw body ...)
-       (with-syntax ([dirname (keyword->string (syntax-e #'kw))])
-         #'(begin (make-directory dirname)
-                  (parameterize ([current-directory dirname])
-                    body ...)))]))
-
-  (define-syntax (>> stx)
-    (syntax-case stx ()
-      [(_ kw val)
-       (let ([e (syntax-e #'val)])
-         (with-syntax ([fname (keyword->string (syntax-e #'kw))]
-                       [writer (cond [(string? e)
-                                      #'(λ (o) (displayln val o))]
-                                     [(bytes? e)
-                                      #'(λ (o) (write-bytes val o))]
-                                     [else #'val])])
-           #'(call-with-output-file fname writer)))]
-      [(_ kw)
-       #'(>> kw "")])))

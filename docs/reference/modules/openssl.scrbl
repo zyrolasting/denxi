@@ -7,6 +7,7 @@
                     racket/pretty
                     xiden/openssl]
          racket/pretty
+         @for-syntax[xiden/openssl]
          xiden/openssl
          "../../shared.rkt"]
 
@@ -40,6 +41,11 @@ a.k.a. cryptographic hash functions.
 Bound to @typeset-code[(pretty-format #:mode 'print md-algorithms)]
 }
 
-@defproc[(make-digest [variant md-bytes-source/c] [algorithm md-algorithm/c]) bytes?]{
+@defsetting*[XIDEN_TRUST_MESSAGE_DIGEST_ALGORITHMS]{
+A list of trusted cryptographic hash function implementations in
+OpenSSL.
+}
+
+@defproc[(make-digest [variant md-bytes-source/c] [algorithm md-algorithm/c DEFAULT_CHF]) bytes?]{
 Returns the raw byte content of @racket[algorithm] applied to bytes from @racket[variant].
 }

@@ -2,23 +2,18 @@
 
 @require["../shared.rkt" @for-label[racket/base]]
 
-@title[#:tag "queries"]{Package Queries}
+@title[#:tag "queries"]{Queries}
 
-To aid package discovery, you can request package definitions from
-configured hosts using a colon-separated @deftech{package query}
-string.
-
-@section{Simple Queries}
-
-A @tech{package query} looks like @tt{example.com:calculator}, and
-that one is understood to mean “the @tt{calculator} package provided
-by @tt{example.com}.”
+A @deftech{package query} is a colon-separated string used to identify
+@tech{package definitions}. An examplw looks like
+@tt{example.com:calculator}, and that one is understood to mean “the
+@tt{calculator} package provided by @tt{example.com}.”
 
 Why not just say @tt{calculator}? Because providers are presumed
-unique, and using a verifiable identity to scope packages helps
+unique, and using a verifiable identity like a domain name helps
 establish a name for your software across hosts. It also establishes a
-basis for comparison when two developers use the same package name
-but deliver different work.
+basis for comparison when two developers use the same package name but
+deliver different work.
 
 Field positions are important. You can still create a query for just
 @tt{calculator}, but @tt{calculator} would be intepreted as the
@@ -99,7 +94,7 @@ beta, then you would have to know the revision number in advance of
 writing the query. With the interval flags, you do not have to know
 any revision numbers.
 
-When resolving @tech{revision names}, @tt{xiden} will raise an error for
+When resolving @tech{revision names}, Xiden will raise an error for
 queries like these because they each resolve to a backwards interval:
 
 @verbatim|{
@@ -120,8 +115,5 @@ be typed.
 example.com:calculator::production
 }|
 
-In fact, even the empty string is a valid @tech{package query}.
-Therefore @racket[""] and @racket[":::"] parse the same way.
-
-Xiden has no opinion on how to handle empty fields. @tech{Catalogs}
-may autocomplete package queries with conventional defaults.
+Even the empty string is a valid @tech{package query}.  In fact,
+@racket[""] and @racket[":::"] parse the same way.

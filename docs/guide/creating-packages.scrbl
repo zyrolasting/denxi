@@ -2,653 +2,140 @@
 
 @require["../shared.rkt" @for-label[@except-in[xiden/pkgdef #%module-begin] racket/base]]
 
-@title[#:tag "new-pkg"]{Defining Packages}
+@title[#:tag "new-pkg"]{Packages}
 
-Xiden builds software using @tech{package definitions}. In
-this section we will write a package definition that, when installed,
-extracts one of two available archives.
+Xiden defines a @deftech{package} as an active instance of a program
+called a @deftech{package definition}. This will seem odd to those who
+think of packages as inert artifacts. After all, we don't normally
+“execute” packages. In Xiden, package @bold{definitions} are the inert
+artifacts. The difference between a package definition and a package
+is the difference between a program or a process.
 
-We will cover why we can feel confident in the build due to the
-integrity checking and authentication steps that happen before we use
-the archives.
+In this section we will write a @tech{package definition} using the
+@racketmodname[xiden] language. We'll use this definition to create
+and install a package in @secref{launchers}.
 
-If you are already familiar with how package definitions work and just
-want an example to copy, then skip to @secref{finished-definition}.
-
-If you are looking for easier ways to write package definitions in
-your own workflow, see @secref{simple-pkgdef}. We won't use that
-information here, because this section covers fundamental concepts
-using the lowest-level terms in Xiden.
-
-
-@section{Create a New Definition File}
-
-Create a new blank Racket module. The name of that file is up to you, but I'll
-use @tt{definition.rkt}. We will use the @racketmodname[xiden] language.
-
-@racketmod[#:file "definition.rkt" xiden]
-
-@section{The Usual Stuff}
-
-Every dependency management tool has you write the same things, so
-let's start there. Since I'm hosting some files for this guide on my
-site, I'll use related information.
-
-You can define the name of your package, your identity as a provider,
-a short description of your package, tags, and so on. Everything in
-this example should not need much explanation.
+The @racketmodname[xiden] language keeps just enough of Racket to be
+useful for what we want to do. We can define variables, write
+procedures, and operate on basic data types. But the language forbids
+@racket[require], I/O, and any terms that would cause side-effects on
+instantiation.
 
 @racketmod[#:file "definition.rkt"
 xiden
 
+(code:comment "Declare Discovery information")
 (name "my-first-package")
 (provider "sagegerard.com")
 (description "Fun playtime in a tutorial")
 (tags "fun" "tutorial" "example")
-(url "https://sagegerard.com")
+(url "https://docs.racket-lang.org/xiden-guide/new-pkg.html")
+
+(code:comment "Declare the Version")
+(edition "default")
+(revision-number 0)
+(revision-names "alpha" "pre-release-0")
+
+(code:comment "Declare Inputs and Outputs")
+(input "default-local.tgz"
+       (archive-artifact "default.tgz"))
+
+(input "minimal-local.tgz"
+       (archive-artifact "minimal.tgz"))
+
+(output "default" (extract-input "default-local.tgz"))
+(output "minimal" (extract-input "minimal-local.tgz"))
+
+(code:comment "Utility Procedures")
+(define (src . parts)
+  (http-source
+    (apply string-append
+           "https://sagegerard.com/xiden-tutorial/"
+           parts)))
+
+(define (archive-artifact filename)
+  (artifact (src filename)
+            (integrity 'sha384 (src filename ".dgst"))
+            (signature (src "public.pem")
+                       (src filename ".sign"))))
 ]
 
-The @racket[provider] definition is less obvious. A provider is not
-necessarily the author of the package, but rather a name of the party
-responsible for distribution. In this case, they are the same
-party.
+
+
+@section{Declare Discovery Information}
+
+You can define the name of your package, your identity as a provider,
+a short description of your package, tags, and so on. Those items
+should not need much explanation. The @racket[provider] and
+@racket[url] definitions are less obvious.
+
+A provider is not necessarily the author of the package, but rather a
+name of the party responsible for distribution. In this case, they are
+the same party.
 
 There's no restriction on how you name a provider, but a domain name
 is useful as a verifiable identifier when data is split across
 different networks.
 
+The best URL to put in @racket[url] is one that offers clarifying
+information for the package itself, hence why it points to this page.
 
-@section{Declare the Version}
 
-Next, let's declare the version of our package.
+@section[#:tag "versioning"]{Declare the Version}
 
-@racketmod[#:file "definition.rkt"
-xiden
+Package definitions versions have an @tech{edition} and a
+@tech{revision}.
 
-(name "my-first-package")
-(provider "sagegerard.com")
-(description "Fun playtime in a tutorial")
-(tags "fun" "tutorial" "example")
-(url "https://sagegerard.com")
+An @deftech{edition} is a name for a target audience. When you wish to
+adapt your software to a different audience without disrupting
+existing users, define a new edition.
 
-(edition "default")
-(revision-number 0)
-(revision-names "alpha" "2020-10-01")
-]
+A @deftech{revision} is an implementation of an @tech{edition}. Given
+an edition, a user can select a @tech{package definition} using a
+@tech{revision number} or a @tech{revision name}.
 
-But wait, nothing there looks like a version number. Xiden
-versions @tech{package definitions} using @tech{editions} and
-@tech{revisions}, not major or minor version numbers. This means users
-can find software like they would a book. When defining a package, you
-may specify an @tech{edition}, a @tech{revision number}, and any
-@tech{revision names} to act as aliases for that number. The revision
-names are freeform, but should relate to meaningful, unique stages in
-your project's life.
+A @deftech{revision number} is an exact non-negative integer. If you
+are releasing a new @tech{package definition} with the same edition,
+then increment the revision number. If you are starting a new edition,
+then the revision number is @racket[0].
 
-For more information see @secref{versioning}.
+A @deftech{revision name} is a string that contains at least one
+non-digit. Each revision name is a unique alias for a revision number
+within an edition. A package definition may include a list of at least
+zero revision names for the revision number.
 
 
-@section{Declare Supported Racket Versions}
+@section{Declare Inputs and Outputs}
 
-Next, we can decide what versions of Racket we want to support if our
-package includes a Racket program. For that, we use
-@racket[racket-versions]. When you run a package, Xiden will
-check if the running version of Racket is an element of the set
-defined by @racket[racket-versions]. If it isn't, that halts use
-of a package.
+A package definition is a program. Like any program, it has inputs and
+outputs. A @deftech{package input} is a named datum that won't take up
+space until it is actually used. A @deftech{package output} is a named
+subprogram that builds files using inputs. When a user installs a
+package with Xiden, they select an output from that package.
 
-This example defines software that can run from Racket v6.0 to Racket
-v7.7.0.5. Each list of two versions is an inclusive interval, so
-support includes the shown versions.
+Writing inputs can be tedious, so we define procedures to capture the
+patterns among them. I expressed two inputs using @deftech{artifacts}.
+Aritfacts are a way to express a source of bytes along with the means
+to verify that we got the right bytes from the right party.
 
-@racketblock[
-(racket-versions ("6.0" "7.7.0.5"))
-]
+Skilled readers will notice that this definition tries to deliver an
+artifact and the information used to verify it from the same
+potentially untrusted, non-deterministic source.  Don't be alarmed:
+Xiden won't trust it either, unless the user consents. We'll show how
+this plays out later in the guide.
 
-Gaps in versions are not expected due to Racket's commitment to
-backward compatibility, but you can express them in the event one
-Racket version does not interact well with your release.
-
-You can also declare version support as unbounded on one side of an
-interval using @racket{*}. This definition of @racket[racket-versions]
-matches every version of Racket except those @italic{strictly between}
-@racket{7.2} and @racket{7.4}.
-
-@racketblock[
-(racket-versions ("*" "7.2") ("7.4" "*"))
-]
-
-If you have particular behavior that depends on exact Racket
-versions, then you may call out those individual versions. This
-example adds such a version that would otherwise be excluded.
-
-@racketblock[
-(racket-versions ("*" "7.2") ("7.4" "*") "7.0.1.2")
-]
-
-We likely want to support as many Racket versions as we can while
-staying backward compatible.  Let's just define support for v5.0 and
-up.
-
-@racketmod[#:file "definition.rkt"
-xiden
-
-(name "my-first-package")
-(provider "sagegerard.com")
-(description "Fun playtime in a tutorial")
-(tags "fun" "tutorial" "example")
-(url "https://sagegerard.com")
-
-(edition "default")
-(revision-number 0)
-(revision-names "alpha")
-
-(racket-versions ("5.0" "*"))
-]
-
-
-@section{Declare Supported Operating Systems}
-
-Racket is cross-platform, but your package might not be.  Maybe you
-need PowerShell. I won't judge. Limiting OS support allows you to make
-reasonable assumptions about available binaries (e.g. GNU coreutils),
-and for offering tailored experiences to users.
-
-You can declare the operating systems you support by writing
-@racketid[os-support] with a list of acceptable values of
-@racket[(system-type 'os)].
-
-This example is a statement of support for UNIX-like systems,
-Windows, and MacOSX.
-
-@racketblock[
-(os-support unix windows macosx)
-]
-
-By default, Xiden assumes each package definition will work on
-every operating system. While this means we don't have to include the
-above line in the final version of our package definition, I'll put it
-in just to be explicit.
-
-
-@section{Package Inputs}
-
-Now for the interesting stuff. In Xiden, a package
-definition is a program. An actively running version of that program
-is a package. Like any other running program, packages use inputs to
-function.
-
-
-A @deftech{package input} is a deferred request for exact bytes. I'll
-define one for now.
-
-@racketmod[#:file "definition.rkt"
-xiden
-
-(name "my-first-package")
-(provider "sagegerard.com")
-(description "Fun playtime in a tutorial")
-(tags "fun" "tutorial" "example")
-(url "https://sagegerard.com")
-
-(edition "default")
-(revision-number 0)
-(revision-names "alpha")
-
-(racket-versions ("5.0" "*"))
-(os-support unix windows macosx)
-
-(input "default.tgz"
-       (sources "https://sagegerard.com/xiden-tutorial/default.tgz"))]
-
-This input defines an archive of source code we'll need to build our
-project.  The archive contains a throwaway Racket module and Scribble
-document.  @racket{default.tgz} is the name of the file that we use
-locally in our build. The @racket[sources] list tells Xiden
-where it can find the actual bytes for that file. I'm only using one
-source here, but you can add other sources in case one isn't
-available.
-
-
-@subsection{Everything is an Input}
-
-A @tech{package input} can be any file, not just Racket packages or
-code.  You can use a Python distribution as an input, or a critical
-security patch.  This means that you can use Xiden to build
-any software.
-
-While we won't cover it here, another benefit of package inputs is
-that you can substitute them. If a build is taking too long because it
-compiles a huge project from source, you can adjust the definition to
-use pre-built binaries instead.
-
-
-@subsection{Integrity Information}
-
-We named a file that we want, but how do we know we got the right
-file?  For that, we need to declare integrity information with our
-input.
-
-@racketblock[
-(input "default.tgz"
-       (sources "https://sagegerard.com/xiden-tutorial/default.tgz")
-       (integrity 'sha384 (hex "299e3eb744725387e0355937727cf6e3c938eda2355cda82d58596fd535188fa624217f52f8c6e7d5ee7cb1d458a7f75")))]
-
-Integrity information tells Xiden if it got the @italic{exact
-bytes} the input requires. If it did not, then the build will
-fail. This is a good thing because it helps make builds
-reproducible. An input might only be available during a build, or may
-persist after a build for run-time use. More on that later.
-
-If you are not familiar with integrity checking, just know that there
-are functions to take a file and turn it into a fixed-length byte
-string called a @italic{digest}.  These functions are called
-cryptographic hash functions (CHFs), but the documentation may also
-refer to them as message digest algorithms. If two files produce the
-same digest, then we can assume the files are the same. That is,
-unless the function itself has a @italic{collision}, where two
-different files produce the same digest. This is a sign to use a
-different function!
-
-The function we're using in this case is SHA-384, which we represent
-here as @racket[sha384]. Since it's hard to type the exact bytes of a
-digest, we can give Xiden the expected digest as a string we
-copy and paste from elsewhere.  Here we tell Xiden that the
-SHA-384 digest of @racket{default.tgz} comes from a hex string. That
-tells Xiden how to translate the digest as a string back to
-bytes for comparison.
-
-Note that just because we use SHA-384 does not mean the end-user
-trusts it. CHFs have a shelf-life since attackers can find a way to
-induce a collision. For that reason, Xiden does not leave it to
-package authors to decide what CHF is best for the user. In fact, by
-the time you read this, SHA-384 might be an ill-advised selection for
-most programs.
-
-
-@subsubsection{Creating an Integrity Expression}
-
-There are a couple of ways you can generate an integrity expression.
-Before you try, download the file at the link shown in the integrity
-expression in the previous snippet. Our goal is to create the same
-expression we saw in the code.
-
-Let's start by making an integrity expression by hand.  If you
-followed @secref{setup}, then you should have OpenSSL installed on
-your system. You can check the digest for yourself by running this
-command:
-
-@verbatim|{
-$ openssl dgst -sha384 default.tgz
-SHA384(default.tgz)= 299e3eb744725387e...
-}|
-
-There's a tricky part here. Yes, the digests match our code, but that
-doesn't mean you should paste it right into new definitions. Typically
-you want to write a definition using a @italic{trusted copy} of a
-file.
-
-We'll assume trust in this file because it is not used to run code on
-your system. From here you can write an integrity expression by
-hand. Just paste it in this example where you see @racketfont{DIGEST}.
-
-@racketblock[(integrity 'sha384 (hex DIGEST))]
-
-Knowing how to produce your own digest is a valuable skill if you want
-to verify data that arrived on your system.  But an external tool
-might use a different encoding and algorithm than what Xiden
-supports.  If you want the entire integrity expression with options
-supported by Xiden, then use the @litchar{xiden mkint}
-command. This example does the same thing, except you'll get an entire
-integrity expression as output.
-
-@verbatim|{
-$ xiden mkint sha384 hex default.tgz
-(integrity 'sha384 (hex "299e3eb744725387e...
-}|
-
-Alternatively, you can tell Xiden to read from standard input.
-Just use a dash in place of the file.
-
-@verbatim|{
-$ cat default.tgz | xiden mkint sha384 hex -
-(integrity 'sha384 (hex "299e3eb744725387e...
-}|
-
-Assuming you trust the input, you only need to copy and paste the
-expression into your definition. If you want programmatic control over
-integrity expressions, then use the @racketmodname[xiden/integrity]
-module.
-
-
-@subsection{Authenticating Inputs}
-
-It's one thing to get the bytes we wanted, but did they come from someone we
-trust? Thankfully it is possible for people to sign their work so that we can
-check.
-
-You may declare a signature with an input. A signature expression includes a
-source of a public key used to verify the signature, and a source for the
-signature itself. The public key, when stored as a file called
-@litchar{public.pem} must work when used in @litchar{openssl pkeyutl -pubin
--inkey public.pem ...}.
-
-Signatures are applied per-input. This example fetches both a public key and a
-signature from the same host that provides an artifact. Here I use a public key
-that is only used for this tutorial.
-
-@racketblock[
-(input "default.tgz"
-       (sources "https://sagegerard.com/xiden-tutorial/default.tgz")
-       (integrity 'sha384 (hex "299e3eb744725387e0355937727cf6e3c938eda2355cda82d58596fd535188fa624217f52f8c6e7d5ee7cb1d458a7f75"))
-       (signature "https://sagegerard.com/xiden-tutorial/public.pem"
-                  "https://sagegerard.com/xiden-tutorial/default.tgz.sign"))]
-
-The @racket[signature] form accepts a string that locates a public key, and a
-string that locates a signature, in that order. @tt{xiden} uses the signature and
-public key to confirm that the @italic{raw bytes of the digest} specified in
-the @racket[integrity] information was signed with a corresponding private key.
-
-While Xiden can fetch public keys from the Internet for you, it will
-refuse to process any input where you do not affirm your trust in the
-corresponding public key.  Vetting public keys is out of scope for this
-guide. Just know that if you do not trust the public key, then a signature
-verified by that key won't offer you any value.  See @secref{trusting-pubkeys}
-to learn how to affirm trust for individual public keys.
-
-
-@section{Package Outputs}
-
-A @deftech{package output} is a named deliverable from the package,
-such as documentation, libraries, or tests.
-
-Every package definition should define a default output, because if a
-user does not request a particular output from a package, then
-Xiden will use the output named @racket{default}.  If you do
-not define a default output, then Xiden will tell the user
-about the outputs available in the definition.
-
-Recall in the last section that we defined inputs named
-@racket{default.tgz}.  We want to fetch and extract that
-archive.
-
-@racketblock[
-(output "default"
-        archive-input := (input-ref "default.tgz")
-        archive-path := (resolve-input archive-input)
-        (extract archive-path)
-        (release-input archive-input))
-]
-
-When building, @racket[current-directory] is bound to a unique
-directory, such that two packages only conflict if evidence shows
-those packages will produce identical output.  You can assume the
-directory is empty, and yours to populate.
-
-Notice that we manually free the archive using
-@racket[release-input]. This is because when you reference an input,
-Xiden lazily writes it to disk and issues a symbolic link to
-the file with the given name. Xiden cannot predict what inputs
-to keep around, so it leaves that to you. We don't need our archive
-once the contents are on disk, so we delete the @italic{link} using
-@racket[release-input].
-
-We do not delete the actual file because if something goes wrong with
-a package, you might not want to fetch every input again.  If there
-are no incoming links for a file in Xiden, then it is
-eligible for garbage collection in a separate process.
-
-
-@subsection{Monadic Types}
-
-We now have two endpoints to our program, and some processing in
-between. So what's the @racket[:=] for in the package output?  If you
-are familiar with Haskell and monads, just know that outputs use a
-notation similar to @tt{do} and skip this section.
-
-@racket[:=] kind of like @racket[let], but it isn't @italic{exactly}
-the same because this abbreviated program does not work.
-
-@racketblock[
-(output "default"
-        archive-input := (input-ref "default.tgz")
-        (extract (resolve-input archive-input))
-        (release-input archive-input))
-]
-
-@racket[:=] does bind a value to an identifier, but it also discovers
-the value to bind from special context called @deftech{monads}.  There
-are many tutorials that explain monads poorly, and this would likely
-be one of them. So we'll just focus on an abbreviated introduction
-that keeps us moving.
-
-Here are two functions.
-
-@racketblock[
-(define (add5 v) (+ v 5))
-(define (sub2 v) (- v 2))
-]
-
-You can compose them.
-
-@racketblock[
-(sub2 (add5 4))
-]
-
-Happy days.
-
-One day someone changes the functions so that they return information
-to store in a program log.
-
-@racketblock[
-(define (add5 v) (values (+ v 5) (format "Adding 5 to ~s" v)))
-(define (sub2 v) (values (- v 2) (format "Subtracting 2 from ~s" v)))
-]
-
-This is preferable than using @racket[displayln] and the like in
-functional programs because this way, calling the function has no
-side-effects. Everything returned from each function is expressed
-purely in terms of arguments.
-
-Problem is, @racket[(sub2 (add5 4))] no longer works. @tech{Monads}
-are just the @italic{stuff} that makes function composition work again
-without changing the definition of @racketid[add5] and
-@racketid[sub2]. That means something is sitting around that knows
-the first value from this kind of function is a number, and the
-second value is a string. It knows that composing two such functions
-means doing something like this:
-
-@racketblock[
-(define (compose-extra f g)
-  (define-values (fv fs) (f v))
-  (define-values (gv gs) (g fv))
-  (values gv (string-append fs "\n" gs)))]
-
-This brings us back to our package output. These instructions work
-because @racket[:=] understands how to find the value you want from
-all the extra @italic{stuff}.
-
-@racketblock[
-archive-path := (resolve-input "default.tgz")
-(extract archive-path)
-]
-
-But @racket[(extract (resolve-input archive-input))] doesn't work
-because you passed the value you want @italic{plus} the extra
-@italic{stuff} to @racket[extract].
-
-In other words, the value returned from @racket[(resolve-input
-archive-input)] is @italic{not the same} as the value bound to
-@racketid[archive-path] when using @racket[:=].
-
-How you deal with the values depends on the type, which is
-normal. You'll pick up on the different types as you go.
-
-
-@subsection{Adding a Second Output}
-
-Assume @racket{default.tgz} has everything a user would need. Some
-users might only want the libraries, not the documentation. Storage is
-cheap, but hundreds of dependencies add up.
-
-We can define a new output for our budget-conscious users:
-
-@racketblock[
-(output "default"
-        archive-path := (resolve-input "default.tgz")
-        (extract archive-path)
-        (release-input archive-path))
-
-(output "minimal"
-        archive-path := (resolve-input "minimal.tgz")
-        (extract archive-path)
-        (release-input archive-path))
-]
-
-This version works, but we don't want to repeat ourselves every time
-we want a new output. To reduce repetition, we can write a procedure.
-But if we want to use the same notation and logic as outputs, we'll
-need to return an @racket[mdo] form.
-
-@racketblock[
-(define (unpack input-name)
-  (mdo archive-input := (input-ref input-name)
-       archive-path := (resolve-input archive-input)
-       (extract archive-path)
-       (release-input archive-input)))
-
-(output "default" (unpack "default.tgz"))
-(output "minimal" (unpack "minimal.tgz"))
-]
-
-
-By adding an output, we changed what the user can request from a
-package.  Since the build extracts an archive with the same name as
-the output, we'll need a new @tech{package input} to go with this
+The package outputs shown here are simple, but some might be taken
+aback by the fact they require a functional programming background to
+extend. Here's a different way to write the same @racket{minimal}
 output.
 
 @racketblock[
-(input "default.tgz"
-       (sources "https://sagegerard.com/xiden-tutorial/default.tgz")
-       (integrity 'sha384 (hex "299e3eb744725387e0355937727cf6e3c938eda2355cda82d58596fd535188fa624217f52f8c6e7d5ee7cb1d458a7f75"))
-       (signature "https://sagegerard.com/xiden-tutorial/public.pem"
-                  "https://sagegerard.com/xiden-tutorial/default.tgz.sign"))
+(output "minimal"
+        archive-input := (input-ref "minimal-local.tgz")
+        archive-path  := (resolve-input archive-input)
+        (extract-input archive-path))]
 
-(input "minimal.tgz"
-       (sources "https://sagegerard.com/xiden-tutorial/minimal.tgz")
-       (integrity 'sha384 (hex "6cc38a7e2513fa9abd2ac079e9c8efbab9385458275c927e77527a189ed9ac393d734a4cf306787425bf722a5ac025c6"))
-       (signature "https://sagegerard.com/xiden-tutorial/public.pem"
-                  "https://sagegerard.com/xiden-tutorial/minimal.tgz.sign"))]
-
-Now when our users choose to build @racket{minimal} output, they will
-only ever download and extract the @racket{minimal.tgz} archive.
-
-
-@subsection{Outputs Can Create Duplicate Data}
-
-Xiden assumes that different outputs produce different
-content, which makes one kind of human error possible.
-
-Assume we add an output to act as an alias of another.
-
-@racketblock[
-(output "default" (unpack "default.tgz"))
-(output "full" (unpack "default.tgz"))
-(output "minimal" (unpack "minimal.tgz"))]
-
-This works, but if a user requests the @racket{full} output and then the
-@racket{default} output, then the same archive would be extracted twice into
-different directories.  This pollutes the disk with redundant data, which is
-probably not what you want.
-
-Different @tech{package outputs} are expected to produce different
-things. If you believe that two outputs are equivalent, then combine
-them into one output. If multiple outputs end up creating too much
-duplicate data, then you might want to consider defining the common
-data in another package definition.
-
-
-@section{User-defined Metadata}
-
-A lot of what we've added to our code counts as metadata, such as
-@tt{url}, @tt{tags}, and @tt{description}. All of the entries
-we've defined so far are metadata that Xiden readily
-recognizes due to their widespread use.
-
-If you want to store other information in your definition,
-then you can use the @tt{metadatum} form.
-
-@racketblock[
-(metadatum support-email "support@example.com")
-]
-
-A metadatum works like @tt{define}, in that you can bind one
-identifier to a value. When someone uses @racket[require] or one of
-its variants on a package definition, they can inspect an expanded
-@tt{metadata} binding to see all user-defined metadata.
-
-@racketinput[(module anon xiden/pkgdef2 (metadatum support-email "support@example.com"))]
-@racketinput[(require 'anon)]
-@racketinput[metadata]
-@racketresult['#hasheq((support-email . "support@example.com"))]
-
-Metadata can only be literal strings, and are not meant for use in
-program logic.
-
-
-@section[#:tag "finished-definition"]{The Finished Definition}
-
-Here is the file we've authored. To recap, it defines a build that simply
-extracts an archive depending on the requested output. We'll discuss this
-definition further in @secref{cli}.
-
-
-@racketmod[#:file "definition.rkt"
-xiden
-
-(name "my-first-package")
-(provider "example.com")
-(description "Fun playtime in a tutorial")
-(tags "fun" "tutorial" "example")
-(url "https://sagegerard.com")
-
-(edition "default")
-(revision-number 0)
-(revision-names "alpha")
-
-(code:comment "-----------------------------------------------")
-(code:comment "Platform support")
-(racket-versions ("5.0" "*"))
-(os-support unix windows macosx)
-
-(code:comment "-----------------------------------------------")
-(code:comment "User Metadata")
-(metadatum support-email "support@example.com")
-
-
-(code:comment "-----------------------------------------------")
-(code:comment "Inputs")
-(input "default.tgz"
-       (sources "https://sagegerard.com/xiden-tutorial/default.tgz")
-       (integrity 'sha384 (hex "299e3eb744725387e0355937727cf6e3c938eda2355cda82d58596fd535188fa624217f52f8c6e7d5ee7cb1d458a7f75"))
-       (signature "https://sagegerard.com/xiden-tutorial/public.pem"
-                  "https://sagegerard.com/xiden-tutorial/default.tgz.sign"))
-
-(input "minimal.tgz"
-       (sources "https://sagegerard.com/xiden-tutorial/minimal.tgz")
-       (integrity 'sha384 (hex "6cc38a7e2513fa9abd2ac079e9c8efbab9385458275c927e77527a189ed9ac393d734a4cf306787425bf722a5ac025c6"))
-       (signature "https://sagegerard.com/xiden-tutorial/public.pem"
-       		  "https://sagegerard.com/xiden-tutorial/minimal.tgz.sign"))
-
-(code:comment "-----------------------------------------------")
-(code:comment "Outputs")
-
-(define (unpack input-name)
-  (mdo archive-input := (input-ref input-name)
-       archive-path  := (resolve-input archive-input)
-       (extract archive-path)
-       (release-input archive-input)))
-
-(output "default" (unpack "default.tgz"))
-(output "minimal" (unpack "minimal.tgz"))
-]
+This notation is a way to write programs using monadic types. If you
+are familiar with Haskell and its @tt{do} notation, then you'll feel
+at home. If you are not sure what I mean, see @secref[#:doc
+xiden-tutorials]{monads}.

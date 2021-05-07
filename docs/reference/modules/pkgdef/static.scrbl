@@ -20,7 +20,9 @@
 
 A @deftech{package definition} is a
 @racket[PACKAGE_DEFINITION_MODULE_LANG] module as a syntax object or a
-list. When a package definition is a list, it matches
+list. When context makes it clear, the term “package definition” can
+also refer to the source code used to produce such a datum. When a
+package definition is a list, it matches
 @racket[package-definition-datum?]. Each package definition is used as
 a Racket module that combines discovery information with build
 instructions for @tech{packages}.
@@ -83,191 +85,12 @@ form @racket[(id val)]. Returns the datum in @racket[val]'s position,
 or @racket[default] if no such expression exists.
 }
 
-
-@defproc[(analyze-input-expression [expr any/c]
-                                   [continue (-> (or/c #f non-empty-string?)
-                                                 (or/c #f (listof non-empty-string?))
-                                                 (or/c #f md-algorithm/c)
-                                                 (or/c #f (or/c bytes?
-                                                                (list/c (or/c 'hex 'base32 'base64)
-                                                                        (or/c bytes? string?))))
-                                                 (or/c #f string?)
-                                                 (or/c #f (or/c bytes?
-                                                                (list/c (or/c 'hex 'base32 'base64)
-                                                                        (or/c bytes? string?))))
-                                                 any)])
-         any]{
-Inspects @racket[expr] to see if it has the shape of an S-expression
-for a @tech{package input}, e.g. @racket['(input "name" (sources "a" "b")
-(integrity 'sha384 #"..."))].
-
-If @racket[expr] does not resemble an input expression, then
-@racket[analyze-input-expression] returns @racket[expr]. Otherwise,
-@racket[analyze-input-expression] returns @racket[continue] applied to
-information extracted from @racket[expr].
-
-In this context, "resemble" means that @racket[expr] may omit
-information but not use incorrect information. So, @racket['(input)]
-resembles an input expression, but is missing data. On the other hand,
-@racket[(input (signature ...) 8 (sources ...))] is said to not
-resemble an input expression because the available data appears
-incorrect, or irrelevant. Data is not validated beyond basic matching;
-subexpressions are not evaluated.
-
-Under this definition, @racket[continue] is applied with the following
-arguments.
-
-@itemlist[
-@item{The name of the input, or @racket[#f] if the name of the input is missing.}
-@item{The sources defined for the input, or @racket[#f] if no expression for sources exists in the expected position. This argument will always consist of only the list of strings.}
-@item{The integrity information's message digest algorithm, or @racket[#f] if the expression is omitted.}
-@item{The integrity information's byte expression, or @racket[#f] if the expression is omitted.}
-@item{The signature information's public key expression, or @racket[#f] if the expression is omitted.}
-@item{The signature information's byte expression, or @racket[#f] if the expression is omitted.}
-]
-
+@defproc[(get-static-list-value [pkgdef bare-pkgdef?] [id symbol?] [default any/c]) any/c]{
+Searches the top-level code of @racket[pkgdef] for a S-expression of
+form @racket[(id . xs)]. Returns @racket[xs], or @racket[default] if
+no such expression exists.
 }
 
-
-@section{Package Definition Code Generation}
-
-@defproc[(make-input-expression
-         [path-or-port (or/c path-string? input-port?)]
-         [#:local-name local-name string? '(see definition)]
-         [#:byte-encoding byte-encoding (or/c #f xiden-encoding/c) 'base64]
-         [#:md-algorithm message-digest-algorithm md-algorithm/c 'sha384]
-         [make-sources (-> bytes? path-string? (non-empty-listof any/c))]
-         [public-key-source (or/c #f non-empty-string? (non-empty-listof any/c))]
-         [private-key-path path-string?]
-         [private-key-password-path (or/c #f path-string?) #f])
-         list?]{
-Returns an input expression (as a list datum) from several pieces of
-information stored in files. All given files must exist. @bold{Do not use
-this procedure with untrusted data}.
-
-If @racket[local-name] is not set and @racket[path-or-port] is a
-@racket[path-string?], then @racket[local-name] is set to
-@racket[(path->string (file-name-from-path path-or-port))].
-
-For example, consider the following application:
-
-@racketblock[
-(make-input-expression
-  "source-code.tar.gz"
-  #:local-name "code.tar.gz"
-  #:byte-encoding 'base64
-  (lambda (digest path) (list "https://example.com/code.tar.gz"))
-  'sha384
-  "https://example.com/public-key.pem"
-  "~/path/to/private-key.pem"
-  "~/path/to/private-key-password.txt")]
-
-@margin-note{Xiden uses OpenSSL subprocesses to sign digests.
-To prevent *nix monitoring tools like @tt{top} from seeing your
-private key's password, it sends the password to OpenSSL using a file
-path.  This is why you cannot pass your password directly, but be sure
-to securely delete the password file the moment you are done using
-it.}
-
-This takes an archive called @racket{source-code.tar.gz} from the file
-system. In the package definition, it will be referred to simply as
-@racket{code.tar.gz}. The source list is computed dynamically from
-@racket[make-sources], which accepts the message digest (as bytes) and
-a reference @racket[eq?] to @racket[path] as arguments. Note that the
-sources are used literally in the output expression, so procedures
-like @racket[(lambda (digest path) `((from-file ,(bytes->string/utf-8
-digest))))] are valid.
-
-The input expression will contain integrity information using a
-@racket['sha384] digest. Finally, the signature information will
-contain the exact public key source and a signature computed from the
-private key and, optionally, the password used to access the private
-key.
-
-The output expression will look something like this:
-
-@racketblock[
-'(input "code.tar.gz"
-        (sources "https://example.com/code.tar.gz")
-        (integrity 'sha384 (base64 "..."))
-        (signature "https://example.com/public-key.pem"
-                   (base64 "...")))]
-
-All expressions of byte strings are encoded using
-@racket[byte-encoding].  If @racket[byte-encoding] is @racket[#f],
-then byte strings are embedded directly in the output expression.
-
-This procedure can be used with a REPL to help copy and paste input
-expressions into a @tech{package definition}. A more convenient way to
-realize this is to hold every argument except the input path constant.
-This allows authors to define several inputs the same way.
-
-@racketblock[
-(define (mkinput . paths)
-  (for/list ([p (in-list paths)])
-    (make-input-expression
-      p
-      (lambda (digest also-p) (list (format "https://example.com/~a" (file-name-from-path also-p))))
-      'sha384
-      "https://example.com/public-key.pem"
-      "~/path/to/private-key.pem"
-      "~/path/to/private-key-password.txt")))]
-
-}
-
-
-@defproc[(autocomplete-input-expression
-           [expr any/c]
-           [#:default-name default-name non-empty-string? DEFAULT_STRING]
-           [#:public-key-source public-key-source (or/c #f non-empty-string? (non-empty-listof any/c))]
-           [#:find-data find-data procedure?]
-           [#:private-key-path private-key-path path-string?]
-           [#:byte-encoding byte-encoding (or/c #f xiden-encoding/c) 'base64]
-           [#:default-md-algorithm default-md-algorithm md-algorithm/c 'sha384]
-           [#:override-sources override-sources procedure? (λ (d p s) s)]
-           [#:private-key-password-path private-key-password-path (or/c path-string? #f) #f])
-         any/c]{
-Programatically finishes incomplete input expressions.
-
-Equivalent to
-
-@racketblock[
-(analyze-input-expression expr
-                          public-key-source
-                          md-algorithm
-                          (λ (n s md ib pk sb)
-                            (make-input-expression
-                             (find-data n s md ib pk sb)
-                             #:local-name (or n default-name)
-                             #:byte-encoding byte-encoding
-                             #:md-algorithm (or md default-md-algorithm)
-                             (λ (d p) (override-sources d p s))
-                             public-key-source
-                             private-key-path
-                             private-key-password-path)))
-]
-}
-
-
-@defproc[(autocomplete-inputs [stripped bare-racket-module?]
-                              [#:default-name default-name non-empty-string? DEFAULT_STRING]
-                              [#:public-key-source public-key-source (or/c #f non-empty-string? (non-empty-listof any/c))]
-                              [#:find-data find-data procedure?]
-                              [#:private-key-path private-key-path path-string?]
-                              [#:byte-encoding byte-encoding (or/c #f xiden-encoding/c) 'base64]
-                              [#:default-md-algorithm default-md-algorithm md-algorithm/c 'sha384]
-                              [#:override-sources override-sources procedure? (λ (d p s) s)]
-                              [#:private-key-password-path private-key-password-path (or/c path-string? #f) #f])
-                              bare-racket-module?]{
-Applies @racket[autocomplete-input-expression] to each element of the
-code in @racket[stripped], returning a new @tech{bare module}.  All
-inputs will be signed using the same private key, all integrity
-information will be generated in the same way, and all byte
-expressions will be encoded the same way.
-}
-
-
-@section{Package Definition Transformations}
 
 @defproc[(override-inputs [pkgdef bare-pkgdef?] [input-exprs list?]) bare-pkgdef?]{
 Functionally replaces any @tech{package inputs} in @racket[pkgdef]

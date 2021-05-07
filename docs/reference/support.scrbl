@@ -9,6 +9,7 @@ This section covers modules that provide shared functionality to
 higher-level modules in Xiden.
 
 @table-of-contents[]
+@include-section{modules/dig.scrbl}
 @include-section{modules/format.scrbl}
 @include-section{modules/exn.scrbl}
 @include-section{modules/url.scrbl}
@@ -20,7 +21,6 @@ higher-level modules in Xiden.
 @include-section{modules/monad.scrbl}
 @include-section{modules/file.scrbl}
 @include-section{modules/openssl.scrbl}
-@include-section{modules/strict-rc.scrbl}
 @include-section{modules/security.scrbl}
 @include-section{modules/racket-module.scrbl}
 @include-section{modules/message.scrbl}

@@ -13,7 +13,7 @@
                   with-module-reading-parameterization)
          syntax/parse
          "contract.rkt"
-         "input-info.rkt"
+         "input.rkt"
          "logged.rkt"
          "message.rkt"
          "monad.rkt"

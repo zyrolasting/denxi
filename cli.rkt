@@ -2,15 +2,16 @@
 
 ; Define primary entry point for the program.
 
+(provide launch-xiden!)
+
 (require racket/match
          racket/path
          racket/sequence
-         "catalog.rkt"
          "cli-flag.rkt"
          "cmdline.rkt"
          "codec.rkt"
          "format.rkt"
-         "input-info.rkt"
+         "input.rkt"
          "integrity.rkt"
          "l10n.rkt"
          "localstate.rkt"
@@ -20,25 +21,28 @@
          "openssl.rkt"
          "package.rkt"
          "pkgdef/static.rkt"
-         "plugin.rkt"
          "port.rkt"
          "printer.rkt"
          "query.rkt"
-         "rc.rkt"
          "security.rkt"
+         "setting.rkt"
          "signature.rkt"
          "source.rkt"
          "string.rkt"
-         "transaction.rkt"
-         "workspace.rkt")
+         "transaction.rkt")
 
-(module+ main
-  (run-entry-point! (current-command-line-arguments)
-                    (get-message-formatter)
+
+(module+ main (launch-xiden!))
+
+(define (launch-xiden! #:arguments [args (current-command-line-arguments)]
+                       #:format-message [format-message (get-message-formatter)]
+                       #:handle-exit [handle-exit exit])
+  (run-entry-point! args
+                    format-message
                     top-level-cli
-                    exit))
+                    handle-exit))
 
-
+  
 (define (top-level-cli args)
   (cli #:program "xiden"
        #:arg-help-strings '("action" "args")
@@ -50,7 +54,6 @@
         ++trust-executable
         ++trust-host-executable
         ++trust-cert
-        --default-catalog-base-url
         --fasl-output
         --memory-limit
         --reader-friendly-output
@@ -65,7 +68,6 @@
              ["show" (values #t "show" show-command)]
              ["gc" (values #t "gc" gc-command)]
              ["mkint" (values #t "mkint" mkint-command)]
-             ["mkinput" (values #f "mkinput" mkinput-command)]
              ["fetch" (values #t "fetch" fetch-command)]
              [_ (values ""
                         (λ _ (values null
@@ -85,7 +87,7 @@
                                  #:trust-any-executable? (XIDEN_TRUST_ANY_EXECUTABLE)
                                  #:trust-certificates (XIDEN_TRUST_CERTIFICATES)
                                  #:implicitly-trusted-host-executables (XIDEN_TRUST_HOST_EXECUTABLES)
-                                 #:workspace (workspace-directory)
+                                 #:workspace (XIDEN_WORKSPACE)
                                  #:gc-period 30
                                  #:name name)
                        (planned halt)))))))
@@ -154,7 +156,7 @@
                  (λ (halt)
                    (match what
                      ["config"
-                      (halt 0 ($show-datum (dump-xiden-settings)))]
+                      (halt 0 ($show-datum null))]
 
                      ["installed"
                       (halt 0
@@ -182,9 +184,6 @@
                              (sequence-map (λ (link-path target-path)
                                              ($show-string (format "~a -> ~a" link-path target-path)))
                                            (in-issued-links))))]
-
-                     ["workspace"
-                      (halt 0 ($show-string (path->string (workspace-directory))))]
 
                      [_
                       (halt 1 ($cli:undefined-command what))]))))))
@@ -218,41 +217,6 @@
                                                                   (λ ()
                                                                     (close-input-port port))))))))))))))))
 
-
-(define (mkinput-command args)
-  (cli #:args args
-       #:program "mkinput"
-       #:arg-help-strings '("source-exprs")
-       #:flags
-       (make-cli-flag-table
-        --byte-encoding
-        --generated-input-name
-        --md
-        --signer)
-       (λ (flags . user-args)
-         (values flags
-                 (λ (halt)
-                   (match-define (list pubkey prvkey pass) (XIDEN_SIGNER))
-                   (halt 0
-                         ($show-datum
-                          (autocomplete-input-expression
-                           #:byte-encoding (XIDEN_BYTE_ENCODING)
-                           #:default-md-algorithm (XIDEN_MESSAGE_DIGEST_ALGORITHM)
-                           #:private-key-password-path pass
-                           #:default-name (XIDEN_GENERATED_INPUT_NAME)
-                           #:find-data (λ _ (current-input-port))
-                           #:override-sources
-                           (λ _ (map (λ (s)
-                                       ; If the argument is read as a
-                                       ; symbol, then the argument
-                                       ; represents a string meant to
-                                       ; be used as-is.
-                                       (define datum (string->value s))
-                                       (if (symbol? datum) s datum))
-                                     user-args))
-                           #:private-key-path prvkey
-                           #:public-key-source pubkey
-                           `(input)))))))))
 
 
 (define-namespace-anchor cli-namespace-anchor)
@@ -317,8 +281,7 @@
 ; Functional tests follow. Use to detect changes in the interface and
 ; verify high-level impact.
 (module+ test
-  (require
-           racket/runtime-path
+  (require racket/runtime-path
            rackunit)
 
   (define mkflag shortest-cli-flag)
@@ -361,77 +324,4 @@
     (define-values (flags exit-code msg) (try (show-command '("config"))))
     (check-pred null? flags)
     (check-equal? exit-code 0)
-    (check-equal? msg ($show-datum (dump-xiden-settings))))
-
-  (test-case "Generate input expressions"
-    (define (expected-simple-input . sources)
-      `(input ,DEFAULT_STRING
-              (sources . ,sources)
-              (integrity 'sha384
-                         (base64 "l0kWCDBh9kC+NzqGXwGTdELJESIB+JUHx1f1dDQ5IFyjpZHoQyocK6lMslXieV+B"))))
-
-    (test-case "Generate all specified values"
-      (define md-algo 'md5)
-      (define expected-digest-base32 "0rsd0k4es4dks32empq1we4gh8======")
-      (define expected-digest-expr `(base32 ,expected-digest-base32))
-      (define expected-digest (base32 expected-digest-base32))
-      (define signature-base32
-        (string-join
-         '("q00q65n5tja2bdqgkv03qjwt3rapw2zcwxtf98pm8rtj26gdkgb2"
-           "fmax95kjbe31mq5knk9c22rretn4ftx57axgp5ca477wt23ec2tq"
-           "httqb3yjnqabq2x0t8qrr2zww4fk3m3q3a2rbg23arhv3h9dygv8"
-           "xeq0vv67xx8zgvd58ecq3jxw8eq14x6kefpg94btpk1c1b5qf28b"
-           "79cfkptx6vbaertbm32xc7aeedza68ta3wyjrk7z9jk8wctz22zb"
-           "v8zjrea33vczmp39j30pngs9rk1hyt1mq6t16xxmkn7hhgkqqy7m"
-           "ays1kx3mhg8q6hqmetkcvkfwmcve6mj9ewxe9ms14wttzns0hcak"
-           "xp8cf6j35kv3ametscrq6jb3peyz6tr01nfed6g8ab5kaj4nr9h1"
-           "31dcdxmee3j1mtp3jbectf3a5qb9fr7x0htytf6j3r3ymcaqjthr"
-           "akdbkr5jt2pabxmw5j038b42a3neb4t6psky36p1x03yh194shk6"
-           "we9mmn3d0ermfamxstrm8t96w62n86nvzjbhwchysbgmwtbenrga"
-           "aez451szz0er297cv1wf3715wx0ff2r8b0z5acee33g=")
-         ""))
-
-      (define expected-integrity-info (integrity md-algo (base32 expected-digest-base32)))
-      (define expected-signature-info (signature test-public-key-path (base32 signature-base32)))
-
-      (define-values (flags exit-code msg)
-        (call-with-input-file test-dummy-file-path
-          (λ (from-file)
-            (parameterize ([current-input-port from-file])
-              (try (mkinput-command (list (mkflag --byte-encoding) "base32"
-                                          (mkflag --generated-input-name) "boo"
-                                          (mkflag --md) "md5"
-                                          (mkflag --signer)
-                                          test-public-key-path
-                                          test-private-key-path
-                                          test-private-key-password-path
-                                          "user-source1"
-                                          "user-source2")))))))
-
-      (check-pred cli-flag-state? (car flags))
-      (check-equal? exit-code 0)
-      (check-equal? msg
-                    ($show-datum
-                     `(input "boo"
-                             (sources "user-source1" "user-source2")
-                             (integrity ',md-algo (base32 ,expected-digest-base32))
-                             (signature ,test-public-key-path (base32 ,signature-base32)))))
-
-      (test-true "Generate integrity expression that actually reflects content"
-        ($integrity-ok?
-         (check-integrity
-          #:trust-message-digest-algorithms '(md5)
-          #:trust-bad-digest #f
-          (integrity 'md5 (base32 expected-digest-base32))
-          (build-path private/ "dummy"))))
-
-
-      (test-true "Generate signature that matches the digest"
-       ($signature-ok?
-        (check-signature
-         #:trust-public-key? (λ _ #t)
-         #:public-key-path test-public-key-path
-         #:trust-unsigned #f
-         #:trust-bad-digest #f
-         expected-signature-info
-         expected-integrity-info))))))
+    (check-equal? msg ($show-datum null))))

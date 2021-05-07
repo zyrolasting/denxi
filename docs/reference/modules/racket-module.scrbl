@@ -6,7 +6,7 @@
                     racket/path
                     racket/pretty
                     syntax/modread
-                    xiden/input-info
+                    xiden/input
                     xiden/logged
                     xiden/racket-module
                     xiden/system]

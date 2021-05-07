@@ -7,9 +7,7 @@
                     xiden/cli-flag
                     xiden/logged
                     xiden/message
-                    xiden/rc
-                    xiden/source
-                    xiden/workspace]
+                    xiden/source]
           "../../shared.rkt"]
 
 @title{Command Line Argument Parsers}
@@ -23,6 +21,21 @@ output and an exit code.
 
 @racket[(submod xiden/cli main)] is the entry point for the
 @litchar{xiden} and @litchar{raco zcpkg} commands.
+
+@defproc[(launch-xiden! [#:arguments arguments (or/c list? vector?) (current-command-line-arguments)]
+                        [#:format-message format-message (get-message-formatter)]
+                        [#:handle-exit handle-exit (-> any/c any) exit])
+                        any]{
+This procedure is called for its effect: To parse the given command
+line arguments and perform work accordingly. Any @tech{messages}
+encountered are printed to @racket[(current-output-port)] after being
+formatted by @racket[format-message]. The program will exit by
+applying @racket[handle-exit] to a status code.
+
+This is the highest-level procedure in the @tt{xiden} collection. All
+functionality is indirectly accessible though here.
+}
+
 
 @defthing[top-level-cli argument-parser/c]{
 Returns a program based on the first argument, @racketid[subcommand],
@@ -90,13 +103,4 @@ process is sent to @racket[(current-error-port)].
 
 This all happens under a @tech{runtime configuration}, so transfers
 can be halted by settings like @racket[XIDEN_FETCH_TOTAL_SIZE_MB].
-}
-
-@defthing[mkinput-command argument-parser/c]{
-Creates a program based that accepts any number of format arguments.
-
-The program generates an input expression, with a @racket[sources]
-form containing each of the arguments. The data used to compute the
-integrity and signature information is read from
-@racket[current-input-port].
 }

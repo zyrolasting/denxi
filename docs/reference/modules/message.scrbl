@@ -6,7 +6,6 @@
                     xiden/logged
                     xiden/format
                     xiden/message
-                    xiden/rc
                     xiden/port]
          "../../shared.rkt"]
 

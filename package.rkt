@@ -12,35 +12,36 @@
 (provide install
          empty-package
          output-not-found
-         (struct-out package))
+         (struct-out package)
+         current-package-definition-editor)
 
-(require racket/format
+(require racket/contract
+         racket/file
+         racket/format
          racket/list
-         "input-info.rkt"
+         "artifact.rkt"
+         "input.rkt"
          "integrity.rkt"
          "localstate.rkt"
          "logged.rkt"
          "message.rkt"
          "monad.rkt"
          "pkgdef/static.rkt"
-         "plugin.rkt"
          "port.rkt"
          "query.rkt"
          "racket-module.rkt"
          "racket-version.rkt"
+         "setting.rkt"
          "source.rkt"
-         "strict-rc.rkt"
          "string.rkt"
          "system.rkt"
-         "url.rkt"
-         "workspace.rkt")
+         "url.rkt")
 
 (module+ test
   (require racket/function
            rackunit
-           (submod "file.rkt" test)
+           (submod "localstate.rkt" test)
            (submod "logged.rkt" test)
-           (submod "plugin.rkt" test)
            "file.rkt"
            "setting.rkt"))
 
@@ -55,6 +56,17 @@
 (define+provide-message $package:unsupported-racket-version $package (versions))
 (define+provide-message $package:unsupported-os $package (supported))
 (define+provide-message $package:unavailable-output $package (available))
+
+(define+provide-setting XIDEN_INSTALL_ABBREVIATED_SOURCES (listof string?) null)
+(define+provide-setting XIDEN_INSTALL_DEFAULT_SOURCES (listof (list/c string? string?)) null)
+(define+provide-setting XIDEN_INSTALL_SOURCES (listof (list/c string? string? string?)) null)
+(define+provide-setting XIDEN_ALLOW_UNSUPPORTED_RACKET boolean? #f)
+(define+provide-setting XIDEN_INPUT_OVERRIDES
+  (listof (list/c (or/c symbol? string? regexp? pregexp? byte-regexp? byte-pregexp?) list?))
+  null)
+
+(define current-package-definition-editor
+  (make-parameter values))
 
 (struct package
   (description
@@ -95,12 +107,12 @@
   (struct-copy package empty-package fields ...))
 
 (define (install link-path-or-#f output-name-or-#f package-definition-source)
-  (mdo pkg := (get-package #:override-specs (rc-ref 'XIDEN_INPUT_OVERRIDES)
-                           #:before-new-package (plugin-ref 'before-new-package values)
+  (mdo pkg := (get-package #:override-specs (XIDEN_INPUT_OVERRIDES)
+                           #:before-new-package (current-package-definition-editor)
                            package-definition-source
-                           (mebibytes->bytes (rc-ref 'XIDEN_FETCH_PKGDEF_SIZE_MB)))
+                           (mebibytes->bytes (XIDEN_FETCH_PKGDEF_SIZE_MB)))
 
-       (fulfil-package-output #:allow-unsupported-racket? (rc-ref 'XIDEN_ALLOW_UNSUPPORTED_RACKET)
+       (fulfil-package-output #:allow-unsupported-racket? (XIDEN_ALLOW_UNSUPPORTED_RACKET)
                               (or output-name-or-#f DEFAULT_STRING)
                               (or link-path-or-#f (package-name pkg))
                               pkg)
@@ -164,12 +176,12 @@
 
 (define (override-package-definition datum before-new-package override-specs)
   (define stripped (strip datum))
-  (define plugin-override (before-new-package stripped))
-  (define package-name (get-static-abbreviated-query plugin-override))
+  (define code-override (before-new-package stripped))
+  (define package-name (get-static-abbreviated-query code-override))
   (define input-overrides (find-per-input-overrides package-name override-specs))
   (make-package-definition-datum #:id (make-id)
    (bare-racket-module-code
-    (override-inputs plugin-override input-overrides))))
+    (override-inputs code-override input-overrides))))
 
 
 (define (make-id)
@@ -245,8 +257,8 @@
 
 (define-logged (validate-inputs pkg)
   (for ([input (in-list (package-inputs pkg))])
-    (when (abstract-input-info/c input)
-      ($fail ($package:abstract-input (input-info-name input)))))
+    (when (abstract-package-input? input)
+      ($fail ($package:abstract-input (package-input-name input)))))
   ($use pkg))
 
 
@@ -275,10 +287,10 @@
 
 
 (module+ test
-  (let ([ev (build-package [output-names '("default")])])
+  (let ([ev (build-package [output-names (list DEFAULT_STRING)])])
     (test-logged-procedure
      "Allow only defined outputs"
-     (validate-requested-output ev "default")
+     (validate-requested-output ev DEFAULT_STRING)
      (λ (val messages)
        (check-eq? val ev)
        (check-pred null? messages)))
@@ -288,10 +300,13 @@
      (λ (val messages)
        (check-eq? val FAILURE)
        (check-match messages
-                    (list ($package:unavailable-output '("default")))))))
+                    (list ($package:unavailable-output (list DEFAULT_STRING)))))))
 
-  (let ([ev (build-package [inputs (list (make-input-info "c1" (sources "s"))
-                                         (make-input-info "c2" (sources "s2")))])])
+  (let ([ev (build-package
+             [inputs (list (package-input "c1"
+                                          (artifact (sources "s")))
+                           (package-input "c2"
+                                          (artifact (sources "s2"))))])])
     (test-logged-procedure
      "Allow all concrete inputs"
      (validate-inputs ev)
@@ -302,8 +317,11 @@
   (test-logged-procedure
    "Disallow abstract inputs"
    (validate-inputs
-    (build-package [inputs (list (make-input-info "concrete" (sources "s") (integrity 'sha1 #""))
-                                 (make-input-info "a"))]))
+    (build-package [inputs (list (package-input "concrete"
+                                                (artifact
+                                                 (sources "s")
+                                                 (integrity 'sha1 #"")))
+                                 (make-package-input "a"))]))
    (λ (val messages)
      (check-eq? val FAILURE)
      (check-match messages
@@ -361,12 +379,8 @@
            [(output-record? variant)
             (reuse-package-output pkg output-name variant link-path)]
            [else
-            (mdo directory-record := (build-package-output-directory pkg output-name)
-
-                 (build-package-output pkg
-                                       output-name
-                                       (build-workspace-path (path-record-path directory-record)))
-
+            (mdo temp-directory := (build-package-output pkg output-name)
+                 directory-record := (logged-unit (make-addressable-directory temp-directory))
                  (record-package-output pkg
                                         output-name
                                         directory-record
@@ -376,25 +390,22 @@
   ($attach (make-addressable-link (find-path-record (output-record-path-id output-record-inst)) link-path)
            ($package:output:reused)))
 
-(define (build-package-output pkg output-name build-directory)
+(define (build-package-output pkg output-name)
   (logged-acyclic
-   (~a (abbreviate-exact-package-query (package->package-query pkg)) ", " output-name ", " build-directory)
+   (~a (abbreviate-exact-package-query (package->package-query pkg)) ", " output-name)
    (λ (messages)
-     (parameterize ([current-directory build-directory]
-                    [current-inputs (package-inputs pkg)])
-       (run-log ((package-build pkg) output-name)
-                messages)))))
+     (define tmp
+       (make-temporary-file "~a"
+                            'directory
+                            (build-object-path)))
+     (define-values (result messages*)
+       (parameterize ([current-directory tmp]
+                      [current-inputs (package-inputs pkg)])
+         (run-log ((package-build pkg) output-name)
+                  messages)))
 
-(define-logged (build-package-output-directory pkg output-name)
-  ($attach
-   (make-addressable-directory
-    (cons (open-input-string output-name)
-          (map open-input-info-as-bytes (package-inputs pkg))))))
-
-(define (open-input-info-as-bytes info)
-  (open-input-bytes
-    (with-handlers ([values (λ (e) (string->bytes/utf-8 (input-info-name info)))])
-      (integrity-info-digest (input-info-integrity info)))))
+     (values (if (eq? result FAILURE) FAILURE tmp)
+             messages*))))
 
 (define-logged (record-package-output pkg output-name directory-record link-path)
   (declare-output (package-provider pkg)
@@ -410,11 +421,13 @@
 
 
 (module+ test
-  (test-case "Stop cyclic package builds"
+  (test-workspace "Stop cyclic package builds"
     (call-with-temporary-file
      (λ (tmp-file-path)
        (write-to-file #:exists 'truncate/replace
-                      (make-package-definition-datum `((output "default" (install #f #f ,(~a tmp-file-path)))))
+                      (make-package-definition-datum
+                       `((output ,DEFAULT_STRING
+                                 (install #f #f ,(~a tmp-file-path)))))
                       tmp-file-path)
        (call-with-values (install #f #f (~a tmp-file-path))
                          (λ (v m)

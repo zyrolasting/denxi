@@ -5,11 +5,11 @@
                     xiden/message
                     xiden/integrity
                     xiden/openssl
-                    xiden/rc
                     xiden/source]
          racket/format
          xiden/integrity
-         @for-syntax[racket/base]
+         @for-syntax[racket/base
+                     xiden/integrity]
          "../../shared.rkt"]
 
 @title{Integrity Checking}
@@ -22,6 +22,13 @@ Represents integrity information for bytes. Given bytes from some
 source, the bytes pass an @tech{integrity check} if they, when applied to
 @racket[algorithm], produce a value @racket[equal?] to
 @racket[digest].
+}
+
+@defproc[(make-trusted-integrity-info [source source-variant?] [chf md-algorithm/c DEFAULT_CHF]) integrity-info?]{
+Returns integrity information with a new digest computed from the
+@racket[source]'s bytes. No safety limits are places on bytes drawn
+from the source, so this procedure should only be used on trusted
+data.
 }
 
 
@@ -51,6 +58,10 @@ digest derived from @racket[variant] is consistent with
 The check fails in all other conditions.
 }
 
+
+@defsetting*[XIDEN_TRUST_BAD_DIGEST]{
+@bold{Highly dangerous}. When true, disable integrity checking.
+}
 
 @defstruct*[($integrity $message) ([ok? boolean?] [stage symbol?] [info any/c]) #:prefab]{
 A @tech{message} that reports the results of an integrity check.

@@ -8,7 +8,7 @@
            file/unzip
            racket/contract
            xiden/archive
-           xiden/input-info
+           xiden/input
            xiden/file
            xiden/logged]
            "../../shared.rkt"]
@@ -18,6 +18,16 @@
 @defmodule[xiden/archive]
 
 @racketmodname[xiden/archive] extracts files from a single archive file.
+
+
+@defthing[current-find-extract-procedure (parameter/c (-> path-string? (or/c #f (-> input-port?))))]{
+A parameter used to find an extraction procedure for an archive
+located at a given path. The procedure in the parameter may return
+@racket[#f] if no other procedure is available.
+
+The default value always returns @racket[#f].
+}
+
 
 @defproc[(extract [in (or/c path-string? input-port?)]) (logged/c (or/c FAILURE void?))]{
 
@@ -41,10 +51,10 @@ If @racketid[P] succeeds, it will return @racket[(void)] and log
 
 The extraction process infers the archive format from the file
 extension in @racket[(object-name in)].  If this is @racket{.tar},
-then @racketid[P] behaves like @racket[untar].  If @racket{.tgz}
-or @racket{.tar.gz}, then @racket[untgz]. If @racket{.zip},
+then @racketid[P] behaves like @racket[untar].  If @racket{.tgz} or
+@racket{.tar.gz}, then @racket[untgz]. If @racket{.zip},
 @racket[unzip]. Otherwise, @racketid[P] will attempt to use
-a @tech{plugin}'s @racket[get-extract-procedure].
+@racket[current-find-extract-procedure].
 }
 
 

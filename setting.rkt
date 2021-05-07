@@ -10,6 +10,7 @@
 
 (provide (struct-out setting)
          define-setting
+         define+provide-setting
          (contract-out
           [call-with-applied-settings
            (-> (if/c hash?
@@ -21,6 +22,7 @@
 (struct setting (id valid? parameter derived-parameter)
   #:property prop:procedure
   (case-lambda [(self) ((setting-derived-parameter self))]
+               [(self v) ((setting-derived-parameter self) v)]
                [(self v proc) (parameterize ([(setting-derived-parameter self) v]) (proc))]))
 
 (define (make-setting id-sym get-default valid?)
@@ -72,8 +74,19 @@
 (define-syntax (define-setting stx)
   (syntax-parse stx
     [(_ name:id cnt:expr get-default:expr)
-     #'(define name (make-setting 'name get-default cnt))]))
+     #'(define name (make-setting 'name (envvar-ref 'name get-default) cnt))]))
 
+
+(define-syntax-rule (define+provide-setting id cnt get-default)
+  (begin (provide (contract-out [id setting?]))
+         (define-setting id cnt get-default)))
+
+
+(define (envvar-ref envname default)
+  (define env (getenv (symbol->string envname)))
+  (cond [(not env) default]
+        [(string=? env "") default]
+        [else (read (open-input-string env))]))
 
 
 (module+ test

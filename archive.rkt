@@ -12,19 +12,22 @@
          racket/match
          racket/path
          racket/string
-         "input-info.rkt"
+         "input.rkt"
          "logged.rkt"
          "message.rkt"
-         "monad.rkt"
-         "plugin.rkt")
+         "monad.rkt")
 
 (provide
  (contract-out
   [extract (-> (or/c path-string? input-port?) (logged/c void?))]
-  [extract-input (->* (string?) (#:keep? any/c) logged?)]))
+  [extract-input (->* (string?) (#:keep? any/c) logged?)]
+  [current-find-extract-procedure
+   (-> path-string? (or/c #f (-> input-port? any)))]))
+
+(define current-find-extract-procedure
+  (make-parameter (λ _ #f)))
 
 (define+provide-message $extract-report (status target))
-
 
 (define-logged (extract variant)
   (let start ([in variant])
@@ -35,6 +38,7 @@
           (if proc
               ($attach (void (proc in)) ($extract-report 'done path))
               ($fail ($extract-report 'unsupported path)))))))
+
 
 (define (extract-input #:keep? [keep? #f] name)
   (if keep?
@@ -54,15 +58,11 @@
     [(list "zip" _ ...)
      unzip]
     [else
-     (define ext (let ([fail (λ _ #f)]) (load-from-plugin 'get-extract-procedure fail fail)))
-     (invariant-assertion (or/c #f (-> input-port? void?))
-                          (and (procedure? ext)
-                               (ext name)))]))
+     ((current-find-extract-procedure) name)]))
 
 
 (module+ test
-  (require rackunit
-           (submod "plugin.rkt" test))
+  (require rackunit)
 
   (define (make-file path-string)
     (define path (string->path path-string))
@@ -83,27 +83,15 @@
     (check-equal? (get-extract-procedure "a.extra....tar.gz") untgz)
     (check-equal? (get-extract-procedure "a.blah") #f)
 
-    (define plugin
-      '(module anonymous racket/base
-         (provide get-extract-procedure)
-         (define (get-extract-procedure name)
-           (λ (in) (void (read-byte in))))))
-
-
-    (call-with-plugin plugin
-                      (λ ()
-                        (test-exn "Plugin procedure is under contract"
-                                  exn:fail:contract?
-                                  (λ () ((get-extract-procedure "a.xz") (void))))
-
-                        ; Confirm that the plugin read the only
-                        ; available byte.
-                        (define-values (i o) (make-pipe))
-                        (write-byte 1 o)
-                        (flush-output o)
-                        (close-output-port o)
-                        ((get-extract-procedure "a.xz") i)
-                        (check-pred eof-object? (read-byte i)))))
+    (parameterize ([current-find-extract-procedure
+                    (λ (name) (λ (in) (void (read-byte in))))])
+      ; Confirm that we read the only available byte.
+      (define-values (i o) (make-pipe))
+      (write-byte 1 o)
+      (flush-output o)
+      (close-output-port o)
+      ((get-extract-procedure "a.xz") i)
+      (check-pred eof-object? (read-byte i))))
 
 
   (test-case "Can pack and unpack an archive"

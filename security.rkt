@@ -13,17 +13,28 @@
          openssl
          "codec.rkt"
          "integrity.rkt"
+         "localstate.rkt"
          "message.rkt"
          "openssl.rkt"
          "path.rkt"
          "port.rkt"
-         "workspace.rkt")
+         "setting.rkt")
 
 (provide restrict)
 
 (define+provide-message $restrict (name))
 (define+provide-message $restrict:operation $restrict (reporting-guard summary args))
 (define+provide-message $restrict:budget $restrict (kind amount))
+
+(define+provide-setting XIDEN_ALLOW_ENV (listof (or/c bytes-environment-variable-name? string?)) null)
+(define+provide-setting XIDEN_TRUST_EXECUTABLES (listof well-formed-integrity-info/c) null)
+(define+provide-setting XIDEN_TRUST_ANY_EXECUTABLE boolean? #f)
+(define+provide-setting XIDEN_TRUST_CERTIFICATES (listof path-string?) null)
+(define+provide-setting XIDEN_TRUST_HOST_EXECUTABLES (listof string?) null)
+(define+provide-setting XIDEN_TRUST_UNVERIFIED_HOST boolean? #f)
+(define+provide-setting XIDEN_MEMORY_LIMIT_MB (>=/c 0) 200)
+(define+provide-setting XIDEN_TIME_LIMIT_S (>=/c 0) (* 5 60))
+
 
 (define (restrict halt
                   proc
@@ -170,7 +181,7 @@
                                     #:trust-any-executable? trust-any-executable?
                                     #:trust-executables trust-executables
                                     #:trust-host-executables trust-host-executables
-                                    #:workspace [ws (workspace-directory)])
+                                    #:workspace [ws (XIDEN_WORKSPACE)])
   (make-security-guard
    (current-security-guard)
    (make-file-guard #:trust-any-executable? trust-any-executable?
@@ -238,10 +249,9 @@
                                   (list op link-path target-path))))))
 
 
-(define (get-writeable-workspace-directories [wd (workspace-directory)])
+(define (get-writeable-workspace-directories [wd (XIDEN_WORKSPACE)])
   (list (current-directory)
-        (build-path wd "var/xiden")
-        (build-path wd "tmp")))
+        wd))
 
 
 
@@ -249,8 +259,7 @@
   (require racket/match
            racket/runtime-path
            rackunit
-           "file.rkt"
-           "strict-rc.rkt")
+           "file.rkt")
 
   (define-runtime-path here ".")
 
@@ -271,7 +280,7 @@
   (test-case "Prescribe write directories per-workspace"
     (define writeables (get-writeable-workspace-directories))
     (check-pred (non-empty-listof complete-path?) writeables)
-    (check-equal? (get-writeable-workspace-directories (workspace-directory))
+    (check-equal? (get-writeable-workspace-directories (XIDEN_WORKSPACE))
                   writeables))
 
   (test-case "Terminate thread at end of procedure"
@@ -345,11 +354,10 @@
     (check-false (trusts-nothing my-path))
     (check-false (trusts-nothing other-path))
 
-    (rc-rebind 'XIDEN_TRUST_MESSAGE_DIGEST_ALGORITHMS
-               '(sha1)
-               (λ ()
-                 (check-true  (trusts-exact-things my-path))
-                 (check-false (trusts-exact-things other-path))))
+    (XIDEN_TRUST_MESSAGE_DIGEST_ALGORITHMS '(sha1)
+      (λ ()
+        (check-true  (trusts-exact-things my-path))
+        (check-false (trusts-exact-things other-path))))
 
     (check-true  (trusts-hosted-things my-path))
     (check-false (trusts-hosted-things other-path)))

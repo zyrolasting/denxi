@@ -9,9 +9,8 @@
          "message.rkt"
          "openssl.rkt"
          "port.rkt"
-         "source.rkt"
-         "strict-rc.rkt"
-         "workspace.rkt")
+         "setting.rkt"
+         "source.rkt")
 
 (provide (struct-out integrity-info)
          (contract-out
@@ -31,6 +30,10 @@
           [bind-trust-list
            (-> (listof well-formed-integrity-info/c)
                (-> path-string? boolean?))]
+          [make-trusted-integrity-info
+           (->* (source-variant?)
+                (md-algorithm/c)
+                integrity-info?)]
           [check-integrity
            (-> #:trust-bad-digest any/c
                #:trust-message-digest-algorithms (listof md-algorithm/c)
@@ -39,12 +42,19 @@
                $integrity?)]))
 
 (define+provide-message $integrity (ok? stage info))
+(define+provide-setting XIDEN_TRUST_BAD_DIGEST boolean? #f)
 
 (struct integrity-info (algorithm digest) #:prefab)
 
 (define integrity integrity-info)
 
 (define MAX_EXPECTED_DIGEST_LENGTH 128)
+
+(define (make-trusted-integrity-info source [chf DEFAULT_CHF])
+  (fetch (coerce-source source)
+         (λ (in est-size)
+           (integrity-info chf (make-digest in chf)))
+         raise))
 
 (define (digest-length-ok? info)
   (equal? (bytes-length (integrity-info-digest info))
@@ -62,8 +72,10 @@
     (for/or ([integrity trusted])
       ($integrity-ok? (check-integrity
                        #:trust-bad-digest #f
-                       #:trust-message-digest-algorithms (rc-ref 'XIDEN_TRUST_MESSAGE_DIGEST_ALGORITHMS)
-                       integrity path)))))
+                       #:trust-message-digest-algorithms (XIDEN_TRUST_MESSAGE_DIGEST_ALGORITHMS)
+                       integrity
+                       (make-digest path
+                                    (integrity-info-algorithm integrity)))))))
 
 
 (define (fetch-digest intinfo exhaust)
@@ -77,7 +89,7 @@
                  #:cache-key (make-source-key source)
                  #:max-size MAX_EXPECTED_DIGEST_LENGTH
                  #:buffer-size MAX_EXPECTED_DIGEST_LENGTH
-                 #:timeout-ms (rc-ref 'XIDEN_FETCH_TIMEOUT_MS)
+                 #:timeout-ms (XIDEN_FETCH_TIMEOUT_MS)
                  #:on-status void
                  "_"
                  in
@@ -89,7 +101,7 @@
   (if (input-port? variant)
       (make-digest variant algorithm)
       (fetch (coerce-source variant)
-             (λ (in est-size) (make-digest in algorithm))
+             (λ (in est-size) (port->bytes in))
              exhaust)))
 
 
@@ -151,14 +163,21 @@
   (define-runtime-path integrity.rkt "integrity.rkt")
   (define-runtime-path main.rkt "main.rkt")
 
+  (test-case "Make trusted integrity info"
+    (define val (make-trusted-integrity-info #"abc" 'md5))
+    (check-pred integrity-info? val)
+    (check-equal? (integrity-info-algorithm val) 'md5)
+    (check-equal? (integrity-info-digest val)
+                  #"\220\1P\230<\322O\260\326\226?}(\341\177r"))
+
   (test-case "Bind trust in specific paths"
     (define trust?
       (bind-trust-list
        (list (integrity-info 'sha1 (make-digest integrity.rkt 'sha1)))))
-    (rc-rebind 'XIDEN_TRUST_MESSAGE_DIGEST_ALGORITHMS '(sha1)
-               (λ ()
-                 (check-true (trust? integrity.rkt))
-                 (check-false (trust? main.rkt)))))
+    (XIDEN_TRUST_MESSAGE_DIGEST_ALGORITHMS '(sha1)
+      (λ ()
+        (check-true (trust? integrity.rkt))
+        (check-false (trust? main.rkt)))))
 
   (test-true "Trust only certain CHFs"
              (consider-chf-trust #:trust-message-digest-algorithms '(md5)

@@ -1,12 +1,15 @@
 #lang xiden
 
+(name "example00-output")
+
 (output "default"
         module-input := (input-ref "hello.rkt")
         (resolve-input module-input))
 
 (input "hello.rkt"
-       (sources (lines-source #f
-                              '("(module hello racket/base"
-                                "  (provide say-hello)"
-                                "  (define (say-hello)"
-                                "    (displayln \"Hello!\")))"))))
+       (artifact
+        (lines-source #f
+                      '("(module hello racket/base"
+                        "  (provide say-hello)"
+                        "  (define (say-hello)"
+                        "    (displayln \"Hello!\")))"))))

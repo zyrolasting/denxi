@@ -25,6 +25,7 @@
          messy-log/c
          run-log
          get-log
+         get-logged-value
          define-logged
          call-with-logged-continuation
          (contract-out
@@ -154,6 +155,10 @@
 (define (logged-attachment v next)
   (logged (λ (m) (values v (cons next m)))))
 
+(define (get-logged-value l)
+  (define-values (v _) (run-log l))
+  v)
+
 (define (get-log m)
   (define-values (_ messages) (run-log m))
   (reverse (flatten messages)))
@@ -180,12 +185,27 @@
   (struct/c logged (-> list? (values (or/c SUCCESS FAILURE cnt) list?))))
 
 (module+ test
-  (provide test-logged-procedure)
   (require rackunit)
-
-  (define (test-logged-procedure #:with [initial null] msg l p)
+  (provide test-logged-procedure
+           check-logged-procedure
+           test-logged-value
+           check-logged-value)
+  
+  (define (test-logged-value msg l check)
     (test-case msg
-      (call-with-values (λ () (run-log l initial)) p)))
+      (check-logged-value l check)))
+
+  (define (check-logged-value l check)
+    (check-logged-procedure l
+                            (λ (result messages)
+                              (check-pred null? messages)
+                              (check result))))
+
+  (define (check-logged-procedure #:with [initial null] l p)
+    (call-with-values (λ () (run-log l initial)) p))
+  
+  (define (test-logged-procedure #:with [initial null] msg l p)
+    (test-case msg (check-logged-procedure #:with initial l p)))
 
   (test-logged-procedure "Check contract on logged procedures"
                          (invariant-assertion (logged/c (>=/c 0)) (logged-unit -7))

@@ -20,12 +20,33 @@
          racket/cmdline
          racket/format
          racket/sandbox
-         "contract.rkt"
+         "artifact.rkt"
+         "archive.rkt"
+         "codec.rkt"
+         "exn.rkt"
+         "file.rkt"
+         "format.rkt"
+         "input.rkt"
+         "integrity.rkt"
          "l10n.rkt"
+         "localstate.rkt"
+         "logged.rkt"
+         "message.rkt"
+         "openssl.rkt"
+         "package.rkt"
          "pkgdef/static.rkt"
-         "rc.rkt"
+         "printer.rkt"
+         "port.rkt"
+         "query.rkt"
+         "racket-module.rkt"
+         "racket-version.rkt"
+         "security.rkt"
          "setting.rkt"
-         "string.rkt")
+         "signature.rkt"
+         "source.rkt"
+         "string.rkt"
+         "system.rkt"
+         "url.rkt")
 
 (provide (struct-out cli-flag)
          (struct-out cli-flag-state)
@@ -185,19 +206,6 @@
 (flag-out [-d --fetch-timeout] (cli-flag/unary XIDEN_FETCH_TIMEOUT_MS arg->value "milliseconds"))
 (flag-out [-o --max-redirects] (cli-flag/unary XIDEN_DOWNLOAD_MAX_REDIRECTS arg->value "exact-nonnegative-integer"))
 (flag-out [-r --subprocess-timeout] (cli-flag/unary XIDEN_SUBPROCESS_TIMEOUT_S arg->value "positive"))
-(flag-out [--byte-encoding] (cli-flag/unary XIDEN_BYTE_ENCODING arg->value "byte-encoding"))
-(flag-out [--md] (cli-flag/unary XIDEN_MESSAGE_DIGEST_ALGORITHM arg->value "algorithm"))
-(flag-out [-g --generated-input-name] (cli-flag/unary XIDEN_GENERATED_INPUT_NAME keep "name"))
-(flag-out [-u --default-catalog-base-url] (cli-flag/unary XIDEN_DEFAULT_CATALOG_BASE_URL keep "url"))
-(flag-out [--signer]
-          (cli-flag XIDEN_SIGNER 'once-each null 3
-                    (λ (flag public-key-source private-key-path password-path)
-                      (map
-                       (λ (str)
-                         (let ([v (string->value str)])
-                           (and v (~a v))))
-                       (list public-key-source private-key-path password-path)))
-                    '("public-key-source" "private-key-path" "password-path")))
 
 
 ; Unary boolean flags

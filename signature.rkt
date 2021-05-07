@@ -8,13 +8,14 @@
          "localstate.rkt"
          "message.rkt"
          "openssl.rkt"
-         "plugin.rkt"
-         "source.rkt"
-         "strict-rc.rkt"
-         "workspace.rkt")
+         "setting.rkt"
+         "source.rkt")
 
 (provide (struct-out signature-info)
          (contract-out
+          [current-verify-signature
+           (parameter/c
+            (-> well-formed-integrity-info/c well-formed-signature-info/c boolean?))]
           [make-signature-bytes
            (-> bytes? path-string? (or/c #f path-string?) bytes?)]
           [signature
@@ -36,6 +37,11 @@
 
 (define+provide-message $signature (ok? stage public-key-path))
 
+(define+provide-setting XIDEN_TRUST_ANY_PUBLIC_KEY boolean? #f)
+(define+provide-setting XIDEN_TRUST_BAD_SIGNATURE boolean? #f)
+(define+provide-setting XIDEN_TRUST_PUBLIC_KEYS (listof well-formed-integrity-info/c) null)
+(define+provide-setting XIDEN_TRUST_UNSIGNED boolean? #f)
+
 (struct signature-info (pubkey body) #:prefab)
 
 (define signature signature-info)
@@ -46,6 +52,7 @@
             source-variant?))
 
 (define MAX_EXPECTED_SIGNATURE_PAYLOAD_LENGTH 24000)
+
 
 (define (default-verify-signature intinfo siginfo)
   (with-handlers ([exn:fail:xiden:openssl?
@@ -62,6 +69,9 @@
                           "-pubin"
                           "-inkey" (fetch-signature-payload (signature-info-pubkey siginfo) raise)))))
 
+
+(define current-verify-signature
+  (make-parameter default-verify-signature))
 
 (define (make-signature-bytes digest private-key-path password-path)
   (define base-args
@@ -87,7 +97,7 @@
                 #:cache-key (make-source-key source)
                 #:max-size MAX_EXPECTED_SIGNATURE_PAYLOAD_LENGTH
                 #:buffer-size MAX_EXPECTED_SIGNATURE_PAYLOAD_LENGTH
-                #:timeout-ms (rc-ref 'XIDEN_FETCH_TIMEOUT_MS)
+                #:timeout-ms (XIDEN_FETCH_TIMEOUT_MS)
                 #:on-status void
                 "_"
                 in
@@ -119,7 +129,7 @@
                        (file->bytes public-key-path)))))
 
 (define (consider-signature intinfo siginfo)
-  ($signature ((plugin-ref 'verify-signature default-verify-signature) intinfo siginfo)
+  ($signature ((current-verify-signature) intinfo siginfo)
               (object-name consider-signature)
               #f))
 
@@ -148,7 +158,7 @@
 ; not need to be checked manually.
 (module+ test
   (require rackunit
-           (submod "file.rkt" test))
+           (submod "localstate.rkt" test))
 
   ; The hard-coded dummy data for this test came from hashing the byte string #"abc"
   ; with SHA-384 and then signing the digest using a 2048-bit RSA private key.
@@ -230,15 +240,15 @@
                                (make-digest pubkey-bytes 'sha384)))))
 
       (define-values (public-key-path s)
-        (rc-rebind 'XIDEN_TRUST_MESSAGE_DIGEST_ALGORITHMS '(sha384)
-                   (λ ()
-                     (consider-public-key-trust
-                      #:public-key-path
-                      (fetch-signature-payload (signature-info-pubkey siginfo)
-                                               (λ (e) (values e e)))
-                      #:trust-public-key? trust-public-key?
-                      siginfo
-                      values))))
+        (XIDEN_TRUST_MESSAGE_DIGEST_ALGORITHMS '(sha384)
+          (λ ()
+            (consider-public-key-trust
+             #:public-key-path
+             (fetch-signature-payload (signature-info-pubkey siginfo)
+                                      (λ (e) (values e e)))
+             #:trust-public-key? trust-public-key?
+             siginfo
+             values))))
 
       (check-pred file-exists? public-key-path)
       (check-eq? s siginfo)

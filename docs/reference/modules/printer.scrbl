@@ -10,9 +10,10 @@
                     xiden/logged
                     xiden/format
                     xiden/message
-                    xiden/rc
                     xiden/port
                     xiden/printer]
+         @for-syntax[xiden/printer]
+         xiden/printer
          "../../shared.rkt"]
 
 @title{Printer}
@@ -26,6 +27,24 @@ output ports.
 @defstruct*[($verbose $message) ([message $message?]) #:prefab]{
 A wrapper for a message that only appears to a user if
 @racket[(XIDEN_VERBOSE)] is @racket[#t].
+}
+
+
+@defsetting*[XIDEN_FASL_OUTPUT]{
+When true, each value @racket[v] printed on STDOUT is first transformed using
+@racket[(s-exp->fasl (serialize v))].
+}
+
+@defsetting*[XIDEN_READER_FRIENDLY_OUTPUT]{
+When true, each program output value @racket[v] is printed on STDOUT using
+@racket[pretty-write] without being translated to a human-readable message.
+
+Use this to produce @racket[(read)]able logs. If it aids read performance,
+combine with @racket[XIDEN_FASL_OUTPUT].
+}
+
+@defsetting*[XIDEN_VERBOSE]{
+When true, emit more detailed program output.
 }
 
 @defproc[(write-message-log [messages messy-log/c] [format-message message-formatter/c]) void?]{

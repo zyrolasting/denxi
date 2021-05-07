@@ -3,13 +3,13 @@
 @require[@for-label[racket/base
                     racket/contract
                     racket/string
-                    xiden/catalog
+                    xiden/artifact
+                    xiden/dig
                     xiden/file
-                    xiden/input-info
+                    xiden/input
                     xiden/logged
                     xiden/package
                     xiden/query
-                    xiden/rc
                     xiden/version
                     @only-in[xiden/url url-string?]
                     @except-in[xiden/pkgdef #%module-begin]]
@@ -33,45 +33,11 @@ provided from the module as @racket[pkg].
 
 @section[#:tag "pkgdef-terms"]{Package Definition Terms}
 
-@defform[(comission anything ...)]{
-Comissions a new package from the installed @tech{plugin}.
-
-@racket[comission] expands to @racket[(override-package P anything ...)],
-where @racket[override-package] is defined by the corresponding
-@tech{plugin}, and @racketid[P] is the current state of the package
-during evaluation of terms.
-
-If @racket[override-package] is not defined, then @racket[comission]
-has no effect. Any package definition using @racket[comission] might
-not function without a compatible plugin installed in the
-@tech{workspace}.
-
-@racketmod[xiden
-(code:comment "This example invokes the plugin during evaluation")
-(code:comment "The plugin will see the provider, package, and edition name, but not the revision.")
-(provider "example.com")
-(package "anvil")
-(edition "heavy")
-(comission)
-(revision-number 1)
-]
-
-@racketmod[xiden
-(code:comment "This example invokes the plugin with arguments")
-(comission "anvil" #:verbose? #t)
-]
-}
-
 @defform*[((define id value)
            (define (id formals ...) body ...))]{
 @racket[define] is allowed in module context to bind procedures and
 common values. All @racket[define]s are hoisted above all other terms
 before evaluation.
-}
-
-@defform[(dependencies query ...) #:contracts ([query package-query?])]{
-Updates the package using @racket[add-catalogged-inputs] and the
-catalog defined by the @tech{plugin}.
 }
 
 @defform[(description string-fragment ...) #:contracts ([string-fragment non-empty-string?])]{
@@ -96,7 +62,7 @@ Sets @racket[package-edition].
 
 @defform*[((input name) (input name integrity) (input name integrity signature))]{
 Adds a @tech{package input} to @racket[package-inputs]. A form
-corresponds exactly to an application of @racket[make-input-info].
+corresponds exactly to an application of @racket[make-package-input].
 }
 
 @defform[(metadatum id value)]{

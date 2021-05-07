@@ -4,18 +4,17 @@
 
 @title{Model}
 
-Xiden creates symbolic links to directories. Those directories
-represent dependencies.  Xiden implements a garbage
-collector that deletes any directory it created once it has no known
-symbolic links. Users therefore uninstall software by deleting links
-and running a garbage collection pass.
+Xiden uses @tech{package definitions} to build directories and issue
+symbolic links to those directories.  A garbage collector deletes any
+directory it created once it has no known symbolic links. When given
+the oppurtunity to perform file or network I/O, Xiden will proceed
+only with the user's consent.
 
-The linked directories are built lazily, atomically, and
-deterministically in @tech{workspaces} using @tech{package
-definitions}.
+Since dependency management is subjective, Xiden requires users to
+define @tech{launchers}. This allows users to set configurations and
+conventions in advance of Xiden's role in their projects.
 
-This section covers the modules that cooperate to these ends, under
-various safety mechanisms and customizations.
+This section covers the modules that cooperate to these ends.
 
 @table-of-contents[]
 @include-section{modules/pkgdef.scrbl}
@@ -23,10 +22,10 @@ various safety mechanisms and customizations.
 @include-section{modules/main.scrbl}
 @include-section{modules/version.scrbl}
 @include-section{modules/query.scrbl}
-@include-section{modules/workspace.scrbl}
+@include-section{modules/localstate.scrbl}
 @include-section{modules/source.scrbl}
-@include-section{modules/catalog.scrbl}
-@include-section{modules/input-info.scrbl}
-@include-section{modules/plugin.scrbl}
-@include-section{settings.scrbl}
+@include-section{modules/input.scrbl}
+@include-section{modules/artifact.scrbl}
+@include-section{modules/launcher.scrbl}
+@include-section{modules/setting.scrbl}
 @include-section{verification.scrbl}

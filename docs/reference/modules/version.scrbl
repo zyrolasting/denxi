@@ -58,19 +58,39 @@ Returns a revision number in terms of a variant type.
 Returns a revision number string in terms of a variant type.
 }
 
-@defproc[(make-revision-interval [lo (or/c revision-number? #f)]
-                                 [hi (or/c revision-number? #f)]
-                                 [#:lo-exclusive lo-exclusive any/c]
-                                 [#:hi-exclusive hi-exclusive any/c])
-                                 (values (or/c #f revision-number?)
-                                         (or/c #f revision-number?))]{
-Creates a possibly invalid integer interval using
 
-@racketblock[
-(values (if (and lo lo-exclusive) (add1 lo) lo)
-        (if (and hi hi-exclusive) (sub1 hi) hi))]
+@defproc[(make-minimum-revision-number [boundary revision-number?]
+                                       [#:exclusive? exclusive? any/c])
+                                       revision-number?]{
+Returns a revision number, interpreting another as a minimum boundary
+for an integer interval. If @racket[exclusive?] is @racket[#f], then
+the return value is simply @racket[boundary]. Otherwise, it's
+@racket[(add1 boundary)].
+}
 
-@racket[lo] and @racket[hi] may be @racket[#f] to capture cases where
-@tech{revision names} cannot map to @tech{revision numbers}. In that
-case, the corresponding interval bound will also be @racket[#f].
+@defproc[(make-maximum-revision-number [boundary revision-number?]
+                                       [#:exclusive? exclusive? any/c])
+                                       revision-number?]{
+Returns a revision number, interpreting another as a maximum boundary
+for an integer interval. If @racket[exclusive?] is @racket[#f], then
+the return value is simply @racket[boundary]. Otherwise, it's
+@racket[(max 0 (sub1 boundary))].
+}
+
+@defproc[(find-latest-available-revision-number [available? (-> revision-number? any/c)]
+                                                [lo revision-number?]
+                                                [hi revision-number?])
+                                                (or/c #f revision-number)]{
+Finds the largest element of the inclusive interval @litchar|{{lo
+.. hi}}| for which @racket[available?] returns a true value. Returns
+@racket[#f] if no such element exists.
+}
+
+@defproc[(find-oldest-available-revision-number [available? (-> revision-number? any/c)]
+                                                [lo revision-number?]
+                                                [hi revision-number?])
+                                                (or/c #f revision-number)]{
+Finds the smallest element of the inclusive interval @litchar|{{lo
+.. hi}}| for which @racket[available?] returns a true value. Returns
+@racket[#f] if no such element exists.
 }

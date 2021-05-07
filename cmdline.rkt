@@ -11,9 +11,7 @@
          "logged.rkt"
          "message.rkt"
          "printer.rkt"
-         "rc.rkt"
-         "setting.rkt"
-         "workspace.rkt")
+         "setting.rkt")
 
 (define exit-code/c (integer-in 0 255))
 (define exit-handler/c (-> exit-code/c any))
@@ -52,11 +50,6 @@
   (on-exit
    (call/cc
     (λ (use-exit-code)
-      ; TODO: An improperly configured workspace directory should be
-      ; cause to halt the program.
-      (when (show-workspace-envvar-error?)
-        (write-message ($invalid-workspace-envvar) format-message))
-
       (with-handlers ([exn? (λ (e)
                               (write-message ($show-string (exn-message e)) format-message)
                               (use-exit-code 1))]
@@ -65,25 +58,14 @@
                          (write-message m format-message)
                          (use-exit-code 1))])
         (define-values (flags run!) (parse-args args))
-        (call-with-applied-settings
-         (build-runtime-configuration flags)
+        (call-with-bound-cli-flags
+         flags
          (λ ()
            (define-values (exit-code program-output)
              (parameterize ([current-message-formatter format-message])
                (call/cc run!)))
            (write-message-log program-output format-message)
            (use-exit-code exit-code))))))))
-
-
-; Capture the runtime configuration once so that it can be reused
-; for more than just a command line handler.
-(define (build-runtime-configuration flags)
-  (call-with-bound-cli-flags
-   flags
-   (λ ()
-     (for/hash ([(sym val) (dump-xiden-settings)])
-       (values (hash-ref XIDEN_SETTINGS sym)
-               val)))))
 
 
 

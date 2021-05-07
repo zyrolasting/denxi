@@ -6,6 +6,8 @@
                     xiden/integrity
                     xiden/logged
                     xiden/security]
+         xiden/security
+         @for-syntax[xiden/security]
          "../../shared.rkt"]
 
 @title{Security}
@@ -120,4 +122,79 @@ It can be one of the following:
 @item{@racket['blocked-listen]: A request to listen for network connections was blocked.}
 @item{@racket['blocked-link]: A request to create a symbolic link was blocked.}
 ]
+}
+
+@defsetting*[XIDEN_MEMORY_LIMIT_MB]{
+Defines a memory limit for a custodian managing process resources, in
+mebibytes.  If this is too low, then it is possible for Xiden to halt
+due to a forced custodian shutdown.
+
+Does not count memory charged when parsing the command line and
+setting up a @tech{runtime configuration}.
+
+Has no effect if the running Racket installation does not support
+per-custodian memory accounting.
+}
+
+@defsetting*[XIDEN_TIME_LIMIT_S]{
+Sets a time limit for a Xiden process, in seconds. Does not count time
+spent parsing the command line and setting up a @tech{runtime
+configuration}.
+}
+
+@defsetting*[XIDEN_TRUST_CERTIFICATES]{
+A list of paths to server certificates that Xiden will trust in
+addition to those available in the operating system. This option is
+safer than @racket[XIDEN_TRUST_UNVERIFIED_HOST] so long as the
+certificates are verified by a trusted party.
+}
+
+@defsetting*[XIDEN_TRUST_UNVERIFIED_HOST]{
+@bold{Dangerous}. When true, trust any server that was not authenticated using available certificates.
+}
+
+@defsetting*[XIDEN_TRUST_ANY_EXECUTABLE]{
+@bold{Dangerous}. When true, allow the Racket runtime to start a subprocess with any executable.
+}
+
+@defsetting[XIDEN_TRUST_EXECUTABLES (listof well-formed-integrity-info/c)]{
+Like @racket[XIDEN_TRUST_PUBLIC_KEYS], but used to verify
+executables a @tech{package} tries to use when creating a subprocess.
+
+Beware: Any executable listed here inherits the OS-level permissions
+of the process, and is not subject to the restrictions of a
+Xiden @tech{runtime configuration}.  If you include a
+Xiden launcher or a sufficiently flexible Racket launcher, a
+@tech{package} can start a new Xiden process with a full-trust
+configuration.
+}
+
+@defsetting*[XIDEN_TRUST_HOST_EXECUTABLES]{
+Like @racket[XIDEN_TRUST_EXECUTABLES], except this setting is a list
+of names. Xiden will allow execution of a file if its normalized path
+equals the value of @racket[find-executable-path] for an element of
+that list. You may need to add multiple entries to account for
+extension differences across platforms.
+
+This can be helpful in the event a package depends on access to an
+executable on the host system and there is no way to control the
+content of that executable.
+
+The @racket[find-executable-path] restriction is meant to prevent
+packages from creating and then immediately running their own
+executables just because they have a name in this list. Even so, this
+can be a dangerous setting, and should only be used if you trust both
+the package definition and the executables on your system. It's also
+why @tt{PATH} should not include a build directory.
+
+Regardless of the setting's actual value, Xiden implicitly considers
+@racket{openssl} an element of its list. The user is therefore
+responsible for the integrity of their OpenSSL instance.
+}
+
+@defsetting*[XIDEN_ALLOW_ENV]{
+Names of environment variables visible to @tech{packages}, and
+Xiden subprocesses.
+
+@racket{PATH} is included regardless of the value of this setting.
 }

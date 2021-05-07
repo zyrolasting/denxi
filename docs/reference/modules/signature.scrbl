@@ -6,7 +6,9 @@
                     xiden/message
                     xiden/integrity
                     xiden/signature
-                    xiden/source]]
+                    xiden/source]
+         @for-syntax[xiden/signature]
+         xiden/signature]
 
 @title{Signature Checking}
 
@@ -70,6 +72,22 @@ invariants of the OpenSSL command documented at the beginning of this
 section.
 }
 
+
+@defthing[current-verify-signature (parameter/c (-> integrity-info? signature-info? boolean))]{
+A parameter containing a procedure for signature verification.
+Returns @racket[#t] if Xiden may assume that the signature in the
+second argument is valid for the digest found in the first
+argument. Making this procedure always return @racket[#t] is
+equivalent to setting @racket[XIDEN_TRUST_UNSIGNED] to @racket[#t].
+
+The default implementation is a procedure that uses the host's OpenSSL
+installation to verify the signature.
+
+You may assume that the public key is trusted if control reaches this
+procedure in the context of a @tech{launcher}.
+}
+
+
 @defproc[(check-signature [#:trust-public-key? trust-public-key? (-> path-string? any/c)]
                           [#:public-key-path public-key-path path-string?]
                           [#:trust-unsigned trust-unsigned any/c]
@@ -111,4 +129,23 @@ the check result.
 
 @racket[public-key-path] is a path to a cached public key file
 used for a check, or @racket[#f] if a public key is not relevant.
+}
+
+@defsetting*[XIDEN_TRUST_ANY_PUBLIC_KEY]{
+@bold{Dangerous}. When true, trust any public key used to verify a signature.
+}
+
+@defsetting*[XIDEN_TRUST_UNSIGNED]{
+@bold{Dangerous}. When true, trust any input that lacks a signature.
+}
+
+@defsetting*[XIDEN_TRUST_BAD_SIGNATURE]{
+@bold{Dangerous}. When true, trust any input that has a signature that does not match the input's integrity information.
+}
+
+@defsetting[XIDEN_TRUST_PUBLIC_KEYS (listof well-formed-integrity-info/c)]{
+A list of integrity information used to verify public keys. If a
+public key fetched for an input passes the integrity check for an
+element of @racket[XIDEN_TRUST_PUBLIC_KEYS], then the public key is
+considered trustworthy.
 }

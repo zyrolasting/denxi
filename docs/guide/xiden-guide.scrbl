@@ -3,30 +3,29 @@
 @require[@for-label[racket/base]
          "../shared.rkt"]
 
-@title[#:style '(toc)]{Xiden: A Guide for Functional Dependency Management in Racket}
+@title[#:style '(toc)]{Xiden Guide}
 @author[(author+email "Sage L. Gerard" "sage@sagegerard.com" #:obfuscate? #t)]
 
-This is a guide for Xiden, a functional dependency manager for Racket.
+This is a guide for Xiden, a functional (as in “functional
+programming”) dependency manager for Racket.
 
-This guide is for anyone familiar with Racket who wishes to have more
-options when distributing their own software, or for using third party
-code. When you are finished reading, you'll understand how Xiden
-works, you'll understand what it's strengths/weaknesses are, and
-you'll be better equipped to understand the reference material (See @other-doc['(lib "xiden/docs/reference/xiden-reference.scrbl")]).
+For all documentation, see @other-doc[xiden-index].
 
-To track Xiden's progress as a project, see @secref{project}.
+Xiden creates directories atomically with your explicit and informed
+consent. Xiden is also deterministic, robust, configurable, and
+extensible. It does not have the limitations of @tt{raco pkg}, and is
+suitable for commercial software distribution.
+
+In this guide you will learn how to release and install software using
+Xiden. When you are finished, you'll understand how Xiden works,
+you'll understand what it's strengths/weaknesses are, and you'll be
+better equipped to understand @other-doc[xiden-reference].
 
 @table-of-contents[]
 
 @include-section{introduction.scrbl}
 @include-section{setup.scrbl}
 @include-section{creating-packages.scrbl}
-@include-section{workspace.scrbl}
-@include-section{config.scrbl}
-@include-section{cli.scrbl}
-@include-section{versioning.scrbl}
+@include-section{launchers.scrbl}
 @include-section{queries.scrbl}
-@include-section{catalog.scrbl}
-@include-section{perfecting-packages.scrbl}
-@include-section{security.scrbl}
 @include-section{project.scrbl}

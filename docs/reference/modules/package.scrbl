@@ -3,13 +3,14 @@
 @require[@for-label[racket/base
                     racket/contract
                     racket/string
-                    xiden/input-info
+                    xiden/input
                     xiden/logged
                     xiden/package
-                    xiden/rc
                     xiden/string
                     xiden/url
                     xiden/version]
+         @for-syntax[xiden/package]
+         xiden/package
          "../../shared.rkt"]
 
 @title{Packages}
@@ -27,7 +28,7 @@
                      [os-support (listof symbol?)]
                      [racket-versions (listof (list/c non-empty-string?))]
                      [metadata (hash/c symbol? string?)]
-                     [inputs (listof input-info?)]
+                     [inputs (listof package-input?)]
                      [output-names (listof non-empty-string?)]
                      [build (-> non-empty-string? (logged/c void?))])]{
 A @deftech{package} is an instance of @racket[package].
@@ -123,6 +124,93 @@ a broken intermediate state on disk. This procedure should be used
 in the context of a transaction to avoid this problem.
 
 All @racket[install] @tech{messages} are instances of @racket[$package].
+}
+
+
+@defthing[current-package-definition-editor (parameter/c (-> bare-racket-module? bare-racket-module?))]{
+A parameter for a procedure that replaces any @tech{bare}
+@tech{package definition} with another before creating a package. This
+procedure defaults to the identity function, which means no code is
+replaced. Otherwise, you may return an alternative definition to
+replace the one in the argument.
+
+This procedure is useful for standardizing definitions, or for
+analyzing builds. @bold{Define with care.} This procedure can override
+every package definition, which can render a Xiden process inoperable
+or unsafe.
+
+Take for example a function that returns the same static package
+definition, which has one dependency.
+
+@racketblock[
+(define (before-new-package original)
+  (struct-copy bare-racket-module original
+               [code
+                 '((input "pkgdef" (sources "https://example.com/other.rkt"))
+                   (output "default"
+                           pkgdef-input := (input-ref "pkgdef")
+                           pkgdef-path := (resolve-input "pkgdef")
+                           (install #f #f pkgdef-path)))]))
+]
+
+This creates builds that will not terminate. Even if Xiden downloads a
+new package definition from @racket{https://example.com/other.rkt}, it
+will only be replaced by another instance of the same data returned
+from @racket[(current-package-definition-editor)].
+}
+
+
+@section{Package Settings}
+
+@defsetting*[XIDEN_ALLOW_UNSUPPORTED_RACKET]{
+When true, continue installing when a @tech{package definition}
+declares that it does not support the running Racket version.
+}
+
+@defsetting*[XIDEN_INSTALL_SOURCES]{
+Defines installations in a transaction.
+
+Each list in @racket[XIDEN_INSTALL_SOURCES] consists of three strings:
+
+@itemlist[#:style 'ordered
+@item{The path to a symbolic link to create with respect to @racket[(current-directory)].}
+@item{The name of a desired output from a @tech{package definition}.}
+@item{A URL, file path, or @tech{launcher}-specific string used to find the @tech{package definition}.}
+]
+}
+
+@defsetting*[XIDEN_INPUT_OVERRIDES]{
+A list of strings used to define package input overrides.
+
+Each element is in the form @racket[(cons pattern input-expr)]. The
+input of name @racketid[input-name] is replaced with the (evaluated)
+@racketid[input-expr] for all @tech{package queries} matching
+@racket[pattern].
+
+If @racket[pattern] is a string, then it is used as an argument to
+@racket[pregexp] before matching. If @racket[pattern] is a symbol,
+then it is first coerced to a string and then used as an argument to
+@racket[pregexp].
+}
+
+@defsetting*[XIDEN_INSTALL_ABBREVIATED_SOURCES]{
+Like @racket[XIDEN_INSTALL_SOURCES], except each item in the list only needs to
+be a URL, file path, or @tech{launcher}-specific string used to find the @tech{package
+definition}. The symbolic link name is assumed to be the string bound to
+@racketfont{package} in the definition, and the output is assumed to be
+@racket{default}.
+}
+
+@defsetting*[XIDEN_INSTALL_DEFAULT_SOURCES]{
+Like @racket[XIDEN_INSTALL_SOURCES], except each list only needs two strings:
+
+
+@itemlist[#:style 'ordered
+@item{The path of a symbolic link to create with respect to @racket[(current-directory)].}
+@item{A URL, file path, or @tech{launcher}-specific string used to find the @tech{package definition}.}
+]
+
+The output is assumed to be @racket{default}.
 }
 
 

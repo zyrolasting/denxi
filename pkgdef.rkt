@@ -5,13 +5,13 @@
 (provide #%app
          #%datum
          :=
+         apply
+         artifact
          base32
          base64
          byte-source
          coerce-source
-         comission
          define
-         dependencies
          description
          edition
          extract
@@ -46,6 +46,7 @@
          run
          signature
          sources
+         string-append
          tags
          text-source
          url
@@ -72,15 +73,15 @@
                               url-string))
          syntax/parse/define
          "archive.rkt"
-         "catalog.rkt"
+         "artifact.rkt"
          "codec.rkt"
+         "dig.rkt"
          "file.rkt"
-         "input-info.rkt"
+         "input.rkt"
          "integrity.rkt"
          "logged.rkt"
          "monad.rkt"
          "package.rkt"
-         "plugin.rkt"
          "racket-module.rkt"
          "setting.rkt"
          "signature.rkt"
@@ -168,23 +169,11 @@
 (define-modifier (edition name:non-empty-string)
   (set-field* edition name))
 
-(define-modifier (input name:non-empty-string . args)
+(define-modifier (input name:non-empty-string . means)
   (λ (st)
     (set-field st inputs
-               (cons (make-input-info name . args) (package-inputs st)))))
-
-(define-modifier (comission form ...+)
-  (λ (st)
-    (let ([modify (plugin-ref 'override-package #f)])
-      (if modify
-          (modify st form ...)
-          st))))
-
-(define-modifier (dependencies query:string ...+)
-  (λ (st)
-    (add-catalogged-inputs (plugin-ref 'canonical-catalog (get-default-catalog))
-                           st
-                           (list query ...))))
+               (cons (make-package-input name . means)
+                     (package-inputs st)))))
 
 (define-modifier (metadatum name:id v:string)
   (λ (st)
@@ -240,14 +229,16 @@
        (racket-versions ("7.9" "*") "6.2")
        (metadatum boo "1")
        (output "default" 1)
-       (input "int" (sources "src") (integrity 'sha1 (hex "abcd")))
+       (input "int"
+              (artifact (sources "src")
+                        (integrity 'sha1 (hex "abcd"))))
        (metadatum foo "2")
        (tags "testable" "battle-ready")
        (description "A " "combined str" "ing")
        (input "sig"
-              (sources "src")
-              (integrity 'sha1 (hex "abcd"))
-              (signature "pub" #"bytes"))
+              (artifact (sources "src")
+                        (integrity 'sha1 (hex "abcd"))
+                        (signature "pub" #"bytes")))
        (output "min" 2)
        (os-support windows macosx)
        (url "https://example.com/url")))
@@ -265,15 +256,15 @@
       '(windows macosx)
       '(("7.9" "*") "6.2")
       (hash-table ('boo "1") ('foo "2"))
-      (list (input-info "archive" #f #f #f)
-            (input-info "int"
-                        (? source? _)
-                        (integrity-info 'sha1 #"\253\315")
-                        #f)
-            (input-info "sig"
-                        (? source? _)
-                        (integrity-info 'sha1 #"\253\315")
-                        (signature-info "pub" #"bytes")))
+      (list (package-input "archive" #f)
+            (package-input "int"
+                           (artifact-info (? source? _)
+                                          (integrity-info 'sha1 #"\253\315")
+                                          #f))
+            (package-input "sig"
+                           (artifact-info (? source? _)
+                                          (integrity-info 'sha1 #"\253\315")
+                                          (signature-info "pub" #"bytes"))))
       '("default" "min")
       (? procedure? _)))
 

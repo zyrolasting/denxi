@@ -5,14 +5,14 @@
                     xiden/cmdline
                     xiden/logged
                     xiden/format
-                    xiden/plugin
                     xiden/port
-                    xiden/rc
                     xiden/source
                     xiden/message
                     @except-in[xiden/pkgdef #%module-begin url]
                     xiden/printer
                     xiden/url]
+        @for-syntax[xiden/source]
+                    xiden/source
                     "../../shared.rkt"]
 
 
@@ -109,6 +109,42 @@ if the source is not meant to be identified.
 This is a front-end to @racket[identify] that will always produce a
 fixed-length byte string. Prefer using this over using
 @racket[identify] directly.
+}
+
+@defthing[current-string->source (parameter/c (-> string? source?))]{
+A parameter that controls how @racket[coerce-source] converts strings
+to @tech{source} values.
+
+The default value will infer if the string is suitable for use with
+@racket[file-source] or @racket[http-source], in that order. If an
+error is raised, it will be returned within an @racket[exhausted-source].
+}
+
+@section{Source and Fetch Settings}
+
+@defsetting*[XIDEN_DOWNLOAD_MAX_REDIRECTS]{
+The maximum number of HTTP redirects to follow when resolving a GET request.
+}
+
+@defsetting*[XIDEN_FETCH_TOTAL_SIZE_MB]{
+The maximum total size of a single download allowed when fetching an input from
+a source, in mebibytes.
+}
+
+@defsetting*[XIDEN_FETCH_BUFFER_SIZE_MB]{
+The maximum number of bytes to read at a time from a source, in mebibytes.
+}
+
+@defsetting*[XIDEN_FETCH_PKGDEF_SIZE_MB]{
+Like @racket[XIDEN_FETCH_TOTAL_SIZE_MB], except the quota only applies
+to @tech{package definitions} named in a user-defined transaction.
+This quote does not apply to @tech{package definitions} listed
+as inputs in another @tech{package definition}.
+}
+
+@defsetting*[XIDEN_FETCH_TIMEOUT_MS]{
+The maximum number of seconds to wait for the next available byte from a
+source.
 }
 
 
@@ -312,8 +348,7 @@ If @racket[variant] is a @tech{source}, then the returned value is
 }
 
 @item{
-If @racket[variant] is a string, then the returned value is @racket[(string->source variant)] in terms of the @tech{plugin}.
-}
+If @racket[variant] is a string, then the returned value is @racket[((current-string->source) variant)]}
 
 @item{
 If @racket[variant] is a byte string, then the returned value is @racket[(byte-source variant)].
