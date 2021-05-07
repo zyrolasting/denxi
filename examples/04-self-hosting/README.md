@@ -11,9 +11,9 @@ does not seem to include signature at time of writing). Base your
 actual trust in this example on the trust in your host system, and in
 Sage Gerard's public key.
 
-To install, run `xiden do +a defn.rkt`. You will see a `default`
-symlink appear.  The link points to a directory that holds a fresh
-Racket installation.
+To install, run `racket launch do +a defn.rkt`. You will see a symlink
+appear.  The link points to a directory that holds a fresh Racket
+installation.
 
 Another Xiden instance will be inside the Racket installation. New
 Xiden instances can be used to run this example ad infinitum, provided
