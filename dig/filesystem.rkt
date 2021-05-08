@@ -38,8 +38,8 @@
              (artifact-info (file-source (normalize-path complete-path))
                             (try-integrity complete-path chf)
                             (try-signature complete-path chf public-key-source)))
-            (broken-shovel key)))
-      (broken-shovel key)))
+            (dig-failure 'filesystem-shovel key)))
+      (dig-failure 'filesystem-shovel key)))
 
 
 (define (make-filesystem-shovel/pkgdef directory-path
@@ -56,7 +56,7 @@
                                            (build-path directory-path
                                                        P "public-key")))
                   N)))
-          (broken-shovel key)))))
+          (dig-failure 'filesystem-shovel key)))))
 
 
 (define (try-integrity complete-path chf)

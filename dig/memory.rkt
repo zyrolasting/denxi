@@ -27,7 +27,7 @@
 (define ((make-memory-shovel contents) key)
   (if (hash-has-key? contents key)
       (subprogram-unit (hash-ref contents key))
-      (broken-shovel key)))
+      (dig-failure 'make-memory-shovel key)))
 
 
 (define (make-memory-shovel/pkgdef contents [defaults default-package-query-defaults])
@@ -36,7 +36,7 @@
       (call/cc
        (λ (abort)
          (define (fail v)
-           (abort (broken-shovel key)))
+           (abort (dig-failure 'make-memory-shovel/pkgdef key)))
          (if (package-query-variant? key)
              (mdo exact-query := (make-canonical-package-query canon defaults key)
                   (subprogram-unit (call-with-revisions

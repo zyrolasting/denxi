@@ -36,7 +36,7 @@
                             (signature-info public-key-source
                                             (http-source
                                              (add-url-extname ext-url (~a "." chf ".sig"))))))))
-          (broken-shovel key)))))
+          (dig-failure 'http-shovel key)))))
 
 (define (add-url-extname ext-url extname)
   (struct-copy url ext-url

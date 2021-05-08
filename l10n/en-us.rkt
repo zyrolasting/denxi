@@ -429,8 +429,9 @@
            name
            (join-lines (map format-message messages)))]
 
-  [($dig:no-artifact hint)
-   (format "Artifact not found using: ~v"
+  [($dig:no-artifact shovel-name hint)
+   (format "Artifact not found with ~a and ~v"
+           shovel-name
            hint)]
 
   [($bad-source-eval reason datum context)

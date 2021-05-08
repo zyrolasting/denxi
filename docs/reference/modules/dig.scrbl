@@ -42,10 +42,10 @@ A @tech{message} regarding the results of a @tech{dig}.
 }
 
 
-@defstruct*[($dig:no-artifact $dig) ([hint any/c])]{
-Represents a failure to find an artifact using
-@racket[(current-shovel)]. The fields match the arguments used in the
-failing application.
+@defstruct*[($dig:no-artifact $dig) ([shovel-name (or/c string? symbol?)] [hint any/c])]{
+Represents a failure to find an artifact using a shovel identified by
+@racket[shovel-name]. The @racket[hint] is @racket[eq?] to the
+argument used for the shovel.
 }
 
 
@@ -79,9 +79,24 @@ The default value is @racket[broken-shovel].
 
 @defthing[broken-shovel shovel/c]{
 A shovel that cannot dig. It unconditionally fails and adds
-@racket[$dig:no-artifact] to the program log.
+a @racket[$dig:no-artifact] to the @tech{subprogram log}.
 }
 
+@defproc[(dig-failure [shovel-name (or/c string? symbol?)] [hint any/c]) subprogram?]{
+Returns a @tech{subprogram} that unconditionally fails, adding
+@racket[($dig:no-artifact shovel-name hint)] to the @tech{subprogram
+log}.
+}
+
+@defproc[(shovel-cons [first shovel/c] [second shovel/c]) shovel/c]{
+Returns a @tech{shovel} that tries using the first shovel,
+then the second if the first fails to produce an artifact.
+}
+
+@defproc[(shovel-list [shovel shovel/c] ...) shovel/c]{
+Returns a @tech{shovel} that tries each of the provided shovels in
+order, implicitly ending with @racket[broken-shovel].
+}
 
 @include-section{dig/memory.scrbl}
 @include-section{dig/filesystem.scrbl}
