@@ -67,9 +67,6 @@ with output @racket[($finished-collecting-garbage (xiden-collect-garbage))].
 @racket[show-command] creates a program with behavior based on the
 first argument @racket[A].
 
-If @racketid[A] is @racket{config}, the program halts with exit code 0
-and output @racket[($show-datum (dump-xiden-settings))].
-
 If @racketid[A] is @racket{installed}, the program halts with exit
 code 0 and output @racket[(list ($show-string S) ...)], where
 @racket[S] is a string formatted to show a @tech{package query}, a
