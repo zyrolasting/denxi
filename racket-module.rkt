@@ -1,6 +1,6 @@
 #lang racket/base
 
-; Logged procedures for static operations on Racket modules
+; Subprograms for static operations on Racket modules
 
 (require (only-in racket/exn
                   exn->string)

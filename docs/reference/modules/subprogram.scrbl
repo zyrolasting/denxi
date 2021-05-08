@@ -143,7 +143,7 @@ then evaluation ends early. In that case, the computed value is
 @racket[FAILURE] and @racket[($cycle key)] appears in the log.
 }
 
-@section{Logged Program Control}
+@section{Subprogram Control}
 
 @defform[(define-subprogram (id formals ...) body ...)]{
 Like @racket[(define (id formals ...) body ...)], except the procedure
@@ -197,7 +197,7 @@ the result.
 }
 
 
-@section{Entry Points for Logged Programs}
+@section{Entry Points for Subprograms}
 
 @defproc[(run-subprogram [program subprogram?] [messages (listof $message?) null]) (values any/c (listof $message?))]{
 Applies all delayed work in @racket[program].  Returns a value and a
@@ -211,7 +211,7 @@ Like @racket[run-subprogram], but returns only the list of messages attached to 
 Additionally, that list is @racket[flatten]ed, then @racket[reverse]d.
 }
 
-@section{Testing Logged Procedures}
+@section{Testing Subprograms}
 
 @defmodule[(submod xiden/subprogram test)]
 
