@@ -20,7 +20,7 @@
 @racketmodname[xiden/archive] extracts files from a single archive file.
 
 
-@defthing[current-find-extract-procedure (parameter/c (-> path-string? (or/c #f (-> input-port?))))]{
+@defthing[current-find-extract-procedure (parameter/c (-> path-string? (or/c #f (-> input-port? any))))]{
 A parameter used to find an extraction procedure for an archive
 located at a given path. The procedure in the parameter may return
 @racket[#f] if no other procedure is available.
@@ -29,7 +29,7 @@ The default value always returns @racket[#f].
 }
 
 
-@defproc[(extract [in (or/c path-string? input-port?)]) (subprogram/c (or/c FAILURE void?))]{
+@defproc[(extract [in (or/c path-string? input-port?)]) (subprogram/c void?)]{
 
 @margin-note{@racket[extract] offers no control over the destination
 paths of extracted files. Use @racket[in-paths] or @racket[path-matching]
