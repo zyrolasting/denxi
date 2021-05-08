@@ -18,15 +18,6 @@
 
 @defmodule[xiden/pkgdef/static]
 
-A @deftech{package definition} is a
-@racket[PACKAGE_DEFINITION_MODULE_LANG] module as a syntax object or a
-list. When context makes it clear, the term “package definition” can
-also refer to the source code used to produce such a datum. When a
-package definition is a list, it matches
-@racket[package-definition-datum?]. Each package definition is used as
-a Racket module that combines discovery information with build
-instructions for @tech{packages}.
-
 @deftogether[(
 @defthing[PACKAGE_DEFINITION_MODULE_LANG symbol?]
 @defthing[PACKAGE_DEFINITION_READER_LANG symbol?]
@@ -34,9 +25,6 @@ instructions for @tech{packages}.
 Collection paths for a module language and reader extension used to
 write package definitions.
 }
-
-
-@section{Package Definition Construction and Destructuring}
 
 @defproc[(make-package-definition-datum [#:id id symbol? 'pkgdef] [body list?]) package-definition-datum?]{
 Equivalent to @racket[(make-racket-module-datum #:id id PACKAGE_DEFINITION_MODULE_LANG body)]
@@ -57,12 +45,6 @@ A contract that matches a @tech{bare} @tech{package definition}.
 @defthing[package-definition-datum? predicate/c]{
 Equivalent to @racket[(racket-module-code? PACKAGE_DEFINITION_MODULE_LANG v)].
 }
-
-@section{Package Definition Analysis}
-
-The following procedures return data found from matching against the
-code of a @tech{bare} @tech{package definition}. They do not run
-package definition code.
 
 @defproc[(get-static-abbreviated-query [pkgdef bare-pkgdef?]) package-query?]{
 Returns a @tech{package query} containing the provider, package,

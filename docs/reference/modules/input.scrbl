@@ -19,7 +19,7 @@
 
 @defmodule[xiden/input]
 
-@defstruct*[package-input ([name string?] [plinth (or/c artifact-request? artifact-info?)])]{
+@defstruct*[package-input ([name string?] [plinth (or/c any/c artifact-info?)])]{
 A @deftech{package input} is an instance of @racket[package-input].
 Each instance represents data that a package may lazily fetch.
 
@@ -30,16 +30,15 @@ an @tech{artifact}.  If the plinth does not hold an instance of
 }
 
 @defproc[(make-package-input [name string?]
-                             [plinth (or/c artifact-request? artifact-info?)
-                                     blank-artifact-request])
+                             [plinth (or/c any/c artifact-info?)
+                                     #f])
                              package-input?]{
 A contracted constructor for @racket[package-input].
 }
 
 @defthing[abstract-package-input? predicate/c]{
 Returns @racket[#t] if the argument is an @deftech{abstract package
-input}, meaning that @racket[package-input-plinth] is @racket[equal?]
-to @racket[blank-artifact-request].
+input}, meaning that @racket[package-input-plinth] is @racket[#f].
 }
 
 @defthing[current-inputs (parameter/c (listof package-input?))]{

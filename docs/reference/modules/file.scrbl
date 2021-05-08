@@ -8,7 +8,7 @@
                     xiden/subprogram]
           "../../shared.rkt"]
 
-@title{File System}
+@title{Files}
 
 @defmodule[xiden/file]
 

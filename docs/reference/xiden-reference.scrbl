@@ -57,6 +57,7 @@ This section covers the modules that cooperate to these ends.
 @include-section{modules/monad.scrbl}
 @include-section{modules/file.scrbl}
 @include-section{modules/openssl.scrbl}
+@include-section{modules/port.scrbl}
 @include-section{modules/security.scrbl}
 @include-section{modules/racket-module.scrbl}
 @include-section{modules/codec.scrbl}

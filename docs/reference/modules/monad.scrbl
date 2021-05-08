@@ -7,9 +7,8 @@
 
 @defmodule[xiden/monad]
 
-@racketmodname[xiden/monad] provides a limited interface for
-monads. Includes only a monomorphic bind and a notation for
-composition.
+@racketmodname[xiden/monad] implements a monomorphic bind operation
+and a notation for composition.
 
 @defidform[gen:monad]{
 A generic interface for monad types.

@@ -7,6 +7,7 @@
                     xiden/cli
                     xiden/cli-flag
                     xiden/cmdline
+                    xiden/format
                     xiden/l10n
                     xiden/subprogram
                     xiden/message
@@ -95,10 +96,10 @@ This module mimics production behavior.
                                         bound-program/c))])
          (values (listof cli-flag-state?)
                  bound-program/c)]{
-@racket[cli] does not actually run program logic. It only @italic{plans} it
-in terms of command line arguments.
+Returns captured command line flags and a procedure representing the
+program's behavior.
 
-Applies the following expression:
+First, @racket[cli] applies the following expression:
 
 @racketblock[
 (parse-command-line program argv flags handle-arguments arg-help-strings handle-help)]

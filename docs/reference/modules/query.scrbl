@@ -1,6 +1,9 @@
 #lang scribble/manual
 
-@require[@for-label[racket/base racket/contract racket/string xiden/query xiden/version]
+@require[@for-label[racket
+                    xiden/query
+                    xiden/string
+                    xiden/version]
           "../../shared.rkt"]
 
 @title{Package Queries}
@@ -8,8 +11,8 @@
 @defmodule[xiden/query]
 
 A @deftech{package query} is a colon-separated string that matches
-against the discovery information in @tech{package definitions}.  Use
-package queries to define @tech{version} intervals.
+against discovery and @tech{version} information in @tech{package
+definitions}.
 
 
 @section{Package Query Syntax}

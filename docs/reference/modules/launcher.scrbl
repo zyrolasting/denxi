@@ -15,6 +15,10 @@ in advance of Xiden's restrictions.
 
 @racketmodname[xiden/launcher] is a superset of
 @racketmodname[racket/base] that reprovides
-@racketmodname[xiden/artifact], @racketmodname[xiden/codec],
-@racketmodname[xiden/integrity], @racketmodname[xiden/package],
-@racketmodname[xiden/signature].
+@racketmodname[xiden/archive], @racketmodname[xiden/artifact],
+@racketmodname[xiden/cli], @racketmodname[xiden/codec],
+@racketmodname[xiden/localstate], @racketmodname[xiden/integrity],
+@racketmodname[xiden/openssl], @racketmodname[xiden/package],
+@racketmodname[xiden/printer], @racketmodname[xiden/security],
+@racketmodname[xiden/signature], @racketmodname[xiden/source], and
+@racketmodname[xiden/system].

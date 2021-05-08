@@ -17,8 +17,11 @@ values from a command line to @tech{settings}. Once a process
 is ready to determine a @tech{runtime configuration}, it binds
 values from a command line using @racket[call-with-bound-cli-flags].
 
-In addition to the below, @racketmodname[xiden/cli-flag] provides many
-identifiers bound to element of @racket[all-flags].
+@bold{In addition to the below, @racketmodname[xiden/cli-flag]
+provides many identifiers bound to the elements of
+@racket[all-flags].} Each provided identifier matches the available
+names of the command line flag, @italic{except} the corresponding
+setting id.
 
 @defstruct*[cli-flag ([setting setting?]
                       [kind (or/c 'once-each 'once-any 'multi)]

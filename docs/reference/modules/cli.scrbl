@@ -26,29 +26,28 @@ output and an exit code.
                         [#:format-message format-message message-formatter/c (get-message-formatter)]
                         [#:handle-exit handle-exit (-> any/c any) exit])
                         any]{
-This procedure is called for its effect: To parse the given command
-line arguments and perform work accordingly. Any @tech{messages}
-encountered are printed to @racket[(current-output-port)] after being
-formatted by @racket[format-message]. The program will exit by
-applying @racket[handle-exit] to a status code.
+Returns @racket[(handle-exit status)], where @racket[status] depends
+on program behavior caused as a side-effect.
 
-This is the highest-level procedure in the @tt{xiden} collection. All
-functionality is indirectly accessible though here.
+The side-effect is to parse the given command line arguments, then
+perform work described therein. Any @tech{messages} encountered are
+printed to @racket[(current-output-port)] after being formatted by
+@racket[format-message].
 }
 
 
 @defthing[top-level-cli argument-parser/c]{
-Returns a program based on the first argument, @racketid[subcommand],
-with consideration to command line flags that apply to every possible
-subcommand. If @racketid[subcommand] is not defined, then the program
-halts with exit code @racket[1] and output
+Returns a @racket[bound-program/c] based on the first argument,
+@racketid[subcommand], with consideration to command line flags that
+apply to every possible subcommand. If @racketid[subcommand] is not
+defined, then the program halts with exit code @racket[1] and output
 @racket[($cli:undefined-command subcommand)].
 }
 
 @defthing[do-command argument-parser/c]{
-Creates a program that carries out work defined in @racket[args]. In
-the event no work is possible, then the program will trivially
-halt with exit code 0 and produce no output.
+Returns a @racket[bound-program/c] that carries out work defined in
+@racket[args]. In the event no work is possible, then the program will
+trivially halt with exit code 0 and produce no output.
 
 Otherwise, the command will build a transaction where command-line
 flags add work to execute in reading order.
@@ -56,7 +55,8 @@ flags add work to execute in reading order.
 
 
 @defthing[gc-command argument-parser/c]{
-Creates a program that collects garbage in a @tech{target workspace}.
+Returns a @racket[bound-program/c] that collects garbage in a
+@tech{target workspace}.
 
 Assuming no exceptional behavior, the bound program halts with exit code 0
 with output @racket[($finished-collecting-garbage (xiden-collect-garbage))].
@@ -64,8 +64,8 @@ with output @racket[($finished-collecting-garbage (xiden-collect-garbage))].
 
 
 @defthing[show-command argument-parser/c]{
-@racket[show-command] creates a program with behavior based on the
-first argument @racket[A].
+Returns a @racket[bound-program/c] with behavior based on the first
+argument @racket[A].
 
 If @racketid[A] is @racket{installed}, the program halts with exit
 code 0 and output @racket[(list ($show-string S) ...)], where
@@ -82,11 +82,11 @@ purposes.
 
 In all other cases, the program halts with exit code 1 and output
 @racket[($cli:undefined-command A)].
-
 }
 
 @defthing[fetch-command argument-parser/c]{
-Creates a program based on the first argument @racketid[A].
+Returns a @racket[bound-program/c] based on the first argument
+@racketid[A].
 
 @racketid[A] is treated as a string representation of a datum to
 evaluate using @racket[eval-untrusted-source-expression]. If the

@@ -3,6 +3,7 @@
 @require[@for-label[racket/base
                     racket/contract
                     racket/string
+                    xiden/cmdline
                     xiden/integrity
                     xiden/subprogram
                     xiden/security]

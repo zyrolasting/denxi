@@ -9,6 +9,7 @@
                     xiden/input
                     xiden/subprogram
                     xiden/package
+                    xiden/pkgdef/static
                     xiden/query
                     xiden/version
                     @only-in[xiden/url url-string?]
@@ -22,6 +23,15 @@
 @title{Package Definitions}
 
 @defmodule[xiden/pkgdef]
+
+A @deftech{package definition} is a
+@racket[PACKAGE_DEFINITION_MODULE_LANG] module as a syntax object or a
+list. When context makes it clear, the term “package definition” can
+also refer to the source code used to produce such a datum. When a
+package definition is a list, it matches
+@racket[package-definition-datum?]. Each package definition is used as
+a Racket module that combines discovery information with build
+instructions for @tech{packages}.
 
 @racketmodname[xiden/pkgdef] is a functional module language for
 writing @tech{package definitions}. It expands using a
@@ -60,7 +70,7 @@ with whitespace placement.
 Sets @racket[package-edition].
 }
 
-@defform*[((input name) (input name integrity) (input name integrity signature))]{
+@defform*[((input name) (input name plinth))]{
 Adds a @tech{package input} to @racket[package-inputs]. A form
 corresponds exactly to an application of @racket[make-package-input].
 }

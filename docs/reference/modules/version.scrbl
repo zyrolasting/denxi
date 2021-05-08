@@ -5,21 +5,16 @@
 
 @title{Versions}
 
+@defmodule[xiden/version]
+
 A @tech{package definition} has a @tech{version}.
 
 A @deftech{version} is a combination of an @tech{edition} and a
 @tech{revision}.
 
-@section{Editions}
-
 An @deftech{edition} is a non-empty string.
 
-The default name for an edition is @racket{default}.
-
 An @tech{edition} has at least one @tech{revision}.
-
-
-@section{Revisions}
 
 A @deftech{revision} is either a @tech{revision number} or a @tech{revision name}.
 
@@ -32,10 +27,6 @@ may repeat across editions.
 
 @tech{Revision numbers} start counting from @racket[0].
 
-
-@section{Package Version API}
-
-@defmodule[xiden/version]
 
 @defthing[revision-number? predicate/c]{
 Returns @racket[#t] if the input value is useable as a @tech{revision number}.

@@ -13,13 +13,11 @@
 
 A @deftech{subprogram} in the context of Xiden is an instance of the
 monadic value type @racket[subprogram]. An instance of
-@racket[subprogram] contains a normal Racket procedure that returns
-some value along with some @tech{messages} representing a
-@tech{subprogram log}. A program composed of @tech{subprograms}
-eventually terminates with a complete @tech{message} log along with a
-value. When multiple sequences subprograms execute, a special
-@racket[FAILURE] value returned by one subprogram halts execution of
-following subprograms.
+@racket[subprogram] contains a Racket procedure that returns a value
+and some @tech{messages} representing a @tech{subprogram log}.  When a
+composition of subprograms execute, a special @racket[FAILURE] value
+returned by one subprogram precents execution of following
+subprograms.
 
 
 @section{Fundamentals}
@@ -27,20 +25,21 @@ following subprograms.
 @defthing[subprogram-log/c contract? #:value (or/c $message? (listof (recursive-contract subprogram-log/c)))]{
 A @deftech{subprogram log} is a @tech{message} or an
 arbitrarily-nested list where @tech{messages} are the only non-list
-elements. The key difference between this and a @tech{program log} is
-that the program log is flattened and sorted. Subprogram logs are
-“messy” due to being actively under construction.
+elements. Unlike a @tech{program log}, subprogram logs are “messy” due
+to being actively under construction, and the first element of a
+subprogram log represents the most recent activity.
 
 This contract is not used in some parts of the implementation for
 performance reasons, but will be cited in this reference for
 clarification reasons.
 }
 
-@defstruct*[subprogram ([thnk (-> (listof $message?) (values any/c (listof subprogram-log/c)))]) #:transparent]{
-A monadic type used to produce computed value alongside
-@tech{messages}.  The @racket[thnk] must accept a list of currently
-accumulated messages, then perform planned work that may add at least
-zero new messages.
+
+@defstruct*[subprogram ([thnk (-> (listof $message?) (values any/c subprogram-log/c))]) #:transparent]{
+A monadic type that computes a value alongside a @tech{subprogram
+log}.  The @racket[thnk] must accept a @tech{subprogram} log
+representing prior program activity, then perform planned work that
+may add at least zero new messages.
 
 The latest message must come first in the resulting list, so
 @racket[cons] is appropriate for adding a new message.
@@ -62,8 +61,10 @@ value.
                 messages))))
 ]
 
-It's fine to @racket[cons] another list of messages onto an existing
-list. This creates a @tech{subprogram log}.
+It's fine to @racket[cons] another list of messages onto an
+@tech{subprogram log}. It is only important that a message
+representing the most recent activity comes first should the list be
+flattened.
 
 @racketblock[
 (subprogram (lambda (messages)
@@ -73,13 +74,13 @@ list. This creates a @tech{subprogram log}.
 ]
 }
 
+
 @defform[(subprogram/c contract-expr)]{
 Produces a contract for a subprogram. The procedure must return
 a value matching @racket[contract-expr] as the first value, unless
 that value is @racket[FAILURE].
 }
 
-@section{Terminal Values}
 
 @defthing[FAILURE symbol?]{
 An @tech/reference{uninterned} @tech/reference{symbols} that, when
@@ -95,6 +96,7 @@ Returns a @racket[subprogram] instance that yields @racket[v] as a
 computed value, with no added messages.
 }
 
+
 @defproc[(subprogram-failure [variant any/c]) subprogram?]{
 Returns @racket[(subprogram (λ (m) (values FAILURE (cons V messages))))],
 where @racket[V] is
@@ -106,9 +108,11 @@ where @racket[V] is
 ]
 }
 
+
 @defproc[(subprogram-attachment [v any/c] [next (or/c $message? (listof $message?))]) subprogram?]{
 Returns @racket[(subprogram (λ (m) (values v (cons next m))))].
 }
+
 
 @defproc[(subprogram-map [f (-> $message? $message?)] [to-map subprogram?]) subprogram?]{
 Returns a new @racket[subprogram] instance such that each message produced
@@ -129,6 +133,7 @@ Use this to “scope” messages.
 ]
 }
 
+
 @defproc[(coerce-subprogram [v any/c]) subprogram?]{
 Equivalent to @racket[(if (subprogram? v) v (subprogram-unit v))]
 }
@@ -145,6 +150,7 @@ detection.  If another @racket[subprogram] instance runs in the context of
 then evaluation ends early. In that case, the computed value is
 @racket[FAILURE] and @racket[($cycle key)] appears in the log.
 }
+
 
 @section{Subprogram Control}
 
@@ -163,7 +169,6 @@ runs in a continuation with the following injected procedure bindings:
 @item{@racket[($run! l)]: Equivalent to @racket[(run-subprogram l m)], where @racket[m] is bound to current subprogram log.}
 
 @item{@racket[$messages]: A reference to the current subprogram log.}
-
 ]
 
 The following example defines two equivalent procedures that clarify
@@ -213,6 +218,7 @@ Like @racket[run-subprogram], but returns only the list of messages attached to 
 
 Additionally, that list is @racket[flatten]ed, then @racket[reverse]d.
 }
+
 
 @section{Testing Subprograms}
 

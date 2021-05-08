@@ -3,6 +3,7 @@
 @require[@for-label[racket/base
                     racket/contract
                     xiden/codec
+                    xiden/string
                     @except-in[xiden/pkgdef #%module-begin]]
          xiden/codec
          racket/pretty
