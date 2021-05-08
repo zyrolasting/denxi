@@ -12,7 +12,7 @@
 
 @defmodule[xiden/localstate]
 
-Xiden performs all file I/O in a single deftech{workspace} directory
+Xiden performs all file I/O in a single @deftech{workspace} directory
 that matches the @racket[workspace-directory/c] contract. A
 @deftech{target workspace} is the directory referenced by the value of
 @racket[(XIDEN_WORKSPACE)].
