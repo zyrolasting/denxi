@@ -20,9 +20,6 @@ Xiden in terms of @racketmodname[xiden/cmdline]. Each parser
 prepares a program that uses continuation passing style to return
 output and an exit code.
 
-@racket[(submod xiden/cli main)] is the entry point for the
-@litchar{xiden} and @litchar{raco zcpkg} commands.
-
 @defproc[(launch-xiden! [#:arguments arguments (or/c list? vector?) (current-command-line-arguments)]
                         [#:format-message format-message (get-message-formatter)]
                         [#:handle-exit handle-exit (-> any/c any) exit])
