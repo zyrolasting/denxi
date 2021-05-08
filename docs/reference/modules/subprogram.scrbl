@@ -106,7 +106,7 @@ where @racket[V] is
 Returns @racket[(subprogram (λ (m) (values v (cons next m))))].
 }
 
-@defproc[(subprogram-map [f (-> $message? $message?)] [to-map subprogram?]) logged?]{
+@defproc[(subprogram-map [f (-> $message? $message?)] [to-map subprogram?]) subprogram?]{
 Returns a new @racket[subprogram] instance such that each message produced
 by @racket[to-map] is included in the combined log using @racket[(map
 f (run-subprogram to-map null))].
