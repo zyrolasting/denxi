@@ -310,7 +310,9 @@ If the source is @tech{exhausted}, it yields a relevant
 @defstruct[http-source ([request-url (or/c url? url-string?)])]{
 A @tech{source} that, when @tech{tapped}, yields bytes from an HTTP
 response body. The response comes from a GET request to
-@racket[request-url], and the body is only used for a 2xx response.
+@racket[request-url], and the body is only used for a 2xx response.  A
+non-2xx status will @tech{exhaust} the source with an
+@racket[$http-failure] message.
 
 If @racket[request-url] has the @racket{file} scheme, then
 @racket[http-source] behaves like @racket[file-source]. In this case,
@@ -325,6 +327,16 @@ The behavior of the source is impacted by @racket[XIDEN_DOWNLOAD_MAX_REDIRECTS].
 @defstruct[http-mirrors-source ([request-urls (listof (or/c url-string? url?))])]{
 Like @racket[http-source], but tries each of the given URLs using
 @racket[first-available-source].
+}
+
+@defstruct*[($http-failure $message) ([request-url string?]
+                                      [status-line string?]
+                                      [headers (listof (cons/c string? string?))]
+                                      [capped-body bytes?])]{
+Represents a server response when an @racket[http-source] is
+@tech{exhausted}. The field values match their names.
+@racket[cappped-body] in special in that it holds no more
+than 512 bytes of the response body.
 }
 
 

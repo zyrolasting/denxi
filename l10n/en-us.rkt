@@ -363,6 +363,16 @@
       (format "Malformed extraction report: ~s"
               ($extract-report status target))])]
 
+  [($http-failure request-url status-line headers capped-body)
+   (~a "HTTP fetch failure: " request-url "\n"
+       "-----------\n"
+       (string-replace status-line "\r" "")
+       (join-lines
+        (map (λ (pair) (~a (car pair) ": " (cdr pair)))
+             (sort headers #:key car string<?)))
+       "\n\n"
+       (~s capped-body))]
+
   [($restrict:budget name 'time amount)
    (format "~a it took longer than ~a seconds"
            (restrict-preamble name)

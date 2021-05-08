@@ -37,6 +37,7 @@
   (-> any/c any/c))
 
 (define+provide-message $fetch (id errors))
+(define+provide-message $http-failure (request-url status-line headers capped-body))
 (define+provide-message $bad-source-eval (reason datum context))
 (define+provide-message $untrusted-cert (url original-exn))
 
@@ -207,32 +208,55 @@
     (if (url? request-url)
         request-url
         (string->url request-url)))
-  (with-handlers ([exn:fail:network?
-                   (λ (network-exn)
-                     (if (regexp-match? #rx"certificate verify failed"
-                                        (exn-message network-exn))
-                         (%fail ($untrusted-cert coerced-url network-exn))
-                         (%fail network-exn)))]
-                  [exn? %fail])
+
+  (define (handle-network-error network-exn)
+    (if (regexp-match? #rx"certificate verify failed"
+                       (exn-message network-exn))
+        (%fail ($untrusted-cert coerced-url network-exn))
+        (%fail network-exn)))
+
+  (define (handle-file-url)
+    (let ([path-els (map path/param-path (url-path coerced-url))])
+      (%fetch (file-source (apply build-path
+                                  (if (and (not (equal? (system-type 'os) 'windows))
+                                           (url-path-absolute? coerced-url))
+                                      (cons "/" path-els)
+                                      path-els))))))
+
+  (define (handle-http-url)
+    (define-values (in headers-string)
+      (get-pure-port/headers
+       #:redirections (XIDEN_DOWNLOAD_MAX_REDIRECTS)
+       #:method #"GET"
+       #:status? #t
+       coerced-url))
+
+    (define status
+      (string->number
+       (car (regexp-match #px"\\d\\d\\d"
+                          headers-string))))
+
+    (define headers
+      (extract-all-fields headers-string))
+
+    (define content-length-pair
+      (assf (λ (el) (equal? (string-downcase el) "content-length"))
+            headers))
+
+    (if (and (>= status 200) (< status 300))
+        (%tap in
+              (if content-length-pair
+                  (string->number (or (cdr content-length-pair) "+inf.0"))
+                  +inf.0))
+        (%fail ($http-failure (string->url coerced-url)
+                              (regexp-match #px"[^\n]+\n" headers-string)
+                              headers
+                              (read-bytes 512 in)))))
+
+  (with-handlers ([exn:fail:network? handle-network-error] [exn? %fail])
     (if (equal? (url-scheme coerced-url) "file")
-        (let ([path-els (map path/param-path (url-path coerced-url))])
-          (%fetch (file-source (apply build-path
-                                      (if (and (not (equal? (system-type 'os) 'windows))
-                                               (url-path-absolute? coerced-url))
-                                          (cons "/" path-els)
-                                          path-els)))))
-        (let*-values ([(in headers-string)
-                       (get-pure-port/headers
-                        #:redirections (XIDEN_DOWNLOAD_MAX_REDIRECTS)
-                        #:method #"GET"
-                        coerced-url)]
-                      [(content-length-pair)
-                       (assf (λ (el) (equal? (string-downcase el) "content-length"))
-                             (extract-all-fields headers-string))])
-          (%tap in
-                (if content-length-pair
-                    (string->number (or (cdr content-length-pair) "+inf.0"))
-                    +inf.0))))))
+        (handle-file-url)
+        (handle-http-url))))
 
 
 (define-source #:key http-mirrors-source-request-urls
