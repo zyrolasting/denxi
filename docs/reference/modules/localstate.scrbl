@@ -30,11 +30,11 @@ directory, or a location on the filesystem where nothing exists.
 }
 
 
+@defthing[#:kind "setting" XIDEN_WORKSPACE workspace-directory/c]{
+CLI Flags: @litchar{--w/--workspace}
 
-@defsetting*[XIDEN_WORKSPACE]{
-The directory in which Xiden reads and writes files.
-
-If the directory does not exist, then it will be created when Xiden writes a file.
+The directory in which Xiden reads and writes files. If the directory
+does not exist, then it will be created when Xiden writes a file.
 }
 
 @defproc[(build-workspace-path [path-element (and/c path-string? (not/c complete-path?))]) complete-path?]{

@@ -206,6 +206,7 @@
 (flag-out [-d --fetch-timeout] (cli-flag/unary XIDEN_FETCH_TIMEOUT_MS arg->value "milliseconds"))
 (flag-out [-o --max-redirects] (cli-flag/unary XIDEN_DOWNLOAD_MAX_REDIRECTS arg->value "exact-nonnegative-integer"))
 (flag-out [-r --subprocess-timeout] (cli-flag/unary XIDEN_SUBPROCESS_TIMEOUT_S arg->value "positive"))
+(flag-out [-w --workspace] (cli-flag/unary XIDEN_WORKSPACE arg->value "path"))
 
 
 ; Unary boolean flags

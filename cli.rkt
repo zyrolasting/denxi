@@ -54,6 +54,7 @@
         ++trust-executable
         ++trust-host-executable
         ++trust-cert
+        --workspace
         --fasl-output
         --memory-limit
         --reader-friendly-output
