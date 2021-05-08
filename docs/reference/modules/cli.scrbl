@@ -5,6 +5,7 @@
                     xiden/cmdline
                     xiden/cli
                     xiden/cli-flag
+                    xiden/localstate
                     xiden/subprogram
                     xiden/message
                     xiden/source]
@@ -81,7 +82,7 @@ that they are tracked by Xiden for garbage collection
 purposes.
 
 If @racket{workspace}, the program halts with exit code 0
-and output @racket[($show-string (path->string (workspace-directory)))].
+and output @racket[($show-string (path->string (XIDEN_WORKSPACE)))].
 
 In all other cases, the program halts with exit code 1 and output
 @racket[($cli:undefined-command A)].

@@ -57,12 +57,11 @@ A message for reporting the number of bytes freed from disk using @racket[xiden-
 }
 
 @defproc[(xiden-collect-garbage) exact-nonnegative-integer?]{
-Deletes all records of links that do not actually exist on disk, and
-deleltes any installed files or directories in the @tech{target
-workspace} with no referencing links.
+Deletes all records of links that do not actually exist on disk, then
+deletes any installed files or directories in the @tech{target
+workspace} with no known links.
 
-Returns the estimated number of bytes recovered from disk. This number
-is not fully accurate, because of inaccuracies from
-@racket[file-size], and the fact that empty directories and links are
-treated as negligibly small.
+Returns the estimated number of bytes recovered from disk. Empty
+directories and links are treated as negligibly small, as if they no
+size.
 }
