@@ -60,7 +60,7 @@ guide, then this command will fail with the following message in the
 report:
 
 @verbatim|{
-default.tgz: integrity violation: not trusting CHF sha384. To bypass, add it to XIDEN_TRUST_MESSAGE_DIGEST_ALGORITHMS
+default.tgz: integrity violation: not trusting CHF sha384. To bypass, add it to XIDEN_TRUST_CHFS
 }|
 
 Remember that we defined integrity information using a SHA-384
@@ -71,7 +71,7 @@ that we trusted SHA-384 digests, so Xiden rejects the input.
 Open the @tech{launcher} and add this line.
 
 @racketblock[
-(XIDEN_TRUST_MESSAGE_DIGEST_ALGORITHMS '(sha384))
+(XIDEN_TRUST_CHFS '(sha384))
 ]
 
 This tells Xiden that you trust SHA-384. Because this value is

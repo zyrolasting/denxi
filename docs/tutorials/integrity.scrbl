@@ -13,7 +13,7 @@ using the same content. That is, unless the CHF has a
 @italic{collision}, where two blobs produce the same digest. In the
 event a CHF is compromised by a researcher or attacker, you can revoke
 trust in that CHF by removing it from the
-@racket[XIDEN_TRUST_MESSAGE_DIGEST_ALGORITHMS] setting.
+@racket[XIDEN_TRUST_CHFS] setting.
 
 Xiden checks the integrity for some data using the following
 expression:
@@ -23,7 +23,7 @@ expression:
 (check-integrity #:trust-bad-digest
                  (XIDEN_TRUST_BAD_DIGEST)
                  #:trust-message-digest-algorithms
-                 (XIDEN_TRUST_MESSAGE_DIGEST_ALGORITHMS)
+                 (XIDEN_TRUST_CHFS)
                  data)]
 
 Since an integrity check is controlled by a

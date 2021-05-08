@@ -51,7 +51,7 @@
   (apply or/c md-algorithms))
 
 
-(define+provide-setting XIDEN_TRUST_MESSAGE_DIGEST_ALGORITHMS (listof md-algorithm/c) null)
+(define+provide-setting XIDEN_TRUST_CHFS (listof md-algorithm/c) null)
 
 
 (define DEFAULT_CHF 'sha3-384)

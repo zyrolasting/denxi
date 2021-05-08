@@ -240,7 +240,7 @@
                                (make-digest pubkey-bytes 'sha384)))))
 
       (define-values (public-key-path s)
-        (XIDEN_TRUST_MESSAGE_DIGEST_ALGORITHMS '(sha384)
+        (XIDEN_TRUST_CHFS '(sha384)
           (λ ()
             (consider-public-key-trust
              #:public-key-path

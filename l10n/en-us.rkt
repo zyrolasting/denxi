@@ -62,7 +62,7 @@
     [(XIDEN_TRUST_UNVERIFIED_HOST)
      "Download from any server without authenticating"]
 
-    [(XIDEN_TRUST_MESSAGE_DIGEST_ALGORITHMS)
+    [(XIDEN_TRUST_CHFS)
      "Trust cryptographic hash function implementations from OpenSSL"]
 
     [(XIDEN_TRUST_BAD_DIGEST)
@@ -312,7 +312,7 @@
                   (format "trusting CHF ~a" (integrity-info-algorithm intinfo))
                   (format "not trusting CHF ~a. To bypass, add it to ~a"
                           (integrity-info-algorithm intinfo)
-                          (setting-id XIDEN_TRUST_MESSAGE_DIGEST_ALGORITHMS)))]
+                          (setting-id XIDEN_TRUST_CHFS)))]
 
              [(consider-digest-trust)
               (if ok?

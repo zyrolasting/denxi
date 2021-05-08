@@ -354,7 +354,7 @@
     (check-false (trusts-nothing my-path))
     (check-false (trusts-nothing other-path))
 
-    (XIDEN_TRUST_MESSAGE_DIGEST_ALGORITHMS '(sha1)
+    (XIDEN_TRUST_CHFS '(sha1)
       (λ ()
         (check-true  (trusts-exact-things my-path))
         (check-false (trusts-exact-things other-path))))

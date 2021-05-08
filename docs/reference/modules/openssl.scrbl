@@ -41,7 +41,7 @@ a.k.a. cryptographic hash functions.
 Bound to @typeset-code[(pretty-format #:mode 'print md-algorithms)]
 }
 
-@defsetting*[XIDEN_TRUST_MESSAGE_DIGEST_ALGORITHMS]{
+@defsetting*[XIDEN_TRUST_CHFS]{
 A list of trusted cryptographic hash function implementations in
 OpenSSL.
 }

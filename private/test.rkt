@@ -34,7 +34,7 @@
 
 
 (define (call-with-dummy-trust f)
-  (XIDEN_TRUST_MESSAGE_DIGEST_ALGORITHMS
+  (XIDEN_TRUST_CHFS
    '(md5)
    (λ ()
      (XIDEN_TRUST_PUBLIC_KEYS

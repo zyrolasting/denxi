@@ -223,10 +223,10 @@
 
 ; Multi flags
 (flag-out [+c ++trust-chf ++trust-message-digest-algorithm]
-          (cli-flag XIDEN_TRUST_MESSAGE_DIGEST_ALGORITHMS
+          (cli-flag XIDEN_TRUST_CHFS
                     'multi null 1 (λ (flag algo)
                                     (cons (string->symbol algo)
-                                          (XIDEN_TRUST_MESSAGE_DIGEST_ALGORITHMS)))
+                                          (XIDEN_TRUST_CHFS)))
                     '("md-algorithm")))
 
 (flag-out [++trust-cert]

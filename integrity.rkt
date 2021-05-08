@@ -72,7 +72,7 @@
     (for/or ([integrity trusted])
       ($integrity-ok? (check-integrity
                        #:trust-bad-digest #f
-                       #:trust-message-digest-algorithms (XIDEN_TRUST_MESSAGE_DIGEST_ALGORITHMS)
+                       #:trust-message-digest-algorithms (XIDEN_TRUST_CHFS)
                        integrity
                        (make-digest path
                                     (integrity-info-algorithm integrity)))))))
@@ -174,7 +174,7 @@
     (define trust?
       (bind-trust-list
        (list (integrity-info 'sha1 (make-digest integrity.rkt 'sha1)))))
-    (XIDEN_TRUST_MESSAGE_DIGEST_ALGORITHMS '(sha1)
+    (XIDEN_TRUST_CHFS '(sha1)
       (λ ()
         (check-true (trust? integrity.rkt))
         (check-false (trust? main.rkt)))))

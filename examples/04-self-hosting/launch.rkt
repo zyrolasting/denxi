@@ -11,7 +11,7 @@
 (XIDEN_TRUST_EXECUTABLES
  (list (integrity 'sha384 (base64 "SxPU+tB4Pskzsjj9NT8L7a7S5iCXQWBk1ZGZgYCINXuQcFIxjLepin5FE+MzsAYE"))))
 
-(XIDEN_TRUST_MESSAGE_DIGEST_ALGORITHMS
+(XIDEN_TRUST_CHFS
  '(sha384))
 
 (module+ main (launch-xiden!))

@@ -73,7 +73,7 @@
 (define-logged (check-artifact-integrity arti workspace-relative-path)
   (define status
     (check-integrity #:trust-bad-digest (XIDEN_TRUST_BAD_DIGEST)
-                     #:trust-message-digest-algorithms (XIDEN_TRUST_MESSAGE_DIGEST_ALGORITHMS)
+                     #:trust-message-digest-algorithms (XIDEN_TRUST_CHFS)
                      (artifact-info-integrity arti)
                      (if (artifact-info-integrity arti)
                          (make-digest (build-workspace-path workspace-relative-path)
