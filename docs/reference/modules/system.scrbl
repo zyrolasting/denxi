@@ -59,9 +59,10 @@ code of the subprocess is not a member of @racket[expected-exit-codes]
 holds at least one byte when @racket[fail-on-stderr?]  is
 @racket[#t]. Otherwise, the result is @racket[(void)].
 
-The program log will gain either a @racket[$subprocess:report] if the
-subprocess ran, or a @racket[$subprocess:command-not-found] if
-@racket[command] was not found.
+The @tech{subprogram log} will gain either a
+@racket[$subprocess:report] if the subprocess ran, or a
+@racket[$subprocess:command-not-found] if @racket[command] was not
+found.
 
 Standard input is drawn from @racket[stdin]. If @racket[stdin] is
 @racket[#f], then no standard input will be available to the

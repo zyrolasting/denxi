@@ -397,15 +397,15 @@ operations (except @racket['exists]), and all network operations.
 
 If the evaluation produces a @tech{source}, then the result of the
 subprogram is that source, and no other @tech{messages} will
-appear in the program log.
+appear in the @tech{subprogram log}.
 
 If the evaluation does not produce a @tech{source}, then the result is
-@racket[FAILURE] and the program log gains a @racket[($bad-source-eval
-'invariant datum)].
+@racket[FAILURE] and the subprogram log gains a
+@racket[($bad-source-eval 'invariant datum)].
 
 If the evaluation is blocked by the security guard, then the result is
-@racket[FAILURE] and the program log gains a @racket[($bad-source-eval
-'security datum)].
+@racket[FAILURE] and the subprogram log gains a
+@racket[($bad-source-eval 'security datum)].
 }
 
 

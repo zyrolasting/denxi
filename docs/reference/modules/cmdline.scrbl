@@ -57,7 +57,9 @@ A procedure that parses command line arguments and plans further action.
 
 @defthing[program-log/c chaperone-contract? #:value (or/c $message? (listof $message?))]{
 A @deftech{program log} is a single @tech{message} or list of
-@tech{messages} that report exact program behavior.
+@tech{messages} that report exact program behavior. The list is sorted
+such that the first element is the first @tech{message} to report in
+the respective program.
 }
 
 @section{CLI Flow Control}

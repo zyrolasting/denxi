@@ -344,10 +344,10 @@ with @racket[make-canonical-package-query].
          [defaults package-query-defaults-implementation/c]
          [query package-query-variant?])
          (subprogram/c exact-package-query?)]{
-Returns a @tech{subprogram}. The procedure computes an
-@tech{exact package query} in @tech{canonical form} with respect to
-@racket[canon]. In the event of an error, the program log gains at
-least one @racket[$package-query-canon] instance.
+Returns a @tech{subprogram} that computes an @tech{exact package
+query} in @tech{canonical form} with respect to @racket[canon]. In the
+event of an error, the @tech{subprogram log} gains at least one
+@racket[$package-query-canon] instance.
 
 @itemlist[#:style 'ordered
 @item{Autocomplete @racket[query] using @racket[(autocomplete-parsed-package-query defaults query)].}

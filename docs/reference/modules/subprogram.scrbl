@@ -25,8 +25,11 @@ following subprograms.
 @section{Fundamentals}
 
 @defthing[subprogram-log/c contract? #:value (or/c $message? (listof (recursive-contract subprogram-log/c)))]{
-A @deftech{subprogram log} is a @tech{message} or an arbitrarily-nested
-list where @tech{messages} are the only non-list elements.
+A @deftech{subprogram log} is a @tech{message} or an
+arbitrarily-nested list where @tech{messages} are the only non-list
+elements. The key difference between this and a @tech{program log} is
+that the program log is flattened and sorted. Subprogram logs are
+“messy” due to being actively under construction.
 
 This contract is not used in some parts of the implementation for
 performance reasons, but will be cited in this reference for
@@ -151,15 +154,15 @@ runs in a continuation with the following injected procedure bindings:
 
 @itemlist[
 @item{@racket[($use v [messages])]: Aborts the program with @racket[v] as the result and the given message log.
-@racketid[messages] defaults to the current program log.}
+@racketid[messages] defaults to the current @tech{subprogram log}.}
 
 @item{@racket[($fail [msg])]: Abort the program with a @racket[FAILURE] result and an optional new message. If no message is passed, then the program log is unaffected.}
 
 @item{@racket[($attach v [msg])]: Abort the program with @racket[v] as the result and an optional new message. If no message is passed, then the program log is unaffected.}
 
-@item{@racket[($run! l)]: Equivalent to @racket[(run-subprogram l m)], where @racket[m] is bound to current program log.}
+@item{@racket[($run! l)]: Equivalent to @racket[(run-subprogram l m)], where @racket[m] is bound to current subprogram log.}
 
-@item{@racket[$messages]: A reference to the current program log.}
+@item{@racket[$messages]: A reference to the current subprogram log.}
 
 ]
 
@@ -190,10 +193,10 @@ how @racket[define-subprogram] reduces code volume.
                    [#:force-value value any/c (void)]
                    [preamble $message?] ...)
                    (subprogram/c any/c)]{
-Returns a @tech{subprogram} that applies @racket[dump-message]
-to every element of the @racket[preamble], then every element in the
-current program log. The subprogram will use @racket[value] as
-the result.
+Returns a @tech{subprogram} that applies @racket[dump-message] to
+every element of the @racket[preamble], then every element in the
+current @tech{subprogram log}. The subprogram will use @racket[value]
+as the result.
 }
 
 
