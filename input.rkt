@@ -47,6 +47,7 @@
 
 (define+provide-message $input (name))
 (define+provide-message $input:not-found $input ())
+(define+provide-message $input:log $input (messages))
 
 (define current-inputs
   (make-parameter null))
@@ -78,10 +79,18 @@
     ($use (delete-file (package-input-name input)))))
 
 (define (fetch-input input)
-  (mdo arti           := (find-artifact (package-input-plinth input))
+  (mdo arti           := (find-artifact-for-input input)
        file-record    := (fetch-artifact (package-input-name input) arti)
        (verify-artifact arti file-record) ; Security critical
        (subprogram-unit file-record)))
+
+(define (find-artifact-for-input input)
+  (subprogram-combine
+   (find-artifact (package-input-plinth input))
+   (λ (messages to-wrap)
+     (cons ($input:log (package-input-name input)
+                       (reverse to-wrap))
+           messages))))
 
 (define (resolve-input input)
   (mdo file-record    := (fetch-input input)

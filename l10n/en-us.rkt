@@ -414,6 +414,11 @@
    (format "Input not found: ~s"
            name)]
 
+  [($input:log name messages)
+   (format "Resolving input ~s~n~a"
+           name
+           (join-lines (map format-message messages)))]
+
   [($dig:no-artifact hint)
    (format "Artifact not found using: ~v"
            hint)]
