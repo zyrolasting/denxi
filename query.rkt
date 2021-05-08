@@ -7,9 +7,9 @@
          racket/match
          "contract.rkt"
          "format.rkt"
-         "logged.rkt"
          "message.rkt"
          "string.rkt"
+         "subprogram.rkt"
          "version.rkt")
 
 (provide (struct-out parsed-package-query)
@@ -21,7 +21,7 @@
          package-query-canon-implementation/c
          (contract-out
           [default-package-query-defaults
-           package-query-defaults-implementation/c]
+            package-query-defaults-implementation/c]
           [boundary-flags-string? predicate/c]
           [well-formed-package-query? predicate/c]
           [resolved-package-query? predicate/c]
@@ -58,7 +58,7 @@
                  package-query-defaults-implementation/c
                  package-query-variant?)
                 (#:force-complete-interval? any/c)
-                (logged/c exact-package-query?))]
+                (subprogram/c exact-package-query?))]
           [find-revision-number
            (-> package-query-canon?
                string?
@@ -340,7 +340,7 @@
          canon
          defaults
          query-variant)
-  (logged
+  (subprogram
    (λ (messages)
      (call/cc
       (λ (abort)
@@ -574,10 +574,10 @@
 
   (test-case "Autocomplete package queries"
     (test-not-exn "Do not throw a contract failure for missing autocompletion methods"
-     (λ () (autocomplete-parsed-package-query
-            (invariant-assertion package-query-defaults-implementation/c
-                                 (autocomplete-noop))
-            (parse-package-query ""))))
+                  (λ () (autocomplete-parsed-package-query
+                         (invariant-assertion package-query-defaults-implementation/c
+                                              (autocomplete-noop))
+                         (parse-package-query ""))))
 
     (test-equal? "Build a default package query"
                  (autocomplete-parsed-package-query (autocomplete-noop)
@@ -662,14 +662,14 @@
 
     (define (check-successful-canon l expected)
       (define-values (result messages)
-        (run-log l null))
+        (run-subprogram l null))
       (check-pred exact-package-query? result)
       (check-pred null? messages)
       (check-equal? result expected))
 
     (define (check-failing-canon l . preds)
       (define-values (result messages)
-        (run-log l null))
+        (run-subprogram l null))
       (check-eq? result FAILURE)
       (check-equal? (length messages) (length preds))
       (map (λ (pred msg) (pred msg))
@@ -677,10 +677,10 @@
            (flatten messages)))
 
     (define (get-failing-canon-log l)
-      (flatten (get-log l)))
+      (flatten (get-subprogram-log l)))
 
     (define (get-failing-canon-message l)
-      (let ([log (get-log l)])
+      (let ([log (get-subprogram-log l)])
         (and (not (null? log))
              (car log))))
 
@@ -814,7 +814,7 @@
                                       impl
                                       (autocomplete-noop)
                                       pq))
-        expected)
+       expected)
       (check-equal?
        (get-failing-canon-message
         (make-canonical-package-query #:force-complete-interval? #t

@@ -4,7 +4,7 @@
                     racket/contract
                     racket/string
                     xiden/integrity
-                    xiden/logged
+                    xiden/subprogram
                     xiden/security]
          xiden/security
          @for-syntax[xiden/security]
@@ -34,9 +34,9 @@ configuration"], which ultimately controls arguments to
                    [#:workspace workspace path-string?]
                    [#:gc-period gc-period (>=/c 0)]
                    [#:name name (or/c string? symbol?) (or (object-name proc) "")]
-                   [halt (-> exit-code/c messy-log/c any)]
-                   [proc (-> (-> exit-code/c messy-log/c any) any/c)])
-                   logged?]{
+                   [halt (-> exit-code/c subprogram-log/c any)]
+                   [proc (-> (-> exit-code/c subprogram-log/c any) any/c)])
+                   subprogram?]{
 Reduces runtime privileges.
 
 Applies @racket[proc] under a new @tech/reference{parameterization},
@@ -75,8 +75,8 @@ forcibly killed and the program log will include a
 @racket[$restrict:budget] message. While the thread is active, garbage
 is collected every @racket[gc-period] seconds.
 
-If @racket[proc] returns a value without incident, then the logged
-procedure will use that value. Otherwise, the logged procedure will
+If @racket[proc] returns a value without incident, then the subprogram
+procedure will use that value. Otherwise, the subprogram will
 use @racket[FAILURE] and include the relevant @racket[$restrict]
 message with the given @racket[name].
 }

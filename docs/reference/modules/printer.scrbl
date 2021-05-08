@@ -7,7 +7,7 @@
                     racket/pretty
                     racket/serialize
                     xiden/l10n
-                    xiden/logged
+                    xiden/subprogram
                     xiden/format
                     xiden/message
                     xiden/port
@@ -47,7 +47,7 @@ combine with @racket[XIDEN_FASL_OUTPUT].
 When true, emit more detailed program output.
 }
 
-@defproc[(write-message-log [messages messy-log/c] [format-message message-formatter/c]) void?]{
+@defproc[(write-message-log [messages subprogram-log/c] [format-message message-formatter/c]) void?]{
 Writes every message @racket[m] in @racket[messages] using
 @racket[(write-message m format-message (current-output-port))].
 }

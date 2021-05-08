@@ -14,7 +14,7 @@
          "../artifact.rkt"
          "../dig.rkt"
          "../integrity.rkt"
-         "../logged.rkt"
+         "../subprogram.rkt"
          "../openssl.rkt"
          "../signature.rkt"
          "../source.rkt"
@@ -26,7 +26,7 @@
     (λ (key)
       (if (url-variant? key)
           (let* ([ext-url (extend-base-url base-url (coerce-url key))])
-            (logged-unit
+            (subprogram-unit
              (artifact (http-source ext-url)
                        (and chf
                             (integrity-info chf
@@ -71,7 +71,7 @@
   
   (test-case "Create artifacts expecting only content"
     (define dig (make-http-shovel "https://example.com/pkg"))
-    (define arti (get-logged-value (dig "/cool/stuff?a=b")))
+    (define arti (get-subprogram-value (dig "/cool/stuff?a=b")))
     (check-pred artifact-info? arti)
     (check-false (artifact-info-integrity arti))
     (check-false (artifact-info-signature arti))
@@ -80,7 +80,7 @@
 
   (test-case "Create artifacts expecting content and integrity info"
     (define dig (make-http-shovel "https://example.com/pkg" 'md5))
-    (define arti (get-logged-value (dig "x")))
+    (define arti (get-subprogram-value (dig "x")))
     (check-pred artifact-info? arti)
     (check-pred integrity-info? (artifact-info-integrity arti))
     (check-false (artifact-info-signature arti))
@@ -92,7 +92,7 @@
 
   (test-case "Create artifacts expecting all info"
     (define dig (make-http-shovel "https://example.com/pkg" 'md5 empty-source))
-    (define arti (get-logged-value (dig "x")))
+    (define arti (get-subprogram-value (dig "x")))
     (check-pred artifact-info? arti)
     (check-pred integrity-info? (artifact-info-integrity arti))
     (check-pred signature-info? (artifact-info-signature arti))

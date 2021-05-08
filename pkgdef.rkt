@@ -79,14 +79,14 @@
          "file.rkt"
          "input.rkt"
          "integrity.rkt"
-         "logged.rkt"
          "monad.rkt"
          "package.rkt"
          "racket-module.rkt"
          "setting.rkt"
          "signature.rkt"
-         "string.rkt"
          "source.rkt"
+         "string.rkt"
+         "subprogram.rkt"
          "system.rkt")
 
 
@@ -189,7 +189,7 @@
                build
                (λ (requested-name)
                  (if (equal? requested-name name)
-                     (coerce-logged (mdo steps ...))
+                     (coerce-subprogram (mdo steps ...))
                      ((package-build st) requested-name))))))
 
 (define-modifier (name n:non-empty-string)
@@ -271,7 +271,7 @@
     (define build (package-build pkgdef))
 
     (define (check l e)
-      (call-with-values (λ () (run-log l))
+      (call-with-values (λ () (run-subprogram l))
                         (λ (v m)
                           (check-equal? v e)
                           (check-pred null? m))))

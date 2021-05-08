@@ -7,7 +7,7 @@
                     xiden/dig
                     xiden/file
                     xiden/input
-                    xiden/logged
+                    xiden/subprogram
                     xiden/package
                     xiden/query
                     xiden/version

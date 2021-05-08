@@ -24,5 +24,5 @@ higher-level modules in Xiden.
 @include-section{modules/security.scrbl}
 @include-section{modules/racket-module.scrbl}
 @include-section{modules/message.scrbl}
-@include-section{modules/logged.scrbl}
+@include-section{modules/subprogram.scrbl}
 @include-section{modules/codec.scrbl}

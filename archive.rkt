@@ -13,14 +13,14 @@
          racket/path
          racket/string
          "input.rkt"
-         "logged.rkt"
+         "subprogram.rkt"
          "message.rkt"
          "monad.rkt")
 
 (provide
  (contract-out
-  [extract (-> (or/c path-string? input-port?) (logged/c void?))]
-  [extract-input (->* (string?) (#:keep? any/c) logged?)]
+  [extract (-> (or/c path-string? input-port?) (subprogram/c void?))]
+  [extract-input (->* (string?) (#:keep? any/c) subprogram?)]
   [current-find-extract-procedure
    (-> path-string? (or/c #f (-> input-port? any)))]))
 
@@ -29,7 +29,7 @@
 
 (define+provide-message $extract-report (status target))
 
-(define-logged (extract variant)
+(define-subprogram (extract variant)
   (let start ([in variant])
     (if (path-string? in)
         (call-with-input-file in start)
@@ -117,7 +117,7 @@
 
                       (delete-directory/files dir/)
 
-                      (run-log (extract .tar))
+                      (run-subprogram (extract .tar))
 
                       (test-file input-a)
                       (test-file input-b)

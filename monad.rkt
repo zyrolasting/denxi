@@ -16,11 +16,11 @@
 
 (define-syntax (mdo stx)
   (syntax-parse stx #:literals (:=)
-    [(_ e:expr) #'e]
-    [(_ target:id := e:expr . body)
-     #'(bind e (λ (target) (mdo . body)))]
-    [(_ e:expr . body)
-     #'(bind e (λ _ (mdo . body)))]))
+                [(_ e:expr) #'e]
+                [(_ target:id := e:expr . body)
+                 #'(bind e (λ (target) (mdo . body)))]
+                [(_ e:expr . body)
+                 #'(bind e (λ _ (mdo . body)))]))
 
 
 (module+ test

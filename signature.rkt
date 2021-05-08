@@ -141,12 +141,12 @@
                          siginfo
                          intinfo)
   (consider-integrity-trust #:trust-bad-digest trust-bad-digest siginfo
-   (λ _
-     (consider-signature-info #:trust-unsigned trust-unsigned siginfo
-      (λ _
-        (consider-public-key-trust #:trust-public-key? trust-public-key? #:public-key-path public-key-path siginfo
-          (λ _
-            (consider-signature intinfo siginfo))))))))
+                            (λ _
+                              (consider-signature-info #:trust-unsigned trust-unsigned siginfo
+                                                       (λ _
+                                                         (consider-public-key-trust #:trust-public-key? trust-public-key? #:public-key-path public-key-path siginfo
+                                                                                    (λ _
+                                                                                      (consider-signature intinfo siginfo))))))))
 
 
 

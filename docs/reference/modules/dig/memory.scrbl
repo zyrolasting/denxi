@@ -2,7 +2,7 @@
 
 @require[@for-label[racket
                     xiden/artifact
-                    xiden/logged
+                    xiden/subprogram
                     xiden/dig
                     xiden/dig/memory
                     xiden/artifact

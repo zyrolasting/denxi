@@ -13,9 +13,9 @@
          racket/port
          racket/sequence
          "codec.rkt"
-         "logged.rkt"
          "message.rkt"
          "path.rkt"
+         "subprogram.rkt"
          "url.rkt")
 
 (define+provide-message $path-not-found (pattern wrt))
@@ -30,7 +30,7 @@
       cache)))
 
 
-(define-logged (path-matching variant [wrt (current-directory)])
+(define-subprogram (path-matching variant [wrt (current-directory)])
   (with-handlers ([exn? (λ (e) ($fail ($path-not-found variant wrt)))])
     (sequence-ref (in-paths variant wrt) 0)))
 

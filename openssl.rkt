@@ -15,7 +15,7 @@
           [chf/c
            flat-contract?]
           [DEFAULT_CHF
-           chf/c]
+            chf/c]
           [md-bytes-source/c
            flat-contract?]
           [make-digest

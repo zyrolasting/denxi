@@ -4,7 +4,7 @@
                     racket/contract
                     xiden/format
                     xiden/l10n
-                    xiden/logged
+                    xiden/subprogram
                     xiden/message
                     xiden/printer]
          "../../shared.rkt"]
@@ -37,11 +37,11 @@ Returns a string for the user's locale.
 ]}
 
 
-@defproc[(run+print-log [l logged?]) any/c]{
-Returns the first value from @racket[(run-log l)].
+@defproc[(run+print-subprogram [l subprogram?]) any/c]{
+Returns the first value from @racket[(run-subprogram l)].
 
 Before returning control, each @tech{message} @racketid[M] from
-@racket[run-log] is printed using
+@racket[run-subprogram] is printed using
 
 @racketblock[(write-message M (get-message-formatter) (current-output-port))]
 }

@@ -15,13 +15,13 @@
          "contract.rkt"
          "format.rkt"
          "localstate.rkt"
-         "logged.rkt"
          "message.rkt"
          "openssl.rkt"
          "port.rkt"
          "printer.rkt"
          "setting.rkt"
          "string.rkt"
+         "subprogram.rkt"
          "url.rkt")
 
 
@@ -65,7 +65,7 @@
           [exhaust/c contract?]
           [fetch (-> source? tap/c exhaust/c any/c)]
           [identify (-> source? (or/c #f input-port?))]
-          [logged-fetch (-> any/c source? tap/c logged?)]
+          [subprogram-fetch (-> any/c source? tap/c subprogram?)]
           [make-source-key (-> source? (or/c bytes? #f))]
           [source? predicate/c]
           [source-variant? flat-contract?]
@@ -74,13 +74,13 @@
           [current-string->source
            (parameter/c (-> string? source?))]
           [eval-untrusted-source-expression
-           (->* (any/c) (namespace?) logged?)]))
+           (->* (any/c) (namespace?) subprogram?)]))
 
 ;-----------------------------------------------------------------------
 ; Implementation
 
-(define (logged-fetch id source p)
-  (logged
+(define (subprogram-fetch id source p)
+  (subprogram
    (λ (messages)
      (fetch source
             (λ a
@@ -170,7 +170,7 @@
 
 
 (define-source #:key first-available-source-sources
-               (first-available-source [sources (listof source?)] [errors list?])
+  (first-available-source [sources (listof source?)] [errors list?])
   (if (null? sources)
       (%fail (reverse errors))
       (%fetch (car sources)
@@ -180,7 +180,7 @@
 
 
 (define-source #:key text-source-data
-               (text-source [data string?])
+  (text-source [data string?])
   (%fetch (byte-source (string->bytes/utf-8 data))))
 
 
@@ -190,19 +190,19 @@
               (lines-source-lines s)))
 
 (define-source #:key lines-source->string
-               (lines-source [suffix (or/c #f char? string?)] [lines (listof string?)])
+  (lines-source [suffix (or/c #f char? string?)] [lines (listof string?)])
   (%fetch (text-source (lines-source->string %src))))
 
 
 (define-source #:key file-source-path
-               (file-source [path path-string?])
+  (file-source [path path-string?])
   (with-handlers ([exn:fail:filesystem? %fail])
     (%tap (open-input-file path)
           (file-size path))))
 
 
 (define-source #:key http-source-request-url
-               (http-source [request-url (or/c url? url-string?)])
+  (http-source [request-url (or/c url? url-string?)])
   (define coerced-url
     (if (url? request-url)
         request-url
@@ -236,7 +236,7 @@
 
 
 (define-source #:key http-mirrors-source-request-urls
-               (http-mirrors-source [request-urls (listof (or/c url? url-string?))])
+  (http-mirrors-source [request-urls (listof (or/c url? url-string?))])
   (%fetch (apply sources (map http-source request-urls))))
 
 
@@ -295,7 +295,7 @@
 
 
 (define (eval-untrusted-source-expression datum [ns (current-namespace)])
-  (logged
+  (subprogram
    (λ (messages)
      (call/cc
       (λ (return)
@@ -332,7 +332,7 @@
            mzlib/etc
            "file.rkt"
            "setting.rkt"
-           (submod "logged.rkt" test))
+           (submod "subprogram.rkt" test))
 
   (define (run-tap in est)
     (define out (open-output-bytes))
@@ -450,7 +450,7 @@
   (define test-ns (namespace-anchor->namespace ns-anchor))
 
   (define (test-safe-expression intent predicate datum)
-    (test-logged-procedure
+    (test-subprogram-procedure
      (format "Eval source expression (safe, ~a)" intent)
      (eval-untrusted-source-expression datum test-ns)
      (λ (val messages)
@@ -458,7 +458,7 @@
        (check-pred null? messages))))
 
   (define (test-unsafe-expression intent datum)
-    (test-logged-procedure
+    (test-subprogram-procedure
      (format "Eval source expression (dangerous, ~a)" intent)
      (eval-untrusted-source-expression datum test-ns)
      (λ (val messages)
@@ -468,15 +468,15 @@
                                       (? (λ (v) (equal? datum v)) _)
                                       _)))))
 
-  (test-logged-procedure
+  (test-subprogram-procedure
    "Eval non-source expression"
    (eval-untrusted-source-expression '1 test-ns)
    (λ (val messages)
-       (check-eq? val FAILURE)
-       (check-match (car messages)
-                    ($bad-source-eval 'invariant
-                                      (? (λ (v) (equal? '1 v)) _)
-                                      _))))
+     (check-eq? val FAILURE)
+     (check-match (car messages)
+                  ($bad-source-eval 'invariant
+                                    (? (λ (v) (equal? '1 v)) _)
+                                    _))))
 
   (test-safe-expression
    "Literal bytes"

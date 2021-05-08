@@ -50,34 +50,34 @@
                   #:gc-period gc-period
                   #:name [name (or (object-name proc) "")])
   (call-with-managed-thread (make-gc-thread gc-period)
-   (λ _
-     ; The `plan' mechanic allows the two threads at play
-     ; to decide how to apply `halt'.
-     (define finish halt)
-     (define (plan c m)
-       (set! finish (λ () (halt c m))))
+                            (λ _
+                              ; The `plan' mechanic allows the two threads at play
+                              ; to decide how to apply `halt'.
+                              (define finish halt)
+                              (define (plan c m)
+                                (set! finish (λ () (halt c m))))
 
-     (define security-guard
-       (make-custom-security-guard
-        #:name name
-        #:trust-any-executable? trust-any-executable?
-        #:trust-executables trusted-executables
-        #:trust-host-executables implicitly-trusted-host-executables
-        #:workspace workspace))
+                              (define security-guard
+                                (make-custom-security-guard
+                                 #:name name
+                                 #:trust-any-executable? trust-any-executable?
+                                 #:trust-executables trusted-executables
+                                 #:trust-host-executables implicitly-trusted-host-executables
+                                 #:workspace workspace))
 
-     (call-with-managed-thread
-      (make-worker-thread name
-                          memory-limit
-                          security-guard
-                          (make-envvar-subset allowed-envvars)
-                          plan
-                          trust-unverified-host?
-                          trust-certificates
-                          proc)
-      (λ (worker-thread)
-        (unless (sync/timeout time-limit worker-thread)
-          (plan 1 ($restrict:budget name 'time time-limit)))
-        (finish))))))
+                              (call-with-managed-thread
+                               (make-worker-thread name
+                                                   memory-limit
+                                                   security-guard
+                                                   (make-envvar-subset allowed-envvars)
+                                                   plan
+                                                   trust-unverified-host?
+                                                   trust-certificates
+                                                   proc)
+                               (λ (worker-thread)
+                                 (unless (sync/timeout time-limit worker-thread)
+                                   (plan 1 ($restrict:budget name 'time time-limit)))
+                                 (finish))))))
 
 
 ;-------------------------------------------------------------------------------
@@ -93,18 +93,18 @@
   (thread
    (λ ()
      (call-with-custom-custodian memory-limit
-      (λ ()
-        (with-handlers ([exn:fail:out-of-memory?
-                         (λ _ (plan 1 ($restrict:budget name 'space memory-limit)))]
-                        [exn?
-                         (λ (e) (plan 1 ($show-string (exn->string e))))])
-          (parameterize ([current-environment-variables envvars]
-                         [current-https-protocol
-                          (make-ssl-context trust-certificates
-                                            trust-unverified-host?)]
-                         [current-security-guard security-guard])
-            (call-with-values (λ () (call/cc proc))
-                              plan))))))))
+                                 (λ ()
+                                   (with-handlers ([exn:fail:out-of-memory?
+                                                    (λ _ (plan 1 ($restrict:budget name 'space memory-limit)))]
+                                                   [exn?
+                                                    (λ (e) (plan 1 ($show-string (exn->string e))))])
+                                     (parameterize ([current-environment-variables envvars]
+                                                    [current-https-protocol
+                                                     (make-ssl-context trust-certificates
+                                                                       trust-unverified-host?)]
+                                                    [current-security-guard security-guard])
+                                       (call-with-values (λ () (call/cc proc))
+                                                         plan))))))))
 
 
 (define (make-ssl-context trust-certificates trust-unverified-host?)
@@ -355,9 +355,9 @@
     (check-false (trusts-nothing other-path))
 
     (XIDEN_TRUST_CHFS '(sha1)
-      (λ ()
-        (check-true  (trusts-exact-things my-path))
-        (check-false (trusts-exact-things other-path))))
+                      (λ ()
+                        (check-true  (trusts-exact-things my-path))
+                        (check-false (trusts-exact-things other-path))))
 
     (check-true  (trusts-hosted-things my-path))
     (check-false (trusts-hosted-things other-path)))

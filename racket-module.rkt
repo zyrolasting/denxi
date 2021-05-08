@@ -14,9 +14,9 @@
          syntax/parse
          "contract.rkt"
          "input.rkt"
-         "logged.rkt"
          "message.rkt"
          "monad.rkt"
+         "subprogram.rkt"
          "system.rkt")
 
 (provide
@@ -38,10 +38,10 @@
                      list?)]
                [read-racket-module
                 (->* (symbol? symbol? racket-module-input-variant/c)
-                     (logged/c syntax?))]
+                     (subprogram/c syntax?))]
                [keep-standalone-racket-module
                 (->* (string?) (#:compile-with (or/c path-string? #f))
-                     logged?)]))
+                     subprogram?)]))
 
 (define+provide-message $racket-module-read-error $message (variant reason context))
 
@@ -95,13 +95,13 @@
          (read-racket-module expected-reader-lang expected-module-lang (open-input-bytes variant))]))
 
 
-(define-logged (read-racket-module/path expected-reader-lang expected-module-lang variant)
+(define-subprogram (read-racket-module/path expected-reader-lang expected-module-lang variant)
   (call-with-input-file variant
     (λ (i)
       ($run! (read-racket-module/port expected-reader-lang expected-module-lang i)))))
 
 
-(define-logged (read-racket-module/port expected-reader-lang expected-module-lang in)
+(define-subprogram (read-racket-module/port expected-reader-lang expected-module-lang in)
   (define source-v (get-source-v in))
   (with-handlers ([procedure? (λ (p) ($fail (p source-v)))]
                   [exn? (λ (e) ($fail ($racket-module-read-error source-v 'exception (exn->string e))))])
@@ -200,7 +200,7 @@
   (mdo input-path := (keep-input name)
        (if compile-with
            (run compile-with "make" input-path)
-           (logged-unit input-path))))
+           (subprogram-unit input-path))))
 
 
 (module+ test
@@ -208,7 +208,7 @@
            racket/function
            racket/port
            rackunit
-           (submod "logged.rkt" test))
+           (submod "subprogram.rkt" test))
 
   (test-case "Detect code types"
     (check-true (code/c '()))
@@ -232,50 +232,50 @@
 
   (test-case "Extract body from module forms"
     (check-equal?  (get-racket-module-body  'something
-                   `(module anon something a b c))
+                                            `(module anon something a b c))
+                   '(a b c))
+    (check-equal? (get-racket-module-body 'something
+                                          `(module anon something (#%module-begin a b c)))
                   '(a b c))
     (check-equal? (get-racket-module-body 'something
-                   `(module anon something (#%module-begin a b c)))
-                  '(a b c))
-    (check-equal? (get-racket-module-body 'something
-                   (make-racket-module-datum 'something '(a b c)))
+                                          (make-racket-module-datum 'something '(a b c)))
                   '(a b c)))
 
-  (test-logged-procedure "Detect error when reading improper module form"
-                         (read-racket-module '_ '_ "(module)")
-                         expect-bad-module-form)
+  (test-subprogram-procedure "Detect error when reading improper module form"
+                             (read-racket-module '_ '_ "(module)")
+                             expect-bad-module-form)
 
-  (test-logged-procedure "Detect if EOF came too soon"
-                         (read-racket-module '_ '_ "")
-                         expect-bad-module-form)
+  (test-subprogram-procedure "Detect if EOF came too soon"
+                             (read-racket-module '_ '_ "")
+                             expect-bad-module-form)
 
-  (test-logged-procedure "Read with reader extension"
-                         (read-racket-module 'racket/base
-                                             'racket/base
-                                             "#lang racket/base (define val 1)")
-                         (λ (v msg)
-                           (check-pred syntax? v)
-                           (check-match (syntax->datum v)
-                                        `(module ,_ racket/base (,_ (define val 1))))
-                           (check-pred null? msg)))
+  (test-subprogram-procedure "Read with reader extension"
+                             (read-racket-module 'racket/base
+                                                 'racket/base
+                                                 "#lang racket/base (define val 1)")
+                             (λ (v msg)
+                               (check-pred syntax? v)
+                               (check-match (syntax->datum v)
+                                            `(module ,_ racket/base (,_ (define val 1))))
+                               (check-pred null? msg)))
 
-  (test-logged-procedure "Accept only prescribed reader extensions"
-                         (read-racket-module 'other 'racket/base "#lang racket/base (define val 1)")
-                         (λ (v msg)
-                           (check-eq? v FAILURE)
-                           (check-match (car msg)
-                                        ($racket-module-read-error #f
-                                                                   'blocked-reader
-                                                                   '(submod racket/base reader)))))
+  (test-subprogram-procedure "Accept only prescribed reader extensions"
+                             (read-racket-module 'other 'racket/base "#lang racket/base (define val 1)")
+                             (λ (v msg)
+                               (check-eq? v FAILURE)
+                               (check-match (car msg)
+                                            ($racket-module-read-error #f
+                                                                       'blocked-reader
+                                                                       '(submod racket/base reader)))))
 
-  (test-logged-procedure "Accept only prescribed expander language"
-                         (read-racket-module 'racket/base
-                                             'other
-                                             "#lang racket/base (define val 1)")
-                         (λ (v msg)
-                           (check-eq? v FAILURE)
-                           (check-match (car msg)
-                                        ($racket-module-read-error _ 'unexpected-module-lang _))))
+  (test-subprogram-procedure "Accept only prescribed expander language"
+                             (read-racket-module 'racket/base
+                                                 'other
+                                                 "#lang racket/base (define val 1)")
+                             (λ (v msg)
+                               (check-eq? v FAILURE)
+                               (check-match (car msg)
+                                            ($racket-module-read-error _ 'unexpected-module-lang _))))
 
   (test-case "Strip and dress modules"
     (define body '((define a 1) (provide a)))

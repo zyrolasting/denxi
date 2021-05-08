@@ -7,7 +7,7 @@
                     racket/pretty
                     syntax/modread
                     xiden/input
-                    xiden/logged
+                    xiden/subprogram
                     xiden/racket-module
                     xiden/system]
          "../../shared.rkt"]
@@ -69,8 +69,8 @@ Otherwise, returns @racket[(syntax->datum code)].
 @defproc[(read-racket-module [expected-reader-lang symbol?]
                              [expected-module-lang symbol?]
                              [variant racket-module-input-variant/c])
-                             (logged/c syntax?)]{
-Returns a @tech{logged procedure} that reads a Racket module's code
+                             (subprogram/c syntax?)]{
+Returns a @tech{subprogram} that reads a Racket module's code
 and returns the resulting syntax object with minimal
 expansion. Reading is limited to the reader extension provided by the
 collection path in @racket[expected-reader-lang], and the module
@@ -134,7 +134,7 @@ Returns
 
 @defproc[(keep-standalone-racket-module [#:compile-with compile-with (or/c #f path-string?) "raco"]
                                         [name string?])
-                                        logged?]{
+                                        subprogram?]{
 Behaves like @racket[keep-input] when @racket[compile-with] is
 @racket[#f].
 

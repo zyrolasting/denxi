@@ -17,7 +17,7 @@
          "../dig.rkt"
          "../input.rkt"
          "../integrity.rkt"
-         "../logged.rkt"
+         "../subprogram.rkt"
          "../monad.rkt"
          "../query.rkt"
          "../signature.rkt"
@@ -26,7 +26,7 @@
 
 (define ((make-memory-shovel contents) key)
   (if (hash-has-key? contents key)
-      (logged-unit (hash-ref contents key))
+      (subprogram-unit (hash-ref contents key))
       (broken-shovel key)))
 
 
@@ -37,14 +37,14 @@
        (λ (abort)
          (define (fail v)
            (abort (broken-shovel key)))
-      (if (package-query-variant? key)
-          (mdo exact-query := (make-canonical-package-query canon defaults key)
-               (logged-unit (call-with-revisions
-                             contents
-                             exact-query
-                             (λ (revisions n)
-                               (ref revisions n values)))))
-          (fail key)))))))
+         (if (package-query-variant? key)
+             (mdo exact-query := (make-canonical-package-query canon defaults key)
+                  (subprogram-unit (call-with-revisions
+                                    contents
+                                    exact-query
+                                    (λ (revisions n)
+                                      (ref revisions n values)))))
+             (fail key)))))))
 
 
 (struct memory-canon (contents)
@@ -60,10 +60,10 @@
      (call-with-revisions
       (memory-canon-contents cat)
       (parsed-package-query P K E (~a L) (~a H) "ii")
-       (λ (revisions _)
-         (find-latest-available-revision-number
-          (λ (v) (hash-ref revisions v #f))
-          L H))))])
+      (λ (revisions _)
+        (find-latest-available-revision-number
+         (λ (v) (hash-ref revisions v #f))
+         L H))))])
 
 
 (define (call-with-revisions contents exact-query continue-with)
@@ -86,9 +86,9 @@
 
 (module+ test
   (require rackunit
-           "../logged.rkt"
+           "../subprogram.rkt"
            "../source.rkt"
-           (submod "../logged.rkt" test))
+           (submod "../subprogram.rkt" test))
 
   (test-equal? "Alias keys"
                (ref (hash "a" 1
@@ -107,7 +107,7 @@
       (artifact (byte-source #"def") #f #f))
 
     (define (check-expected q)
-      (define-values (actual m) (run-log (dig q)))
+      (define-values (actual m) (run-subprogram (dig q)))
       (check-pred artifact-info? actual)
       (match-define (artifact-info (byte-source edata) eii esi) expected)
       (match-define (artifact-info (byte-source adata) aii asi) actual)

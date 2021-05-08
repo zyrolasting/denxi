@@ -123,12 +123,12 @@
 
   (define (test-invalid-interval min-v max-v)
     (test-exn (format "Flag [~a, ~a] as an invalid interval" min-v max-v)
-            (λ (e)
-              (and (exn:fail:xiden:invalid-racket-version-interval? e)
-                   (check-eq? (exn:fail:xiden:invalid-racket-version-interval-lo e) min-v)
-                   (check-eq? (exn:fail:xiden:invalid-racket-version-interval-hi e) max-v)))
-            (λ ()
-              (racket-version-in-range? "0.0" min-v max-v))))
+              (λ (e)
+                (and (exn:fail:xiden:invalid-racket-version-interval? e)
+                     (check-eq? (exn:fail:xiden:invalid-racket-version-interval-lo e) min-v)
+                     (check-eq? (exn:fail:xiden:invalid-racket-version-interval-hi e) max-v)))
+              (λ ()
+                (racket-version-in-range? "0.0" min-v max-v))))
 
   (for ([v (in-list (list null
                           `((,UNBOUNDED_RACKET_VERSION ,UNBOUNDED_RACKET_VERSION))

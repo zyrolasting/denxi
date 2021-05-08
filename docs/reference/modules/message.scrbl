@@ -3,7 +3,7 @@
 @require[@for-label[racket/base
                     racket/contract
                     racket/match
-                    xiden/logged
+                    xiden/subprogram
                     xiden/format
                     xiden/message
                     xiden/port]

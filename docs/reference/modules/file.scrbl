@@ -5,7 +5,7 @@
                     racket/sequence
                     file/glob
                     xiden/file
-                    xiden/logged]
+                    xiden/subprogram]
           "../../shared.rkt"]
 
 @title{File System}
@@ -28,8 +28,8 @@ then @racket[pattern] is used as a glob pattern for use in
 
 @defproc[(path-matching [pattern (or/c regexp? pregexp? byte-regexp? byte-pregexp? string?)]
                         [start directory-exists? (current-directory)])
-         (logged/c path?)]{
-Like @racket[in-paths], except this returns a @tech{logged procedure}
+         (subprogram/c path?)]{
+Like @racket[in-paths], except this returns a @tech{subprogram}
 that fails with @racket[$path-not-found] on the program log if no
 paths are found.  Otherwise, the procedure uses the first matching
 path.

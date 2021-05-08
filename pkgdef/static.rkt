@@ -4,13 +4,13 @@
 
 (require "../codec.rkt"
          "../contract.rkt"
-         "../logged.rkt"
          "../openssl.rkt"
          "../path.rkt"
          "../query.rkt"
          "../racket-module.rkt"
          "../signature.rkt"
-         "../string.rkt")
+         "../string.rkt"
+         "../subprogram.rkt")
 
 (provide (contract-out
           [PACKAGE_DEFINITION_MODULE_LANG symbol?]
@@ -22,7 +22,7 @@
            (->* (list?) (#:id symbol?) package-definition-datum?)]
           [read-package-definition
            (->* (racket-module-input-variant/c)
-                (logged/c syntax?))]
+                (subprogram/c syntax?))]
           [bare-pkgdef? flat-contract?]
           [get-static-abbreviated-query
            (-> bare-pkgdef? package-query?)]
@@ -149,7 +149,7 @@
          (cdr input-exprs)))))
 
 
-(define-logged (read-package-query stripped defaults)
+(define-subprogram (read-package-query stripped defaults)
   (define (parse v) (get-static-simple-value stripped v))
   (define provider
     (parse 'provider (get-default-provider defaults)))

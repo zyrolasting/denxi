@@ -20,7 +20,7 @@
          "../dig.rkt"
          "../input.rkt"
          "../integrity.rkt"
-         "../logged.rkt"
+         "../subprogram.rkt"
          "../monad.rkt"
          "../openssl.rkt"
          "../query.rkt"
@@ -34,7 +34,7 @@
            (not (complete-path? key)))
       (let ([complete-path (build-path directory-path key)])
         (if (file-exists? complete-path)
-            (logged-unit
+            (subprogram-unit
              (artifact-info (file-source (normalize-path complete-path))
                             (try-integrity complete-path chf)
                             (try-signature complete-path chf public-key-source)))
@@ -43,18 +43,18 @@
 
 
 (define (make-filesystem-shovel/pkgdef directory-path
-                                    chf
-                                    [defaults default-package-query-defaults])
+                                       chf
+                                       [defaults default-package-query-defaults])
   (let ([canon (filesystem-canon directory-path)])
     (λ (key)
       (if (package-query-variant? key)
           (mdo exact-query := (make-canonical-package-query canon defaults key)
                (match-let ([(parsed-package-query P K E N _ _) exact-query])
                  ((make-filesystem-shovel (build-path directory-path P K E)
-                                       chf
-                                       (file-source
-                                        (build-path directory-path
-                                                    P "public-key")))
+                                          chf
+                                          (file-source
+                                           (build-path directory-path
+                                                       P "public-key")))
                   N)))
           (broken-shovel key)))))
 
@@ -164,7 +164,7 @@
          (make-artifact-paths "a/b/f"))
 
        (test-case "Find full artifact in filesystem dig"
-         (define result (get-logged-value (dig content-path)))
+         (define result (get-subprogram-value (dig content-path)))
          (check-pred artifact-info? result)
 
          (match-define
@@ -181,14 +181,14 @@
        (test-case "Find partial artifact in filesystem dig"
          (delete-file sig-path)
          (delete-file digest-path)
-         (define partial (get-logged-value (dig content-path)))
+         (define partial (get-subprogram-value (dig content-path)))
          (check-source content-path (artifact-info-source partial))
          (check-false (artifact-info-integrity partial))
          (check-false (artifact-info-signature partial)))
 
        (test-case "Resolve symlinks in filesystem dig"
          (make-file-or-directory-link content-path "link")
-         (define linked (get-logged-value (dig "link")))
+         (define linked (get-subprogram-value (dig "link")))
          (check-source content-path (artifact-info-source linked))
          (check-false (artifact-info-integrity linked))
          (check-false (artifact-info-signature linked))))))
@@ -221,7 +221,7 @@
        (make-file-or-directory-link package (build-path provider-path DEFAULT_STRING))
        (make-file-or-directory-link provider (build-path directory-path DEFAULT_STRING))
        
-       (define default-artifact (get-logged-value (dig ":::0:cool")))
+       (define default-artifact (get-subprogram-value (dig ":::0:cool")))
        (check-pred artifact-info? default-artifact)
 
        (match-define (artifact-info content-source

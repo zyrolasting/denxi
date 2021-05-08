@@ -8,7 +8,7 @@
                     xiden/cli-flag
                     xiden/cmdline
                     xiden/l10n
-                    xiden/logged
+                    xiden/subprogram
                     xiden/message
                     xiden/printer]]
 
@@ -36,13 +36,13 @@ error state. Lean on the @tech{program log} for specifics.
 A procedure that reacts to an exit code, like @racket[exit].
 }
 
-@defthing[bound-program/c contract? #:value (-> (-> exit-code/c messy-log/c any) any)]{
+@defthing[bound-program/c contract? #:value (-> (-> exit-code/c subprogram-log/c any) any)]{
 A procedure meant to run predetermined program logic in the context of
 a @tech{runtime configuration}.
 
 The only argument is a procedure (probably representing a
 @tech/reference{continuation}) that accepts an exit code and a
-@tech{messy log} representing program output. That continuation
+@tech{subprogram log} representing program output. That continuation
 will decide how to react to the given information.
 }
 

@@ -8,14 +8,14 @@
          racket/serialize
          "contract.rkt"
          "format.rkt"
-         "logged.rkt"
          "message.rkt"
-         "setting.rkt")
+         "setting.rkt"
+         "subprogram.rkt")
 
 
 (provide (contract-out
           [write-message-log
-           (-> messy-log/c message-formatter/c void?)]
+           (-> subprogram-log/c message-formatter/c void?)]
           [write-message
            (->* ($message?) (#:newline? any/c message-formatter/c output-port?) void?)]))
 
@@ -31,7 +31,7 @@
       m))
 
 
-; Program output can be a messy log so that users don't always have to
+; Program output can be a subprogram log so that users don't always have to
 ; construct an organized list of messages.
 (define (write-message-log program-output format-message)
   (define messages

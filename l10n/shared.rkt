@@ -16,7 +16,6 @@
    "../input.rkt"
    "../integrity.rkt"
    "../localstate.rkt"
-   "../logged.rkt"
    "../message.rkt"
    "../openssl.rkt"
    "../package.rkt"
@@ -30,5 +29,6 @@
    "../signature.rkt"
    "../source.rkt"
    "../string.rkt"
+   "../subprogram.rkt"
    "../system.rkt"
    "../url.rkt")

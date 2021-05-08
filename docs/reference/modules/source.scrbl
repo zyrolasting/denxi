@@ -3,7 +3,7 @@
 @require[@for-label[racket/base
                     racket/contract
                     xiden/cmdline
-                    xiden/logged
+                    xiden/subprogram
                     xiden/format
                     xiden/port
                     xiden/source
@@ -88,13 +88,13 @@ Returns @racket[#t] if the sole argument is suitable for use in @racket[coerce-s
 }
 
 @deftogether[(
-@defproc[(logged-fetch [id any/c] [source source?] [tap tap/c]) logged?]
+@defproc[(subprogram-fetch [id any/c] [source source?] [tap tap/c]) subprogram?]
 @defstruct*[($fetch $message) ([id any/c] [errors (listof $message?)])]
 )]{
-Returns a @tech{logged procedure} that applies @racket[fetch] to
+Returns a @tech{subprogram} that applies @racket[fetch] to
 @racket[source] and @racket[tap].
 
-The computed value of the logged procedure is @racket[FAILURE] if the
+The computed value of the subprogram is @racket[FAILURE] if the
 source is @tech{exhausted}. Otherwise, the value is what's returned
 from @racket[tap].
 
@@ -376,15 +376,15 @@ containing source file changes location on disk.
 
 @deftogether[(
 @defstruct*[($bad-source-eval $message) ([reason (or/c 'security 'invariant)] [datum any/c])]
-@defproc[(eval-untrusted-source-expression [datum any/c] [ns namespace? (current-namespace)]) logged?]
+@defproc[(eval-untrusted-source-expression [datum any/c] [ns namespace? (current-namespace)]) subprogram?]
 )]{
-@racket[eval-untrusted-source-expression] returns a @tech{logged
-procedure} which evaluates @racket[(eval datum ns)] in the context of
-a @tech/reference{security guard}. The security guard blocks all file
+@racket[eval-untrusted-source-expression] returns a @tech{subprogram}
+which evaluates @racket[(eval datum ns)] in the context of a
+@tech/reference{security guard}. The security guard blocks all file
 operations (except @racket['exists]), and all network operations.
 
 If the evaluation produces a @tech{source}, then the result of the
-logged procedure is that source, and no other @tech{messages} will
+subprogram is that source, and no other @tech{messages} will
 appear in the program log.
 
 If the evaluation does not produce a @tech{source}, then the result is

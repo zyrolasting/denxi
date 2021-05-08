@@ -5,7 +5,7 @@
                     racket/path
                     xiden/artifact
                     xiden/dig
-                    xiden/logged
+                    xiden/subprogram
                     xiden/message
                     xiden/integrity
                     xiden/input
@@ -46,24 +46,24 @@ to @racket[blank-artifact-request].
 A @tech/reference{parameter} bound to inputs to use with @racket[input-ref].
 }
 
-@defproc[(input-ref [name string?]) (logged/c package-input?)]{
+@defproc[(input-ref [name string?]) (subprogram/c package-input?)]{
 Returns the first element of @racket[(current-inputs)] with an
 @racket[package-input-name] @racket[equal?] to @racket[name].
 }
 
-@defproc[(find-input [inputs (listof package-input?)] [name string?]) (logged/c package-input?)]{
-Returns a @tech{logged procedure} @racketid[P] that either returns the
+@defproc[(find-input [inputs (listof package-input?)] [name string?]) (subprogram/c package-input?)]{
+Returns a @tech{subprogram} @racketid[P] that either returns the
 first input in @racket[inputs] with the given name, or fails with
 @racket[$input:not-found] on the program log.
 }
 
-@defproc[(release-input [input package-input?]) (logged/c void?)]{
-Returns a @tech{logged procedure} @racketid[P] that deletes the
+@defproc[(release-input [input package-input?]) (subprogram/c void?)]{
+Returns a @tech{subprogram} @racketid[P] that deletes the
 symbolic link derived from @racket[input].
 }
 
-@defproc[(resolve-input [input package-input?]) (logged/c path-string?)]{
-Returns a @tech{logged procedure} @racketid[P] that, when applied,
+@defproc[(resolve-input [input package-input?]) (subprogram/c path-string?)]{
+Returns a @tech{subprogram} @racketid[P] that, when applied,
 acquires and verifies the bytes for @racket[input]. @racketid[P]
 returns a relative path to a symbolic link in
 @racket[(current-directory)].
@@ -72,7 +72,7 @@ returns a relative path to a symbolic link in
 the program log.
 }
 
-@defproc[(keep-input [name string?]) (logged/c path-string?)]{
+@defproc[(keep-input [name string?]) (subprogram/c path-string?)]{
 Equivalent to @racket[(mdo i := (input-ref name) (resolve-input i))].
 
 Use for inputs that you do not intend to release.

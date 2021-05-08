@@ -46,17 +46,17 @@
                   original))
 
   (test-exn "Detect corruption"
-    (λ (e)
-      (and (exn:fail:xiden:decompression? e)
-           (eq? (exn:fail:xiden:decompression-pos e)
-                3)))
-    (λ ()
-      (define in (open-input-bytes original))
-      (define compressed-out (open-output-bytes))
+            (λ (e)
+              (and (exn:fail:xiden:decompression? e)
+                   (eq? (exn:fail:xiden:decompression-pos e)
+                        3)))
+            (λ ()
+              (define in (open-input-bytes original))
+              (define compressed-out (open-output-bytes))
 
-      (compress in compressed-out)
+              (compress in compressed-out)
 
-      (define to-corrupt (get-output-bytes compressed-out #t))
+              (define to-corrupt (get-output-bytes compressed-out #t))
 
-      (bytes-set! to-corrupt 0 0)
-      (decompress (open-input-bytes to-corrupt) (open-output-bytes)))))
+              (bytes-set! to-corrupt 0 0)
+              (decompress (open-input-bytes to-corrupt) (open-output-bytes)))))

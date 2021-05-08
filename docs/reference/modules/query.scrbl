@@ -343,8 +343,8 @@ with @racket[make-canonical-package-query].
          [canon package-query-canon-implementation/c]
          [defaults package-query-defaults-implementation/c]
          [query package-query-variant?])
-         (logged/c exact-package-query?)]{
-Returns a @tech{logged procedure}. The procedure computes an
+         (subprogram/c exact-package-query?)]{
+Returns a @tech{subprogram}. The procedure computes an
 @tech{exact package query} in @tech{canonical form} with respect to
 @racket[canon]. In the event of an error, the program log gains at
 least one @racket[$package-query-canon] instance.

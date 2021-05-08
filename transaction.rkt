@@ -12,20 +12,20 @@
 (require "cli-flag.rkt"
          "contract.rkt"
          "exn.rkt"
-         "logged.rkt"
-         "message.rkt")
+         "message.rkt"
+         "subprogram.rkt")
 
 (provide
  (contract-out
   [transact
-   (-> (listof (-> logged?))
+   (-> (listof (-> subprogram?))
        (-> list? any)
        (-> list? any)
        any)]
   [fold-transaction-actions
    (-> (listof cli-flag-state?)
-       (hash/c procedure? (-> any/c logged?))
-       (listof (-> logged?)))]))
+       (hash/c procedure? (-> any/c subprogram?))
+       (listof (-> subprogram?)))]))
 
 (define (transact actions commit rollback)
   (call/cc
@@ -45,7 +45,7 @@
               (λ (e)
                 (fail (cons ($show-string (exn->string e))
                             accum-messages)))])
-            (run-log (action) accum-messages)))
+            (run-subprogram (action) accum-messages)))
 
         (if (eq? result FAILURE)
             (fail messages)
@@ -108,8 +108,8 @@
                            flag
                            (list-ref value-list i))))
   (define (act v)
-    (logged-attachment (if (eq? v 'b) SUCCESS #f)
-                       ($show-string (~a v))))
+    (subprogram-attachment (eq? v 'b)
+                           ($show-string (~a v))))
 
   (call-with-applied-settings
    (hash TEST_LETTER_STRINGS '(a b c)
@@ -148,16 +148,16 @@
        (define (rollback m)
          (cons 'rolled-back (flatten m)))
 
-       (check-equal? (transact (map (λ (f) (λ () (logged-attachment (f) ($show-string (~a (f)))))) actions)
+       (check-equal? (transact (map (λ (f) (λ () (subprogram-attachment (f) ($show-string (~a (f)))))) actions)
                                flatten
                                rollback)
                      (map (compose $show-string ~a)
                           (reverse expected-preprocessed-values)))
 
-       (define (warn) (logged-attachment #f ($show-string "about to fail")))
+       (define (warn) (subprogram-attachment #f ($show-string "about to fail")))
        (test-equal? "Handle transaction failure"
                     (transact (list warn
-                                    (λ () (logged-failure ($show-string "uh oh")))
+                                    (λ () (subprogram-failure ($show-string "uh oh")))
                                     warn)
                               flatten
                               rollback)

@@ -36,9 +36,9 @@
 (define windows-reserved-name-pattern-string
   (format "(?i:(~a))(\\..*)?"
           (string-join '("\\.+" "com\\d" "lpt\\d" "nul" "aux" "prn" "con"
-                         "CLOCK\\$" "\\$Mft" "\\$MftMirr" "\\$LogFile" "\\$Volume"
-                         "\\$AttrDef" "\\$Bitmap" "\\$Boot" "\\$BadClus" "\\$Secure"
-                         "\\$Upcase" "\\$Extend" "\\$Quota" "\\$ObjId" "\\$Reparse")
+                                "CLOCK\\$" "\\$Mft" "\\$MftMirr" "\\$LogFile" "\\$Volume"
+                                "\\$AttrDef" "\\$Bitmap" "\\$Boot" "\\$BadClus" "\\$Secure"
+                                "\\$Upcase" "\\$Extend" "\\$Quota" "\\$ObjId" "\\$Reparse")
                        "|")))
 
 (define maybe-spaces-pattern-string "\\s*")

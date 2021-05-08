@@ -15,7 +15,7 @@
          "integrity.rkt"
          "l10n.rkt"
          "localstate.rkt"
-         "logged.rkt"
+         "subprogram.rkt"
          "message.rkt"
          "monad.rkt"
          "openssl.rkt"
@@ -42,7 +42,7 @@
                     top-level-cli
                     handle-exit))
 
-  
+
 (define (top-level-cli args)
   (cli #:program "xiden"
        #:arg-help-strings '("action" "args")
@@ -270,9 +270,9 @@
                           (eval-untrusted-source-expression
                            datum
                            (namespace-anchor->namespace cli-namespace-anchor))
-                          (logged-fetch display-name source copy-to-stdout)))
+                          (subprogram-fetch display-name source copy-to-stdout)))
 
-                   (define-values (result messages) (run-log program))
+                   (define-values (result messages) (run-subprogram program))
                    (parameterize ([current-output-port (current-error-port)])
                      (write-message-log messages (current-message-formatter)))
                    (halt (if (eq? result FAILURE) 1 0) null))))))

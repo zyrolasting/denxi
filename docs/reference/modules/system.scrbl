@@ -2,7 +2,7 @@
 
 @require[@for-label[racket/base
                     racket/contract
-                    xiden/logged
+                    xiden/subprogram
                     xiden/message
                     xiden/system]
          @for-syntax[xiden/system]
@@ -38,8 +38,8 @@ A syntax class that matches members of @racket[ALL_OS_SYMS].
               [#:cwd wd path-string? (current-directory)]
               [command path-string?]
               [arguments (or/c path-string? string-no-nuls? bytes-no-nuls?)] ...)
-              logged?]{
-Returns a @tech{logged procedure} @racketid[P] called for its effect.
+              subprogram?]{
+Returns a @tech{subprogram} @racketid[P] called for its effect.
 
 @racketid[P] creates a subprocess with the given @racket[command] and
 @racket[arguments], with @racket[wd] set as the working directory.

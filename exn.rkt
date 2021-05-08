@@ -15,8 +15,8 @@
                 any)]
 
           [exc (->* ((unconstrained-domain-> exn?))
-                          #:rest list?
-                          (unconstrained-domain-> exn?))]
+                    #:rest list?
+                    (unconstrained-domain-> exn?))]
           [make-xiden-error
            (->* ((unconstrained-domain-> exn?) string?)
                 (#:fields null)

@@ -23,7 +23,6 @@
          "input.rkt"
          "integrity.rkt"
          "localstate.rkt"
-         "logged.rkt"
          "message.rkt"
          "monad.rkt"
          "pkgdef/static.rkt"
@@ -34,6 +33,7 @@
          "setting.rkt"
          "source.rkt"
          "string.rkt"
+         "subprogram.rkt"
          "system.rkt"
          "url.rkt")
 
@@ -41,7 +41,7 @@
   (require racket/function
            rackunit
            (submod "localstate.rkt" test)
-           (submod "logged.rkt" test)
+           (submod "subprogram.rkt" test)
            "file.rkt"
            "setting.rkt"))
 
@@ -85,7 +85,7 @@
    build))
 
 (define (output-not-found name)
-  (logged-failure ($package:output:undefined)))
+  (subprogram-failure ($package:output:undefined)))
 
 (define empty-package
   (package ""
@@ -117,7 +117,7 @@
                               (or link-path-or-#f (package-name pkg))
                               pkg)
 
-       (logged-unit (void))))
+       (subprogram-unit (void))))
 
 
 ;===============================================================================
@@ -145,7 +145,7 @@
          ; The reader/expander guards in read-package-definition
          ; prevent arbitrary code from reaching here.
          (eval overridden module-namespace)
-         (logged-unit (dynamic-require `',(cadr overridden) 'pkg)))))
+         (subprogram-unit (dynamic-require `',(cadr overridden) 'pkg)))))
 
 
 (define (find-original-package-definition pkgdef-origin-variant max-size)
@@ -180,8 +180,8 @@
   (define package-name (get-static-abbreviated-query code-override))
   (define input-overrides (find-per-input-overrides package-name override-specs))
   (make-package-definition-datum #:id (make-id)
-   (bare-racket-module-code
-    (override-inputs code-override input-overrides))))
+                                 (bare-racket-module-code
+                                  (override-inputs code-override input-overrides))))
 
 
 (define (make-id)
@@ -194,12 +194,12 @@
                                          (random 0 10))))))))
 
 (define (fetch-package-definition name source max-size)
-  (logged-fetch name
-                source
-                (λ (from-source est-size)
-                  (make-limited-input-port from-source
-                                           (min max-size est-size)
-                                           #f))))
+  (subprogram-fetch name
+                    source
+                    (λ (from-source est-size)
+                      (make-limited-input-port from-source
+                                               (min max-size est-size)
+                                               #f))))
 
 
 
@@ -238,16 +238,16 @@
                                output-name
                                link-path
                                pkg)
-  (logged-combine (mdo (validate-requested-output pkg output-name) ; 3.1
-                       (validate-inputs pkg)
-                       (validate-os-support pkg)
-                       (validate-racket-support #:allow-unsupported? allow-unsupported-racket? pkg)
-                       (reuse-or-build-package-output pkg output-name link-path)) ; 3.2
-                  (λ (to-wrap messages)
-                    (cons ($package:log (abbreviate-exact-package-query (package->package-query pkg))
-                                        output-name
-                                        (reverse to-wrap))
-                          messages))))
+  (subprogram-combine (mdo (validate-requested-output pkg output-name) ; 3.1
+                           (validate-inputs pkg)
+                           (validate-os-support pkg)
+                           (validate-racket-support #:allow-unsupported? allow-unsupported-racket? pkg)
+                           (reuse-or-build-package-output pkg output-name link-path)) ; 3.2
+                      (λ (to-wrap messages)
+                        (cons ($package:log (abbreviate-exact-package-query (package->package-query pkg))
+                                            output-name
+                                            (reverse to-wrap))
+                              messages))))
 
 ;-------------------------------------------------------------------------------
 ; 3.1: Validation
@@ -255,21 +255,21 @@
 ; Makes sure that the package agrees with the environment and runtime
 ; configuration.
 
-(define-logged (validate-inputs pkg)
+(define-subprogram (validate-inputs pkg)
   (for ([input (in-list (package-inputs pkg))])
     (when (abstract-package-input? input)
       ($fail ($package:abstract-input (package-input-name input)))))
   ($use pkg))
 
 
-(define-logged (validate-os-support pkg)
+(define-subprogram (validate-os-support pkg)
   (let ([supported (package-os-support pkg)])
     (if (member (system-type 'os) supported)
         ($use pkg)
         ($fail ($package:unsupported-os supported)))))
 
 
-(define-logged (validate-racket-support #:allow-unsupported? allow-unsupported? pkg)
+(define-subprogram (validate-racket-support #:allow-unsupported? allow-unsupported? pkg)
   (let ([racket-support (check-racket-version-ranges (version) (package-racket-versions pkg))])
     (case racket-support
       [(supported undeclared) ($use pkg)]
@@ -279,7 +279,7 @@
            ($fail ($package:unsupported-racket-version racket-support)))])))
 
 
-(define-logged (validate-requested-output pkg requested)
+(define-subprogram (validate-requested-output pkg requested)
   (let ([available (package-output-names pkg)])
     (if (member requested available)
         ($use pkg)
@@ -288,13 +288,13 @@
 
 (module+ test
   (let ([ev (build-package [output-names (list DEFAULT_STRING)])])
-    (test-logged-procedure
+    (test-subprogram-procedure
      "Allow only defined outputs"
      (validate-requested-output ev DEFAULT_STRING)
      (λ (val messages)
        (check-eq? val ev)
        (check-pred null? messages)))
-    (test-logged-procedure
+    (test-subprogram-procedure
      "Reject unavailable outputs"
      (validate-requested-output ev "other")
      (λ (val messages)
@@ -307,14 +307,14 @@
                                           (artifact (sources "s")))
                            (package-input "c2"
                                           (artifact (sources "s2"))))])])
-    (test-logged-procedure
+    (test-subprogram-procedure
      "Allow all concrete inputs"
      (validate-inputs ev)
      (λ (val messages)
        (check-eq? val ev)
        (check-pred null? messages))))
 
-  (test-logged-procedure
+  (test-subprogram-procedure
    "Disallow abstract inputs"
    (validate-inputs
     (build-package [inputs (list (package-input "concrete"
@@ -329,7 +329,7 @@
 
 
   (let ([other-os (filter (λ (v) (not (eq? v (system-type 'os)))) ALL_OS_SYMS)])
-    (test-logged-procedure
+    (test-subprogram-procedure
      "Disallow packages that don't list current os support"
      (validate-os-support (build-package [os-support other-os]))
      (λ (val messages)
@@ -338,7 +338,7 @@
                     (list ($package:unsupported-os (? (λ (v) (equal? v other-os)) _)))))))
 
   (let ([ev (build-package [os-support (list (system-type 'os))])])
-    (test-logged-procedure
+    (test-subprogram-procedure
      "Allow packages that support the current os"
      (validate-inputs ev)
      (λ (val messages)
@@ -349,14 +349,14 @@
     (define with-unsupported-version
       (build-package [racket-versions '("0.0")]))
 
-    (test-logged-procedure
+    (test-subprogram-procedure
      "Detect packages that declare an unsupported Racket version"
      (validate-racket-support #:allow-unsupported? #f with-unsupported-version)
      (λ (val msg)
        (check-pred $package:unsupported-racket-version?
                    (car msg))))
 
-    (test-logged-procedure
+    (test-subprogram-procedure
      "Conditionally allow unsupported Racket versions"
      (validate-racket-support #:allow-unsupported? #t with-unsupported-version)
      (λ (val msg) (check-pred null? msg)))))
@@ -380,18 +380,18 @@
             (reuse-package-output pkg output-name variant link-path)]
            [else
             (mdo temp-directory := (build-package-output pkg output-name)
-                 directory-record := (logged-unit (make-addressable-directory temp-directory))
+                 directory-record := (subprogram-unit (make-addressable-directory temp-directory))
                  (record-package-output pkg
                                         output-name
                                         directory-record
                                         link-path))]))))
 
-(define-logged (reuse-package-output pkg output-name output-record-inst link-path)
+(define-subprogram (reuse-package-output pkg output-name output-record-inst link-path)
   ($attach (make-addressable-link (find-path-record (output-record-path-id output-record-inst)) link-path)
            ($package:output:reused)))
 
 (define (build-package-output pkg output-name)
-  (logged-acyclic
+  (subprogram-acyclic
    (~a (abbreviate-exact-package-query (package->package-query pkg)) ", " output-name)
    (λ (messages)
      (define tmp
@@ -401,13 +401,13 @@
      (define-values (result messages*)
        (parameterize ([current-directory tmp]
                       [current-inputs (package-inputs pkg)])
-         (run-log ((package-build pkg) output-name)
-                  messages)))
+         (run-subprogram ((package-build pkg) output-name)
+                         messages)))
 
      (values (if (eq? result FAILURE) FAILURE tmp)
              messages*))))
 
-(define-logged (record-package-output pkg output-name directory-record link-path)
+(define-subprogram (record-package-output pkg output-name directory-record link-path)
   (declare-output (package-provider pkg)
                   (package-name pkg)
                   (package-edition pkg)
@@ -422,21 +422,21 @@
 
 (module+ test
   (test-workspace "Stop cyclic package builds"
-    (call-with-temporary-file
-     (λ (tmp-file-path)
-       (write-to-file #:exists 'truncate/replace
-                      (make-package-definition-datum
-                       `((output ,DEFAULT_STRING
-                                 (install #f #f ,(~a tmp-file-path)))))
-                      tmp-file-path)
-       (call-with-values (install #f #f (~a tmp-file-path))
-                         (λ (v m)
-                           (check-eq? v FAILURE)
-                           (check-match
-                            (car m)
-                            ($package:log _ _
-                                          (list ($fetch _ _)
-                                                ($package:log _ _ (list ($cycle _))))))))))))
+                  (call-with-temporary-file
+                   (λ (tmp-file-path)
+                     (write-to-file #:exists 'truncate/replace
+                                    (make-package-definition-datum
+                                     `((output ,DEFAULT_STRING
+                                               (install #f #f ,(~a tmp-file-path)))))
+                                    tmp-file-path)
+                     (call-with-values (install #f #f (~a tmp-file-path))
+                                       (λ (v m)
+                                         (check-eq? v FAILURE)
+                                         (check-match
+                                          (car m)
+                                          ($package:log _ _
+                                                        (list ($fetch _ _)
+                                                              ($package:log _ _ (list ($cycle _))))))))))))
 
 
 

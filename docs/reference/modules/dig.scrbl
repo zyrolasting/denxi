@@ -8,7 +8,7 @@
                     xiden/artifact
                     xiden/dig
                     xiden/input
-                    xiden/logged
+                    xiden/subprogram
                     xiden/message
                     xiden/package
                     xiden/query
@@ -50,17 +50,17 @@ failing application.
 
 
 @defthing[shovel/c chaperone-contract?
-                   #:value (-> any/c (logged/c artifact-info?))]{
+                   #:value (-> any/c (subprogram/c artifact-info?))]{
 A @tech/reference{chaperone contract} for procedures that carry out
-@tech{digs}. They must return @tech{logged procedures} to capture
+@tech{digs}. They must return @tech{subprograms} to capture
 possible @tech{messages} for failure conditions.
 }
 
 
 @defproc[(find-artifact [hint any/c]
                         [shovel shovel/c (current-shovel)])
-                        (logged/c artifact-info?)]{
-Returns a @tech{logged procedure} used to find an @tech{artifact} with
+                        (subprogram/c artifact-info?)]{
+Returns a @tech{subprogram} used to find an @tech{artifact} with
 the given @tech{shovel}.
 
 If @racket[hint] is already an @tech{artifact}, then it will be

@@ -5,9 +5,9 @@
          racket/system
          syntax/parse
          "contract.rkt"
-         "logged.rkt"
          "message.rkt"
-         "setting.rkt")
+         "setting.rkt"
+         "subprogram.rkt")
 
 (provide (all-from-out racket/system)
          os-sym
@@ -21,7 +21,7 @@
                      #:timeout exact-positive-integer?
                      #:stdin (or/c #f (and/c output-port? file-stream-port?)))
                     #:rest (listof path-string?)
-                    logged?)]))
+                    subprogram?)]))
 
 (define+provide-setting XIDEN_SUBPROCESS_TIMEOUT_S (>=/c 0) (* 30 60))
 
@@ -83,13 +83,13 @@
              stderr<))])
 
 
-(define-logged (run #:expected-exit-codes [expected-exit-codes '(0)]
-                    #:timeout [timeout (* 60 60)]
-                    #:stdin [user-stdin #f]
-                    #:cwd [wd (current-directory)]
-                    #:fail-on-stderr? [fail-on-stderr? #t]
-                    #:controller [controller (subprocess-controller/production)]
-                    cmd . args)
+(define-subprogram (run #:expected-exit-codes [expected-exit-codes '(0)]
+                        #:timeout [timeout (* 60 60)]
+                        #:stdin [user-stdin #f]
+                        #:cwd [wd (current-directory)]
+                        #:fail-on-stderr? [fail-on-stderr? #t]
+                        #:controller [controller (subprocess-controller/production)]
+                        cmd . args)
   (define cmd-actual (find-exe controller cmd))
 
   (unless cmd-actual
@@ -146,7 +146,7 @@
     (call-with-values (λ ()
                         (parameterize ([current-output-port to-nowhere]
                                        [current-error-port to-nowhere])
-                          (run-log l null)))
+                          (run-subprogram l null)))
                       (λ (v messages)
                         (test-case msg
                           (if should-fail?
@@ -219,18 +219,18 @@
   #;(define-values (i o) (make-pipe))
   #;(define pi (peeking-input-port i))
   #;(test-subprocess "Allow user-defined standard input"
-                   #:should-fail? #f
-                   (run #:fail-on-stderr? #f
-                        #:stdin pi
-                        #:controller
-                        (subprocess-controller/mock 0 0
-                                                    (λ (so si . _)
-                                                      (check-eq? pi i)
-                                                      (write-bytes #"abc" o)
-                                                      (flush-output o)
-                                                      (close-output-port o)
-                                                      (values from-nothing
-                                                              to-nowhere
-                                                              i)))
-                        "stdin")
-                   ($subprocess:report _ _ _ _ _ _ _ #t)))
+                     #:should-fail? #f
+                     (run #:fail-on-stderr? #f
+                          #:stdin pi
+                          #:controller
+                          (subprocess-controller/mock 0 0
+                                                      (λ (so si . _)
+                                                        (check-eq? pi i)
+                                                        (write-bytes #"abc" o)
+                                                        (flush-output o)
+                                                        (close-output-port o)
+                                                        (values from-nothing
+                                                                to-nowhere
+                                                                i)))
+                          "stdin")
+                     ($subprocess:report _ _ _ _ _ _ _ #t)))

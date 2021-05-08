@@ -3,7 +3,7 @@
 @require[@for-label[racket
                     xiden/archive
                     xiden/input
-                    xiden/logged
+                    xiden/subprogram
                     xiden/monad
                     @only-in[xiden/pkgdef output]]]
 
@@ -76,6 +76,6 @@ passed the value you want plus extra @italic{stuff} to
 @racket[extract].
 
 If you look at the documentation for a function in Xiden and see that
-it returns an unfamiliar value like @racket[(logged/c string?)]
+it returns an unfamiliar value like @racket[(subprogram/c string?)]
 instead of just @racket[string?], it is probably meant for use as a
 monadic type, where @racket[:=] pulls out the string you want.

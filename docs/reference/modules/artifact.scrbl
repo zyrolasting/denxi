@@ -3,7 +3,7 @@
 @require[@for-label[racket/base
                     racket/contract
                     racket/path
-                    xiden/logged
+                    xiden/subprogram
                     xiden/artifact
                     xiden/integrity
                     xiden/monad
@@ -33,15 +33,15 @@ An abbreviated constructor for @racket[artifact-info].
 
 
 @defproc[(verify-artifact [arti artifact-info?] [pathrec path-record?])
-         (logged/c void?)]{
-Returns a @tech{logged procedure} that fails in the event an
+         (subprogram/c void?)]{
+Returns a @tech{subprogram} that fails in the event an
 @tech{artifact} does not meet the restrictions set by the
 @tech{runtime configuration}.
 }
 
 @defproc[(fetch-artifact [name string?] [arti artifact-info?])
-         (logged/c path-record?)]{
-Like @racket[logged-fetch], but the content is expected to be an
+         (subprogram/c path-record?)]{
+Like @racket[subprogram-fetch], but the content is expected to be an
 @tech{artifact}.
 }
 

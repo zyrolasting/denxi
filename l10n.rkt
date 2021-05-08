@@ -4,20 +4,20 @@
 
 (provide get-message-formatter
          get-localized-string
-         run+print-log)
+         run+print-subprogram)
 
 (require racket/list
          racket/runtime-path
          racket/sequence
          "codec.rkt"
          "format.rkt"
-         "logged.rkt"
+         "subprogram.rkt"
          "printer.rkt")
 
 (define-runtime-path here "l10n")
 
-(define (run+print-log logged-inst)
-  (define-values (result messages) (run-log logged-inst))
+(define (run+print-subprogram subprogram-inst)
+  (define-values (result messages) (run-subprogram subprogram-inst))
   (define format-message (get-message-formatter))
   (sequence-for-each
    (λ (m) (write-message m format-message))

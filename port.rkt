@@ -144,8 +144,8 @@
               #:est-size +inf.0
               #:on-status (λ (m)
                             (check-equal? m
-                             ($transfer:scope "anon"
-                                              ($transfer:budget:rejected 100 +inf.0))))))
+                                          ($transfer:scope "anon"
+                                                           ($transfer:budget:rejected 100 +inf.0))))))
 
   (test-case "Time out on reads that block for too long"
     ; Reading from a pipe in this way will block indefinitely.

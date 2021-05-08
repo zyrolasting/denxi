@@ -109,7 +109,7 @@
                  #:buffer-size exact-positive-integer?
                  #:timeout-ms (>=/c 0))
                 (#:cache-key (or/c bytes? #f))
-               path-record?)]
+                path-record?)]
           [make-addressable-directory
            (-> directory-exists?
                path-record?)]
@@ -614,7 +614,7 @@
         (define error-info (exn:fail:sql-info e))
         (unless (regexp-match? #rx"transaction within a transaction"
                                (cdr (assoc 'message error-info)))
-            (raise e)))])
+          (raise e)))])
     (query-exec+ "begin exclusive transaction;"))
   (values end-transaction!
           rollback-transaction!))
@@ -1019,94 +1019,94 @@
     (run-db-test msg (λ () body ...)))
 
   (test-db "Declare paths"
-    (declare-path "a/b/c" #"digest")
-    (define expected (path-record 1 "a/b/c" #"digest" sql-null))
-    (check-equal? (find-exactly-one (path-record #f "a/b/c" #f #f))
-                  expected)
+           (declare-path "a/b/c" #"digest")
+           (define expected (path-record 1 "a/b/c" #"digest" sql-null))
+           (check-equal? (find-exactly-one (path-record #f "a/b/c" #f #f))
+                         expected)
 
-    (check-equal? (find-path-digest "a/b/c")
-                  #"digest")
+           (check-equal? (find-path-digest "a/b/c")
+                         #"digest")
 
-    (test-case "Return existing records when trying to save a duplicate path"
-      (check-equal? (declare-path "a/b/c" #"different")
-                    expected))
+           (test-case "Return existing records when trying to save a duplicate path"
+             (check-equal? (declare-path "a/b/c" #"different")
+                           expected))
 
-    (test-case "Declare a path key"
-      (gen-save (path-key-record #f #"name" 1))
-      (define actual (look-up-path #"name"))
-      (check-equal? actual expected)
-      (test-equal? "Use path key with make-addressable-file"
-                   (make-addressable-file #:cache-key #"name"
-                                          #:on-status void
-                                          #:buffer-size 0
-                                          #:timeout-ms 0
-                                          #:max-size 0
-                                          ""
-                                          (open-input-bytes #"")
-                                          1)
-                   expected)
+           (test-case "Declare a path key"
+             (gen-save (path-key-record #f #"name" 1))
+             (define actual (look-up-path #"name"))
+             (check-equal? actual expected)
+             (test-equal? "Use path key with make-addressable-file"
+                          (make-addressable-file #:cache-key #"name"
+                                                 #:on-status void
+                                                 #:buffer-size 0
+                                                 #:timeout-ms 0
+                                                 #:max-size 0
+                                                 ""
+                                                 (open-input-bytes #"")
+                                                 1)
+                          expected)
 
 
-      (test-case "Path keys are deleted when paths are deleted"
-        (delete-record actual)
-        (check-false (look-up-path #"name")))))
+             (test-case "Path keys are deleted when paths are deleted"
+               (delete-record actual)
+               (check-false (look-up-path #"name")))))
 
 
   (test-db "Declare an output"
-    (define pathrec
-      (declare-path "outpath" #"abcd"))
+           (define pathrec
+             (declare-path "outpath" #"abcd"))
 
-    (define revision-names
-      '("prod" "live"))
+           (define revision-names
+             '("prod" "live"))
 
-    ; We can assume the ID is 1 because this is always a fresh database
-    (define edition-id 1)
+           ; We can assume the ID is 1 because this is always a fresh database
+           (define edition-id 1)
 
-    (define outrec
-      (declare-output "example.com"
-                      "widget"
-                      DEFAULT_STRING
-                      12
-                      revision-names
-                      "lib"
-                      pathrec))
+           (define outrec
+             (declare-output "example.com"
+                             "widget"
+                             DEFAULT_STRING
+                             12
+                             revision-names
+                             "lib"
+                             pathrec))
 
-    (check-equal? outrec (output-record 1 1 1 "lib"))
+           (check-equal? outrec (output-record 1 1 1 "lib"))
 
-    (for ([name (in-list revision-names)])
-      (test-equal? (format "Resolve revision name ~a" name)
-                   (find-revision-number name edition-id)
-                   12)))
+           (for ([name (in-list revision-names)])
+             (test-equal? (format "Resolve revision name ~a" name)
+                          (find-revision-number name edition-id)
+                          12)))
 
 
   (test-db "Query installed outputs"
-    (define (mock-install query revision-number revision-names)
-      (declare-output (parsed-package-query-provider-name query)
-                      (parsed-package-query-package-name query)
-                      (parsed-package-query-edition-name query)
-                      revision-number
-                      revision-names
-                      (~a "out" revision-number)
-                      (declare-path (~a "path" revision-number)
-                                    #"abcd")))
+           (define (mock-install query revision-number revision-names)
+             (declare-output (parsed-package-query-provider-name query)
+                             (parsed-package-query-package-name query)
+                             (parsed-package-query-edition-name query)
+                             revision-number
+                             revision-names
+                             (~a "out" revision-number)
+                             (declare-path (~a "path" revision-number)
+                                           #"abcd")))
 
-    (define (mock-install-line qs N)
-      (define query (coerce-parsed-package-query qs))
-      (for ([i (in-range N)])
-        (mock-install query i (list (format "rev-~a" i)
-                                    (format "alt-~a" i)))))
+           (define (mock-install-line qs N)
+             (define query (coerce-parsed-package-query qs))
+             (for ([i (in-range N)])
+               (mock-install query i (list (format "rev-~a" i)
+                                           (format "alt-~a" i)))))
 
-    (mock-install-line "a.example.com:widget:default" 10)
+           (mock-install-line "a.example.com:widget:default" 10)
 
-    (define actual-results
-      (sequence->list
-       (in-values-sequence
-        (in-xiden-objects "a.example.com:widget:default:rev-3:7:ei" "lib"))))
+           (define actual-results
+             (sequence->list
+              (in-values-sequence
+               (in-xiden-objects "a.example.com:widget:default:rev-3:7:ei" "lib"))))
 
-    (check-equal? (map (match-lambda [(list o _ rev-n _ path) (list rev-n o path)]) actual-results)
-                  (build-list 4
-                              (λ (i [n (- 7 i)])
-                                (list n (~a "out" n) (~a "path" n))))))
+           (check-equal? (map (match-lambda [(list o _ rev-n _ path) (list rev-n o path)]) actual-results)
+                         (build-list 4
+                                     (λ (i [n (- 7 i)])
+                                       (list n (~a "out" n) (~a "path" n))))))
 
 
   (test-case "Infer clauses for a SELECT query to find missing information"

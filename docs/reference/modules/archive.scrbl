@@ -10,7 +10,7 @@
            xiden/archive
            xiden/input
            xiden/file
-           xiden/logged]
+           xiden/subprogram]
            "../../shared.rkt"]
 
 @title{Archives}
@@ -29,13 +29,13 @@ The default value always returns @racket[#f].
 }
 
 
-@defproc[(extract [in (or/c path-string? input-port?)]) (logged/c (or/c FAILURE void?))]{
+@defproc[(extract [in (or/c path-string? input-port?)]) (subprogram/c (or/c FAILURE void?))]{
 
 @margin-note{@racket[extract] offers no control over the destination
 paths of extracted files. Use @racket[in-paths] or @racket[path-matching]
 to select extracted items.}
 
-Returns a @tech{logged procedure} @racketid[P] that extracts files
+Returns a @tech{subprogram} @racketid[P] that extracts files
 from @racket[in] with respect to @racket[(current-directory)].
 
 If @racket[in] is a @racket[path-string?], then @racket[(extract in)]
@@ -58,7 +58,7 @@ then @racketid[P] behaves like @racket[untar].  If @racket{.tgz} or
 }
 
 
-@defproc[(extract-input [name string?] [#:keep? any/c #f]) logged?]{
+@defproc[(extract-input [name string?] [#:keep? any/c #f]) subprogram?]{
 Like @racket[extract], except archive data is drawn from the input
 found using @racket[(input-ref name)] and @racket[resolve-input].  If
 @racket[keep?] is @racket[#f], the input is released using

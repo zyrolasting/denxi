@@ -12,20 +12,20 @@
                 package-input?)]
           [resolve-input
            (-> package-input?
-               (logged/c path-string?))]
+               (subprogram/c path-string?))]
           [release-input
            (-> package-input?
-               (logged/c void?))]
+               (subprogram/c void?))]
           [keep-input
            (-> string?
-               (logged/c path-string?))]
+               (subprogram/c path-string?))]
           [find-input
            (-> (listof package-input?)
                path-string?
-               (logged/c package-input?))]
+               (subprogram/c package-input?))]
           [input-ref
            (-> string?
-               (logged/c package-input?))]
+               (subprogram/c package-input?))]
           [current-inputs
            (parameter/c (listof package-input?))]))
 
@@ -35,7 +35,6 @@
          "format.rkt"
          "integrity.rkt"
          "localstate.rkt"
-         "logged.rkt"
          "message.rkt"
          "monad.rkt"
          "port.rkt"
@@ -43,7 +42,8 @@
          "query.rkt"
          "signature.rkt"
          "source.rkt"
-         "string.rkt")
+         "string.rkt"
+         "subprogram.rkt")
 
 (define+provide-message $input (name))
 (define+provide-message $input:not-found $input ())
@@ -63,7 +63,7 @@
 (define (input-ref name)
   (find-input (current-inputs) name))
 
-(define-logged (find-input inputs name)
+(define-subprogram (find-input inputs name)
   (for ([i (in-list inputs)])
     (when (equal? name (package-input-name i))
       ($use i)))
@@ -73,7 +73,7 @@
   (mdo i := (input-ref name)
        (resolve-input i)))
 
-(define-logged (release-input input)
+(define-subprogram (release-input input)
   (with-handlers ([exn:fail:filesystem? (λ _ ($use (void)))])
     ($use (delete-file (package-input-name input)))))
 
@@ -81,20 +81,20 @@
   (mdo arti           := (find-artifact (package-input-plinth input))
        file-record    := (fetch-artifact (package-input-name input) arti)
        (verify-artifact arti file-record) ; Security critical
-       (logged-unit file-record)))
+       (subprogram-unit file-record)))
 
 (define (resolve-input input)
   (mdo file-record    := (fetch-input input)
-       link-name      := (logged-unit (package-input-name input))
-       link-record    := (logged-unit (make-addressable-link file-record link-name))
-       (logged-unit link-name)))
+       link-name      := (subprogram-unit (package-input-name input))
+       link-record    := (subprogram-unit (make-addressable-link file-record link-name))
+       (subprogram-unit link-name)))
 
 (define-source #:key get-untrusted-source-key (untrusted-source [input package-input?])
   (define subprogram
     (mdo record := (fetch-input input)
-         (logged-unit
+         (subprogram-unit
           (%fetch (file-source (build-workspace-path (path-record-path record)))))))
-  (define-values (result messages) (run-log subprogram null))
+  (define-values (result messages) (run-subprogram subprogram null))
   (when (eq? result FAILURE)
     (%fail messages)))
 

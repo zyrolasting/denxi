@@ -5,7 +5,7 @@
                     xiden/cmdline
                     xiden/cli
                     xiden/cli-flag
-                    xiden/logged
+                    xiden/subprogram
                     xiden/message
                     xiden/source]
           "../../shared.rkt"]

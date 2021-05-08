@@ -30,7 +30,7 @@
          "integrity.rkt"
          "l10n.rkt"
          "localstate.rkt"
-         "logged.rkt"
+         "subprogram.rkt"
          "message.rkt"
          "openssl.rkt"
          "package.rkt"
@@ -151,7 +151,7 @@
         (set! e
               (call-with-trusted-sandbox-configuration
                (λ () (make-evaluator PACKAGE_DEFINITION_MODULE_LANG)))))
-        e)))
+      e)))
 
 
 (define (arg->value/evaluated flag a)
@@ -426,11 +426,11 @@
 
     (define-values (outside-parameterization inside-parameterization positional)
       (parse-command-line "test" #("-m" "1" "2"
-                                   "--multi" "3" "4"
-                                   "--TEST_MULTI" "5" "6"
-                                   "-a" "once"
-                                   "--quad" "what" "else" "you" "got?"
-                                   "positional" "arguments")
+                                        "--multi" "3" "4"
+                                        "--TEST_MULTI" "5" "6"
+                                        "-a" "once"
+                                        "--quad" "what" "else" "you" "got?"
+                                        "positional" "arguments")
                           (make-cli-flag-table multi-flag once-each-flag once-any-flag)
                           (λ (flags formal1 formal2)
                             (check-equal? (map cli-flag-state-flag-string flags)

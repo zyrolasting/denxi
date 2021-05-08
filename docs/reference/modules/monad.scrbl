@@ -1,6 +1,6 @@
 #lang scribble/manual
 
-@require[@for-label[racket/base racket/contract xiden/logged xiden/monad]
+@require[@for-label[racket/base racket/contract xiden/subprogram xiden/monad]
           "../../shared.rkt"]
 
 @title{Monads}
@@ -39,9 +39,9 @@ term is available, each term must be of the same monadic type.  In
 other words, @racket[mdo] is monomorphic.
 
 @racket[:=] is the monadic bind operator. Here's an example in terms
-of @tech{logged procedures}:
+of @tech{subprograms}:
 
-@racketblock[(mdo number := (logged-unit 1)
+@racketblock[(mdo number := (subprogram-unit 1)
                   number)]
 }
 

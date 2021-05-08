@@ -7,11 +7,11 @@
   [verify-artifact
    (-> artifact-info?
        path-record?
-       (logged/c void?))]
+       (subprogram/c void?))]
   [fetch-artifact
    (-> string?
        artifact-info?
-       (logged/c path-record?))]
+       (subprogram/c path-record?))]
   [artifact
    (->* (source-variant?)
         ((or/c #f well-formed-integrity-info/c)
@@ -22,7 +22,7 @@
 (require "format.rkt"
          "integrity.rkt"
          "localstate.rkt"
-         "logged.rkt"
+         "subprogram.rkt"
          "monad.rkt"
          "openssl.rkt"
          "port.rkt"
@@ -44,21 +44,21 @@
 (define (verify-artifact arti record)
   (mdo (check-artifact-integrity arti (path-record-path record))
        (check-artifact-signature arti (path-record-path record))
-       (logged-unit (void))))
+       (subprogram-unit (void))))
 
 
 (define (fetch-artifact name arti)
-  (logged-fetch name
-                (artifact-info-source arti)
-                (λ (in est-size)
-                  (make-addressable-file
-                   #:cache-key (make-source-key (artifact-info-source arti))
-                   #:max-size (mebibytes->bytes (XIDEN_FETCH_TOTAL_SIZE_MB))
-                   #:buffer-size (mebibytes->bytes (XIDEN_FETCH_BUFFER_SIZE_MB))
-                   #:timeout-ms (XIDEN_FETCH_TIMEOUT_MS)
-                   #:on-status (make-on-status (current-message-formatter))
-                   name
-                   in est-size))))
+  (subprogram-fetch name
+                    (artifact-info-source arti)
+                    (λ (in est-size)
+                      (make-addressable-file
+                       #:cache-key (make-source-key (artifact-info-source arti))
+                       #:max-size (mebibytes->bytes (XIDEN_FETCH_TOTAL_SIZE_MB))
+                       #:buffer-size (mebibytes->bytes (XIDEN_FETCH_BUFFER_SIZE_MB))
+                       #:timeout-ms (XIDEN_FETCH_TIMEOUT_MS)
+                       #:on-status (make-on-status (current-message-formatter))
+                       name
+                       in est-size))))
 
 
 (define ((make-on-status formatter) m)
@@ -70,7 +70,7 @@
       (write-message #:newline? #f m formatter)))
 
 
-(define-logged (check-artifact-integrity arti workspace-relative-path)
+(define-subprogram (check-artifact-integrity arti workspace-relative-path)
   (define status
     (check-integrity #:trust-bad-digest (XIDEN_TRUST_BAD_DIGEST)
                      #:trust-message-digest-algorithms (XIDEN_TRUST_CHFS)
@@ -84,7 +84,7 @@
            status))
 
 
-(define-logged (check-artifact-signature arti path)
+(define-subprogram (check-artifact-signature arti path)
   (define siginfo (artifact-info-signature arti))
   (define intinfo (artifact-info-integrity arti))
 

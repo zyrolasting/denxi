@@ -8,7 +8,7 @@
          "cli-flag.rkt"
          "contract.rkt"
          "format.rkt"
-         "logged.rkt"
+         "subprogram.rkt"
          "message.rkt"
          "printer.rkt"
          "setting.rkt")
@@ -17,7 +17,7 @@
 (define exit-handler/c (-> exit-code/c any))
 (define arguments/c (or/c (vectorof string?) (listof string?)))
 (define program-log/c (or/c $message? (listof $message?)))
-(define bound-program/c (-> (-> exit-code/c messy-log/c any) any))
+(define bound-program/c (-> (-> exit-code/c subprogram-log/c any) any))
 (define argument-parser/c
   (-> arguments/c
       (values (listof cli-flag-state?)

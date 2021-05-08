@@ -4,7 +4,7 @@
                     racket/contract
                     racket/string
                     xiden/input
-                    xiden/logged
+                    xiden/subprogram
                     xiden/package
                     xiden/string
                     xiden/url
@@ -30,7 +30,7 @@
                      [metadata (hash/c symbol? string?)]
                      [inputs (listof package-input?)]
                      [output-names (listof non-empty-string?)]
-                     [build (-> non-empty-string? (logged/c void?))])]{
+                     [build (-> non-empty-string? (subprogram/c void?))])]{
 A @deftech{package} is an instance of @racket[package].
 
 @racket[description] is a human-readable summary of the package's purpose.
@@ -74,7 +74,7 @@ fields, prefer the values in the structure fields.
 @racketmodname[xiden/pkgdef] are always surjective, but might not be
 injective.}
 @racket[build] is function that maps the elements of
-@racket[output-names] to @tech{logged procedures}. Each logged
+@racket[output-names] to @tech{subprograms}. Each subprogram
 procedure installs software into @racket[current-directory] assuming
 @racket[current-inputs] is bound to @racket[inputs]. The behavior of
 @racket[build] is impacted by the @tech{runtime configuration}.
@@ -85,7 +85,7 @@ with the host system varies slightly. If @racket[build] is not
 injective, then it may create redundant data on disk because Xiden
 assumes that different output names imply different file
 distributions. If @racket[build] is not surjective, then a
-@tech{logged procedure} might be inaccessible.  This can happen if a
+@tech{subprogram} might be inaccessible.  This can happen if a
 @racket[package] instance is manually created with faulty data.
 Bijective @racket[build] procedures do not have these problems.
 }
@@ -96,18 +96,18 @@ The empty package claims to support all operating systems and versions
 of Racket.
 }
 
-@defthing[output-not-found (-> non-empty-string? logged?)]{
+@defthing[output-not-found (-> non-empty-string? subprogram?)]{
 The build procedure for the empty package.
 
-Returns a @tech{logged procedure} that always fails and adds
+Returns a @tech{subprogram} that always fails and adds
 @racket[$package:output:undefined] to the program log.
 }
 
 @defproc[(install [link-path (or/c #f path-string?)]
                   [output-name (or/c #f string?)]
                   [package-definition-variant any/c])
-                  logged?]{
-Returns a @tech{logged procedure} called for its effect.  The effect
+                  subprogram?]{
+Returns a @tech{subprogram} called for its effect.  The effect
 being that a symbolic link gets created at @racket[link-path],
 pointing to a directory. That directory contains the files
 corresponding to the @racket[output-name] defined in
@@ -119,7 +119,7 @@ link will match the name of the package.
 If @racket[output-name] is @racket[#f], then @racket[install] will use
 @racket[DEFAULT_STRING].
 
-The @tech{logged procedure} is not atomic, so failure may result in
+The @tech{subprogram} is not atomic, so failure may result in
 a broken intermediate state on disk. This procedure should be used
 in the context of a transaction to avoid this problem.
 
@@ -222,7 +222,7 @@ A @tech{message} from a package's runtime.
 
 @defstruct*[($package:log $package) ([query package-query?]
                                      [output-name string?]
-                                     [messages messy-log/c]) #:prefab]{
+                                     [messages subprogram-log/c]) #:prefab]{
 A @tech{message} containing other messages relevant to building a particular package output.
 }
 
