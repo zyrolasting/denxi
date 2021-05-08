@@ -227,7 +227,7 @@
                     'multi null 1 (λ (flag algo)
                                     (cons (string->symbol algo)
                                           (XIDEN_TRUST_CHFS)))
-                    '("md-algorithm")))
+                    '("cryptographic-hash-function")))
 
 (flag-out [++trust-cert]
           (cli-flag XIDEN_TRUST_CERTIFICATES

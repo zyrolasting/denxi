@@ -23,8 +23,8 @@ This value is subject to change for security reasons, and is not
 guarenteed to be available in the installed OpenSSL implementation.
 }
 
-@defthing[chf/c flat-contract? #:value (apply or/c md-algorithms)]{
-A contract that accepts one of the symbols in @racket[md-algorithms].
+@defthing[chf/c flat-contract? #:value (apply or/c cryptographic-hash-functions)]{
+A contract that accepts one of the symbols in @racket[cryptographic-hash-functions].
 }
 
 @defthing[md-bytes-source/c flat-contract? #:value (or/c path-string? bytes? input-port?)]{
@@ -34,11 +34,11 @@ Given @racket[(path-string? V)], the bytes are drawn from the file located at @r
 Given @racket[(bytes? V)] or @racket[(input-port? V)], the bytes are drawn directly from @racket[V].
 }
 
-@defthing[md-algorithms (listof symbol?)]{
+@defthing[cryptographic-hash-functions (listof symbol?)]{
 A list of symbols that represent supported message digest algorithms,
 a.k.a. cryptographic hash functions.
 
-Bound to @typeset-code[(pretty-format #:mode 'print md-algorithms)]
+Bound to @typeset-code[(pretty-format #:mode 'print cryptographic-hash-functions)]
 }
 
 @defsetting*[XIDEN_TRUST_CHFS]{

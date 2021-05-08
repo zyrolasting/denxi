@@ -10,7 +10,7 @@
          openssl
          (struct-out exn:fail:xiden:openssl)
          (contract-out
-          [md-algorithms
+          [cryptographic-hash-functions
            (non-empty-listof symbol?)]
           [chf/c
            flat-contract?]
@@ -27,7 +27,7 @@
 
 (define openssl (find-executable-path "openssl"))
 
-(define md-algorithms
+(define cryptographic-hash-functions
   '(md4
     md5
     sha1
@@ -48,7 +48,7 @@
 
 
 (define chf/c
-  (apply or/c md-algorithms))
+  (apply or/c cryptographic-hash-functions))
 
 
 (define+provide-setting XIDEN_TRUST_CHFS (listof chf/c) null)
