@@ -16,7 +16,7 @@
                     "../../shared.rkt"]
 
 
-@title{Data Sourcing}
+@title{Sources}
 
 @defmodule[xiden/source]
 
