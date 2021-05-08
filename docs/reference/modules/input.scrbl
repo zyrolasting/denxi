@@ -15,7 +15,7 @@
                     xiden/string]
          "../../shared.rkt"]
 
-@title{Resolving Inputs}
+@title{Package Inputs}
 
 @defmodule[xiden/input]
 
