@@ -15,12 +15,12 @@
 (provide (struct-out integrity-info)
          (contract-out
           [integrity
-           (-> md-algorithm/c
+           (-> chf/c
                source-variant?
                integrity-info?)]
           [make-sourced-digest
            (->* (source-variant?
-                 md-algorithm/c)
+                 chf/c)
                 (exhaust/c)
                 bytes?)]
           [fetch-digest
@@ -32,11 +32,11 @@
                (-> path-string? boolean?))]
           [make-trusted-integrity-info
            (->* (source-variant?)
-                (md-algorithm/c)
+                (chf/c)
                 integrity-info?)]
           [check-integrity
            (-> #:trust-bad-digest any/c
-               #:trust-message-digest-algorithms (listof md-algorithm/c)
+               #:trust-message-digest-algorithms (listof chf/c)
                any/c
                source-variant?
                $integrity?)]))
@@ -63,7 +63,7 @@
 
 (define well-formed-integrity-info/c
   (struct/c integrity-info
-            md-algorithm/c
+            chf/c
             source-variant?))
 
 

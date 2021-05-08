@@ -21,7 +21,7 @@
 @defmodule[xiden/dig/http]
 
 @defproc[(make-http-shovel [base-url url-variant?]
-                           [optional-chf (or/c #f md-algorithm/c) #f]
+                           [optional-chf (or/c #f chf/c) #f]
                            [optional-pubkey (or/c #f source-variant?) #f])
                            shovel/c]{
 Returns a @tech{shovel} used to find artifacts @italic{anticipating}

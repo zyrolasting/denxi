@@ -12,15 +12,15 @@
          (contract-out
           [md-algorithms
            (non-empty-listof symbol?)]
-          [md-algorithm/c
+          [chf/c
            flat-contract?]
           [DEFAULT_CHF
-           md-algorithm/c]
+           chf/c]
           [md-bytes-source/c
            flat-contract?]
           [make-digest
            (->* (md-bytes-source/c)
-                (md-algorithm/c)
+                (chf/c)
                 bytes?)]))
 
 (define-exn exn:fail:xiden:openssl exn:fail:xiden (exit-code output))
@@ -47,11 +47,11 @@
   (or/c path-string? bytes? input-port?))
 
 
-(define md-algorithm/c
+(define chf/c
   (apply or/c md-algorithms))
 
 
-(define+provide-setting XIDEN_TRUST_CHFS (listof md-algorithm/c) null)
+(define+provide-setting XIDEN_TRUST_CHFS (listof chf/c) null)
 
 
 (define DEFAULT_CHF 'sha3-384)

@@ -24,7 +24,7 @@ of the @tech{digsite metaphor}, the shovels defined herein always
 follow symbolic links.
 
 @defproc[(make-filesystem-shovel [directory-path complete-path?]
-                                 [chf md-algorithm/c]
+                                 [chf chf/c]
                                  [public-key-source source-variant?])
                                  shovel/c]{
 Returns a procedure @racket[S], which attempts to produce
@@ -111,7 +111,7 @@ Formally, signature information appears in the artifact when
 
 
 @defproc[(make-filesystem-shovel/pkgdef [directory-path complete-path?]
-                                        [chf md-algorithm/c]
+                                        [chf chf/c]
                                         [defaults package-query-defaults-implementation/c default-package-query-defaults])
                                         dig/c]{
 Like @racket[make-filesystem-shovel], but specialized for files

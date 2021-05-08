@@ -202,7 +202,7 @@
   (λ (stx)
     (syntax-case stx ()
       [(_ id)
-       #'(? md-algorithm/c id)])))
+       #'(? chf/c id)])))
 
 (define-match-expander pkexpr
   (λ (stx)

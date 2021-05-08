@@ -17,14 +17,14 @@
 @defmodule[xiden/integrity]
 
 
-@defstruct*[integrity-info ([algorithm md-algorithm/c] [digest source-variant?])]{
+@defstruct*[integrity-info ([algorithm chf/c] [digest source-variant?])]{
 Represents integrity information for bytes. Given bytes from some
 source, the bytes pass an @tech{integrity check} if they, when applied to
 @racket[algorithm], produce a value @racket[equal?] to
 @racket[digest].
 }
 
-@defproc[(make-trusted-integrity-info [source source-variant?] [chf md-algorithm/c DEFAULT_CHF]) integrity-info?]{
+@defproc[(make-trusted-integrity-info [source source-variant?] [chf chf/c DEFAULT_CHF]) integrity-info?]{
 Returns integrity information with a new digest computed from the
 @racket[source]'s bytes. No safety limits are places on bytes drawn
 from the source, so this procedure should only be used on trusted
@@ -76,7 +76,7 @@ for the check.
 }
 
 
-@defproc[(integrity [algorithm md-algorithm/c] [digest bytes?]) well-formed-integrity-info/c]{
+@defproc[(integrity [algorithm chf/c] [digest bytes?]) well-formed-integrity-info/c]{
 An abbreviated constructor for @racket[integrity-info] that performs stronger validation on arguments.
 
 Meant for use in @tech{package definitions} when declaring @tech{package inputs}.
@@ -90,7 +90,7 @@ passes an @tech{integrity check} for one of the
 }
 
 @defproc[(make-sourced-digest [variant source-variant]
-                              [algorithm md-algorithm/c]
+                              [algorithm chf/c]
                               [exhaust exhaust/c raise]) bytes?]{
 Like @racket[make-digest], except the digest is produced using bytes
 @tech{tapped} from @racket[variant] using @racket[fetch].

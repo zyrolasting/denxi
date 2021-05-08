@@ -41,7 +41,7 @@ cyclic keys, this function will not terminate.
 
 @defproc[(make-filesystem-archaeologist
           [directory-path complete-path?]
-          [chf md-algorithm/c])
+          [chf chf/c])
          archaeologist/c]{
 Returns an @tech{archaeologist} that searches directories for
 @tech{artifacts} in the form of files. The function assumes that

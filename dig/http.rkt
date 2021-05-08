@@ -5,7 +5,7 @@
  (contract-out
   [make-http-shovel
    (->* (url-variant?)
-        ((or/c #f md-algorithm/c)
+        ((or/c #f chf/c)
          (or/c #f source-variant?))
         shovel/c)]))
 
