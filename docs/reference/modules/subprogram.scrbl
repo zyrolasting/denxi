@@ -7,18 +7,19 @@
                     xiden/subprogram
                     xiden/message]]
 
-@title{Logged Procedures}
+@title{Subprograms}
 
 @defmodule[xiden/subprogram]
 
-A @deftech{subprogram} is an instance of the monadic value type
-@racket[subprogram]. An instance of @racket[subprogram] contains a
-normal Racket procedure that returns some value along with some
-@tech{messages} representing a @tech{subprogram log}. A program
-composed of @tech{subprograms} eventually terminates with a complete
-@tech{message} log along with a value. When multiple sequences
-subprograms execute, a special @racket[FAILURE] value returned by one
-subprogram halts execution of following subprograms.
+A @deftech{subprogram} in the context of Xiden is an instance of the
+monadic value type @racket[subprogram]. An instance of
+@racket[subprogram] contains a normal Racket procedure that returns
+some value along with some @tech{messages} representing a
+@tech{subprogram log}. A program composed of @tech{subprograms}
+eventually terminates with a complete @tech{message} log along with a
+value. When multiple sequences subprograms execute, a special
+@racket[FAILURE] value returned by one subprogram halts execution of
+following subprograms.
 
 
 @section{Fundamentals}
