@@ -5,6 +5,8 @@
                     xiden/cmdline
                     xiden/cli
                     xiden/cli-flag
+                    xiden/format
+                    xiden/l10n
                     xiden/localstate
                     xiden/subprogram
                     xiden/message
@@ -21,7 +23,7 @@ prepares a program that uses continuation passing style to return
 output and an exit code.
 
 @defproc[(launch-xiden! [#:arguments arguments (or/c list? vector?) (current-command-line-arguments)]
-                        [#:format-message format-message (get-message-formatter)]
+                        [#:format-message format-message message-formatter/c (get-message-formatter)]
                         [#:handle-exit handle-exit (-> any/c any) exit])
                         any]{
 This procedure is called for its effect: To parse the given command
