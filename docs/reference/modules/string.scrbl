@@ -2,7 +2,7 @@
 
 @require[@for-label[xiden/string racket/base racket/contract]]
 
-@title{String Processing}
+@title{Strings}
 
 @defmodule[xiden/string]
 
