@@ -2,10 +2,7 @@
 
 ; Operate on package definitions as syntax objects or lists.
 
-(require (for-syntax racket/base
-                     racket/match)
-         racket/match
-         "../codec.rkt"
+(require "../codec.rkt"
          "../contract.rkt"
          "../logged.rkt"
          "../openssl.rkt"
@@ -197,43 +194,6 @@
 
 
 
-
-(define-match-expander mdexpr
-  (λ (stx)
-    (syntax-case stx ()
-      [(_ id)
-       #'(? chf/c id)])))
-
-(define-match-expander pkexpr
-  (λ (stx)
-    (syntax-case stx ()
-      [(_ id)
-       #'(? string? id)])))
-
-(define-match-expander bexpr
-  (λ (stx)
-    (syntax-case stx ()
-      [(_ id)
-       #'(or (? bytes? id)
-             (? (λ (v)
-                  (match v
-                    [`(,(or 'hex 'base64 'base32)
-                       ,(? (or/c bytes? string?) _))
-                     #t]
-                    [_ #f])) id))])))
-
-(define-match-expander nexpr
-  (λ (stx)
-    (syntax-case stx ()
-      [(_ id)
-       #'(? non-empty-string? id)])))
-
-(define-match-expander srcexpr
-  (λ (stx)
-    (syntax-case stx ()
-      [(_ id)
-       #'(or (? (listof non-empty-string?) id)
-             `(sources ,(? non-empty-string? id) ___))])))
 
 (module+ test
   (require rackunit)
