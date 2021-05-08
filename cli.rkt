@@ -156,9 +156,6 @@
          (values flags
                  (λ (halt)
                    (match what
-                     ["config"
-                      (halt 0 ($show-datum null))]
-
                      ["installed"
                       (halt 0
                             (sequence->list
@@ -319,10 +316,4 @@
     (check-pred null? msg)
     (check-equal? (get-output-bytes stdout) #"abcdef")
     (check-equal? exit-code 0)
-    (check-true (> (bytes-length (get-output-bytes stderr)) 0)))
-
-  (test-case "Dump all (read)able configuration on request"
-    (define-values (flags exit-code msg) (try (show-command '("config"))))
-    (check-pred null? flags)
-    (check-equal? exit-code 0)
-    (check-equal? msg ($show-datum null))))
+    (check-true (> (bytes-length (get-output-bytes stderr)) 0))))

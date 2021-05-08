@@ -81,9 +81,6 @@ entry referenced by that link. These symbolic links are special in
 that they are tracked by Xiden for garbage collection
 purposes.
 
-If @racket{workspace}, the program halts with exit code 0
-and output @racket[($show-string (path->string (XIDEN_WORKSPACE)))].
-
 In all other cases, the program halts with exit code 1 and output
 @racket[($cli:undefined-command A)].
 

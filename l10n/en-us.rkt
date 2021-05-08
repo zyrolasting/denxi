@@ -18,10 +18,8 @@
 
     [(show-command-help)
      (L "where <what> is one of"
-        "  config     Show a (read)able hash table of current settings"
         "  installed  Show a list of installed outputs"
-        "  links      Show a list of issued links"
-        "  workspace  Show the path to the target workspace directory")]
+        "  links      Show a list of issued links")]
 
     [(backwards-racket-version-interval)
      "minimum Racket version cannot exceed maximum Racket version"]
