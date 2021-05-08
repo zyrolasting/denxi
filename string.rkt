@@ -78,7 +78,9 @@
 
 
 (define (string->value s)
-  (read (open-input-string s)))
+  (call-with-default-reading-parameterization
+   (λ ()
+     (read (open-input-string s)))))
 
 
 (module+ test

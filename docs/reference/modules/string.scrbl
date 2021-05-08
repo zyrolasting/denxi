@@ -6,10 +6,11 @@
 
 @defmodule[xiden/string]
 
-@racketmodname[xiden/string] extends and reprovides @racketmodname[racket/string].
+@racketmodname[xiden/string] extends and reprovides
+@racketmodname[racket/string].
 
-This module defines useful regular expressions and string operations needed by
-other modules.
+This module defines useful regular expressions and string operations
+needed by other modules.
 
 @defthing[DEFAULT_STRING non-empty-string? #:value "default"]{
 The conventional default of the non empty strings.
@@ -73,26 +74,11 @@ cross-platform file name.
 
 @defproc[(get-shortest-string [strings (listof string?)]) string?]{
 Returns the shortest element of @racket[strings].
-
-Current use cases:
-
-@itemlist[
-@item{Show the user the shortest CLI flag among alternatives in some messages.}
-]
 }
-
 
 @defproc[(string->value [s string?]) any/c]{
-Equivalent to @racket[(read (open-input-string s))].
-
-Current use case:
-
-@itemlist[
-@item{
-Convert user-provided runtime configuration values to Racket values.
-}
-]
-
+@racket[read]s a Racket value from the string, treating the string as
+untrusted input.
 }
 
 @defidform[#:kind "syntax-class" non-empty-string]{
