@@ -14,7 +14,10 @@
 @defmodule[xiden/openssl]
 
 OpenSSL is an implicitly-trusted dependency that Xiden invokes as a
-subprocess.
+subprocess. @racketmodname[xiden/openssl] also defines data and
+contracts for @deftech{cryptographic hash functions} (or
+@deftech{CHF}s).
+
 
 @defthing[DEFAULT_CHF chf/c #:value 'sha3-384]{
 A fallback cryptographic hash function.

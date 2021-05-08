@@ -6,13 +6,13 @@
                     xiden/integrity]
                     "../shared.rkt"]
 
-Xiden uses @deftech{cryptographic hash functions} (@deftech{CHF}s) to
-turn data into fixed-length byte strings called @italic{digests}. If
-two digests match, then we can reasonably assume they were created
-using the same content. That is, unless the CHF has a
-@italic{collision}, where two blobs produce the same digest. In the
-event a CHF is compromised by a researcher or attacker, you can revoke
-trust in that CHF by removing it from the
+Xiden uses @deftech{cryptographic hash functions}
+(@tech/xiden-reference{CHF}s) to turn data into fixed-length byte
+strings called @italic{digests}. If two digests match, then we can
+reasonably assume they were created using the same content. That is,
+unless the CHF has a @italic{collision}, where two blobs produce the
+same digest. In the event a CHF is compromised by a researcher or
+attacker, you can revoke trust in that CHF by removing it from the
 @racket[XIDEN_TRUST_CHFS] setting.
 
 Xiden checks the integrity for some data using the following
