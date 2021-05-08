@@ -36,6 +36,7 @@
          name
          os-support
          output
+         path-matching
          provider
          quote
          racket-versions
