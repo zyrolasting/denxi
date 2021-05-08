@@ -3,7 +3,7 @@
 @require[@for-label[racket/base racket/contract xiden/version]
           "../../shared.rkt"]
 
-@title{Package Definition Versions}
+@title{Versions}
 
 A @tech{package definition} has a @tech{version}.
 
