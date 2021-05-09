@@ -21,7 +21,7 @@
 
 (require "format.rkt"
          "integrity.rkt"
-         "localstate.rkt"
+         "state.rkt"
          "subprogram.rkt"
          "monad.rkt"
          "openssl.rkt"

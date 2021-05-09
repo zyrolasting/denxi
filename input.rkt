@@ -34,7 +34,7 @@
          "dig.rkt"
          "format.rkt"
          "integrity.rkt"
-         "localstate.rkt"
+         "state.rkt"
          "message.rkt"
          "monad.rkt"
          "port.rkt"

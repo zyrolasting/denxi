@@ -14,7 +14,7 @@
          "input.rkt"
          "integrity.rkt"
          "l10n.rkt"
-         "localstate.rkt"
+         "state.rkt"
          "subprogram.rkt"
          "message.rkt"
          "monad.rkt"

@@ -15,7 +15,7 @@
    "../format.rkt"
    "../input.rkt"
    "../integrity.rkt"
-   "../localstate.rkt"
+   "../state.rkt"
    "../message.rkt"
    "../openssl.rkt"
    "../package.rkt"

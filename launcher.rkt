@@ -9,7 +9,7 @@
    "artifact.rkt"
    "cli.rkt"
    "codec.rkt"
-   "localstate.rkt"
+   "state.rkt"
    "integrity.rkt"
    "openssl.rkt"
    "package.rkt"

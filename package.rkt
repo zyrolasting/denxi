@@ -22,7 +22,7 @@
          "artifact.rkt"
          "input.rkt"
          "integrity.rkt"
-         "localstate.rkt"
+         "state.rkt"
          "message.rkt"
          "monad.rkt"
          "pkgdef/static.rkt"
@@ -40,7 +40,7 @@
 (module+ test
   (require racket/function
            rackunit
-           (submod "localstate.rkt" test)
+           (submod "state.rkt" test)
            (submod "subprogram.rkt" test)
            "file.rkt"
            "setting.rkt"))

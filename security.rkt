@@ -13,7 +13,7 @@
          openssl
          "codec.rkt"
          "integrity.rkt"
-         "localstate.rkt"
+         "state.rkt"
          "message.rkt"
          "openssl.rkt"
          "path.rkt"

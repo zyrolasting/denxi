@@ -5,7 +5,7 @@
 (require "contract.rkt"
          "file.rkt"
          "integrity.rkt"
-         "localstate.rkt"
+         "state.rkt"
          "message.rkt"
          "openssl.rkt"
          "setting.rkt"
@@ -158,7 +158,7 @@
 ; not need to be checked manually.
 (module+ test
   (require rackunit
-           (submod "localstate.rkt" test))
+           (submod "state.rkt" test))
 
   ; The hard-coded dummy data for this test came from hashing the byte string #"abc"
   ; with SHA-384 and then signing the digest using a 2048-bit RSA private key.

@@ -4,13 +4,13 @@
          @for-label[racket/base
                     racket/contract
                     racket/path
-                    xiden/localstate]
-        xiden/localstate
-        @for-syntax[xiden/localstate]]
+                    xiden/state]
+        xiden/state
+        @for-syntax[xiden/state]]
 
 @title{State}
 
-@defmodule[xiden/localstate]
+@defmodule[xiden/state]
 
 Xiden performs all file I/O in a single @deftech{workspace} directory
 that matches the @racket[workspace-directory/c] contract. A

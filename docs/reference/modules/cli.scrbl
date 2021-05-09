@@ -7,7 +7,7 @@
                     xiden/cli-flag
                     xiden/format
                     xiden/l10n
-                    xiden/localstate
+                    xiden/state
                     xiden/subprogram
                     xiden/message
                     xiden/source]

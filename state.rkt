@@ -190,7 +190,7 @@
                         (XIDEN_WORKSPACE l))))))))
 
 
-(define current-get-localstate-path ; Is a parameter for testing reasons.
+(define current-get-state-path ; Is a parameter for testing reasons.
   (make-parameter (λ () (build-workspace-path "db"))))
 
 (define build-object-path
@@ -329,7 +329,7 @@
 
 (define (connect-if-needed!)
   (unless (current-db-connection)
-    (define db-path ((current-get-localstate-path)))
+    (define db-path ((current-get-state-path)))
     (make-directory* (path-only db-path))
     (define conn
       (sqlite3-connect #:database db-path
@@ -1011,7 +1011,7 @@
       (dynamic-wind void
                     (λ ()
                       (parameterize ([current-db-connection #f]
-                                     [current-get-localstate-path (const t)])
+                                     [current-get-state-path (const t)])
                         (p)))
                     (λ () (delete-file t)))))
 
