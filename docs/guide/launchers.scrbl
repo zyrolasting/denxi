@@ -9,7 +9,8 @@
 If you haven't worked through @secref{new-pkg}, please do so. We'll
 use the @tt{definition.rkt} file from that section here.
 
-To control Xiden, we'll create a trusted Racket module to act as a
+To control Xiden, we'll create a @bold{trusted} (see
+@secref{launcher-security}) Racket module to act as a
 @deftech{launcher}.
 
 @racketmod[#:file "my-xiden.rkt"
@@ -36,9 +37,10 @@ $ PATH="$PATH:$PWD"
 $ xi
 }|
 
-Unlike other dependency managers, Xiden's command-line interface is
-subservient to a user's launcher. This allows more customizations, and
-you can substitute the entire CLI if you have specific needs.
+Unlike other dependency managers, Xiden's command-line interface can
+be made subservient to a user's launcher. This allows more
+customizations, and you can substitute the entire CLI if you have
+specific needs.
 
 I will refer to the above @litchar{xi} command when walking through
 the commands. We will add to the launcher's code as we progress
@@ -245,3 +247,24 @@ incoming links issued by Xiden.
 If you ever create your own symbolic link to a file created by Xiden,
 then that link is dependent on the file remaining after any garbage
 collection pass.
+
+
+@section[#:tag "launcher-security"]{Security Implications of Launchers}
+
+Xiden's default configuration can be thought of as “Deny All”, but a
+launcher is a normal Racket module that starts with all privileges
+granted by the operating system. Any restrictions Xiden sets in terms
+of the configuration will only apply when the launcher actually gives
+control to Xiden. If your launcher is compromised, then Xiden is
+compromised.
+
+If you wish, you can use the built-in @litchar{xiden} launcher to
+mitigate some risks. @litchar{xiden} can only be reconfigured using
+command-line options and environment variables, for a strict subset of
+available options. That shrinks the attack surface some, but custom
+launchers can do things that the default launcher cannot, such as
+intelligently respond to package conflicts or extend the CLI.
+
+To learn more about what the differences are and how to guarentee a
+launch from a zero-trust state, see @secref[#:doc
+xiden-tutorials]{securing-launch}.
