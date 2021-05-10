@@ -75,8 +75,6 @@
            (-> package-query-variant?
                string?
                (sequence/c output-record?))]
-          [find-exactly-one
-           (->* (record?) (procedure?) (or/c #f record?))]
           [start-transaction!
            (-> (values (-> void?) (-> void?)))]
           [build-object-path
@@ -87,7 +85,6 @@
            (-> (sequence/c path-string? path-string?))]
           [in-xiden-objects
            (-> package-query-variant?
-               string?
                (sequence/c path-string?
                            exact-positive-integer?
                            revision-number?
@@ -106,15 +103,13 @@
           [make-addressable-directory
            (-> directory-exists?
                path-record?)]
-          [delete-record
-           (-> record? void?)]
           [make-addressable-link
            (-> path-record? path-string? path-record?)]))
 
 (define+provide-message $finished-collecting-garbage (bytes-recovered))
 (define+provide-setting XIDEN_WORKSPACE workspace-directory/c
   (build-path (find-system-path 'home-dir)
-              "xiden-workspace"))
+              ".xiden"))
 
 ;----------------------------------------------------------------------------------
 ; Relevant Paths
