@@ -157,6 +157,17 @@ This creates builds that will not terminate. Even if Xiden downloads a
 new package definition from @racket{https://example.com/other.rkt}, it
 will only be replaced by another instance of the same data returned
 from @racket[(current-package-definition-editor)].
+
+Defaults to @racket[values].
+}
+
+@defthing[current-package-editor (parameter/c (-> package? package?))]{
+Like @racket[current-package-definition-editor], but for parsed
+packages that are ready to use. This parameter would likely be easier
+to use in a @tech{launcher}, since struct bindings are available to
+operate on the actual package.
+
+Defaults to @racket[values].
 }
 
 

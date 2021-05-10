@@ -9,14 +9,24 @@
 ; - Multiple test submodules are allowed.
 ;
 
-(provide install
-         empty-package
-         output-not-found
-         (struct-out package)
-         current-package-definition-editor)
+(require racket/contract)
+(provide (struct-out package)
+         (contract-out
+          [install
+           (-> (or/c #f path-string?)
+               (or/c #f string?)
+               any/c
+               subprogram?)]
+          [output-not-found
+           (-> string? subprogram?)]
+          [empty-package
+           package?]
+          [current-package-definition-editor
+           (-> bare-racket-module? bare-racket-module?)]
+          [current-package-editor
+           (-> package? package?)]))
 
-(require racket/contract
-         racket/file
+(require racket/file
          racket/format
          racket/list
          "artifact.rkt"
@@ -66,6 +76,9 @@
   null)
 
 (define current-package-definition-editor
+  (make-parameter values))
+
+(define current-package-editor
   (make-parameter values))
 
 (struct package
@@ -145,7 +158,9 @@
          ; The reader/expander guards in read-package-definition
          ; prevent arbitrary code from reaching here.
          (eval overridden module-namespace)
-         (subprogram-unit (dynamic-require `',(cadr overridden) 'pkg)))))
+         (subprogram-unit
+          ((current-package-editor)
+           (dynamic-require `',(cadr overridden) 'pkg))))))
 
 
 (define (find-original-package-definition pkgdef-origin-variant max-size)
