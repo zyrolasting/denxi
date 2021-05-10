@@ -4,6 +4,7 @@
 ; messages.
 
 (require (for-syntax racket/base)
+         racket/function
          racket/generator
          racket/list
          racket/sequence
@@ -50,8 +51,8 @@
 (define+provide-message $cycle (key))
 
 (define subprogram-log/c
-  (or/c $message?
-        (listof (recursive-contract subprogram-log/c))))
+  (listof (or/c $message?
+                (recursive-contract subprogram-log/c))))
 
 (struct subprogram (thnk)
   #:transparent
@@ -89,9 +90,9 @@
   (subprogram
    (λ (m)
      (values FAILURE
-             (cons (cond [(exn? e) ($show-string (exn->string e))]
-                         [($message? e) e]
-                         [else ($show-datum e)])
+             (cons (if ($message? e)
+                       e
+                       ($show-string (exn->string e)))
                    m)))))
 
 (define (dump-subprogram #:dump-message [dump-message writeln] #:force-value [v (void)] . preamble)
@@ -145,7 +146,8 @@
 
 
 (define (run-subprogram m [messages null])
-  (with-handlers ([exn? (λ (e) (run-subprogram (subprogram-failure e) messages))])
+  (with-handlers ([(negate exn:break?)
+                   (λ (e) (run-subprogram (subprogram-failure e) messages))])
     ((subprogram-thnk m) messages)))
 
 (define (subprogram-attachment v next)
