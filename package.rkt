@@ -22,9 +22,11 @@
           [empty-package
            package?]
           [current-package-definition-editor
-           (-> bare-racket-module? bare-racket-module?)]
+           (-> bare-racket-module?
+               (or/c bare-racket-module? (subprogram/c bare-racket-module?)))]
           [current-package-editor
-           (-> package? package?)]))
+           (-> package?
+               (or/c package? (subprogram/c package?)))]))
 
 (require racket/file
          racket/format
@@ -120,10 +122,12 @@
   (struct-copy package empty-package fields ...))
 
 (define (install link-path-or-#f output-name-or-#f package-definition-source)
-  (mdo pkg := (get-package #:override-specs (XIDEN_INPUT_OVERRIDES)
-                           #:before-new-package (current-package-definition-editor)
-                           package-definition-source
-                           (mebibytes->bytes (XIDEN_FETCH_PKGDEF_SIZE_MB)))
+  (mdo pkgdef := (get-package-definition
+                  package-definition-source
+                  (mebibytes->bytes (XIDEN_FETCH_PKGDEF_SIZE_MB))
+                  (XIDEN_INPUT_OVERRIDES))
+
+       pkg := (get-package pkgdef)
 
        (fulfil-package-output #:allow-unsupported-racket? (XIDEN_ALLOW_UNSUPPORTED_RACKET)
                               (or output-name-or-#f DEFAULT_STRING)
@@ -145,22 +149,39 @@
 ;
 
 
+(define (get-package-definition source max-size override-specs)
+  (mdo original-package-definition :=
+       (find-original-package-definition source max-size)
+
+       stripped-package-definition :=
+       (subprogram-unit (strip original-package-definition))
+
+       user-modified-package-definition :=
+       (coerce-subprogram ((current-package-definition-editor) stripped-package-definition))
+
+       (subprogram-unit
+        (override-package-definition user-modified-package-definition
+                                     override-specs))))
+
+
 ; Use the module namespace to dynamically extend registered modules.
 (define-namespace-anchor anchor)
 (define module-namespace (namespace-anchor->namespace anchor))
 
-(define (get-package #:before-new-package [before-new-package values]
-                     #:override-specs [override-specs null]
-                     source
-                     max-size)
-  (mdo original := (find-original-package-definition source max-size)
-       (let ([overridden (override-package-definition original before-new-package override-specs)])
-         ; The reader/expander guards in read-package-definition
-         ; prevent arbitrary code from reaching here.
-         (eval overridden module-namespace)
-         (subprogram-unit
-          ((current-package-editor)
-           (dynamic-require `',(cadr overridden) 'pkg))))))
+(define (get-package overridden-package-definition)
+  (mdo evaluated-package :=
+       (subprogram
+        (λ (messages)
+          ; The reader/expander guards in read-package-definition prevent
+          ; arbitrary code from reaching here. Never provide `get-package`
+          ; to keep it that way.
+          (eval overridden-package-definition
+                module-namespace)
+          (values (dynamic-require `',(cadr overridden-package-definition) 'pkg)
+                  messages)))
+
+       (coerce-subprogram ((current-package-editor)
+                           evaluated-package))))
 
 
 (define (find-original-package-definition pkgdef-origin-variant max-size)
@@ -189,9 +210,7 @@
               override-specs))
 
 
-(define (override-package-definition datum before-new-package override-specs)
-  (define stripped (strip datum))
-  (define code-override (before-new-package stripped))
+(define (override-package-definition code-override override-specs)
   (define package-name (get-static-abbreviated-query code-override))
   (define input-overrides (find-per-input-overrides package-name override-specs))
   (make-package-definition-datum #:id (make-id)
@@ -220,20 +239,14 @@
 
 (module+ test
   (test-case "Override package definitions"
-    (define (before-new-package orig)
-      (struct-copy bare-racket-module orig
-                   [code (list-set (bare-racket-module-code orig)
-                                   1
-                                   '(package "tweedledum"))]))
-
     (define overridden
       (override-package-definition
-       (make-package-definition-datum
+       (strip
+        (make-package-definition-datum
         '((provider "wonderland")
-          (package "tweedledee")
+          (package "tweedledum")
           (input "logic")
-          (input "nonsense")))
-       before-new-package
+          (input "nonsense"))))
        '((#px"dum" (input "logic" (integrity 'sha1 (hex "abc"))))
          (#px"zooks" (input "nonsense" (integrity 'sha1 (hex "abc")))))))
 
