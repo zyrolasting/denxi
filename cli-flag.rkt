@@ -23,7 +23,6 @@
          "artifact.rkt"
          "archive.rkt"
          "codec.rkt"
-         "exn.rkt"
          "file.rkt"
          "format.rkt"
          "input.rkt"
