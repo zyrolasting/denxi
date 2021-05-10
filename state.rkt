@@ -1069,7 +1069,7 @@
            (define actual-results
              (sequence->list
               (in-values-sequence
-               (in-xiden-objects "a.example.com:widget:default:rev-3:7:ei" "lib"))))
+               (in-xiden-objects "a.example.com:widget:default:rev-3:7:ei"))))
 
            (check-equal? (map (match-lambda [(list o _ rev-n _ path) (list rev-n o path)]) actual-results)
                          (build-list 4
