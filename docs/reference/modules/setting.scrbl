@@ -43,7 +43,8 @@ structural relationship between the fields. Use
 @racket[setting] implements @racket[prop:procedure]. For an instance @racket[S]:
 
 @itemlist[
-@item{@racket[(S)] is @racket[((setting-derived-parameter S))].}
+@item{@racket[(S)] is equivalent to @racket[((setting-derived-parameter S))].}
+@item{@racket[(S val)] is equivalent to @racket[((setting-derived-parameter S) val)].}
 @item{@racket[(S val proc)] applies the procedure @racket[proc] in a @tech/reference{parameterization} where @racket[(setting-derived-parameter S)] is @racket[val].}
 ]
 }
