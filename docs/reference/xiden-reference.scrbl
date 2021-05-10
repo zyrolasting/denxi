@@ -47,7 +47,6 @@ This section covers the modules that cooperate to these ends.
 @include-section{modules/state.scrbl}
 @include-section{modules/setting.scrbl}
 @include-section{modules/format.scrbl}
-@include-section{modules/exn.scrbl}
 @include-section{modules/url.scrbl}
 @include-section{modules/string.scrbl}
 @include-section{modules/l10n.scrbl}
