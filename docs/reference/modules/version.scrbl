@@ -71,17 +71,17 @@ the return value is simply @racket[boundary]. Otherwise, it's
 @defproc[(find-latest-available-revision-number [available? (-> revision-number? any/c)]
                                                 [lo revision-number?]
                                                 [hi revision-number?])
-                                                (or/c #f revision-number)]{
+                                                (or/c #f revision-number?)]{
 Finds the largest element of the inclusive interval @litchar|{{lo
-.. hi}}| for which @racket[available?] returns a true value. Returns
+.. hi}}| where @racket[available?] returns a true value. Returns
 @racket[#f] if no such element exists.
 }
 
 @defproc[(find-oldest-available-revision-number [available? (-> revision-number? any/c)]
                                                 [lo revision-number?]
                                                 [hi revision-number?])
-                                                (or/c #f revision-number)]{
+                                                (or/c #f revision-number?)]{
 Finds the smallest element of the inclusive interval @litchar|{{lo
-.. hi}}| for which @racket[available?] returns a true value. Returns
+.. hi}}| where @racket[available?] returns a true value. Returns
 @racket[#f] if no such element exists.
 }
