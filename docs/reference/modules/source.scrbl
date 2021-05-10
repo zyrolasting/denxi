@@ -251,6 +251,19 @@ an optional procedure to mark the source exhausted (defaults to
 @racket[%fail]).
 }
 
+@defproc[(lock-source [variant source-variant?]
+                      [budget (or/c +inf.0 exact-nonnegative-integer?) 0]
+                      [exhaust exhaust/c])
+                      (or/c source-variant?
+                            bytes?)]{
+Returns either @racket[variant], or the complete byte string produced
+from @racket[variant] so long as its estimated size is not greater
+than @racket[budget].
+
+@racket[lock-source] works in the context of @racket[fetch], using the
+provided @racket[exhaust] procedure.
+}
+
 
 @section{Source Types}
 

@@ -71,6 +71,12 @@
           [source? predicate/c]
           [source-variant? flat-contract?]
           [sources (->* () #:rest (listof (or/c string? source?)) source?)]
+          [lock-source
+           (->* (source-variant?)
+                ((or/c +inf.0 exact-nonnegative-integer?)
+                 exhaust/c)
+                (or/c source-variant?
+                      bytes?))]
           [tap/c contract?]
           [current-string->source
            (parameter/c (-> string? source?))]
@@ -117,6 +123,21 @@
 
 (define source-variant?
   (or/c bytes? path? string? source?))
+
+
+(define (lock-source variant [budget 0] [exhaust raise])
+  (cond [(bytes? variant)
+         variant]
+        [(byte-source? variant)
+         (byte-source-data variant)]
+        [else
+         (fetch (coerce-source variant)
+                (λ (in est-size)
+                  (if (> est-size budget)
+                      (begin (close-input-port in)
+                             variant)
+                      (port->bytes in)))
+                exhaust)]))
 
 
 (define (make-source-key src)
@@ -357,6 +378,18 @@
            "file.rkt"
            "setting.rkt"
            (submod "subprogram.rkt" test))
+
+  (test-case "Lock sources"
+    (define str "hello, world")
+    (define as-bytes (string->bytes/utf-8 str))
+    (define txt (text-source str))
+    (check-eq? (lock-source as-bytes) as-bytes)
+    (check-eq? (lock-source (byte-source as-bytes)) as-bytes)
+    (check-eq? (lock-source txt) txt)
+    (check-equal? (lock-source txt (bytes-length as-bytes)) as-bytes)
+    (check-eq? (lock-source txt (sub1 (bytes-length as-bytes))) txt)
+    (check-eq? (lock-source (exhausted-source 1) 0 values) 1))
+
 
   (define (run-tap in est)
     (define out (open-output-bytes))
