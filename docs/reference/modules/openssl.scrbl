@@ -49,6 +49,27 @@ A list of trusted cryptographic hash function implementations in
 OpenSSL.
 }
 
+@defthing[openssl complete-path?]{
+Equal to @racket[(find-executable-path "openssl")].
+}
+
 @defproc[(make-digest [variant md-bytes-source/c] [algorithm chf/c DEFAULT_CHF]) bytes?]{
 Returns the raw byte content of @racket[algorithm] applied to bytes from @racket[variant].
+}
+
+@defstruct*[($openssl-error $message) ([args list?]
+                                       [timeout (or/c #f (>=/c 0))]
+                                       [exit-code exact-nonnegative-integer?]
+                                       [output bytes?]
+                                       [reason (or/c #f bytes?)])]{
+Represents a failed OpenSSL subprocess using the given arguments.
+
+If @racket[timeout] is not @racket[#f], then the subprocess timed out
+after Xiden waited @racket[timeout] seconds.
+
+@racket[exit-code] represents the exit code returned from the process.
+
+@racket[output] is a dump of the process' standard output at the time
+of failure. @racket[reason] holds a dump of standard error bytes, or
+@racket[#f] if the process timed out.
 }

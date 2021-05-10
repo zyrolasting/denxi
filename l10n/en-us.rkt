@@ -480,4 +480,22 @@
        "Query is limited to {" minimum "..." maximum "},\n"
        "but canon selected: " selection "\n"
        "This is likely a bug with the service.\n"
-       "Please report it to the maintainer.")])
+       "Please report it to the maintainer.")]
+
+  [($openssl-error args timeout exit-code output reason)
+   (if timeout
+       (L (~a "OpenSSL subprocess timed out after " (~a timeout) " seconds")
+          (~a "  exe: " openssl)
+          (~a "  arguments: " (~s args))
+          (~a "------<stdout>------")
+          (~a (bytes->string/utf-8 output))
+          (~a "------<stdout>------"))
+       (L (~a "OpenSSL subprocess failed with exit code " (~a exit-code))
+          (~a "  exe: " openssl)
+          (~a "  arguments: " (~s args))
+          (~a "------<stdout>------")
+          (~a (bytes->string/utf-8 output))
+          (~a "------<stdout>------")
+          (~a "------<stderr>------")
+          (~a (bytes->string/utf-8 reason))
+          (~a "------<stderr>------")))])

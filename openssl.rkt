@@ -3,12 +3,11 @@
 (require racket/contract
          racket/format
          racket/port
-         "exn.rkt"
+         "message.rkt"
          "setting.rkt")
 
 (provide run-openssl-command
          openssl
-         (struct-out exn:fail:xiden:openssl)
          (contract-out
           [cryptographic-hash-functions
            (non-empty-listof symbol?)]
@@ -23,7 +22,7 @@
                 (chf/c)
                 bytes?)]))
 
-(define-exn exn:fail:xiden:openssl exn:fail:xiden (exit-code output))
+(define+provide-message $openssl-error (args timeout exit-code output reason))
 
 (define openssl (find-executable-path "openssl"))
 
@@ -84,19 +83,19 @@
                         (subprocess-status sp)
                         (begin (subprocess-kill sp #t) 1)))
 
-                  (define error-string
-                    (if maybe-sp
-                        (port->string from-stderr)
-                        (format "Command timed out after ~a seconds. xiden terminated the subprocess."
-                                delay-seconds)))
+                  (define error-info
+                    (and maybe-sp
+                         (port->bytes from-stderr)))
 
                   (define output (port->bytes from-stdout))
 
                   (unless (eq? exit-code 0)
-                    (raise ((exc exn:fail:xiden:openssl exit-code output)
-                            "OpenSSL failed with exit code ~a: ~a"
-                            exit-code
-                            error-string)))
+                    (raise ($openssl-error args
+                                           (or maybe-sp
+                                               delay-seconds)
+                                           exit-code
+                                           output
+                                           error-info)))
 
                   output)
                 (λ ()
