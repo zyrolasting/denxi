@@ -37,7 +37,7 @@ error state. Lean on the @tech{program log} for specifics.
 A procedure that reacts to an exit code, like @racket[exit].
 }
 
-@defthing[bound-program/c contract? #:value (-> (-> exit-code/c subprogram-log/c any) any)]{
+@defthing[bound-program/c contract? #:value (-> (-> exit-code/c (or/c $message? subprogram-log/c) any) any)]{
 A procedure meant to run predetermined program logic in the context of
 a @tech{runtime configuration}.
 

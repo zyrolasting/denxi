@@ -145,7 +145,7 @@ Equivalent to @racket[(if (subprogram? v) v (subprogram-unit v))]
 
 
 @deftogether[(
-@defproc[(subprogram-acyclic [key any/c] [proc (-> (listof $message?) (values any/c (listof subprogram-log/c)))]) subprogram?]
+@defproc[(subprogram-acyclic [key any/c] [proc (-> (listof $message?) (values any/c subprogram-log/c))]) subprogram?]
 @defstruct*[($cycle $message) ([key any/c])]
 )]{
 @racket[subprogram-acyclic] behaves like @racket[(subprogram proc)] with cycle

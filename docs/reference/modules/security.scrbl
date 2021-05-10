@@ -36,12 +36,11 @@ configuration"], which ultimately controls arguments to
                    [#:gc-period gc-period (>=/c 0)]
                    [#:name name (or/c string? symbol?) (or (object-name proc) "")]
                    [halt (-> exit-code/c subprogram-log/c any)]
-                   [proc (-> (-> exit-code/c subprogram-log/c any) any/c)])
+                   [proc bound-program/c])
                    subprogram?]{
-Reduces runtime privileges.
-
 Applies @racket[proc] under a new @tech/reference{parameterization},
-then sends control to @racket[halt] depending on runtime behavior.
+with restricted runtime privileges. Eventually sends control to
+@racket[halt] depending on runtime behavior.
 
 The parameterization includes
 

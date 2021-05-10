@@ -19,11 +19,11 @@ trust.
 Xiden's draws configuration from environment variables, command-line
 options, and adjustments made by a custom @tech/xiden-guide{launcher}.
 
-Xiden is a Racket process, so it's true restrictions come from the
-operating system. Running Xiden as root or an administrator carries
-risk, which is why it was designed for unprivileged use. @bold{Running
-Xiden with elevated privileges and safety checks disabled is
-equivalent to allowing arbitrary code execution.}
+Like any other process, a Xiden process' true restrictions come from
+the operating system. Running Xiden as root or an administrator
+carries risk, which is why it was designed for unprivileged
+use. @bold{Running Xiden with elevated privileges and safety checks
+disabled is equivalent to allowing arbitrary code execution.}
 
 
 @section{Check Implicit Trust First!}
@@ -63,10 +63,10 @@ For example, if @racket[XIDEN_TRUST_BAD_DIGEST] is true, Xiden will
 still not execute any subprocess outside of the host's OpenSSL
 instance unless it has an entry in @racket[XIDEN_TRUST_EXECUTABLES].
 A particularly trusting programmer can shut off that side of Xiden's
-protections.
+protections by enabling @racket[XIDEN_TRUST_ANY_EXECUTABLE].
 
-With that said, I'll skip to the end I'm hinting at: @bold{This
-configuration disables all safety features in Xiden.}
+You can probably start to see the pattern here, so, I'll skip to the
+end: @bold{This configuration disables all safety features in Xiden.}
 
 @racketblock[
 (XIDEN_TRUST_ANY_EXECUTABLE #t)
