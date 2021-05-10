@@ -120,9 +120,9 @@ to verify that we got the right bytes from the right party.
 
 Skilled readers will notice that this definition tries to deliver an
 artifact and the information used to verify it from the same
-potentially untrusted, non-deterministic source.  Don't be alarmed:
-Xiden won't trust it either, unless the user consents. We'll show how
-this plays out later in the guide.
+potentially untrusted source.  Don't be alarmed: Xiden does not
+volunteer trust either without user consent. @practice{determinism}
+covers how to adjust definitions to guarentee determinism.
 
 The package outputs shown here are simple, but some might be taken
 aback by the fact they require a functional programming background to
