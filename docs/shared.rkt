@@ -45,6 +45,12 @@
 (define (tech/xiden-reference tag)
   (tech #:doc xiden-reference tag))
 
+(define (tutorial tag)
+  (secref #:doc xiden-tutorials tag))
+
+(define (practice tag)
+  (secref #:doc xiden-practices tag))
+
 (define-for-syntax (infer-contract-expr stx s)
    (define proc (setting-valid? s))
    (define formatted (~v proc))
