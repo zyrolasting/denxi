@@ -24,11 +24,13 @@
           [sxs
            (-> package? (subprogram/c package?))]
           [current-package-definition-editor
-           (-> bare-racket-module?
-               (or/c bare-racket-module? (subprogram/c bare-racket-module?)))]
+           (parameter/c
+            (-> bare-racket-module?
+                (or/c bare-racket-module? (subprogram/c bare-racket-module?))))]
           [current-package-editor
-           (-> package?
-               (or/c package? (subprogram/c package?)))]))
+           (parameter/c
+            (-> package?
+                (or/c package? (subprogram/c package?))))]))
 
 (require racket/file
          racket/format
