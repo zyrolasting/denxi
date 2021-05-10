@@ -111,7 +111,7 @@
    (λ (result)
      (check-equal? (artifact-info-source result) #"")))
 
-  (test-subprogram-procedure
+  (test-subprogram
    "Do not find an artifact by default when none is available"
    (find-artifact #f)
    (λ (result messages)

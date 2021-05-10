@@ -474,7 +474,7 @@
   (define test-ns (namespace-anchor->namespace ns-anchor))
 
   (define (test-safe-expression intent predicate datum)
-    (test-subprogram-procedure
+    (test-subprogram
      (format "Eval source expression (safe, ~a)" intent)
      (eval-untrusted-source-expression datum test-ns)
      (λ (val messages)
@@ -482,7 +482,7 @@
        (check-pred null? messages))))
 
   (define (test-unsafe-expression intent datum)
-    (test-subprogram-procedure
+    (test-subprogram
      (format "Eval source expression (dangerous, ~a)" intent)
      (eval-untrusted-source-expression datum test-ns)
      (λ (val messages)
@@ -492,7 +492,7 @@
                                       (? (λ (v) (equal? datum v)) _)
                                       _)))))
 
-  (test-subprogram-procedure
+  (test-subprogram
    "Eval non-source expression"
    (eval-untrusted-source-expression '1 test-ns)
    (λ (val messages)

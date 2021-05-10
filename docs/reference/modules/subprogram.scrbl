@@ -240,11 +240,11 @@ Like @racket[run-subprogram], but returns only the computed value.
 
 @defmodule[(submod xiden/subprogram test)]
 
-@defproc[(test-subprogram-procedure [#:with initial (listof $message?) null]
-                                    [test-message string?]
-                                    [subprogram-procedure subprogram?]
-                                    [continue procedure?])
-                                    void?]{
+@defproc[(test-subprogram [#:with initial (listof $message?) null]
+                          [test-message string?]
+                          [subprogram-procedure subprogram?]
+                          [continue procedure?])
+                          void?]{
 Equivalent to a unit test case with the given @racket[test-message], where the
 test evaluates @racketblock[(call-with-values (λ () (run-subprogram subprogram-procedure initial)) continue)].
 }

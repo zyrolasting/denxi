@@ -241,41 +241,41 @@
                                           (make-racket-module-datum 'something '(a b c)))
                   '(a b c)))
 
-  (test-subprogram-procedure "Detect error when reading improper module form"
-                             (read-racket-module '_ '_ "(module)")
-                             expect-bad-module-form)
+  (test-subprogram "Detect error when reading improper module form"
+                   (read-racket-module '_ '_ "(module)")
+                   expect-bad-module-form)
 
-  (test-subprogram-procedure "Detect if EOF came too soon"
-                             (read-racket-module '_ '_ "")
-                             expect-bad-module-form)
+  (test-subprogram "Detect if EOF came too soon"
+                   (read-racket-module '_ '_ "")
+                   expect-bad-module-form)
 
-  (test-subprogram-procedure "Read with reader extension"
-                             (read-racket-module 'racket/base
-                                                 'racket/base
-                                                 "#lang racket/base (define val 1)")
-                             (λ (v msg)
-                               (check-pred syntax? v)
-                               (check-match (syntax->datum v)
-                                            `(module ,_ racket/base (,_ (define val 1))))
-                               (check-pred null? msg)))
+  (test-subprogram "Read with reader extension"
+                   (read-racket-module 'racket/base
+                                       'racket/base
+                                       "#lang racket/base (define val 1)")
+                   (λ (v msg)
+                     (check-pred syntax? v)
+                     (check-match (syntax->datum v)
+                                  `(module ,_ racket/base (,_ (define val 1))))
+                     (check-pred null? msg)))
 
-  (test-subprogram-procedure "Accept only prescribed reader extensions"
-                             (read-racket-module 'other 'racket/base "#lang racket/base (define val 1)")
-                             (λ (v msg)
-                               (check-eq? v FAILURE)
-                               (check-match (car msg)
-                                            ($racket-module-read-error #f
-                                                                       'blocked-reader
-                                                                       '(submod racket/base reader)))))
+  (test-subprogram "Accept only prescribed reader extensions"
+                   (read-racket-module 'other 'racket/base "#lang racket/base (define val 1)")
+                   (λ (v msg)
+                     (check-eq? v FAILURE)
+                     (check-match (car msg)
+                                  ($racket-module-read-error #f
+                                                             'blocked-reader
+                                                             '(submod racket/base reader)))))
 
-  (test-subprogram-procedure "Accept only prescribed expander language"
-                             (read-racket-module 'racket/base
-                                                 'other
-                                                 "#lang racket/base (define val 1)")
-                             (λ (v msg)
-                               (check-eq? v FAILURE)
-                               (check-match (car msg)
-                                            ($racket-module-read-error _ 'unexpected-module-lang _))))
+  (test-subprogram "Accept only prescribed expander language"
+                   (read-racket-module 'racket/base
+                                       'other
+                                       "#lang racket/base (define val 1)")
+                   (λ (v msg)
+                     (check-eq? v FAILURE)
+                     (check-match (car msg)
+                                  ($racket-module-read-error _ 'unexpected-module-lang _))))
 
   (test-case "Strip and dress modules"
     (define body '((define a 1) (provide a)))

@@ -184,8 +184,8 @@
 
 (module+ test
   (require rackunit)
-  (provide test-subprogram-procedure
-           check-subprogram-procedure
+  (provide test-subprogram
+           check-subprogram
            test-subprogram-value
            check-subprogram-value)
   
@@ -194,23 +194,23 @@
       (check-subprogram-value l check)))
 
   (define (check-subprogram-value l check)
-    (check-subprogram-procedure l
-                                (λ (result messages)
-                                  (check-pred null? messages)
-                                  (check result))))
+    (check-subprogram l
+                      (λ (result messages)
+                        (check-pred null? messages)
+                        (check result))))
 
-  (define (check-subprogram-procedure #:with [initial null] l p)
+  (define (check-subprogram #:with [initial null] l p)
     (call-with-values (λ () (run-subprogram l initial)) p))
   
-  (define (test-subprogram-procedure #:with [initial null] msg l p)
-    (test-case msg (check-subprogram-procedure #:with initial l p)))
+  (define (test-subprogram #:with [initial null] msg l p)
+    (test-case msg (check-subprogram #:with initial l p)))
 
-  (test-subprogram-procedure "Check contract on subprogram procedures"
-                             (invariant-assertion (subprogram/c (>=/c 0)) (subprogram-unit -7))
-                             (λ (p msg)
-                               (check-eq? p FAILURE)
-                               (check-match msg
-                                            (list ($show-string (regexp "assertion violation"))))))
+  (test-subprogram "Check contract on subprogram procedures"
+                   (invariant-assertion (subprogram/c (>=/c 0)) (subprogram-unit -7))
+                   (λ (p msg)
+                     (check-eq? p FAILURE)
+                     (check-match msg
+                                  (list ($show-string (regexp "assertion violation"))))))
 
   (test-case "Inject subprogram program control into lexical context of new procedures"
     (define-subprogram (try branch)
@@ -221,12 +221,12 @@
         [(run)      ($run! (subprogram (λ (m) (values branch (cons branch m)))))]))
 
     (define (check #:with [base-messages null] subprogram-proc expected-val expected-messages)
-      (test-subprogram-procedure #:with base-messages
-                                 (format "Expecting ~s ~s" expected-val expected-messages)
-                                 subprogram-proc
-                                 (λ (actual-value actual-messages)
-                                   (check-equal? actual-value expected-val)
-                                   (check-equal? actual-messages expected-messages))))
+      (test-subprogram #:with base-messages
+                       (format "Expecting ~s ~s" expected-val expected-messages)
+                       subprogram-proc
+                       (λ (actual-value actual-messages)
+                         (check-equal? actual-value expected-val)
+                         (check-equal? actual-messages expected-messages))))
 
     (check (try 'use-1arg) #:with '(1) 'use-1arg '(1))
     (check (try 'use-2arg) 'use-2arg 'use-2arg)
@@ -310,14 +310,14 @@
     (define cyclic (subprogram-acyclic 1 (λ (m) (run-subprogram cyclic m))))
     (define acyclic (subprogram-acyclic 1 (λ (m) (values 'ok (cons 'ok m)))))
 
-    (test-subprogram-procedure "Make acyclic procedures behave like normal subprogram procedures"
-                               acyclic
-                               (λ (v msg)
-                                 (check-eq? v 'ok)
-                                 (check-equal? msg '(ok))))
+    (test-subprogram "Make acyclic procedures behave like normal subprogram procedures"
+                     acyclic
+                     (λ (v msg)
+                       (check-eq? v 'ok)
+                       (check-equal? msg '(ok))))
 
-    (test-subprogram-procedure "Block cycles in acyclic subprogram procedures"
-                               cyclic
-                               (λ (v msg)
-                                 (check-eq? v FAILURE)
-                                 (check-equal? msg (list ($cycle 1)))))))
+    (test-subprogram "Block cycles in acyclic subprogram procedures"
+                     cyclic
+                     (λ (v msg)
+                       (check-eq? v FAILURE)
+                       (check-equal? msg (list ($cycle 1)))))))

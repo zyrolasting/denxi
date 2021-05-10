@@ -288,13 +288,13 @@
 
 (module+ test
   (let ([ev (build-package [output-names (list DEFAULT_STRING)])])
-    (test-subprogram-procedure
+    (test-subprogram
      "Allow only defined outputs"
      (validate-requested-output ev DEFAULT_STRING)
      (λ (val messages)
        (check-eq? val ev)
        (check-pred null? messages)))
-    (test-subprogram-procedure
+    (test-subprogram
      "Reject unavailable outputs"
      (validate-requested-output ev "other")
      (λ (val messages)
@@ -307,14 +307,14 @@
                                           (artifact (sources "s")))
                            (package-input "c2"
                                           (artifact (sources "s2"))))])])
-    (test-subprogram-procedure
+    (test-subprogram
      "Allow all concrete inputs"
      (validate-inputs ev)
      (λ (val messages)
        (check-eq? val ev)
        (check-pred null? messages))))
 
-  (test-subprogram-procedure
+  (test-subprogram
    "Disallow abstract inputs"
    (validate-inputs
     (build-package [inputs (list (package-input "concrete"
@@ -329,7 +329,7 @@
 
 
   (let ([other-os (filter (λ (v) (not (eq? v (system-type 'os)))) ALL_OS_SYMS)])
-    (test-subprogram-procedure
+    (test-subprogram
      "Disallow packages that don't list current os support"
      (validate-os-support (build-package [os-support other-os]))
      (λ (val messages)
@@ -338,7 +338,7 @@
                     (list ($package:unsupported-os (? (λ (v) (equal? v other-os)) _)))))))
 
   (let ([ev (build-package [os-support (list (system-type 'os))])])
-    (test-subprogram-procedure
+    (test-subprogram
      "Allow packages that support the current os"
      (validate-inputs ev)
      (λ (val messages)
@@ -349,14 +349,14 @@
     (define with-unsupported-version
       (build-package [racket-versions '("0.0")]))
 
-    (test-subprogram-procedure
+    (test-subprogram
      "Detect packages that declare an unsupported Racket version"
      (validate-racket-support #:allow-unsupported? #f with-unsupported-version)
      (λ (val msg)
        (check-pred $package:unsupported-racket-version?
                    (car msg))))
 
-    (test-subprogram-procedure
+    (test-subprogram
      "Conditionally allow unsupported Racket versions"
      (validate-racket-support #:allow-unsupported? #t with-unsupported-version)
      (λ (val msg) (check-pred null? msg)))))
