@@ -5,12 +5,12 @@
 
 (require (for-syntax racket/base)
          racket/contract
+         racket/exn
          racket/function
          racket/generator
          racket/list
          racket/sequence
          racket/set
-         "exn.rkt"
          "format.rkt"
          "message.rkt"
          "monad.rkt")
@@ -299,7 +299,9 @@
 
     (test-case "Show exceptions in log"
       (define (try makes-error)
-        (check-match (get-subprogram-log (mdo x := (makes-error ((exc exn:fail:xiden) "blah ~a" 'abc))
+        (check-match (get-subprogram-log (mdo x := (makes-error
+                                                    (exn:fail (format "blah ~a" 'abc)
+                                                              (current-continuation-marks)))
                                               (subprogram (λ (m) (fail "Should not get here") (values FAILURE null)))))
                      (list ($show-string (pregexp "blah abc.+")))))
 
