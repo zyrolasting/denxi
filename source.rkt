@@ -8,11 +8,11 @@
          net/head
          (only-in net/uri-codec
                   uri-encode)
+         racket/contract
          racket/exn
          racket/generic
          racket/match
          racket/path
-         "contract.rkt"
          "format.rkt"
          "state.rkt"
          "message.rkt"

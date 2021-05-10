@@ -1,10 +1,10 @@
 #lang racket/base
 
-(require racket/generic
+(require racket/contract
+         racket/generic
          racket/port
          racket/system
          syntax/parse
-         "contract.rkt"
          "message.rkt"
          "setting.rkt"
          "subprogram.rkt")

@@ -4,7 +4,7 @@
 
 (require net/url
          syntax/parse
-         "contract.rkt")
+         racket/contract)
 
 (provide (all-from-out net/url)
          url-string

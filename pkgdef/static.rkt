@@ -2,8 +2,8 @@
 
 ; Operate on package definitions as syntax objects or lists.
 
-(require "../codec.rkt"
-         "../contract.rkt"
+(require racket/contract
+         "../codec.rkt"
          "../openssl.rkt"
          "../path.rkt"
          "../query.rkt"

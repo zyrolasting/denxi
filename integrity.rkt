@@ -2,7 +2,7 @@
 
 ; Verify integrity of bytes
 
-(require "contract.rkt"
+(require racket/contract
          "file.rkt"
          "format.rkt"
          "state.rkt"

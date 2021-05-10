@@ -2,7 +2,7 @@
 
 ; Authenticate source of bytes.
 
-(require "contract.rkt"
+(require racket/contract
          "file.rkt"
          "integrity.rkt"
          "state.rkt"

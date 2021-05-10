@@ -2,16 +2,16 @@
 
 ; Extend racket/format
 
-(require racket/format
+(require racket/contract
+         racket/format
          racket/match
          racket/pretty
          racket/string
-         "contract.rkt"
          "message.rkt")
 
 (define message-formatter/c (-> $message? string?))
 
-(provide (all-from-out "contract.rkt" ; For define+provide expansion
+(provide (all-from-out racket/contract ; For define+provide expansion
                        racket/format)
          define-message-formatter
          define+provide-message-formatter

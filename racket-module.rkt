@@ -12,7 +12,7 @@
                   check-module-form
                   with-module-reading-parameterization)
          syntax/parse
-         "contract.rkt"
+         racket/contract
          "input.rkt"
          "message.rkt"
          "monad.rkt"

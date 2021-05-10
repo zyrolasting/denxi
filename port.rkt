@@ -2,8 +2,8 @@
 
 ; Extend racket/port to support byte transfers with safety limits.
 
-(require racket/port
-         "contract.rkt"
+(require racket/contract
+         racket/port
          "message.rkt"
          "string.rkt")
 

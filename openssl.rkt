@@ -1,8 +1,8 @@
 #lang racket/base
 
-(require racket/format
+(require racket/contract
+         racket/format
          racket/port
-         "contract.rkt"
          "exn.rkt"
          "setting.rkt")
 

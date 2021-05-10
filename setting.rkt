@@ -6,7 +6,7 @@
 
 (require (for-syntax racket/base
                      syntax/parse)
-         "contract.rkt")
+         racket/contract)
 
 (provide (struct-out setting)
          define-setting
@@ -87,6 +87,14 @@
   (cond [(not env) default]
         [(string=? env "") default]
         [else (read (open-input-string env))]))
+
+
+(define (rewrite-contract-error-message e id)
+  (struct-copy exn:fail:contract e
+               [message #:parent exn
+                        (regexp-replace #rx"^[^\n]+"
+                                        (exn-message e)
+                                        (format "Invalid value for ~a" id))]))
 
 
 (module+ test

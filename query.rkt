@@ -2,10 +2,10 @@
 
 ; Define a data type to match against package definitions.
 
-(require racket/function
+(require racket/contract
+         racket/function
          racket/generic
          racket/match
-         "contract.rkt"
          "format.rkt"
          "message.rkt"
          "string.rkt"

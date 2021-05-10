@@ -4,9 +4,9 @@
 ; module.
 
 (require racket/cmdline
+         racket/contract
          racket/vector
          "cli-flag.rkt"
-         "contract.rkt"
          "format.rkt"
          "subprogram.rkt"
          "message.rkt"

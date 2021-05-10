@@ -9,9 +9,9 @@
 ; order: (a b c d).  This module does so in a transactional
 ; control flow.
 
-(require racket/exn
+(require racket/contract
+         racket/exn
          "cli-flag.rkt"
-         "contract.rkt"
          "message.rkt"
          "subprogram.rkt")
 

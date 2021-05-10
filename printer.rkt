@@ -2,11 +2,11 @@
 
 ; Write $message instances to ports
 
-(require racket/fasl
+(require racket/contract
+         racket/fasl
          racket/list
          racket/pretty
          racket/serialize
-         "contract.rkt"
          "format.rkt"
          "message.rkt"
          "setting.rkt"

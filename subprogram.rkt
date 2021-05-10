@@ -4,12 +4,12 @@
 ; messages.
 
 (require (for-syntax racket/base)
+         racket/contract
          racket/function
          racket/generator
          racket/list
          racket/sequence
          racket/set
-         "contract.rkt"
          "exn.rkt"
          "format.rkt"
          "message.rkt"
