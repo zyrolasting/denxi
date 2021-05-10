@@ -30,8 +30,8 @@
 (require racket/contract
          syntax/parse
          version/utils
-         "exn.rkt"
          "l10n.rkt"
+         "message.rkt"
          "string.rkt")
 
 (provide racket-version-selection
@@ -56,15 +56,13 @@
                racket-version-ranges/c
                current-racket-version-relationship/c)]))
 
-(define-exn exn:fail:xiden:invalid-racket-version-interval exn:fail:xiden (lo hi))
+(define+provide-message $racket-version:invalid-interval (min-v max-v))
 
 (define (make-racket-version-interval min-v max-v)
   (define lo (version->integer (normalize-minimum-version min-v)))
   (define hi (version->integer (normalize-maximum-version max-v)))
   (if (< hi lo)
-      (raise (exn:fail:xiden:invalid-racket-version-interval
-              (format "Cannot match Racket version in reversed interval: [~a, ~a]" min-v max-v)
-              (current-continuation-marks) min-v max-v))
+      (raise ($racket-version:invalid-interval min-v max-v))
       (values lo hi)))
 
 (define (normalize-minimum-version v)
@@ -124,9 +122,9 @@
   (define (test-invalid-interval min-v max-v)
     (test-exn (format "Flag [~a, ~a] as an invalid interval" min-v max-v)
               (λ (e)
-                (and (exn:fail:xiden:invalid-racket-version-interval? e)
-                     (check-eq? (exn:fail:xiden:invalid-racket-version-interval-lo e) min-v)
-                     (check-eq? (exn:fail:xiden:invalid-racket-version-interval-hi e) max-v)))
+                (and ($racket-version:invalid-interval? e)
+                     (check-eq? ($racket-version:invalid-interval-min-v e) min-v)
+                     (check-eq? ($racket-version:invalid-interval-max-v e) max-v)))
               (λ ()
                 (racket-version-in-range? "0.0" min-v max-v))))
 

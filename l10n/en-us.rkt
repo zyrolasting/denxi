@@ -413,6 +413,11 @@
                (~a (encode 'base64 (make-digest path 'sha384))))
        (~a "Unauthorized attempt to execute non-existant " path))]
 
+  [($racket-version:invalid-interval min-v max-v)
+   (format "Cannot match Racket version in reversed interval: [~a, ~a]"
+           min-v
+           max-v)]
+
   [($path-not-found pattern wrt)
    (format "Could not find path matching ~s~n  w.r.t. ~a"
            pattern
