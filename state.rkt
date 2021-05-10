@@ -968,7 +968,7 @@
                                 #f
                                 e)))])
         (define-values (_ rev-id rev-no path-id path)
-          (sequence-ref (in-xiden-objects query output-name) 0))
+          (sequence-ref (in-xiden-objects query) 0))
         (find-exactly-one (output-record #f rev-id #f output-name)))))))
 
 

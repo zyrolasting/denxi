@@ -15,7 +15,9 @@
 
 (provide (contract-out
           [write-message-log
-           (-> subprogram-log/c message-formatter/c void?)]
+           (-> (or/c $message? subprogram-log/c)
+               message-formatter/c
+               void?)]
           [write-message
            (->* ($message?) (#:newline? any/c message-formatter/c output-port?) void?)]))
 
