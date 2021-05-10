@@ -4,13 +4,13 @@
   (begin (begin (provide (all-from-out s))
                 (require s)) ...))
 
-(r "../artifact.rkt"
+(r racket/exn
+   "../artifact.rkt"
    "../archive.rkt"
    "../cli-flag.rkt"
    "../cmdline.rkt"
    "../dig.rkt"
    "../codec.rkt"
-   "../exn.rkt"
    "../file.rkt"
    "../format.rkt"
    "../input.rkt"
