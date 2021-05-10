@@ -5,7 +5,6 @@
                     racket/contract
                     racket/path
                     racket/sequence
-                    db
                     xiden/message
                     xiden/query
                     xiden/state
