@@ -46,7 +46,6 @@
 ; Provided ids include relation structs. See use of define-relation.
 (provide (struct-out record)
          build-workspace-path
-         make-workspace-path-builder
          path-in-workspace?
          call-with-ephemeral-workspace
          (contract-out
@@ -67,10 +66,6 @@
                output-record?)]
           [find-path-record
            (-> any/c (or/c path-record? #f))]
-          [find-package-query
-           (-> exact-positive-integer?
-               string?
-               (or/c parsed-package-query? #f))]
           [call-with-reused-output
            (-> package-query-variant?
                string?
@@ -80,8 +75,6 @@
            (-> package-query-variant?
                string?
                (sequence/c output-record?))]
-          [in-path-links
-           (-> path-record? (sequence/c path-record?))]
           [find-exactly-one
            (->* (record?) (procedure?) (or/c #f record?))]
           [start-transaction!
@@ -792,9 +785,6 @@
                            (raise e)))])
       (gen-save rec))))
 
-(define (in-path-links path-id)
-  (search-by-record (path-record #f #f #f path-id)))
-
 (define (in-issued-links)
   (in-query+ (~a "select L.path, P.path from " (relation-name paths) " as P "
                  "inner join " (relation-name paths) " as L "
@@ -909,7 +899,7 @@
 
 
 
-(define (in-xiden-objects query-variant output-name)
+(define (in-xiden-objects query-variant)
   (define query (coerce-parsed-package-query query-variant))
   (match-define
     (parsed-package-query
@@ -967,25 +957,8 @@
 
 (define (in-xiden-outputs query-variant output-name)
   (sequence-map (λ (output-name revid revno pathid path) (find-exactly-one (output-record #f revid #f #f)))
-                (in-xiden-objects query-variant output-name)))
+                (in-xiden-objects query-variant)))
 
-
-(define (find-package-query output-name revision-id)
-  (match-define (vector provider-name package-name edition-name revision-number)
-    (query-row+ (~a "select P.name, K.name, E.name, R.number"
-                    " from "       (relation-name providers) " as P"
-                    " inner join " (relation-name packages)  " as K on P.id = K.provider_id"
-                    " inner join " (relation-name editions)  " as E on K.id = E.package_id"
-                    " inner join " (relation-name revisions) " as R on E.id = R.edition_id"
-                    " where R.id = ?")
-                revision-id))
-  (parsed-package-query provider-name
-                        package-name
-                        edition-name
-                        (~a revision-number)
-                        (~a revision-number)
-                        "ii"
-                        output-name))
 
 
 (define (call-with-reused-output query output-name continue)
