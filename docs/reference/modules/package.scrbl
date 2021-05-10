@@ -129,10 +129,10 @@ All @racket[install] @tech{messages} are instances of @racket[$package].
 
 @defthing[current-package-definition-editor (parameter/c (-> bare-racket-module? bare-racket-module?))]{
 A parameter for a procedure that replaces any @tech{bare}
-@tech{package definition} with another before creating a package. This
-procedure defaults to the identity function, which means no code is
-replaced. Otherwise, you may return an alternative definition to
-replace the one in the argument.
+@tech{package definition} with another before creating a package.
+
+This procedure defaults to the identity function, so no code is
+replaced.
 
 This procedure is useful for standardizing definitions, or for
 analyzing builds. @bold{Define with care.} This procedure can override
@@ -157,17 +157,17 @@ This creates builds that will not terminate. Even if Xiden downloads a
 new package definition from @racket{https://example.com/other.rkt}, it
 will only be replaced by another instance of the same data returned
 from @racket[(current-package-definition-editor)].
-
-Defaults to @racket[values].
 }
 
 @defthing[current-package-editor (parameter/c (-> package? package?))]{
 Like @racket[current-package-definition-editor], but for parsed
-packages that are ready to use. This parameter would likely be easier
-to use in a @tech{launcher}, since struct bindings are available to
-operate on the actual package.
+packages that are suitable for installation.
 
-Defaults to @racket[values].
+This procedure defaults to the identity function, so the package is
+used as-is.
+
+This parameter would likely be easier to use in a @tech{launcher},
+since struct bindings are available to operate on the actual package.
 }
 
 
