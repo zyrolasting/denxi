@@ -21,6 +21,8 @@
            (-> string? subprogram?)]
           [empty-package
            package?]
+          [sxs
+           (-> package? (subprogram/c package?))]
           [current-package-definition-editor
            (-> bare-racket-module?
                (or/c bare-racket-module? (subprogram/c bare-racket-module?)))]
@@ -31,7 +33,9 @@
 (require racket/file
          racket/format
          racket/list
+         racket/random
          "artifact.rkt"
+         "codec.rkt"
          "input.rkt"
          "integrity.rkt"
          "state.rkt"
@@ -99,8 +103,22 @@
    output-names
    build))
 
+
+(define (sxs pkg)
+  (subprogram
+   (λ (messages)
+     (define new-provider
+       (string-replace
+        (coerce-string (encode 'base32 (crypto-random-bytes 32)))
+        "=" ""))
+     (values (struct-copy package pkg [provider new-provider])
+             (cons ($show-string (~a "sxs: " (package-provider pkg) " ~> " new-provider))
+                   messages)))))
+
+
 (define (output-not-found name)
   (subprogram-failure ($package:output:undefined)))
+
 
 (define empty-package
   (package ""
@@ -135,6 +153,14 @@
                               pkg)
 
        (subprogram-unit (void))))
+
+
+(module+ test
+  (test-case "Force SxS installations"
+    (define (sample)
+      (package-provider (get-subprogram-value (sxs empty-package))))
+    (check-not-equal? (sample) (sample))))
+
 
 
 ;===============================================================================

@@ -176,6 +176,27 @@ since struct bindings are available to operate on the actual package.
 }
 
 
+@defproc[(sxs [pkg package?]) (subprogram/c package?)]{
+Returns a @tech{subprogram} that functionally updates
+@racket[(package-provider pkg)] with a cryptographically random name.
+
+When used as the @racket[current-package-editor], Xiden is forced into
+an extreme interpretation of side-by-side (SxS) installations.
+
+In this mode, package conflicts become vanishingly improbable. The
+cost is that Xiden's cycle detection and caching mechanisms are
+defeated because they will never encounter the same package enough
+times for them to matter.  Repeated installations under @racket[sxs]
+will increase disk usage with redundant data. The Xiden process using
+it consumes more resources while vulnerable to non-termination.
+
+@racket[sxs] is useful as a support tool when a user encounters an
+unlikely package conflict. Re-running a single installation on the
+conflicting package using @racket[sxs] will force it past the cache
+and cycle detector. Stop using it the moment you don't need it.
+}
+
+
 @section{Package Settings}
 
 @defsetting*[XIDEN_ALLOW_UNSUPPORTED_RACKET]{
