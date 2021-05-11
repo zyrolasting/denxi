@@ -6,14 +6,25 @@
 @title[#:tag "racket-versions"]{Limit Packages to Specific Racket Versions}
 
 Write the @racket[racket-versions] form in a package definition to
-restrict packages to specific versions of a Racket installation. When
-you run a package, Xiden will check if the running version of Racket
-is an element of the set defined by @racket[racket-versions]. If it
-isn't, that halts use of a package.
+declare what versions of a Racket installation may use your
+package. When you run a package, Xiden will check if the running
+version of Racket is an element of the set defined by
+@racket[racket-versions]. If it isn't, that halts use of a package.
 
-This example defines software that can run from Racket v6.0 to Racket
-v7.7.0.5. Each list of two versions is an inclusive interval, so
-support includes the shown versions.
+Be careful with how you understand this feature, because there's an
+important nuance. Remember that Xiden can install arbitrary software,
+so most package definitions won't even include
+@racket[racket-versions]. It's only used when a package means to
+install Racket code for use with the same Racket installation running
+Xiden at the time. If Xiden is running on Racket v7.9, and it is about
+to install a package that claims to only work on v8.0 and up, then
+Xiden can reject the package. Do not take this to mean that Xiden can
+only install Racket code, or that package definition itself won't load
+for certain Racket versions.
+
+This example @racket[racket-versions] form restricts the package for
+use from Racket v6.0 to Racket v7.7.0.5. Each list of two versions is
+an inclusive interval, so support includes the shown versions.
 
 @racketblock[
 (racket-versions ("6.0" "7.7.0.5"))
