@@ -28,10 +28,12 @@
 ; This procedure acts as an interface between a specific method (HTTP,
 ; File read, etc.) and the part of Xiden that reads an estimated number
 ; of bytes from a port.
+
+(define budget/c
+  (or/c +inf.0 exact-nonnegative-integer?))
+
 (define tap/c
-  (-> input-port?
-      (or/c +inf.0 exact-positive-integer?)
-      any))
+  (-> input-port? budget/c any))
 
 (define exhaust/c
   (-> any/c any/c))
@@ -73,11 +75,11 @@
           [sources (->* () #:rest (listof (or/c string? source?)) source?)]
           [lock-source
            (->* (source-variant?)
-                ((or/c +inf.0 exact-nonnegative-integer?)
-                 exhaust/c)
+                (budget/c exhaust/c)
                 (or/c source-variant?
                       bytes?))]
           [tap/c contract?]
+          [budget/c flat-contract?]
           [current-string->source
            (parameter/c (-> string? source?))]
           [eval-untrusted-source-expression
@@ -378,6 +380,15 @@
            "file.rkt"
            "setting.rkt"
            (submod "subprogram.rkt" test))
+
+  (test-case "Detect budget amounts using predicate"
+    (check-pred budget/c 0)
+    (check-pred budget/c -0)
+    (check-pred budget/c 1)
+    (check-pred budget/c +inf.0)
+    (check-false (budget/c -inf.0))
+    (check-false (budget/c 0.0))
+    (check-false (budget/c -1)))
 
   (test-case "Lock sources"
     (define str "hello, world")

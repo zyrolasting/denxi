@@ -35,12 +35,12 @@ control ends up in the program, and what references become available
 as a result of using @racket[fetch] on a source.
 
 
-@defthing[tap/c
-  chaperone-contract?
-  #:value
-  (-> input-port?
-      (or/c +inf.0 exact-positive-integer?)
-      any/c)]{
+@defthing[budget/c flat-contract? #:value (or/c +inf.0 exact-nonnegative-integer?)]{
+A value representing an estimated number of bytes to allocate for a
+future task.
+}
+
+@defthing[tap/c chaperone-contract? #:value (-> input-port? budget/c any/c)]{
 A @tech/reference{contract} for a procedure used to @tech{tap} a
 @tech{source}.
 
