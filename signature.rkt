@@ -13,6 +13,8 @@
 
 (provide (struct-out signature-info)
          (contract-out
+          [MAX_EXPECTED_SIGNATURE_PAYLOAD_LENGTH
+           budget/c]
           [current-verify-signature
            (parameter/c
             (-> well-formed-integrity-info/c well-formed-signature-info/c boolean?))]
@@ -33,7 +35,14 @@
                #:trust-bad-digest any/c
                (or/c #f well-formed-signature-info/c)
                (or/c #f well-formed-integrity-info/c)
-               $signature?)]))
+               $signature?)]
+          [lock-signature-info
+           (->* (well-formed-signature-info/c)
+                (#:public-key-budget (or/c +inf.0 exact-nonnegative-integer?)
+                 #:signature-budget (or/c +inf.0 exact-nonnegative-integer?)
+                 exhaust/c)
+                well-formed-signature-info/c)]))
+
 
 (define+provide-message $signature (ok? stage public-key-path))
 
@@ -103,6 +112,25 @@
                 in
                 est-size))))
            exhaust)))
+
+
+(define (lock-signature-info siginfo
+                             #:public-key-budget
+                             [public-key-budget MAX_EXPECTED_SIGNATURE_PAYLOAD_LENGTH]
+                             #:signature-budget
+                             [signature-budget MAX_EXPECTED_SIGNATURE_PAYLOAD_LENGTH]
+                             [exhaust raise])
+  (call/cc
+   (λ (abort)
+     (define (exhaust* v)
+       (abort (exhaust v)))
+     (signature-info
+      (lock-source (signature-info-pubkey siginfo)
+                   public-key-budget
+                   exhaust*)
+      (lock-source (signature-info-body siginfo)
+                   signature-budget
+                   exhaust*)))))
 
 
 ; ------------------------------------------------------------------------------
@@ -202,6 +230,37 @@
   ; Coverage info should flag this as uncovered when tests are passing.
   (define (fails . _)
     (fail "Control should not have reached here"))
+
+
+  (test-case "Lock signature info"
+    (define example (signature-info (text-source "wx") (text-source "yz")))
+
+    (define (try pb sb)
+      (lock-signature-info #:public-key-budget pb
+                           #:signature-budget sb
+                           example))
+
+    (check-match (try 0 0)
+                 (signature-info (text-source "wx") (text-source "yz")))
+
+    (check-match (try 2 2)
+                 (signature-info #"wx" #"yz"))
+
+    (check-match (try 0 2)
+                 (signature-info (text-source "wx") #"yz"))
+
+    (check-match (try 2 0)
+                 (signature-info #"wx" (text-source "yz")))
+
+    (test-case "Exhaust a lock on first lock-signature failure"
+      (define (try-exhaust p s)
+        (check-equal? (lock-signature-info (signature-info p s)
+                                           values)
+                      1))
+      (try-exhaust (exhausted-source 1) #"")
+      (try-exhaust #"" (exhausted-source 1))
+      (try-exhaust (exhausted-source 1) (exhausted-source 2))))
+
 
   ; A new workspace controls /tmp file pollution
   (test-workspace "Verify signatures"

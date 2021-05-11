@@ -116,6 +116,27 @@ passes.
 The check fails in all other conditions.
 }
 
+
+@defproc[(lock-signature-info [#:public-key-budget
+                               public-key-budget
+                               budget/c
+                               MAX_EXPECTED_SIGNATURE_PAYLOAD_LENGTH]
+                              [#:signature-budget
+                               signature-budget
+                               budget/c
+                               MAX_EXPECTED_SIGNATURE_PAYLOAD_LENGTH]
+                              [siginfo well-formed-signature-info/c]
+                              [exhaust exhaust/c])
+                              well-formed-signature-info/c]{
+Like @racket[lock-integrity-info], but for the fields of a
+@racket[signature-info] instance.
+}
+
+@defthing[MAX_EXPECTED_SIGNATURE_PAYLOAD_LENGTH budget/c]{
+An estimated maximum number of bytes (chosen empirically) for a public
+key or signature.
+}
+
 @defstruct*[($signature $message) ([ok? boolean?]
                                    [stage symbol?]
                                    [public-key-path (or/c #f path-string?)])
