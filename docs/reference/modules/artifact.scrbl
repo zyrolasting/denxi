@@ -45,3 +45,40 @@ Like @racket[subprogram-fetch], but the content is expected to be an
 @tech{artifact}.
 }
 
+
+@defproc[(lock-artifact [arti artifact-info?]
+                        [exhaust exhaust/c raise]
+                        [#:source? source? any/c #t]
+                        [#:integrity? integrity? any/c #t]
+                        [#:signature? signature? any/c #t]
+                        [#:content-budget content-budget budget/c (* 1024 50)]
+                        [#:digest-budget digest-budget budget/c +inf.0]
+                        [#:public-key-budget public-key-budget budget/c +inf.0]
+                        [#:signature-budget signature-budget budget/c +inf.0])
+                        artifact-info?]{
+Returns a functionally-updated @racket[artifact-info].
+
+When @racket[content?] is a true value, then the
+@racket[artifact-info-source] field @racketid[C] is replaced by
+
+@racketblock[
+(lock-source C content-budget exhaust)
+]
+
+When @racket[integrity?] is a true value, then the
+@racket[artifact-info-integrity] field @racketid[I] is replaced by
+
+@racketblock[
+(lock-integrity-info #:digest-budget digest-budget
+                     I exhaust)
+]
+
+When @racket[signature?] is a true value, then the @racket[artifact-info-signature]
+field @racketid[S] is replaced by
+
+@racketblock[
+(lock-signature-info #:public-key-budget public-key-budget
+                     #:signature-budget signature-budget
+                     S exhaust)
+]
+}

@@ -16,7 +16,18 @@
    (->* (source-variant?)
         ((or/c #f well-formed-integrity-info/c)
          (or/c #f well-formed-signature-info/c))
-        artifact-info?)]))
+        artifact-info?)]
+  [lock-artifact
+   (->* (artifact-info?)
+        (exhaust/c
+         #:source? any/c
+         #:integrity? any/c
+         #:signature? any/c
+         #:content-budget budget/c
+         #:digest-budget budget/c
+         #:public-key-budget budget/c
+         #:signature-budget budget/c)
+         artifact-info?)]))
 
 
 (require "format.rkt"
@@ -59,6 +70,41 @@
                        #:on-status (make-on-status (current-message-formatter))
                        name
                        in est-size))))
+
+
+(define (lock-artifact #:source? [source? #t]
+                       #:integrity? [integrity? #t]
+                       #:signature? [signature? #t]
+                       #:content-budget [content-budget (* 1024 50)]
+                       #:digest-budget [digest-budget +inf.0]
+                       #:public-key-budget [public-key-budget +inf.0]
+                       #:signature-budget [signature-budget +inf.0]
+                       arti
+                       [exhaust raise])
+  (call/cc
+   (λ (abort)
+     (define (exhaust* v)
+       (abort (exhaust v)))
+     (let ([lock (λ (? s c) (if (and ? s) (c s) s))])
+       (artifact-info (lock source?
+                            (artifact-info-source arti)
+                            (λ (content)
+                              (lock-source content
+                                           content-budget
+                                           exhaust*)))
+                      (lock integrity?
+                            (artifact-info-integrity arti)
+                            (λ (intinfo)
+                              (lock-integrity-info #:digest-budget digest-budget
+                                                   intinfo
+                                                   exhaust*)))
+                      (lock signature?
+                            (artifact-info-signature arti)
+                            (λ (siginfo)
+                              (lock-signature-info #:public-key-budget public-key-budget
+                                                   #:signature-budget signature-budget
+                                                   siginfo
+                                                   exhaust*))))))))
 
 
 (define ((make-on-status formatter) m)
@@ -115,3 +161,121 @@
   ($attach (or ($signature-ok? status)
                FAILURE)
            status))
+
+
+(module+ test
+  (require rackunit)
+
+  (test-case "Lock artifacts"
+    (define with-content
+      (artifact-info (text-source "qr")
+                     (integrity-info 'md5 (text-source "st"))
+                     (signature-info (text-source "uv")
+                                     (text-source "wx"))))
+
+
+    (define (try source?
+                 integrity?
+                 signature?
+                 content-budget
+                 digest-budget
+                 public-key-budget
+                 signature-budget
+                 [arti with-content])
+      (lock-artifact #:source? source?
+                     #:integrity? integrity?
+                     #:signature? signature?
+                     #:content-budget content-budget
+                     #:digest-budget digest-budget
+                     #:public-key-budget public-key-budget
+                     #:signature-budget signature-budget
+                     arti
+                     values))
+
+    (check-match (try #t #t #t +inf.0 +inf.0 +inf.0 +inf.0)
+                 (artifact-info #"qr"
+                                (integrity-info 'md5 #"st")
+                                (signature-info #"uv" #"wx")))
+
+    (check-match (try #f #t #t +inf.0 +inf.0 +inf.0 +inf.0)
+                 (artifact-info (text-source "qr")
+                                (integrity-info 'md5 #"st")
+                                (signature-info #"uv" #"wx")))
+
+    (check-match (try #t #f #t +inf.0 +inf.0 +inf.0 +inf.0)
+                 (artifact-info #"qr"
+                                (integrity-info 'md5 (text-source "st"))
+                                (signature-info #"uv" #"wx")))
+
+    (check-match (try #t #t #f +inf.0 +inf.0 +inf.0 +inf.0)
+                 (artifact-info #"qr"
+                                (integrity-info 'md5 #"st")
+                                (signature-info (text-source "uv")
+                                                (text-source "wx"))))
+
+    (check-match (try #t #t #t 0 +inf.0 +inf.0 +inf.0)
+                 (artifact-info (text-source "qr")
+                                (integrity-info 'md5 #"st")
+                                (signature-info #"uv" #"wx")))
+
+    (check-match (try #t #t #t 0 0 +inf.0 +inf.0)
+                 (artifact-info (text-source "qr")
+                                (integrity-info 'md5 (text-source "st"))
+                                (signature-info #"uv" #"wx")))
+
+    (check-match (try #t #t #t 0 0 0 +inf.0)
+                 (artifact-info (text-source "qr")
+                                (integrity-info 'md5 (text-source "st"))
+                                (signature-info (text-source "uv") #"wx")))
+
+    (define (check-exhaust arti [expected 1])
+      (check-equal? (lock-artifact arti values)
+                    expected))
+
+    (check-exhaust
+     (artifact-info (exhausted-source 1)
+                    (integrity-info 'md5 #"")
+                    (signature-info #"" #"")))
+
+    (check-exhaust
+     (artifact-info #""
+                    (integrity-info 'md5 (exhausted-source 1))
+                    (signature-info #"" #"")))
+
+    (check-exhaust
+     (artifact-info #""
+                    (integrity-info 'md5 #"")
+                    (signature-info (exhausted-source 1) #"")))
+
+    (check-exhaust
+     (artifact-info #""
+                    (integrity-info 'md5 #"")
+                    (signature-info #"" (exhausted-source 1))))
+
+    (check-exhaust
+     (artifact-info (exhausted-source 1)
+                    (integrity-info 'md5 (exhausted-source 2))
+                    (signature-info (exhausted-source 3)
+                                    (exhausted-source 4)))
+     1)
+
+    (check-exhaust
+     (artifact-info #""
+                    (integrity-info 'md5 (exhausted-source 2))
+                    (signature-info (exhausted-source 3)
+                                    (exhausted-source 4)))
+     2)
+
+    (check-exhaust
+     (artifact-info #""
+                    (integrity-info 'md5 #"")
+                    (signature-info (exhausted-source 3)
+                                    (exhausted-source 4)))
+     3)
+
+    (check-exhaust
+     (artifact-info #""
+                    (integrity-info 'md5 #"")
+                    (signature-info #""
+                                    (exhausted-source 4)))
+     4)))
