@@ -30,8 +30,8 @@ get a cache hit.
 You can imagine that conflicts would be rare in practice, but there
 are scenarios where they pop up. Conflicts are a problem when you are
 expecting to install something other than what's cached, and you don't
-want to uninstall anything either. How do you have @italic{and} eat
-that cake?
+want to uninstall anything either. This tutorial explains how to have
+@italic{and} eat that cake.
 
 Depending on the nature of the code leading up to the cache hit, a
 Xiden programmer might respond differently. This tutorial will cause
@@ -143,8 +143,8 @@ add this line.
 encounters them, but before they are installed. That's a powerful hook
 that could be exploited, so it is not configurable by a zero-trust
 launcher.  You must start from a @italic{more} privileged Racket
-program that you trust to use @racket[current-package-editor], like
-a launcher.
+program that you trust to use @racket[current-package-editor], like a
+custom launcher.
 
 @racket[sxs] is a built-in procedure that returns a new package with a
 unique provider name. This has a neat tradeoff: Package conflicts

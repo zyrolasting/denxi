@@ -4,9 +4,11 @@
                     racket/contract
                     racket/string
                     xiden/input
-                    xiden/subprogram
+                    xiden/message
                     xiden/package
+                    xiden/racket-module
                     xiden/string
+                    xiden/subprogram
                     xiden/url
                     xiden/version]
          @for-syntax[xiden/package]
@@ -147,14 +149,14 @@ Take for example a function that returns the same static package
 definition, which has one dependency.
 
 @racketblock[
-(define (before-new-package original)
+(current-package-definition-editor (lambda (original)
   (struct-copy bare-racket-module original
                [code
                  '((input "pkgdef" (sources "https://example.com/other.rkt"))
                    (output "default"
                            pkgdef-input := (input-ref "pkgdef")
                            pkgdef-path := (resolve-input "pkgdef")
-                           (install #f #f pkgdef-path)))]))
+                           (install #f #f pkgdef-path)))])))
 ]
 
 This creates builds that will not terminate. Even if Xiden downloads a
@@ -178,7 +180,10 @@ since struct bindings are available to operate on the actual package.
 
 @defproc[(sxs [pkg package?]) (subprogram/c package?)]{
 Returns a @tech{subprogram} that functionally updates
-@racket[(package-provider pkg)] with a cryptographically random name.
+@racket[(package-provider pkg)] with a cryptographically random name,
+and adds a @racket[$show-string] @tech{message} to the
+@tech{subprogram log} that displays as @litchar{sxs: <old name> ~>
+<new name>}.
 
 When used as the @racket[current-package-editor], Xiden is forced into
 an extreme interpretation of side-by-side (SxS) installations.
@@ -186,14 +191,17 @@ an extreme interpretation of side-by-side (SxS) installations.
 In this mode, package conflicts become vanishingly improbable. The
 cost is that Xiden's cycle detection and caching mechanisms are
 defeated because they will never encounter the same package enough
-times for them to matter.  Repeated installations under @racket[sxs]
-will increase disk usage with redundant data. The Xiden process using
-it consumes more resources while vulnerable to non-termination.
+times for them to matter.  Installations using @racket[sxs] consume
+more resources, and are vulnerable to non-termination. Stop using
+@racket[sxs] the moment you don't need it.
 
-@racket[sxs] is useful as a support tool when a user encounters an
-unlikely package conflict. Re-running a single installation on the
-conflicting package using @racket[sxs] will force it past the cache
-and cycle detector. Stop using it the moment you don't need it.
+@racket[sxs] is useful for handling unwanted
+@tech/xiden-tutorials{package conflicts}. Re-running a single
+installation using @racket[sxs] will force installation of conflicting
+packages without disturbing other installed packages.
+
+Note that the package inputs are still subject to caching. Only the
+output directories that would hold links to inputs are not cached.
 }
 
 

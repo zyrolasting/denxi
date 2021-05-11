@@ -102,19 +102,17 @@ program's behavior.
 First, @racket[cli] applies the following expression:
 
 @racketblock[
-(parse-command-line program argv flags handle-arguments arg-help-strings handle-help)]
+(parse-command-line program args flags handle-arguments arg-help-strings handle-help)]
 
 Note that some arguments used as-is. Others are computed towards the
 same ends.
 
-@racket[argv] is bound to a vector coerced from @racket[args].
-
-@racket[handle-help] is configured to generates a program that uses
-@racket[help-suffix-string-key] to add localized contextual help. The
-exit code from such a program is @racket[0] if the user actually
-requested help in @racket[args]. @racket[1] otherwise. The same help
-suffix is used in the event the user does not pass enough positional
-arguments for @racket[handle-arguments].
+@racket[handle-help] adds localized contextual help using
+@racket[help-suffix-string-key]. The exit code from such a program is
+@racket[0] if the user actually requested help in
+@racket[args]. @racket[1] otherwise. The same help suffix is used in
+the event the user does not pass enough positional arguments for
+@racket[handle-arguments].
 
 The following example shows the relationship between command line
 parsing, a @tech{runtime configuration} based on flags, and actual

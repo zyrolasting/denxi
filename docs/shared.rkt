@@ -45,6 +45,9 @@
 (define (tech/xiden-reference tag)
   (tech #:doc xiden-reference tag))
 
+(define (tech/xiden-tutorials tag)
+  (tech #:doc xiden-tutorials tag))
+
 (define (tutorial tag)
   (secref #:doc xiden-tutorials tag))
 

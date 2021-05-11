@@ -18,10 +18,10 @@ directory it created once it has no known symbolic links. When given
 the oppurtunity to perform file or network I/O, Xiden will proceed
 only with the user's consent.
 
-Since dependency management is subjective, Xiden requires users to
-define @tech{launchers}. This allows users to set configurations and
-conventions in advance of Xiden's role in their projects. Xiden itself
-attempts to stay fully configurable.
+Since dependency management is subjective, Xiden allows users to
+define custom @tech{launchers} that configure Xiden with privileged
+code. For security, Xiden also ships with a launcher called
+@litchar{xiden} that defaults to a zero-trust configuration.
 
 This section covers the modules that cooperate to these ends.
 
