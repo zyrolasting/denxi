@@ -95,3 +95,8 @@ This is the only @tech{source} that includes all possible safety
 checks and customizations defined by the @tech{launcher}, making it
 suitable for use with arbitrary data.
 }
+
+@defproc[(find-artifact-for-input [in input-info?]) (subprogram/c artifact-info?)]{
+Returns a @tech{subprogram} that attempts to create an @tech{artifact}
+from @racket[in].
+}
