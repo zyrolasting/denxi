@@ -16,6 +16,7 @@
 ;
 
 (require (for-syntax racket/base
+                     racket/syntax
                      syntax/stx)
          racket/cmdline
          racket/format
@@ -183,13 +184,20 @@
     [(_ [id alts ...] expr)
      (with-syntax ([(strs ...)
                     (stx-map (λ (x) (datum->syntax x (symbol->string (syntax-e x))))
-                             #'(id alts ...))])
-       #'(begin (provide id (rename-out [id alts] ...))
-                (define id
+                             #'(id alts ...))]
+                   [canonical-id
+                    (syntax-case #'expr () [(_ setting-id . _)
+                                            (format-id #'stx
+                                                       "--~a"
+                                                       #'setting-id)])])
+       #'(begin (provide canonical-id
+                         (rename-out [canonical-id id]
+                                     [canonical-id alts] ...))
+                (define canonical-id
                   (struct-copy cli-flag expr
                                [additional-flag-strings
                                 (list strs ...)]))
-                (set! all-flags (cons id all-flags))))]))
+                (set! all-flags (cons canonical-id all-flags))))]))
 
 (define (find-cli-flag s)
   (findf (λ (c) (eq? s (cli-flag-setting c)))
