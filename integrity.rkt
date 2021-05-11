@@ -14,6 +14,8 @@
 
 (provide (struct-out integrity-info)
          (contract-out
+          [MAX_EXPECTED_DIGEST_LENGTH
+           budget/c]
           [integrity
            (-> chf/c
                source-variant?

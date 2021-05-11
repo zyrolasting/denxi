@@ -102,3 +102,8 @@ Like @racket[make-digest], except the digest is produced using bytes
 Returns new integrity information, such that digest bytes are within
 the instance itself if @racket[exhaust] is not called.
 }
+
+@defthing[MAX_EXPECTED_DIGEST_LENGTH budget/c]{
+A maximum expected number of bytes occupied by some digest.  Chosen
+empirically.
+}
