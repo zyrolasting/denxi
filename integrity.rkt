@@ -38,8 +38,7 @@
                 integrity-info?)]
           [lock-integrity-info
            (->* (well-formed-integrity-info/c)
-                (#:digest-budget (or/c +inf.0 exact-nonnegative-integer?)
-                 exhaust/c)
+                (#:digest-budget budget/c exhaust/c)
                 well-formed-integrity-info/c)]
           [check-integrity
            (-> #:trust-bad-digest any/c
