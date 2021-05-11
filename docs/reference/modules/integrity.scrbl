@@ -95,3 +95,10 @@ passes an @tech{integrity check} for one of the
 Like @racket[make-digest], except the digest is produced using bytes
 @tech{tapped} from @racket[variant] using @racket[fetch].
 }
+
+@defproc[(lock-integrity-info [to-lock well-formed-integrity-info/c]
+                              [exhaust exhaust/c])
+                              well-formed-integrity-info/c]{
+Returns new integrity information, such that digest bytes are within
+the instance itself if @racket[exhaust] is not called.
+}

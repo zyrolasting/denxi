@@ -34,6 +34,11 @@
            (->* (source-variant?)
                 (chf/c)
                 integrity-info?)]
+          [lock-integrity-info
+           (->* (well-formed-integrity-info/c)
+                (#:digest-budget (or/c +inf.0 exact-nonnegative-integer?)
+                 exhaust/c)
+                well-formed-integrity-info/c)]
           [check-integrity
            (-> #:trust-bad-digest any/c
                #:trust-message-digest-algorithms (listof chf/c)
@@ -105,6 +110,16 @@
              exhaust)))
 
 
+(define (lock-integrity-info intinfo
+                             #:digest-budget [digest-budget MAX_EXPECTED_DIGEST_LENGTH]
+                             [exhaust raise])
+  (integrity-info
+   (integrity-info-algorithm intinfo)
+   (lock-source (integrity-info-digest intinfo)
+                digest-budget
+                exhaust)))
+
+
 ;; -------------------------------------------------------------------------------
 ;; Affirmations
 
@@ -169,6 +184,20 @@
     (check-equal? (integrity-info-algorithm val) 'md5)
     (check-equal? (integrity-info-digest val)
                   #"\220\1P\230<\322O\260\326\226?}(\341\177r"))
+
+  (test-case "Lock integrity info"
+    (check-match (lock-integrity-info (integrity 'md5 (text-source "abc")))
+                 (integrity-info 'md5 #"abc")))
+
+  (test-case "Do not lock integrity info if budget is too low"
+    (check-match (lock-integrity-info #:digest-budget 0
+                                      (integrity 'md5 (text-source "abc")))
+                 (integrity-info 'md5 (text-source "abc"))))
+
+  (test-equal? "Forward exhaust procedure"
+               (with-handlers ([real? values])
+                 (lock-integrity-info (integrity 'md5 (exhausted-source 1))))
+               1)
 
   (test-case "Bind trust in specific paths"
     (define trust?
