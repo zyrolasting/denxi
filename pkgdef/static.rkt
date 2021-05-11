@@ -34,6 +34,11 @@
            (-> bare-pkgdef? symbol? any/c any/c)]
           [get-static-simple-string
            (-> bare-pkgdef? symbol? any/c)]
+          [replace-input-expression
+           (-> bare-pkgdef?
+               non-empty-string?
+               list?
+               bare-pkgdef?)]
           [override-inputs
            (-> bare-pkgdef?
                list?
@@ -149,6 +154,15 @@
          (cdr input-exprs)))))
 
 
+(define (replace-input-expression stripped input-name input-expr)
+  (struct-copy bare-racket-module stripped
+               [code
+                (for/list ([form (in-list (bare-racket-module-code stripped))])
+                  (if (equal? (get-static-input-name form) input-name)
+                      input-expr
+                      form))]))
+
+
 (define-subprogram (read-package-query stripped defaults)
   (define (parse v) (get-static-simple-value stripped v))
   (define provider
@@ -197,6 +211,21 @@
 
 (module+ test
   (require rackunit)
+
+  (test-case "Replace input expression"
+    (check-match
+     (replace-input-expression
+      (strip
+       '(module a xiden/pkgdef
+          (input "a" (artifact #""))
+          (input "b")
+          (input "c")))
+      "a"
+      '(input "x"))
+     (bare-racket-module
+      'a
+      'xiden/pkgdef
+      (list _ ... (list 'input "x") _ ...))))
 
   (test-case "Extract input name"
     (define (check . forms)

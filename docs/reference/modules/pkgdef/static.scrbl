@@ -81,3 +81,12 @@ that share a name with at least one element in @racket[input-exprs].
 If multiple expressions in @racket[input-exprs] share a name, only the
 last occurrance will be used in the output.
 }
+
+@defproc[(replace-input-expression [pkgdef bare-pkgdef?]
+                                   [input-name non-empty-string?]
+                                   [replacement any/c])
+                                   bare-pkgdef?]{
+Functionally replaces the first @racket[input] form
+in @racket[pkgdef] with @racket[replacement], where the input's name
+is @racket[input-name].
+}
