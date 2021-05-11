@@ -21,3 +21,4 @@ For all documentation, see @other-doc[xiden-index].
 @include-section{abstract-concrete.scrbl}
 @include-section{override-inputs.scrbl}
 @include-section{securing-launch.scrbl}
+@include-section{conflicts.scrbl}
