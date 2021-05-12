@@ -210,6 +210,14 @@ as the result.
 }
 
 
+@defproc[(subprogram-branch [test subprogram?] [on-failure subprogram?]) subprogram?]{
+Returns a @tech{subprogram}. If the @racket[test] program fails, then
+the result of the returned program depends on @racket[on-failure].
+
+All @tech{messages} are collected in the @tech{subprogram log}.
+}
+
+
 @section{Entry Points for Subprograms}
 
 @defproc[(run-subprogram [program subprogram?] [messages subprogram-log/c null]) (values any/c (listof $message?))]{

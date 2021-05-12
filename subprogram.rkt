@@ -41,6 +41,10 @@
                  #:force-value any/c)
                 #:rest list?
                 (subprogram/c any/c))]
+          [subprogram-branch
+           (-> subprogram?
+               subprogram?
+               subprogram?)]
           [subprogram-map
            (-> subprogram?
                (-> $message? $message?)
@@ -94,6 +98,14 @@
                        e
                        ($show-string (exn->string e)))
                    m)))))
+
+(define (subprogram-branch test other)
+  (subprogram
+   (λ (messages)
+     (define-values (result messages*) (run-subprogram test messages))
+     (if (eq? result FAILURE)
+         (run-subprogram other messages*)
+         (values result messages*)))))
 
 (define (dump-subprogram #:dump-message [dump-message writeln] #:force-value [v (void)] . preamble)
   (subprogram
@@ -188,7 +200,7 @@
            check-subprogram
            test-subprogram-value
            check-subprogram-value)
-  
+
   (define (test-subprogram-value msg l check)
     (test-case msg
       (check-subprogram-value l check)))
@@ -201,7 +213,7 @@
 
   (define (check-subprogram #:with [initial null] l p)
     (call-with-values (λ () (run-subprogram l initial)) p))
-  
+
   (define (test-subprogram #:with [initial null] msg l p)
     (test-case msg (check-subprogram #:with initial l p)))
 
@@ -322,4 +334,18 @@
                      cyclic
                      (λ (v msg)
                        (check-eq? v FAILURE)
-                       (check-equal? msg (list ($cycle 1)))))))
+                       (check-equal? msg (list ($cycle 1))))))
+
+  (test-subprogram "Branch subprograms"
+                   (subprogram-branch (subprogram-unit 2)
+                                      (subprogram-failure ($show-datum 1)))
+                   (λ (v msg)
+                     (check-equal? v 2)
+                     (check-pred null? msg)))
+
+  (test-subprogram "Branch subprograms (else case)"
+                   (subprogram-branch (subprogram-failure ($show-datum 1))
+                                      (subprogram-unit 2))
+                   (λ (v msg)
+                     (check-equal? v 2)
+                     (check-equal? msg (list ($show-datum 1))))))
