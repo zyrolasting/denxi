@@ -42,9 +42,10 @@
                 #:rest list?
                 (subprogram/c any/c))]
           [subprogram-branch
-           (-> subprogram?
-               subprogram?
-               subprogram?)]
+           (->* (subprogram?
+                 subprogram?)
+                (#:discard? any/c)
+                subprogram?)]
           [subprogram-fold
            (-> subprogram?
                (listof (-> any/c subprogram?))
@@ -103,12 +104,12 @@
                        ($show-string (exn->string e)))
                    m)))))
 
-(define (subprogram-branch test other)
+(define (subprogram-branch #:discard? [discard? #f] test other)
   (subprogram
    (λ (messages)
      (define-values (result messages*) (run-subprogram test messages))
      (if (eq? result FAILURE)
-         (run-subprogram other messages*)
+         (run-subprogram other (if discard? messages messages*))
          (values result messages*)))))
 
 (define (subprogram-fold initial fs)
@@ -359,6 +360,14 @@
                    (λ (v msg)
                      (check-equal? v 2)
                      (check-equal? msg (list ($show-datum 1)))))
+
+  (test-subprogram "Branch subprograms (discard log)"
+                   (subprogram-branch #:discard? #t
+                                      (subprogram-failure ($show-datum 1))
+                                      (subprogram-unit 2))
+                   (λ (v msg)
+                     (check-equal? v 2)
+                     (check-pred null? msg)))
 
   (test-subprogram "Fold subprograms"
                    (let ([add
