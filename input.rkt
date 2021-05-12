@@ -27,7 +27,7 @@
            (-> string?
                (subprogram/c package-input?))]
           [find-artifact-for-input
-           (-> input-info?
+           (-> package-input?
                (subprogram/c artifact-info?))]
           [current-inputs
            (parameter/c (listof package-input?))]))
