@@ -217,6 +217,61 @@ the result of the returned program depends on @racket[on-failure].
 All @tech{messages} are collected in the @tech{subprogram log}.
 }
 
+@defproc[(subprogram-fold [initial subprogram?]
+                          [fns (listof (-> any/c subprogram?))])
+                          subprogram?]{
+Returns a @tech{subprogram}.
+
+Bind each function in @racket[fns] (under the context of
+@racket[subprogram-bind]) starting from @racket[initial].
+
+Assuming @racketid[fn_0] is the first element of @racket[fns], and
+@racketid[fn_N] is the last element of @racket[fns], the returned
+subprogram behaves like the following @racket[mdo] form.
+
+@racketblock[
+(mdo v_0 := initial
+     v_1 := (fn_N v_0)
+     v_2 := (fn_N-1 v_1)
+     ...
+     v_N-1 := (fn_0 v_N-2)
+     v_N := (fn_0 v_N-1))
+]
+
+Notice that @racket[fns] are applied in reverse, so the last element
+of @racket[fns] is the first to operate on the output of
+@racket[initial].
+
+An example follows. Also note that the literal @tech{subprogram log}
+near the end appears to follow the order of the input functions.
+Since message logs are assembled using @racket[cons], the fact the
+functions were applied in reverse made the messages also appear in
+reverse.
+
+@racketblock[
+(define ((shift amount) accum)
+  (subprogram (lambda (messages)
+    (values (+ amount accum)
+            (cons ($show-datum amount)
+                  messages)))))
+
+(define sub
+  (subprogram-fold (subprogram-unit 0)
+                   (list (shift -1)
+                         (shift 8)
+                         (shift -3))))
+
+(define-values (result messages)
+  (run-subprogram sub))
+
+(equal? result 4)
+(equal? messages
+        (list ($show-datum -1)
+              ($show-datum 8)
+              ($show-datum -3)))
+]
+}
+
 
 @section{Entry Points for Subprograms}
 

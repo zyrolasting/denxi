@@ -45,6 +45,10 @@
            (-> subprogram?
                subprogram?
                subprogram?)]
+          [subprogram-fold
+           (-> subprogram?
+               (listof (-> any/c subprogram?))
+               subprogram?)]
           [subprogram-map
            (-> subprogram?
                (-> $message? $message?)
@@ -106,6 +110,12 @@
      (if (eq? result FAILURE)
          (run-subprogram other messages*)
          (values result messages*)))))
+
+(define (subprogram-fold initial fs)
+  (if (null? fs)
+      initial
+      (subprogram-bind (subprogram-fold initial (cdr fs))
+                       (λ (v) ((car fs) v)))))
 
 (define (dump-subprogram #:dump-message [dump-message writeln] #:force-value [v (void)] . preamble)
   (subprogram
@@ -348,4 +358,34 @@
                                       (subprogram-unit 2))
                    (λ (v msg)
                      (check-equal? v 2)
-                     (check-equal? msg (list ($show-datum 1))))))
+                     (check-equal? msg (list ($show-datum 1)))))
+
+  (test-subprogram "Fold subprograms"
+                   (let ([add
+                          (λ (to-add)
+                            (λ (use-in-subprogram)
+                              (subprogram
+                               (λ (messages) (values (+ to-add
+                                                        use-in-subprogram)
+                                                     (cons to-add messages))))))])
+                     (subprogram-fold (subprogram-unit 10)
+                                      (list (add 1)
+                                            (add -9)
+                                            (add 3)
+                                            (add -2))))
+                   (λ (result messages)
+                     (check-equal? result 3)
+                     (check-equal? messages '(1 -9 3 -2))))
+
+  (test-subprogram "Fail folded subprograms at right moment"
+                   (let ([ok (λ (v) (λ (_) (subprogram-attachment v v)))]
+                         [no (λ (v) (λ (_) (subprogram-failure v)))])
+                     (subprogram-fold (subprogram-unit 10)
+                                      (list (ok 1)
+                                            (ok 2)
+                                            (ok 3)
+                                            (no ($show-datum "done"))
+                                            (ok 4))))
+                   (λ (result messages)
+                     (check-eq? result FAILURE)
+                     (check-equal? messages (list ($show-datum "done") 4)))))
