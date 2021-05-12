@@ -75,7 +75,7 @@
 (define (lock-artifact #:source? [source? #t]
                        #:integrity? [integrity? #t]
                        #:signature? [signature? #t]
-                       #:content-budget [content-budget (* 1024 50)]
+                       #:content-budget [content-budget (* 1024 200)]
                        #:digest-budget [digest-budget +inf.0]
                        #:public-key-budget [public-key-budget +inf.0]
                        #:signature-budget [signature-budget +inf.0]
