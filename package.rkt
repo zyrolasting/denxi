@@ -23,6 +23,12 @@
            package?]
           [sxs
            (-> package? (subprogram/c package?))]
+          [load-user-package-definition
+           (-> source-variant?
+               (subprogram/c package-definition-datum?))]
+          [build-user-package
+           (-> package-definition-datum?
+               (subprogram/c package?))]
           [current-package-definition-editor
            (parameter/c
             (-> bare-racket-module?
@@ -141,13 +147,10 @@
 (define-syntax-rule (build-package fields ...)
   (struct-copy package empty-package fields ...))
 
-(define (install link-path-or-#f output-name-or-#f package-definition-source)
-  (mdo pkgdef := (get-package-definition
-                  package-definition-source
-                  (mebibytes->bytes (XIDEN_FETCH_PKGDEF_SIZE_MB))
-                  (XIDEN_INPUT_OVERRIDES))
 
-       pkg := (get-package pkgdef)
+(define (install link-path-or-#f output-name-or-#f pkgdef-source)
+  (mdo pkgdef := (load-user-package-definition pkgdef-source)
+       pkg := (build-user-package pkgdef)
 
        (fulfil-package-output #:allow-unsupported-racket? (XIDEN_ALLOW_UNSUPPORTED_RACKET)
                               (or output-name-or-#f DEFAULT_STRING)
@@ -177,7 +180,9 @@
 ;
 
 
-(define (get-package-definition source max-size override-specs)
+(define (load-user-package-definition source)
+  (define max-size (mebibytes->bytes (XIDEN_FETCH_PKGDEF_SIZE_MB)))
+  (define override-specs (XIDEN_INPUT_OVERRIDES))
   (mdo original-package-definition :=
        (find-original-package-definition source max-size)
 
@@ -196,29 +201,22 @@
 (define-namespace-anchor anchor)
 (define module-namespace (namespace-anchor->namespace anchor))
 
-(define (get-package overridden-package-definition)
+(define (build-user-package pkgdef)
   (mdo evaluated-package :=
        (subprogram
         (λ (messages)
-          ; The reader/expander guards in read-package-definition prevent
-          ; arbitrary code from reaching here. Never provide `get-package`
-          ; to keep it that way.
-          (eval overridden-package-definition
-                module-namespace)
-          (values (dynamic-require `',(cadr overridden-package-definition) 'pkg)
+          (eval pkgdef module-namespace)
+          (values (dynamic-require `',(cadr pkgdef) 'pkg)
                   messages)))
-
        (coerce-subprogram ((current-package-editor)
                            evaluated-package))))
 
 
 (define (find-original-package-definition pkgdef-origin-variant max-size)
-  (if (string? pkgdef-origin-variant)
-      (mdo variant := (fetch-package-definition (~a pkgdef-origin-variant)
-                                                (coerce-source pkgdef-origin-variant)
-                                                max-size)
-           (read-package-definition variant))
-      (read-package-definition pkgdef-origin-variant)))
+  (mdo variant := (fetch-package-definition (~a pkgdef-origin-variant)
+                                            (coerce-source pkgdef-origin-variant)
+                                            max-size)
+       (read-package-definition variant)))
 
 
 (define (find-per-input-overrides package-name override-specs)

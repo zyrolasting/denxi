@@ -128,6 +128,18 @@ in the context of a transaction to avoid this problem.
 All @racket[install] @tech{messages} are instances of @racket[$package].
 }
 
+@defproc[(build-user-package [pkgdef package-definition-datum?]) (subprogram/c package?)]{
+Returns a @tech{subprogram} that builds a new @racket[package]
+instance by dynamically instantiating @racket[pkgdef], then passing
+the result to @racket[current-package-editor].
+}
+
+@defproc[(load-user-package-definition [src source-variant?])
+         (subprogram/c package-definition-datum?)]{
+Returns a @tech{subprogram} that builds a new @tech{package
+definition} from the bytes read from @racket[src], then computes the
+final result using @racket[current-package-definition-editor].
+}
 
 @defthing[current-package-definition-editor
           (parameter/c (-> bare-racket-module?
