@@ -60,11 +60,14 @@
 
 (define (notarize the-notary content)
   (match-define (notary chf pubkey prvkey prvkeypass) the-notary)
+
+  (define user-source
+    (if (source-variant? content)
+        content
+        (artifact-info-source content)))
+
   (define content-source
-    (coerce-source
-     (if (source-variant? content)
-         content
-         (artifact-info-source content))))
+    (coerce-source user-source))
 
   (if chf
       (subprogram-fetch
@@ -79,16 +82,18 @@
 
          (close-input-port in)
          
-         (artifact content-source
+         (artifact user-source
                    intinfo
                    (and intinfo
+                        pubkey
+                        prvkey
                         (signature-info
                          pubkey
                          (make-signature-bytes
                           (integrity-info-digest intinfo)
                           prvkey
                           prvkeypass))))))
-      (subprogram-unit (artifact-info content-source #f #f))))
+      (subprogram-unit (artifact-info user-source #f #f))))
 
 (module+ test
   (require rackunit

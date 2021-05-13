@@ -14,7 +14,8 @@
         "  gc      Collect garbage"
         "  show    Print report"
         "  fetch   Transfer bytes from source"
-        "  mkint   Make integrity info for bytes")]
+        "  mkint   Make integrity info for bytes"
+        "  lock    Lock a package definition")]
 
     [(show-command-help)
      (L "where <what> is one of"

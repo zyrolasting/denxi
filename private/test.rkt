@@ -5,13 +5,17 @@
 
 (provide make-dummy-signature
          make-dummy-integrity
-         call-with-dummy-trust)
+         call-with-dummy-trust
+         useless-public-key-path
+         leaked-private-key-path
+         leaked-private-key-password-path)
 
 (require racket/runtime-path)
-(define-runtime-path private-key-path "privkey.pem")
+
+(define-runtime-path leaked-private-key-path "privkey.pem")
 (define-runtime-path dummy "dummy")
-(define-runtime-path public-key-path "pubkey.pem")
-(define-runtime-path password-path "pass")
+(define-runtime-path useless-public-key-path "pubkey.pem")
+(define-runtime-path leaked-private-key-password-path "pass")
 
 (require "../codec.rkt"
          "../integrity.rkt"
@@ -22,10 +26,10 @@
 
 (define (make-dummy-signature digest)
   (signature-info
-   (file-source (path->complete-path public-key-path))
+   (file-source (path->complete-path useless-public-key-path))
    (make-signature-bytes digest
-                         private-key-path
-                         password-path)))
+                         leaked-private-key-path
+                         leaked-private-key-password-path)))
 
 
 (define (make-dummy-integrity in [algo 'md5])
@@ -38,7 +42,7 @@
    '(md5)
    (λ ()
      (XIDEN_TRUST_PUBLIC_KEYS
-      (list (integrity 'md5 (make-digest public-key-path 'md5)))
+      (list (integrity 'md5 (make-digest useless-public-key-path 'md5)))
       f))))
 
 (module+ test
@@ -58,7 +62,7 @@
      (check-pred $signature-ok?
                  (check-signature #:trust-public-key?
                                   (bind-trust-list (XIDEN_TRUST_PUBLIC_KEYS))
-                                  #:public-key-path public-key-path
+                                  #:public-key-path useless-public-key-path
                                   #:trust-unsigned #f
                                   #:trust-bad-digest #f
                                   sig

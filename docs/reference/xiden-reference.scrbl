@@ -61,3 +61,4 @@ This section covers the modules that cooperate to these ends.
 @include-section{modules/racket-module.scrbl}
 @include-section{modules/codec.scrbl}
 @include-section{modules/notary.scrbl}
+@include-section{modules/lock.scrbl}
