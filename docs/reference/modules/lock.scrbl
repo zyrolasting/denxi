@@ -33,7 +33,7 @@ this, a @tech{notary} creates digests and signatures.
 
 The locking process is recursive, such that if a package definition
 uses another package definition as an input, then @italic{that}
-package definition is locked, then embedded in the containing package
+package definition is locked and embedded in the containing package
 definition. The result is a self-contained software distribution
 program.
 
