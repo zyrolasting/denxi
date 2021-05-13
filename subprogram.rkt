@@ -23,7 +23,6 @@
          subprogram-attachment
          subprogram/c
          subprogram-log/c
-         run-subprogram
          get-subprogram-value
          get-subprogram-log
          define-subprogram
@@ -41,6 +40,10 @@
                  #:force-value any/c)
                 #:rest list?
                 (subprogram/c any/c))]
+          [run-subprogram
+           (->* (subprogram?)
+                (list?)
+                (values any/c list?))]
           [subprogram-branch
            (->* (subprogram?
                  subprogram?)
