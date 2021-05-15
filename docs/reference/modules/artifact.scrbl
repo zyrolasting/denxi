@@ -34,9 +34,15 @@ An abbreviated constructor for @racket[artifact-info].
 
 @defproc[(verify-artifact [arti artifact-info?] [pathrec path-record?])
          (subprogram/c void?)]{
-Returns a @tech{subprogram} that fails in the event an
-@tech{artifact} does not meet the restrictions set by the
-@tech{runtime configuration}.
+Returns a @tech{subprogram} that fails in the event an @tech{artifact}
+does not meet the restrictions set by the @tech{runtime
+configuration}. In that case, the @tech{subprogram log} will contain
+any relevant @tech{messages} explaining a verification failure.
+
+The computed value of the subprogram is @racket[(void)] because the
+value is not important. @racket[verify-artifact] is used for its
+ability to halt @tech{subprograms} when an artifact fails
+verification.
 }
 
 @defproc[(fetch-artifact [name string?] [arti artifact-info?])
@@ -48,7 +54,7 @@ Like @racket[subprogram-fetch], but the content is expected to be an
 
 @defproc[(lock-artifact [arti artifact-info?]
                         [exhaust exhaust/c raise]
-                        [#:source? source? any/c #t]
+                        [#:content? content? any/c #t]
                         [#:integrity? integrity? any/c #t]
                         [#:signature? signature? any/c #t]
                         [#:content-budget content-budget budget/c (* 1024 50)]
@@ -70,7 +76,7 @@ When @racket[integrity?] is a true value, then the
 
 @racketblock[
 (lock-integrity-info #:digest-budget digest-budget
-                     I exhaust)
+                     exhaust)
 ]
 
 When @racket[signature?] is a true value, then the @racket[artifact-info-signature]

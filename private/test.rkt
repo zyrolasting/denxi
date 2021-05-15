@@ -5,6 +5,7 @@
 
 (provide make-dummy-signature
          make-dummy-integrity
+         make-dummy-integrity+signature
          call-with-dummy-trust
          useless-public-key-path
          leaked-private-key-path
@@ -35,6 +36,11 @@
 (define (make-dummy-integrity in [algo 'md5])
   (integrity-info algo
                   (make-digest in algo)))
+
+(define (make-dummy-integrity+signature in [algo 'md5])
+  (define intinfo (make-dummy-integrity in algo))
+  (define siginfo (make-dummy-signature (integrity-info-digest intinfo)))
+  (values intinfo siginfo))
 
 
 (define (call-with-dummy-trust f)

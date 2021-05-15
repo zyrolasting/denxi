@@ -20,7 +20,7 @@
   [lock-artifact
    (->* (artifact-info?)
         (exhaust/c
-         #:source? any/c
+         #:content? any/c
          #:integrity? any/c
          #:signature? any/c
          #:content-budget budget/c
@@ -72,7 +72,7 @@
                        in est-size))))
 
 
-(define (lock-artifact #:source? [source? #t]
+(define (lock-artifact #:content? [content? #t]
                        #:integrity? [integrity? #t]
                        #:signature? [signature? #t]
                        #:content-budget [content-budget (* 1024 200)]
@@ -86,7 +86,7 @@
      (define (exhaust* v)
        (abort (exhaust v)))
      (let ([lock (λ (? s c) (if (and ? s) (c s) s))])
-       (artifact-info (lock source?
+       (artifact-info (lock content?
                             (artifact-info-source arti)
                             (λ (content)
                               (lock-source content
@@ -125,7 +125,7 @@
                          (make-digest (build-workspace-path workspace-relative-path)
                                       (integrity-info-algorithm (artifact-info-integrity arti)))
                          #"")))
-                     
+
   ($attach (or ($integrity-ok? status) FAILURE)
            status))
 
@@ -164,7 +164,36 @@
 
 
 (module+ test
-  (require rackunit)
+  (require rackunit
+           racket/file
+           "private/test.rkt"
+           (submod "state.rkt" test)
+           (submod "subprogram.rkt" test))
+
+  (test-workspace "Fetch artifacts"
+    (define data #"abc")
+    (parameterize ([current-output-port (open-output-nowhere)])
+      (check-subprogram
+       (fetch-artifact "anon" (artifact (byte-source data)))
+       (λ (record messages)
+         (check-pred path-record? record)
+         (check-equal? (file->bytes (path-record-path record)) data)
+
+         (test-case "Verify artifacts"
+           (define-values (intinfo siginfo)
+             (make-dummy-integrity+signature
+              (open-input-bytes data)))
+           (define arti (artifact (byte-source data) intinfo siginfo))
+           (check-subprogram (verify-artifact arti record)
+                             (λ (result messages)
+                               (check-equal? result FAILURE)))
+
+           (call-with-dummy-trust
+            (λ ()
+              (check-subprogram (verify-artifact arti record)
+                                (λ (result messages)
+                                  (check-pred void? result))))))))))
+
 
   (test-case "Lock artifacts"
     (define with-content
@@ -174,7 +203,7 @@
                                      (text-source "wx"))))
 
 
-    (define (try source?
+    (define (try content?
                  integrity?
                  signature?
                  content-budget
@@ -182,7 +211,7 @@
                  public-key-budget
                  signature-budget
                  [arti with-content])
-      (lock-artifact #:source? source?
+      (lock-artifact #:content? content?
                      #:integrity? integrity?
                      #:signature? signature?
                      #:content-budget content-budget
