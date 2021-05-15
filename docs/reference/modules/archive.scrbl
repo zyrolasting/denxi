@@ -20,7 +20,9 @@
 @racketmodname[xiden/archive] extracts files from a single archive file.
 
 
-@defthing[current-find-extract-procedure (parameter/c (-> path-string? (or/c #f (-> input-port? any))))]{
+@defthing[current-find-extract-procedure
+          (parameter/c (-> path-string?
+                           (or/c #f (-> input-port? any))))]{
 A parameter used to find an extraction procedure for an archive
 located at a given path. The procedure in the parameter may return
 @racket[#f] if no other procedure is available.
@@ -29,18 +31,18 @@ The default value always returns @racket[#f].
 }
 
 
-@defproc[(extract [in (or/c path-string? input-port?)]) (subprogram/c void?)]{
-
+@defproc[(extract [in (or/c path-string? input-port?)])
+                  (subprogram/c void?)]{
 @margin-note{@racket[extract] offers no control over the destination
-paths of extracted files. Use @racket[in-paths] or @racket[path-matching]
-to select extracted items.}
+paths of extracted files. Use @racket[in-paths] or
+@racket[path-matching] to select extracted items.}
 
-Returns a @tech{subprogram} @racketid[P] that extracts files
-from @racket[in] with respect to @racket[(current-directory)].
+Returns a @tech{subprogram} @racketid[P] that extracts files from
+@racket[in] with respect to @racket[(current-directory)].
 
 If @racket[in] is a @racket[path-string?], then @racket[(extract in)]
-is equivalent to @racket[(call-with-input-file in extract)]. The
-rest of this entry assumes @racket[in] is an input port.
+is equivalent to @racket[(call-with-input-file in extract)]. The rest
+of this entry assumes @racket[in] is an input port.
 
 If @racketid[P] cannot figure out how to extract files, it will return
 @racket[FAILURE] and log @racket[($extract-report 'unsupported
