@@ -54,26 +54,42 @@ created using a private key.
 }
 
 @defproc[(signature [pubkey source-variant?] [body source-variant?]) signature-info?]{
-An abbreviated @racket[signature-info] constructor for use in @tech{package definitions}.
+An abbreviated @racket[signature-info] constructor.
 }
 
 @defthing[well-formed-signature-info/c flat-contract?]{
-Recognizes an instance of @racket[signature-info] that is suitable for use in signature checking.
+Recognizes an instance of @racket[signature-info] that is suitable for
+use with @racket[check-signature].
 }
 
 @defproc[(fetch-signature-payload [src source-variant?] [exhaust exhaust/c]) any/c]{
-Like @racket[fetch], except the return value is a path to a possibly
-cached file of limited size, or the value returned from
-@racket[exhaust].
+Like @racket[fetch], except transfer limits are capped to
+@racket[MAX_EXPECTED_SIGNATURE_PAYLOAD_LENGTH] and no transfer status
+information is reported.
 
-In practice, the file is expected to contain either a public key or a
-signature.  In any case, the file is expected to respect the
-invariants of the OpenSSL command documented at the beginning of this
-section.
+In practice, the fetched bytes are expected to contain either a public
+key or a signature.  In any case, the output is assumed to be
+compatible with the tool used to verify signatures.
 }
 
 
-@defthing[current-verify-signature (parameter/c (-> integrity-info? signature-info? boolean))]{
+@defproc[(make-signature-bytes [digest bytes?]
+                               [private-key-path path-string?]
+                               [private-key-password-path (or/c #f path-string?)])
+                               bytes?]{
+Returns bytes representing the unencoded signature for
+@racket[digest]. Requires access to a private key on the filesystem.
+
+If the private key has a password, then pass a path to a text file
+containing that password to @racket[private-key-password-path].  If
+not provided, the user will be prompted for the password through
+@racket[(current-input-port)].
+}
+
+@defthing[current-verify-signature
+          (parameter/c (-> integrity-info?
+                           signature-info?
+                           boolean?))]{
 A parameter containing a procedure for signature verification.
 Returns @racket[#t] if Xiden may assume that the signature in the
 second argument is valid for the digest found in the first
@@ -93,7 +109,8 @@ procedure in the context of a @tech{launcher}.
                           [#:trust-unsigned trust-unsigned any/c]
                           [#:trust-bad-digest trust-bad-digest any/c]
                           [siginfo (or/c #f signature-info?)]
-                          [intinfo well-formed-integrity-info/c]) $signature?]{
+                          [intinfo well-formed-integrity-info/c])
+                          $signature?]{
 This procedure returns the result of a @deftech{signature check},
 which follows the high-level rules shown below. Each rule is processed
 in the order shown.

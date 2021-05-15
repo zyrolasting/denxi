@@ -153,7 +153,8 @@
       (k public-key-path siginfo)
       ($signature #f
                   (object-name consider-public-key-trust)
-                  (and (file-exists? public-key-path)
+                  (and public-key-path
+                       (file-exists? public-key-path)
                        (file->bytes public-key-path)))))
 
 (define (consider-signature intinfo siginfo)
@@ -262,15 +263,25 @@
       (try-exhaust (exhausted-source 1) (exhausted-source 2))))
 
 
-  ; A new workspace controls /tmp file pollution
   (test-workspace "Verify signatures"
     (test-equal? "Skip signature checking if user trusts bad digests"
-                 (consider-integrity-trust #:trust-bad-digest #t siginfo fails)
+                 (check-signature
+                  #:trust-public-key? (λ _ #f)
+                  #:public-key-path #f
+                  #:trust-unsigned #f
+                  #:trust-bad-digest #t
+                  siginfo fails)
                  ($signature #t (object-name consider-integrity-trust) #f))
 
     (test-equal? "Continue when user does not trust bad digests"
-                 (consider-integrity-trust #:trust-bad-digest #f siginfo values)
-                 siginfo)
+                 (check-signature
+                  #:trust-public-key? (λ _ #f)
+                  #:public-key-path #f
+                  #:trust-unsigned #f
+                  #:trust-bad-digest #f
+                  siginfo
+                  fails)
+                 ($signature #f (object-name consider-public-key-trust) #f))
 
     (test-equal? "Trust unsigned inputs if instructed, but announce doing so"
                  (consider-signature-info #:trust-unsigned #t #f fails)
