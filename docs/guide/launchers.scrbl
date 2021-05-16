@@ -249,22 +249,34 @@ then that link is dependent on the file remaining after any garbage
 collection pass.
 
 
+
 @section[#:tag "launcher-security"]{Security Implications of Launchers}
 
 Xiden's default configuration can be thought of as “Deny All”, but a
-launcher is a normal Racket module that starts with all privileges
+custom launcher is any Racket module that starts with all privileges
 granted by the operating system. Any restrictions Xiden sets in terms
 of the configuration will only apply when the launcher actually gives
-control to Xiden. If your launcher is compromised, then Xiden is
-compromised.
+control to Xiden. So, if your custom launcher is compromised, then
+Xiden is compromised.
 
-If you wish, you can use the built-in @litchar{xiden} launcher to
-mitigate some risks. @litchar{xiden} can only be reconfigured using
-command-line options and environment variables, for a strict subset of
-available options. That shrinks the attack surface some, but custom
-launchers can do things that the default launcher cannot, such as
-intelligently respond to package conflicts or extend the CLI.
+You can use the built-in @litchar{xiden} launcher to mitigate some
+risks. It has the same interface as other launchers.
 
-To learn more about what the differences are and how to guarentee a
-launch from a zero-trust state, see @secref[#:doc
-xiden-tutorials]{securing-launch}.
+@verbatim|{
+$ xiden do +d vendor definition.rkt
+}|
+
+The key difference is that the @litchar{xiden} launcher does not
+modify some @tech/reference{parameters}, like
+@racket[current-package-editor]. @litchar{xiden} is only configurable
+by command-line flags and environment variables, which reduces the
+size of the attack surface.
+
+So why would you ever use a custom launcher? Custom launchers can do
+things that the default launcher cannot, such as intelligently respond
+to package conflicts, extend the CLI, or resolve @tech{package
+queries} in specific ways. The good news is that launchers can
+themselves be signed and distributed using Xiden, to protect trust in
+how Xiden launches despite the customizations.
+
+To learn more, see @secref[#:doc xiden-tutorials]{securing-launch}.
