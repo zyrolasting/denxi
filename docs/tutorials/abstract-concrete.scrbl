@@ -22,9 +22,10 @@ steps to produce files.
 Abstract outputs are obviously useless for file creation. However,
 abstract outputs still have a name, and output names are the last
 piece of information Xiden needs to check if something is already
-installed. This way if you have an existing @tech{workspace} with some
-pre-installed packages, use an abstract output to induce a package
-conflict and quickly issue new links to the dependency on your system.
+installed. This way if you have an existing
+@tech/xiden-reference{workspace} with some pre-installed packages, use
+an abstract output to induce a package conflict and quickly issue new
+links to the dependency on your system.
 
 This enables certain workflows where you write a package definition to
 install some software, check the workspace into version control, and

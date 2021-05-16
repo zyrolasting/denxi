@@ -51,12 +51,12 @@ Lock files are not necessary when you leverage Xiden's design, which
 caches all fulfilled data. When you install software starting from
 zero-trust, a successful installation implies that your system
 contains an integrous copy of authenticated data. You can either check
-your @tech{workspace} into source control or archive it for
-distribution as a file. You may need to sign the archive or commit for
-others to decide if they trust your distribution. When the workspace
-is sent to another user's system, the links may be invalid, but the
-data will be locally present. This means that when a user installs
-package definitions, outputs will be reused normally. On the other
-hand, collecting garbage before installing anything will delete
+your @tech/xiden-reference{workspace} into source control or archive
+it for distribution as a file. You may need to sign the archive or
+commit for others to decide if they trust your distribution. When the
+workspace is sent to another user's system, the links may be invalid,
+but the data will be locally present. This means that when a user
+installs package definitions, outputs will be reused normally. On the
+other hand, collecting garbage before installing anything will delete
 everything in that workspace unless symbolic links are preserved in
 the transfer.
