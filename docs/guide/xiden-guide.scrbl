@@ -28,4 +28,5 @@ better equipped to understand @other-doc[xiden-reference].
 @include-section{creating-packages.scrbl}
 @include-section{launchers.scrbl}
 @include-section{queries.scrbl}
+@include-section{cache.scrbl}
 @include-section{project.scrbl}

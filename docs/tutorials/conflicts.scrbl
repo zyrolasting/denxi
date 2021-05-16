@@ -5,20 +5,20 @@
                     xiden/package]
          "../shared.rkt"]
 
-@title{Handling Package Conflicts}
+@title[#:tag "package-conflicts"]{Handling Package Conflicts}
 
 When Xiden installs a package, it will re-use any outputs that are
-already installed. This creates room for @deftech{package conflicts},
-where the package output you meant to install is simply not built.
-Instead, Xiden will hand you a link to a previously built directory.
+already installed based on the @tech/xiden-reference["exact package
+query"] corresponding to the package. This creates room for
+@deftech{package conflicts}, where Xiden will hand you a link to a
+previously built directory.
 
-This might seem strange, but it makes sense because you, the user, are
-being treated exactly the same way as any other dependent requesting a
-dependency in Xiden's model. I, Xiden, notice that you requested the
-@racket{default} output of the @racket[0]th revision of the
-@racket{minimal} edition of the @racket{css} package by
-@racket{example.com}. I happen to have it ready. Here you go and have
-a great day.
+You, the user, are being treated exactly the same way as any other
+dependent requesting a dependency in Xiden's model. I, Xiden, notice
+that you requested the @racket{default} output of the @racket[0]th
+revision of the @racket{minimal} edition of the @racket{css} package
+by @racket{example.com}. I happen to have it ready. Here's a link.
+Have a great day.
 
 As you can clearly collect, the cache that causes our conflicts
 considers a cacophony of names. A provider name, a package name, an

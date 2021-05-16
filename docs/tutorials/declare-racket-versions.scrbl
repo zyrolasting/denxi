@@ -19,12 +19,12 @@ install Racket code for use with the same Racket installation running
 Xiden at the time. If Xiden is running on Racket v7.9, and it is about
 to install a package that claims to only work on v8.0 and up, then
 Xiden can reject the package. Do not take this to mean that Xiden can
-only install Racket code, or that package definition itself won't load
-for certain Racket versions.
+only install Racket code, or that the package definition itself won't
+load for cetain Racket versions.
 
-This example @racket[racket-versions] form restricts the package for
-use from Racket v6.0 to Racket v7.7.0.5. Each list of two versions is
-an inclusive interval, so support includes the shown versions.
+This example of @racket[racket-versions] restricts the package for use
+from Racket v6.0 to Racket v7.7.0.5. Each list of two versions is an
+inclusive interval, so support includes the shown versions.
 
 @racketblock[
 (racket-versions ("6.0" "7.7.0.5"))
