@@ -1,25 +1,28 @@
 #lang scribble/manual
 
-@require["../shared.rkt" @for-label[@except-in[xiden/pkgdef #%module-begin] racket/base]]
+@require["../shared.rkt"
+         @for-label[@except-in[xiden/pkgdef #%module-begin]
+                    xiden/integrity
+                    xiden/signature
+                    racket/base]]
 
 @title[#:tag "new-pkg"]{Packages}
 
-Xiden defines a @deftech{package} as an active instance of a program
-called a @deftech{package definition}. This will seem odd to those who
-think of packages as inert artifacts. After all, we don't normally
-“execute” packages. In Xiden, package @bold{definitions} are the inert
-artifacts. The difference between a package definition and a package
-is the difference between a program or a process.
+We don't normally “execute” packages, but you do in Xiden. In Xiden, a
+@deftech{package definition} is a program used to create packages and
+install one of their outputs. The difference between a package
+definition and a package is the difference between a program and a
+process.
 
 In this section we will write a @tech{package definition} using the
 @racketmodname[xiden] language. We'll use this definition to create
 and install a package in @secref{launchers}.
 
-The @racketmodname[xiden] language keeps just enough of Racket to be
-useful for what we want to do. We can define variables, write
-procedures, and operate on basic data types. But the language forbids
-@racket[require], I/O, and any terms that would cause side-effects on
-instantiation.
+The @racketmodname[xiden] language allows you to define variables,
+write procedures, and operate on basic data types. But the language
+forbids @racket[require], I/O, and any side-effects on instantiation.
+@bold{Think of a package definition as the declarative form of a
+software release.}
 
 @racketmod[#:file "definition.rkt"
 xiden
@@ -77,8 +80,10 @@ There's no restriction on how you name a provider, but a domain name
 is useful as a verifiable identifier when data is split across
 different networks.
 
-The best URL to put in @racket[url] is one that offers clarifying
+The @racket[url] term is meant to help users find clarifying
 information for the package itself, hence why it points to this page.
+If you do not have a page for your package, then you may safely omit
+@racket[url].
 
 
 @section[#:tag "versioning"]{Declare the Version}
@@ -86,9 +91,10 @@ information for the package itself, hence why it points to this page.
 Package definitions versions have an @tech{edition} and a
 @tech{revision}.
 
-An @deftech{edition} is a name for a target audience. When you wish to
-adapt your software to a different audience without disrupting
-existing users, define a new edition.
+An @deftech{edition} is named after a target audience, or a design
+that serves a target audience. When you wish to adapt your software to
+a different audience without disrupting existing users, define a new
+edition.
 
 A @deftech{revision} is an implementation of an @tech{edition}. Given
 an edition, a user can select a @tech{package definition} using a
