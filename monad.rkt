@@ -16,6 +16,7 @@
 
 (define-syntax (mdo stx)
   (syntax-parse stx #:literals (:=)
+                [(_) #'(void)]
                 [(_ e:expr) #'e]
                 [(_ target:id := e:expr . body)
                  #'(bind e (λ (target) (mdo . body)))]
@@ -45,6 +46,10 @@
     (mdo a := (include-string-return 1)
          b := (include-string (λ (str) (values (add1 a) (string-append str "+"))))
          (include-string (λ (str) (values (* b 2) (string-append str "*"))))))
+
+  (test-pred "Allow empty (mdo) forms"
+             void?
+             (mdo))
 
   (test-pred "Adopts value of monadic type using mdo"
              include-string?

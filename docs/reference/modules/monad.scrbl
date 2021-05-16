@@ -33,9 +33,12 @@ Use to compose two functions that each deal with a monadic type.
 A “monadic do” form for composing a sequence of steps using bind
 operations.
 
-In the simplest case, @racket[(eq? (mdo V) V)]. Once more than one
-term is available, each term must be of the same monadic type.  In
-other words, @racket[mdo] is monomorphic.
+In the simplest case, @racket[(void? (mdo))]. This captures the
+sequence that does nothing.
+
+For single-terms, @racket[(eq? (mdo V) V)]. Once more than one term is
+available, each term must be of the same monadic type.  In other
+words, @racket[mdo] is monomorphic.
 
 @racket[:=] is the monadic bind operator. Here's an example in terms
 of @tech{subprograms}:
