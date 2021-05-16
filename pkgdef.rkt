@@ -184,7 +184,7 @@
 (define-modifier (os-support os:os-sym ...+)
   (set-field* os-support '(os ...)))
 
-(define-modifier (output name:non-empty-string steps:expr ...+)
+(define-modifier (output name:non-empty-string steps:expr ...)
   (λ (st)
     (set-field (set-field st output-names (cons name (package-output-names st)))
                build

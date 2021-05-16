@@ -97,6 +97,9 @@ Defines a @deftech{package output}, which is a named subprogram where
 @racket[body] sits in an implicit @racket[mdo] form.  The output is
 encoded as part of the implementation of @racket[package-build].
 The name is added to @racket[package-output-names].
+
+Blank outputs like @racket[(output "name")] are acceptable, but are
+only useful when expecting cached outputs.
 }
 
 @defform[(provider str)
