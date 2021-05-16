@@ -14,7 +14,6 @@
          "input.rkt"
          "integrity.rkt"
          "l10n.rkt"
-         "lock.rkt"
          "state.rkt"
          "subprogram.rkt"
          "message.rkt"
@@ -73,7 +72,6 @@
              ["gc" (values #t "gc" gc-command)]
              ["mkint" (values #t "mkint" mkint-command)]
              ["fetch" (values #t "fetch" fetch-command)]
-             ["lock" (values #t "lock" lock-command)]
              [_ (values ""
                         (λ _ (values null
                                      (λ (halt)
@@ -278,28 +276,6 @@
                    (parameterize ([current-output-port (current-error-port)])
                      (write-message-log messages (current-message-formatter)))
                    (halt (if (eq? result FAILURE) 1 0) null))))))
-
-
-(define (lock-command args)
-  (cli #:args args
-       #:program "lock"
-       #:arg-help-strings '("pkgdef-source")
-       #:flags
-       (make-cli-flag-table --fetch-total-size
-                            --fetch-buffer-size
-                            --fetch-pkgdef-size
-                            --fetch-timeout
-                            --max-redirects)
-       (λ (flags pkgdef)
-         (values flags
-                 (λ (halt)
-                   (define-values (result messages)
-                     (run-subprogram (lock-package-definition pkgdef
-                                                              fraudulent-notary)))
-                   (if (eq? result FAILURE)
-                       (halt 1 messages)
-                       (halt 0
-                             ($show-datum (dress result)))))))))
 
 
 ; Functional tests follow. Use to detect changes in the interface and
