@@ -64,6 +64,10 @@
                string?
                path-record?
                output-record?)]
+          [declare-link
+           (-> path-string?
+               path-record?
+               path-record?)]
           [find-path-record
            (-> any/c (or/c path-record? #f))]
           [call-with-reused-output

@@ -262,6 +262,19 @@ specific revision, edition, package, and provider.
 }
 
 
+@defproc[(declare-link [link-path path-string?]
+                       [target-record path-record?])
+                       path-record?]{
+Saves an existing link at @racket[link-path] as pointing to the
+(presumably existing) path in @racket[target-record]. If the link
+already exists in the database, the existing record is returned.
+
+After using @racket[declare-link], the path in @racket[target-record]
+becomes eligible for garbage collection when @racket[(not
+(link-exists?  link-path))].
+}
+
+
 @defproc[(declare-output [provider-name non-empty-string?]
                          [package-name non-empty-string?]
                          [edition-name non-empty-string?]
