@@ -1,3 +1,3 @@
 #lang racket/base
-(require "default/hello.rkt")
+(require "example00-output/hello.rkt")
 (module+ main (say-hello))
