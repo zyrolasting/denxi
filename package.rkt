@@ -41,6 +41,7 @@
 (require racket/file
          racket/format
          racket/list
+         racket/path
          racket/random
          "artifact.rkt"
          "codec.rkt"
@@ -435,14 +436,38 @@
            [else
             (mdo temp-directory := (build-package-output pkg output-name)
                  directory-record := (subprogram-unit (make-addressable-directory temp-directory))
+
+                 ; We need to record links in the database AFTER the
+                 ; final name for the directory is set.
+                 (record-input-links directory-record pkg)
+
                  (record-package-output pkg
                                         output-name
                                         directory-record
                                         link-path))]))))
 
+
 (define-subprogram (reuse-package-output pkg output-name output-record-inst link-path)
   ($attach (make-addressable-link (find-path-record (output-record-path-id output-record-inst)) link-path)
            ($package:output:reused)))
+
+
+(define-subprogram (record-input-links directory-record pkg)
+  (parameterize ([current-directory
+                  (build-workspace-path
+                   (path-record-path directory-record))])
+    (for ([input (in-list (package-inputs pkg))])
+      (define link-name (package-input-name input))
+      (when (link-exists? link-name)
+        (declare-link (find-relative-path
+                        (XIDEN_WORKSPACE)
+                        (simple-form-path link-name))
+                      (find-path-record
+                       (find-relative-path
+                        (XIDEN_WORKSPACE)
+                        (normalize-path link-name)))))))
+  ($use (void)))
+
 
 (define (build-package-output pkg output-name)
   (subprogram-acyclic

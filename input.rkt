@@ -33,6 +33,7 @@
            (parameter/c (listof package-input?))]))
 
 (require racket/match
+         racket/path
          "artifact.rkt"
          "dig.rkt"
          "format.rkt"
@@ -96,10 +97,17 @@
            messages))))
 
 (define (resolve-input input)
-  (mdo file-record    := (fetch-input input)
-       link-name      := (subprogram-unit (package-input-name input))
-       link-record    := (subprogram-unit (make-addressable-link file-record link-name))
-       (subprogram-unit link-name)))
+  (mdo file-record  := (fetch-input input)
+       link-name    := (subprogram-unit (package-input-name input))
+       (subprogram
+        (λ (messages)
+          (make-file-or-directory-link
+           (find-relative-path
+            (current-directory)
+            (build-workspace-path (path-record-path file-record)))
+           link-name)
+          (values link-name
+                  messages)))))
 
 (define-source #:key get-untrusted-source-key (untrusted-source [input package-input?])
   (define subprogram
