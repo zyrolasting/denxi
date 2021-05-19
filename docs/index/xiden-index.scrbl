@@ -36,9 +36,10 @@ modules in the @litchar{xiden} collection.
 
 Xiden is a powerful alternative to @tt{raco pkg}, Guix, and Nix.
 Xiden allows you to distribute software to others by custom rules, to
-the point you may easily produce your own Steam, or App Store.  Xiden
-is also suitable for use as a component of continuous integration
-systems and operating systems.
+the point you may feasibly produce your own Steam or App Store by
+throwing an interface in front of Xiden.  Xiden is also suitable for
+use as a component of continuous integration systems and operating
+systems.
 
 End users ultimately control how Xiden works on their system, so they
 can act as their own naming authority for all software found over the
