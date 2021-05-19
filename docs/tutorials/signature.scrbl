@@ -3,9 +3,11 @@
 @title[#:tag "signature"]{Signature Checking}
 
 @require[@for-label[racket
+                    xiden/artifact
                     xiden/codec
                     xiden/integrity
                     xiden/signature
+                    xiden/source
                     xiden/openssl]
                     "../shared.rkt"]
 
