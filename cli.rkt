@@ -282,40 +282,130 @@
 ; verify high-level impact.
 (module+ test
   (require racket/runtime-path
-           rackunit)
+           rackunit
+           (submod "state.rkt" test))
 
   (define mkflag shortest-cli-flag)
 
-  (define-runtime-path private/ "private")
-
-  (define (make-test-path . args)
-    (~a (path->complete-path (apply build-path private/ args))))
-
-  (define test-private-key-path (make-test-path "privkey.pem"))
-  (define test-private-key-password-path (make-test-path "pass"))
-  (define test-dummy-file-path (make-test-path "dummy"))
-  (define test-public-key-path (make-test-path "pubkey.pem"))
-
-  (define (run-functional-test prog)
-    (call-with-values prog
-                      (λ (flags run!)
-                        (call-with-bound-cli-flags
-                         flags (λ ()
-                                 (define-values (exit-code msg) (call/cc run!))
-                                 (values flags exit-code msg))))))
-
-  (define-syntax-rule (try prog)
-    (run-functional-test (λ () prog)))
-
-  (test-case "Fetch from user-provided sources"
+  (define (check-cli args continue)
+    (define messages null)
+    (define formatter (get-message-formatter))
     (define stdout (open-output-bytes))
     (define stderr (open-output-bytes))
-    (define-values (flags exit-code msg)
-      (parameterize ([current-output-port stdout] [current-error-port stderr])
-        (try (fetch-command '("(byte-source #\"abcdef\")")))))
+    (call-with-values
+     (λ ()
+       (parameterize ([current-output-port stdout]
+                      [current-error-port stderr])
+         (launch-xiden! #:arguments args
+                        #:format-message
+                        (λ (m)
+                          (set! messages (cons m messages))
+                          (formatter m))
+                        #:handle-exit
+                        (λ (status)
+                          (values status
+                                  (reverse messages)
+                                  (get-output-bytes stdout #t)
+                                  (get-output-bytes stderr #t))))))
+     continue))
 
-    (check-pred null? flags)
-    (check-pred null? msg)
-    (check-equal? (get-output-bytes stdout) #"abcdef")
-    (check-equal? exit-code 0)
-    (check-true (> (bytes-length (get-output-bytes stderr)) 0))))
+  (define (check-link link-path path)
+    (check-pred link-exists? link-path)
+    (check-equal? (file-or-directory-identity link-path)
+                  (file-or-directory-identity path)))
+
+
+  (define (split-buffer-lines buf)
+    (string-split (bytes->string/utf-8 buf) "\n"))
+
+  (define (test-cli msg args continue)
+    (test-case msg (check-cli args continue)))
+
+  (test-cli "Fetch from user-provided sources"
+            '("fetch" "(byte-source #\"abcdef\")")
+            (λ (exit-code messages stdout stderr)
+              (check-equal? stdout #"abcdef")
+              (check-equal? exit-code 0)
+              (check-true (> (bytes-length stderr) 0))))
+
+  (define-runtime-path rt-examples/ "examples/")
+  (define examples/ (path->complete-path rt-examples/))
+
+  (test-workspace "Support example 0"
+    (define expected-output-directory
+      "example00-output")
+    (define expected-file-link-path
+      (build-path expected-output-directory
+                  "hello.rkt"))
+
+    (check-cli (list "do"
+                     (mkflag --XIDEN_TRUST_BAD_DIGEST)
+                     "#t"
+                     (mkflag --XIDEN_INSTALL_ABBREVIATED_SOURCES)
+                     (~a (build-path examples/ "00-racket-modules" "defn.rkt")))
+               (λ (exit-code messages stdout stderr)
+                 (check-true (link-exists? expected-file-link-path))
+                 (check-true (file-exists? expected-file-link-path))
+                 (check-equal? exit-code 0)))
+
+    (check-cli (list "show" "installed")
+               (λ (exit-code messages stdout stderr)
+                 (check-equal? exit-code 0)
+                 (define entries (split-buffer-lines stdout))
+                 (check-pred list? entries)
+                 (check-equal? (length entries) 1)
+                 (define fields (regexp-split #px"\\s+" (car entries)))
+                 (check-pred list? fields)
+                 (check-equal? (length fields) 3)
+                 (match-define (list exact-query output-name dirname) fields)
+                 (define output-directory (build-path "objects" dirname))
+
+                 (check-equal? exact-query
+                               (format "~a:~a:~a:0:0:ii"
+                                       DEFAULT_STRING
+                                       expected-output-directory
+                                       DEFAULT_STRING))
+
+                 (check-equal? output-name DEFAULT_STRING)
+                 (check-pred directory-exists? output-directory)
+                 (check-link expected-output-directory
+                             output-directory)))
+
+    (check-cli (list "show" "links")
+               (λ (exit-code messages stdout stderr)
+                 (check-equal? exit-code 0)
+                 (define entries
+                   (string-split (bytes->string/utf-8 stdout) "\n"))
+
+                 (check-pred list? entries)
+                 (check-equal? (length entries) 2)
+                 (for ([entry (in-list entries)])
+                   (define fields (regexp-split #px"\\s+" (car entries)))
+                   (check-pred list? fields)
+                   (check-equal? (length fields) 3)
+                   (match-define (list link-path _ obj-path) fields)
+                   (check-link link-path obj-path))))
+
+    ; Garbage collection does nothing at first, because we didn't
+    ; delete the output link.
+    (check-cli (list "gc")
+               (λ (exit-code messages stdout stderr)
+                 (check-equal? exit-code 0)
+                 (check-pred directory-exists? "example00-output")
+                 (check-match messages
+                              (list ($finished-collecting-garbage 0)))
+                 (check-true (link-exists? expected-file-link-path))
+                 (check-true (file-exists? expected-file-link-path))))
+
+    ; Now we delete the link to the output. The garbage collector will
+    ; delete the affected files.
+    (delete-file expected-output-directory)
+    (check-cli (list "gc")
+               (λ (exit-code messages stdout stderr)
+                 (check-equal? exit-code 0)
+                 (check-false (directory-exists? "example00-output"))
+                 (check-match messages
+                              (list ($finished-collecting-garbage
+                                     (? (λ (v) (> v 0)) _))))
+                 (check-false (link-exists? expected-file-link-path))
+                 (check-false (file-exists? expected-file-link-path))))))
