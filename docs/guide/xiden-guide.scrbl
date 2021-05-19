@@ -17,9 +17,8 @@ extensible. It does not have the limitations of @tt{raco pkg}, and is
 suitable for commercial software distribution.
 
 In this guide you will learn how to release and install software using
-Xiden. When you are finished, you'll understand how Xiden works,
-you'll understand what it's strengths/weaknesses are, and you'll be
-better equipped to understand @other-doc[xiden-reference].
+Xiden. When you are finished, you'll understand how Xiden works well
+enough to use the rest of the documentation.
 
 @table-of-contents[]
 
