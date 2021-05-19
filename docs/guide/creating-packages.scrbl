@@ -88,17 +88,18 @@ If you do not have a page for your package, then you may safely omit
 
 @section[#:tag "versioning"]{Declare the Version}
 
-Package definitions versions have an @tech{edition} and a
-@tech{revision}.
+Package definitions have versions, and each version consists of an
+@tech{edition} and a @tech{revision}.
 
-An @deftech{edition} is named after a target audience, or a design
-that serves a target audience. When you wish to adapt your software to
-a different audience without disrupting existing users, define a new
-edition.
+An @deftech{edition} is a string that names a target audience, or a
+design that caters to that audience. When you wish to adapt your
+software to a different audience without disrupting existing users,
+define a new edition.
 
-A @deftech{revision} is an implementation of an @tech{edition}. Given
-an edition, a user can select a @tech{package definition} using a
-@tech{revision number} or a @tech{revision name}.
+A @deftech{revision} is an implementation of an @tech{edition}.  We'll
+assume that a user would prefer the latest revision of their chosen
+edition, but user can select a revision using a @tech{revision number}
+or a @tech{revision name}.
 
 A @deftech{revision number} is an exact non-negative integer. If you
 are releasing a new @tech{package definition} with the same edition,
@@ -113,27 +114,34 @@ zero revision names for the revision number.
 
 @section{Declare Inputs and Outputs}
 
-A package definition is a program. Like any program, it has inputs and
-outputs. A @deftech{package input} is a named datum that won't take up
-space until it is actually used. A @deftech{package output} is a named
-subprogram that builds files using inputs. When a user installs a
-package with Xiden, they select an output from that package.
+As we saw, a package definition is a program. Like any program, we can
+define inputs and outputs. A @deftech{package input} is a named source
+of data which may or may not be available in the package definition. A
+@deftech{package output} is a named subprogram that builds files using
+package inputs.
 
-Writing inputs can be tedious, so we define procedures to capture the
-patterns among them. I expressed two inputs using @deftech{artifacts}.
-Aritfacts are a way to express a source of bytes along with the means
-to verify that we got the right bytes from the right party.
+When a user installs software using Xiden, they are required to select
+a package output. Only the inputs actually used by that output are
+saved to disk.
 
-Skilled readers will notice that this definition tries to deliver an
-artifact and the information used to verify it from the same
-potentially untrusted source.  Don't be alarmed: Xiden does not
-volunteer trust either without user consent. @practice{determinism}
-covers how to adjust definitions to guarentee determinism.
+Writing inputs can be tedious, so we can define procedures to capture
+some patterns. I expressed two inputs using @deftech{artifacts}, which
+express the source of data for an input along with the means to verify
+that we got the right data from the right party.
+
+Skilled readers will notice that this definition has a problem.  It
+delivers an artifact and the information used to verify that artifact
+from the same potentially untrusted source.  Don't be alarmed: Xiden
+does not volunteer trust in this situation. @practice{determinism}
+covers how to adjust definitions for the sake of reproducible builds,
+after the user consents to this arrangement.
 
 The package outputs shown here are simple, but some might be taken
-aback by the fact they require a functional programming background to
-extend. Here's a different way to write the same @racket{minimal}
-output.
+aback by the fact they require a working understanding of monads. If
+you are not sure what I mean, please read @secref[#:doc
+xiden-tutorials]{monads} before proceeding any further.
+
+Here's a different way to write the same @racket{minimal} output.
 
 @racketblock[
 (output "minimal"
@@ -141,7 +149,5 @@ output.
         archive-path  := (resolve-input archive-input)
         (extract-input archive-path))]
 
-This notation is a way to write programs using monadic types. If you
-are familiar with Haskell and its @tt{do} notation, then you'll feel
-at home. If you are not sure what I mean, see @secref[#:doc
-xiden-tutorials]{monads}.
+This notation is a way to write programs using monadic types. Haskell
+programmers will understand the notation without issue.
