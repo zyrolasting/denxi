@@ -1,6 +1,6 @@
 #lang scribble/manual
 
-@title{Integrity Checking}
+@title[#:tag "integrity"]{Integrity Checking}
 
 @require[@for-label[racket
                     xiden/codec
@@ -21,7 +21,7 @@ Xiden checks the integrity for some data using the following
 expression:
 
 @racketblock[
-(require xiden/integrity xiden/rc)
+(require xiden/integrity)
 (check-integrity #:trust-bad-digest
                  (XIDEN_TRUST_BAD_DIGEST)
                  #:trust-message-digest-algorithms

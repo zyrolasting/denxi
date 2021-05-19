@@ -65,10 +65,9 @@ report:
 default.tgz: integrity violation: not trusting CHF sha384. To bypass, add it to XIDEN_TRUST_CHFS
 }|
 
-Remember that we defined integrity information using a SHA-384
-digest. Xiden is paranoid, and will not proceed with any operation
-that it cannot trace back to your affirmative consent. We didn't say
-that we trusted SHA-384 digests, so Xiden rejects the input.
+What this means is that the integrity information in the package
+definition is using a SHA-384 digest, and Xiden was not configured to
+trust it.
 
 Open the @tech{launcher} and add this line.
 

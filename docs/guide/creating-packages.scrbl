@@ -127,14 +127,16 @@ saved to disk.
 Writing inputs can be tedious, so we can define procedures to capture
 some patterns. I expressed two inputs using @deftech{artifacts}, which
 express the source of data for an input along with the means to verify
-that we got the right data from the right party.
+that we got the right data from the right party. For more information,
+read @secref[#:doc xiden-tutorials "integrity"], and then
+@secref[#:doc xiden-tutorials "signature"].
 
-Skilled readers will notice that this definition has a problem.  It
-delivers an artifact and the information used to verify that artifact
-from the same potentially untrusted source.  Don't be alarmed: Xiden
-does not volunteer trust in this situation. @practice{determinism}
-covers how to adjust definitions for the sake of reproducible builds,
-after the user consents to this arrangement.
+Skilled readers will see a problem by now.  The artifact and the
+information used for verification are coming from the same potentially
+untrusted source.  Don't be alarmed: Xiden does not volunteer trust in
+this situation.  @practice{determinism} covers how to adjust
+definitions for the sake of reproducible builds, after the user
+consents to this arrangement.
 
 The package outputs shown here are simple, but some might be taken
 aback by the fact they require a working understanding of monads. If

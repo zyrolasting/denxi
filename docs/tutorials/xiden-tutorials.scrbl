@@ -7,13 +7,14 @@
 
 Each section of this document covers how to accomplish a well-defined
 task using Xiden, when doing so would be tangential to other
-documents.
+documents. For the most part, each section stands alone.
 
 For all documentation, see @other-doc[xiden-index].
 
 @table-of-contents[]
 
 @include-section{integrity.scrbl}
+@include-section{signature.scrbl}
 @include-section{declare-racket-versions.scrbl}
 @include-section{declare-os-support.scrbl}
 @include-section{user-metadata.scrbl}
