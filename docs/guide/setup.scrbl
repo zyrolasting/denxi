@@ -11,12 +11,16 @@ This section covers how to install @tt{xiden} on your system.
 
 First, make sure the following programs are available in your @tt{PATH}.
 
+@margin-note{Your OpenSSL build may differ from others, even if you
+have the correct version. For this reason, the documentation may use
+OpenSSL features that are not available on your machine.  The guide
+will help you account for this if some examples don't work.}
+
 @itemlist[
 @item{SQLite 3.24.0+. Verify with @litchar{sqlite3 -version}}
 @item{Racket 7.0+. Verify with @litchar{racket -v}}
 @item{OpenSSL 0.9.8+. Verify with @litchar{openssl version}}
 ]
-
 
 @section{Install from Racket's Default Package Catalog}
 

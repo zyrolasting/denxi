@@ -58,7 +58,13 @@ $ xi do +a definition.rkt
 
 This command defines a transaction with one step: To install something
 from a definition. If you use the definition we wrote earlier in the
-guide, then this command will fail with the following message in the
+guide, then this command @italic{will} fail for one of two reasons.
+
+The first possible reason is that your OpenSSL installation does not
+support the crypographic hash function used for digests. You can
+address this by following @secref{error-openssl-intinfo}.
+
+The other reason is stated in a message like the following in the
 report:
 
 @verbatim|{
@@ -66,8 +72,8 @@ default.tgz: integrity violation: not trusting CHF sha384. To bypass, add it to 
 }|
 
 What this means is that the integrity information in the package
-definition is using a SHA-384 digest, and Xiden was not configured to
-trust it.
+definition is using a digest made from a CHF you did not say that you
+trusted.
 
 Open the @tech{launcher} and add this line.
 
@@ -75,9 +81,12 @@ Open the @tech{launcher} and add this line.
 (XIDEN_TRUST_CHFS '(sha384))
 ]
 
-This tells Xiden that you trust SHA-384. Because this value is
-programmed directly into the launcher, it will apply every time you
-run it.
+If you used a different CHF when following
+@secref{error-openssl-intinfo}, then use it instead.
+
+This tells Xiden that you trust digests made by the given
+algorithms. Because this value is programmed directly into the
+launcher, it will apply every time you run it.
 
 Run @litchar{xi do +a definition.rkt} again for a different
 message.
@@ -87,11 +96,13 @@ default.tgz: signature violation: public key not trusted. To trust this key, add
 (integrity 'sha384 (base64 "n2Ac8K56quwznmSJFZZtnZFxL1ck16hUf+Ule2jd1bHGMJy/EiK2Vc2ibCITnyM0"))
 }|
 
-Not a bug, but a feature. Xiden refused to use an input because you
-never said that you trusted the public key used to verify
-@racket{default.tgz}'s signature. It's one of my keys. If you trust it
-enough to continue, copy the @racket[integrity] expression to your
-clipboard add this code to your launcher.
+This is another benefit of using a zero-trust launcher: Every reason
+to suspect an input is a reason to not use it.  Xiden refused to use
+the input because you never said that you trusted the @italic{public
+key} used to verify @racket{default.tgz}'s signature of the diest. I
+signed the digests I host for this guide using one of my keys. If you
+trust that key enough to continue, copy the @racket[integrity]
+expression to your clipboard add this code to your launcher.
 
 @racketblock[
 (XIDEN_TRUST_PUBLIC_KEYS
@@ -101,12 +112,14 @@ clipboard add this code to your launcher.
 
 
 This back and forth is intended to encourage explicit consent to
-specifics starting from no trust, just like a well-designed router.
-If this is too inconvenient for you, Xiden can be adjusted to offer
-trust over an entire topic. This is not a good habit, though. You
-should leverage the zero-trust configuration to interactively add
-trust only for what you expressly want. This takes more work, but it
-helps keep you safe, and Xiden's error messages will guide you.
+specifics starting from no trust, just like a sensibly configured
+firewall.  If this is too inconvenient for you, Xiden can be adjusted
+to offer trust over an entire topic. This is not a good habit,
+though. You should leverage the zero-trust configuration to
+interactively add trust only for what you expressly want. This takes
+more work, but it helps keep you safe, and Xiden's error messages will
+guide you. In the end, you'll end up with a launcher that has all of
+your answers to specific prompts built-in.
 
 When you are ready, run @litchar{xi do +a definition.rkt} again. If
 you see a symbolic link appear in the current directory called

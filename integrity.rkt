@@ -226,7 +226,8 @@
 
 
   (test-case "Create integrity information"
-    (for ([algorithm (in-list cryptographic-hash-functions)])
+    (for ([algorithm (in-list cryptographic-hash-functions)]
+          #:when (not (eq? algorithm 'gost)))
       (define info (make-dummy-integrity-info algorithm))
       (check-pred integrity-info? info)
       (check-eq? (integrity-info-algorithm info) algorithm)

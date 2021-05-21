@@ -58,9 +58,9 @@ xiden
 
 (define (archive-artifact filename)
   (artifact (src filename)
-            (integrity 'sha384 (src filename ".dgst"))
+            (integrity 'sha384 (src filename ".sha384"))
             (signature (src "public.pem")
-                       (src filename ".sign"))))
+                       (src filename ".sha384.sign"))))
 ]
 
 
@@ -153,3 +153,26 @@ Here's a different way to write the same @racket{minimal} output.
 
 This notation is a way to write programs using monadic types. Haskell
 programmers will understand the notation without issue.
+
+@section[#:tag "error-openssl-intinfo"]{Troubleshooting OpenSSL for Integrity Information}
+
+On this page we use SHA-384 for integrity information, but your
+OpenSSL build might not include it. If you get an error like
+@litchar{subprocess timeout} later, run @litchar{openssl list
+-digest-commands} to see what options are available to you.
+
+This tutorial's integrity information is available in @litchar{md5},
+@litchar{sha1}, @litchar{sha256}, @litchar{sha384}, and
+@litchar{sha3-384}. For example, if you want to use @litchar{sha1},
+update your definition to replace the hash function like so:
+
+@racketblock[
+(define (archive-artifact filename)
+  (artifact (src filename)
+            (integrity 'sha1 (src filename ".sha1"))
+            (signature (src "public.pem")
+                       (src filename ".sha1.sign"))))
+]
+
+@bold{Be sure to use an option that is both hosted on the server, and
+shown in @litchar{openssl list -digest-commands}.}

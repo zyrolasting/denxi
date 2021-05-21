@@ -19,11 +19,13 @@ contracts for @deftech{cryptographic hash functions} (or
 @deftech{CHF}s).
 
 
-@defthing[DEFAULT_CHF chf/c #:value 'sha3-384]{
-A fallback cryptographic hash function.
+@defthing[DEFAULT_CHF chf/c]{
+A fallback cryptographic hash function to use when one is not
+specified.
 
-This value is subject to change for security reasons, and is not
-guarenteed to be available in the installed OpenSSL implementation.
+While you can use this value as a constant, it isn't a constant.  The
+value is subject to change for security reasons, and is based on CHFs
+available in the host's OpenSSL instance.
 }
 
 @defthing[chf/c flat-contract? #:value (apply or/c cryptographic-hash-functions)]{
@@ -38,26 +40,43 @@ Given @racket[(bytes? V)] or @racket[(input-port? V)], the bytes are drawn direc
 }
 
 @defthing[cryptographic-hash-functions (listof symbol?)]{
-A list of symbols that represent supported message digest algorithms,
-a.k.a. cryptographic hash functions.
+A list of symbols that represent cryptographic hash functions,
+available in the underlying OpenSSL instance.
 
 Bound to @typeset-code[(pretty-format #:mode 'print cryptographic-hash-functions)]
 }
 
 @defsetting*[XIDEN_TRUST_CHFS]{
-A list of trusted cryptographic hash function implementations in
-OpenSSL.
+A list of trusted cryptographic hash functions. If they are available
+in the underlying OpenSSL instance, they may be used.
 }
 
 @defthing[openssl complete-path?]{
 Equal to @racket[(find-executable-path "openssl")].
 }
 
-@defproc[(make-digest [variant md-bytes-source/c] [algorithm chf/c DEFAULT_CHF]) bytes?]{
+@defproc[(make-digest [variant md-bytes-source/c] [chf symbol? DEFAULT_CHF]) bytes?]{
 Returns the raw byte content of @racket[algorithm] applied to bytes from @racket[variant].
+
+Raises @racket[$openssl:unavailable-chf] if the underlying OpenSSL
+instance does not support @racket[chf].
 }
 
-@defstruct*[($openssl-error $message) ([args list?]
+@defproc[(get-available-chfs) (listof symbol?)]{
+Returns a list of cryptographic hash functions supported by the host's
+OpenSSL instance.
+}
+
+@defstruct*[($openssl $message) ()]{
+A @tech{message} pertaining to OpenSSL use.
+}
+
+@defstruct*[($openssl:unavailable-chf $openssl) ([requested symbol?])]{
+The @racket[requested] CHF is not available in the OpenSSL build on
+the host system.
+}
+
+@defstruct*[($openssl:error $openssl) ([args list?]
                                        [timeout (or/c #f (>=/c 0))]
                                        [exit-code exact-nonnegative-integer?]
                                        [output bytes?]

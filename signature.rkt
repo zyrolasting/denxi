@@ -64,9 +64,9 @@
 
 
 (define (default-verify-signature intinfo siginfo)
-  (with-handlers ([$openssl-error?
+  (with-handlers ([$openssl:error?
                    (λ (e) (if (regexp-match? #rx"Signature Verification Failure"
-                                             ($openssl-error-output e))
+                                             ($openssl:error-output e))
                               #f
                               (raise e)))])
     (regexp-match?
@@ -336,7 +336,7 @@
                    ($signature #f (object-name consider-signature) #f))
 
       (test-exn "Don't hide OpenSSL errors"
-                $openssl-error?
+                $openssl:error?
                 (λ () (consider-signature intinfo
                                           (struct-copy signature-info siginfo
                                                        [pubkey #"garbage"])))))))

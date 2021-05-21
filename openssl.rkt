@@ -2,7 +2,9 @@
 
 (require racket/contract
          racket/format
+         racket/list
          racket/port
+         racket/string
          "message.rkt"
          "setting.rkt")
 
@@ -14,47 +16,22 @@
           [chf/c
            flat-contract?]
           [DEFAULT_CHF
-            chf/c]
+           chf/c]
           [md-bytes-source/c
            flat-contract?]
           [make-digest
            (->* (md-bytes-source/c)
-                (chf/c)
+                (symbol?)
                 bytes?)]))
 
-(define+provide-message $openssl-error (args timeout exit-code output reason))
+(define+provide-message $openssl ())
+(define+provide-message $openssl:error (args timeout exit-code output reason))
+(define+provide-message $openssl:unavailable-chf (requested available))
 
 (define openssl (find-executable-path "openssl"))
 
-(define cryptographic-hash-functions
-  '(md4
-    md5
-    sha1
-    sha224
-    sha256
-    sha3-224
-    sha3-256
-    sha3-384
-    sha3-512
-    sha384
-    sha512
-    sha512-224
-    sha512-256))
-
-
 (define md-bytes-source/c
   (or/c path-string? bytes? input-port?))
-
-
-(define chf/c
-  (apply or/c cryptographic-hash-functions))
-
-
-(define+provide-setting XIDEN_TRUST_CHFS (listof chf/c) null)
-
-
-(define DEFAULT_CHF 'sha3-384)
-
 
 (define (make-digest variant [algorithm DEFAULT_CHF])
   (cond [(path-string? variant)
@@ -63,7 +40,10 @@
         [(bytes? variant)
          (make-digest (open-input-bytes variant) algorithm)]
         [(input-port? variant)
-         (run-openssl-command variant "dgst" "-binary" (~a "-" algorithm))]))
+         (if (member algorithm cryptographic-hash-functions)
+             (run-openssl-command variant "dgst" "-binary" (~a "-" algorithm))
+             (raise ($openssl:unavailable-chf algorithm
+                                              cryptographic-hash-functions)))]))
 
 
 (define (run-openssl-command #:timeout [delay-seconds 3] stdin-source . args)
@@ -90,7 +70,7 @@
                   (define output (port->bytes from-stdout))
 
                   (unless (eq? exit-code 0)
-                    (raise ($openssl-error args
+                    (raise ($openssl:error args
                                            (or maybe-sp
                                                delay-seconds)
                                            exit-code
@@ -101,3 +81,34 @@
                 (λ ()
                   (close-input-port from-stderr)
                   (close-input-port from-stdout))))
+
+(define cryptographic-hash-functions
+  (filter-map (λ (el)
+                (define str (bytes->string/utf-8 el))
+                (and (non-empty-string? str)
+                     (string->symbol str)))
+              (regexp-split
+               #px"\\s+"
+               (run-openssl-command (open-input-bytes #"")
+                                    "list"
+                                    "-digest-commands"))))
+
+(define chf/c
+  (apply or/c cryptographic-hash-functions))
+
+
+(define+provide-setting XIDEN_TRUST_CHFS (listof chf/c) null)
+
+
+(define DEFAULT_CHF
+  (or (ormap (λ (chf)
+               (findf (λ (v) (eq? chf v))
+                      cryptographic-hash-functions))
+             '(sha3-384
+               sha3-512
+               sha3-256
+               sha3-224
+               sha384
+               sha256
+               sha1))
+      (car cryptographic-hash-functions)))

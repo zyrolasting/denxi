@@ -133,7 +133,10 @@
      "Maximum number of seconds a subprocess may run"]
 
     [(XIDEN_INPUT_OVERRIDES)
-     "Package input overrides"]))
+     "Package input overrides"]
+
+    [(XIDEN_WORKSPACE)
+     "Directory to use to store state"]))
 
 
 (define (restrict-preamble name)
@@ -487,7 +490,15 @@
        "This is likely a bug with the service.\n"
        "Please report it to the maintainer.")]
 
-  [($openssl-error args timeout exit-code output reason)
+  [($openssl:unavailable-chf requested available)
+   (let ([r-available (reverse available)])
+   (L (~a "The requested CHF " requested " is not available in your OpenSSL build.")
+      "The currently available CHFs are"
+      (~a (string-join (reverse (cdr r-available)) ",")
+          "and"
+          (car r-available))))]
+
+  [($openssl:error args timeout exit-code output reason)
    (if timeout
        (L (~a "OpenSSL subprocess timed out after " (~a timeout) " seconds")
           (~a "  exe: " openssl)
