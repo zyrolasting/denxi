@@ -50,8 +50,7 @@ scenarios. Sounds great, but how do you solve that brain-numbingly
 horrid problem that Windows UAC had? You know, when you were asked one
 question at a time by a single-file line of dialog boxes? It doesn't
 matter how much you just signed away in that one box with the funny
-words, you're just smlapping[*](#smlap) it all away to get things
-done.
+words, you're just smlapping[*](#1) it all away to get things done.
 
 Xiden approaches the Security/UX problem by defining both extremes and
 leaving the practical compromise up to configuration.
@@ -148,9 +147,10 @@ challenge that wasn't considered.
 
 ---
 
-<span id="#smlap">*</span> That wasn't a typo. A smlap is when you try to
-touch something but can't decide on a "smack" or a "slap," so you do a
-flaccid combination of the two.  It's that thing that you do to a
-touchscreen, a keyboard, or a mouse to convey dismissiveness to the
-computer that's just doing its job.  If you've ever been smlapped, it
-feels as unpleasant as the portmanteu sounds when you say it out loud.
+###### [1]
+A smlap is when you try to touch something but can't decide on a
+"smack" or a "slap," so you do a flaccid combination of the two.  It's
+that thing that you do to a touchscreen, a keyboard, or a mouse to
+convey dismissiveness to the computer that's just doing its job.  If
+you've ever been smlapped, it feels as unpleasant as the portmanteu
+sounds when you say it out loud.
