@@ -5,7 +5,7 @@
 @title[#:tag "queries"]{Queries}
 
 A @deftech{package query} is a colon-separated string used to identify
-@tech{package definitions}. An examplw looks like
+@tech{package definitions}. An example looks like
 @tt{example.com:calculator}, and that one is understood to mean “the
 @tt{calculator} package provided by @tt{example.com}.”
 
