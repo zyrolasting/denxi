@@ -135,24 +135,40 @@ launcher!
 
 ## Versioning
 
-Xiden addresses versioning by factoring a target audience as part of a
-version. Software releases are categorized under providers and
-editions, codifying the distributor of a release and the intended kind
-of person who intends to download it. This creates a way to adapt
-software to new audiences--breaking changes and all--without
-disrupting your brand, or your existing users. This also makes
-versions useful as discovery information.
+In Xiden, software releases are versioned using editions, and
+revisions defined by a provider.  This codifies the distributor and
+the intended user as part of a software's identity. This creates an
+interesting approach to versioning with a few benefits.
+
+* Versions double as discovery information. It's hard to understand
+  why you want `v3.4.581` of something, but it's easy to understand
+  that you want the `latest` revision of the `small-business` edition.
+
+* Revisions are defined on number lines, and Xiden supports queries
+  that capture intervals with inclusive and exclusive bounds.
+  (e.g. `example.com:http-client:beta:production:ie`
+  means "The `http-client` package made by `example.com`, from
+  the `beta` revision up to but NOT including the `production` revision)
+
+* If a developer wants to throw out everything they did and rewrite a
+  program for a new audience, they can do so without affecting the
+  brand. Just define a new edition for the same package.
+
+* If a user wants to lock down the interface for a package but
+  keep getting security updates, then there are a few options.
+  One is to track an edition that meets that promise, or to
+  program Xiden to override inputs such that only the desired
+  interfaces are used with patches applied.
 
 
 ## Localization
 
-Xiden includes localization facilities for translating its messages to
-other human languages. Xiden can also print its output as a
-machine-readable document. Together, those features allow for
-international use.  A Belgian engineer can accumulate logs from Xiden
-during offline builds, which appear to her in Dutch.  When she next
-establishes an Internet connection, she emails the logs to her German
-colleage. The German colleague can full up the attached log in German.
+Xiden includes the `xiden/l10n` module for translating Xiden's
+machine-readable messages to other human languages.  A Belgian
+engineer can accumulate logs from Xiden during offline builds, which
+appear to her in Dutch.  When she next establishes an Internet
+connection, she emails the logs to her German colleage. The German
+colleague can full up the attached log in German.
 
 
 ## Oh my God, will you shut up?
