@@ -30,12 +30,12 @@
          artifact-info?)]))
 
 
-(require "format.rkt"
+(require "crypto.rkt"
+         "format.rkt"
          "integrity.rkt"
          "state.rkt"
          "subprogram.rkt"
          "monad.rkt"
-         "openssl.rkt"
          "port.rkt"
          "printer.rkt"
          "signature.rkt"

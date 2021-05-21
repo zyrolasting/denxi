@@ -25,10 +25,10 @@
          racket/sequence
          racket/vector
          "codec.rkt"
+         "crypto.rkt"
          "file.rkt"
          "format.rkt"
          "message.rkt"
-         "openssl.rkt"
          "path.rkt"
          "port.rkt"
          "query.rkt"

@@ -23,8 +23,8 @@
 
 (require racket/match
          "artifact.rkt"
+         "crypto.rkt"
          "integrity.rkt"
-         "openssl.rkt"
          "signature.rkt"
          "source.rkt"
          "subprogram.rkt"

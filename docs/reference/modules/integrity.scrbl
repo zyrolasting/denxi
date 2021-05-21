@@ -4,7 +4,7 @@
                     racket/contract
                     xiden/message
                     xiden/integrity
-                    xiden/openssl
+                    xiden/crypto
                     xiden/source]
          racket/format
          xiden/integrity

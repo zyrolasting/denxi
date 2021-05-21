@@ -5,7 +5,7 @@
 @require[@for-label[racket
                     xiden/codec
                     xiden/integrity
-                    xiden/openssl]
+                    xiden/crypto]
                     "../shared.rkt"]
 
 Xiden uses @deftech{cryptographic hash functions}

@@ -3,11 +3,11 @@
 ; Authenticate source of bytes.
 
 (require racket/contract
+         "crypto.rkt"
          "file.rkt"
          "integrity.rkt"
          "state.rkt"
          "message.rkt"
-         "openssl.rkt"
          "setting.rkt"
          "source.rkt")
 

@@ -9,7 +9,7 @@
                     xiden/dig/http
                     xiden/message
                     xiden/integrity
-                    xiden/openssl
+                    xiden/crypto
                     xiden/query
                     xiden/signature
                     xiden/source

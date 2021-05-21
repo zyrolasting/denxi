@@ -3,11 +3,11 @@
 ; Verify integrity of bytes
 
 (require racket/contract
+         "crypto.rkt"
          "file.rkt"
          "format.rkt"
          "state.rkt"
          "message.rkt"
-         "openssl.rkt"
          "port.rkt"
          "setting.rkt"
          "source.rkt")

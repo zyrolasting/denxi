@@ -5,16 +5,16 @@
 @require[@for-label[racket/base
                     racket/contract
                     racket/pretty
-                    xiden/openssl]
+                    xiden/crypto]
          racket/pretty
-         @for-syntax[xiden/openssl]
-         xiden/openssl
+         @for-syntax[xiden/crypto]
+         xiden/crypto
          "../../shared.rkt"]
 
-@defmodule[xiden/openssl]
+@defmodule[xiden/crypto]
 
 OpenSSL is an implicitly-trusted dependency that Xiden invokes as a
-subprocess. @racketmodname[xiden/openssl] also defines data and
+subprocess. @racketmodname[xiden/crypto] also defines data and
 contracts for @deftech{cryptographic hash functions} (or
 @deftech{CHF}s).
 

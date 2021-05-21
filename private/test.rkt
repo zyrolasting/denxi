@@ -19,8 +19,8 @@
 (define-runtime-path leaked-private-key-password-path "pass")
 
 (require "../codec.rkt"
+         "../crypto.rkt"
          "../integrity.rkt"
-         "../openssl.rkt"
          "../signature.rkt"
          "../source.rkt")
 

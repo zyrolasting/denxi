@@ -4,7 +4,7 @@
                     xiden/artifact
                     xiden/integrity
                     xiden/notary
-                    xiden/openssl
+                    xiden/crypto
                     xiden/signature
                     xiden/source
                     xiden/subprogram]
