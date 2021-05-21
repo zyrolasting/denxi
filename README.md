@@ -119,16 +119,17 @@ sense, Xiden is both a dependency manager and a library for one. It
 can do this because it is written in Racket, so it uses DSLs dedicated
 to software distribution problems.
 
-With the custom launcher DSL, Xiden can be adjusted behave like NPM,
-PyPi, `raco pkg`, or like a back-end to an app store. You can even
-customize the notation you use for Xiden's built-in command line
-interface like switching between SemVer and Xiden's package query
-syntax.
+With `#lang xiden/launcher`, the custom launcher DSL, Xiden can be
+programmed to behave like NPM, PyPi, `raco pkg`, or like a back-end to
+an app store. You can even customize the notation you use for Xiden's
+built-in command line interface like switching between SemVer and
+Xiden's package query syntax.
 
-Xiden's language for package definitions resembles a build
-specification language, and it includes recipes for archive extraction
+Xiden's language for package definitions, `#lang xiden` is a primitive
+build specification language that includes ways to declare discovery
+information, metadata, and programs that perform archive extraction
 and Racket module compilation. Are you missing a feature or support
-for a file format? Put it in the launcher, and distribute that
+for a file format?  Put it in the launcher, and distribute that
 launcher!
 
 
