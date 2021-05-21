@@ -50,7 +50,8 @@ scenarios. Sounds great, but how do you solve that brain-numbingly
 horrid problem that Windows UAC had? You know, when you were asked one
 question at a time by a single-file line of dialog boxes? It doesn't
 matter how much you just signed away in that one box with the funny
-words, you're just smlapping[*](#1) it all away to get things done.
+words, you're just smlapping<sup><a href="#1">[1]</a></sup> it all
+away to get things done.
 
 Xiden approaches the Security/UX problem by defining both extremes and
 leaving the practical compromise up to configuration.
