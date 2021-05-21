@@ -1,8 +1,7 @@
 [![](https://img.shields.io/badge/%E2%99%A5-Support%20Ethical%20Software-red)](https://sagegerard.com/show-support.html)
 [![Documentation](https://img.shields.io/badge/Docs-Scribble-blue.svg)](https://docs.racket-lang.org/xiden-index/index.html)
 
-Xiden is a dependency manager, and a library for distributing
-software.
+Xiden is an application and a library for distributing software.
 
 You can use Xiden as a package manager to bring in dependencies for
 your project, but it's so extensible that you can feasibly make an
