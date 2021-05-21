@@ -43,7 +43,7 @@ smart answers to prompts baked in, with sane ways to address errors,
 and with no distractions like unnecessary files or version conflicts.
 
 There's no way that command exists, right? I think it does. It's just
-hard to make.
+hard to make because of subjective elements.
 
 
 ## Balancing Security and Convenience
@@ -51,42 +51,44 @@ hard to make.
 Xiden approaches the Security/UX problem by defining both extremes and
 leaving the practical compromise up to configuration.
 
-The first extreme is the built-in launcher, which takes a firm
-no-consent (think "Deny All") stance to any cryptographic hash
-function, public key, non-OS server certificate, data transfer budget,
-intraprocess code execution, memory quota, time quota, and subprocess
-spawn attempt. If the user didn't say you could execute the binary
-with this SHA3-512 hash, then you _won't_, dammit. The user must
-express their entire trust profile in command line arguments or
-environment variables, and the launcher will probably still complain
-about something they missed. The user also cannot access some of
-Xiden's most sensitive configurations through the default launcher.
-The built-in launcher tries to be the best approach to InfoSec that a
-program written in a high-level langugage can be, but it has that
-horrid Windows UAC problem where you have to answer a bunch of
-prompts. It doesn't matter how much they signed away in that one box
-with the funny words, most users just smlap<sup><a
-href="#1">[1]</a></sup> the prompts away to get things done. The
-zero-trust launcher doesn't even prompt, though. It just mechanically
-says "you didn't consent to this scenario" and halts.
+The first extreme is the built-in zero-trust launcher, `xiden`.  The
+`xiden` command takes a firm no-consent (think "Deny All") stance to
+any cryptographic hash function, public key, non-OS server
+certificate, data transfer budget, intraprocess code execution, memory
+quota, time quota, and subprocess spawn attempt. If the user didn't
+say you could execute the binary with this SHA3-512 hash, then you
+_won't_, dammit. The user must express their entire trust profile in
+command line arguments or environment variables, and the launcher will
+probably still complain about something they missed. The user also
+cannot access some of Xiden's most sensitive configurations through
+the default launcher.  The built-in launcher tries to be the best
+approach to InfoSec that a program written in a high-level langugage
+can be, but it has that horrid Windows UAC problem where you have to
+answer a bunch of prompts. It doesn't matter how much they signed away
+in that one box with the funny words, most users just smlap<sup><a
+href="#1">[1]</a></sup> the prompts away to get things done. `xiden`
+doesn't prompt, though, because it's non-interactive.  It just
+mechanically says "you didn't allow this scenario" and halts.
 
-The zero-trust extreme makes for a usabilty _nightmare_, so the other
-extreme is to define a Xiden user as an absolute authority. Despite
-having many checks, Xiden does not extend OS-level security for the
-user running it as a process.  You can leverage this to write trusted
-code (think "Allow All") to launch Xiden.
+A zero-trust extreme is a usabilty nightmare, so the other extreme is
+to define a Xiden user as an absolute authority. Despite having many
+checks, Xiden does not extend OS-level security for the user running
+it as a process. This makes `root` a risky Xiden user, so it's better
+to use Xiden for unprivileged installations.  Still, you can leverage
+Xiden's implicit trust in its user to write trusted code (think "Allow
+All") on top of the "Deny All" rules.
 
-The compromise between the "Deny All" and "Allow All" extremes is to
-build a custom launcher on top of "Deny All" part, that flips all of
-Xiden's switches and knobs on behalf of a less technical user. The
+Therein lies the compromise: a custom launcher that flips all of
+Xiden's switches and knobs on behalf of a less technical user. A
 custom launcher is the user-friendly program that "bakes in" the smart
-answers to prompts I mentioned earlier, moving you closer to the Magic
-Install Command. For example, the launcher can embed its own trusted
-public keys so it will only install payloads from certain sources.
+answers to prompts I mentioned earlier, moving you closer to your own
+Magic Install Command. For example, the launcher can embed its own
+trusted public keys so it will only install payloads from certain
+sources.
 
 But how would you distribute something so particular to your
 team/fans/customers/disinterested-mailing-list safely?  With Xiden's
-built-in launcher! Xiden's rules for data distribution and
+zero-trust launcher! Xiden's rules for data distribution and
 verification applies equally to itself, so you can use the "Deny All"
 model to distribute custom launchers signed by your private key. And
 when an information security incident comes up in the industry, you
