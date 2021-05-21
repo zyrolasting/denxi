@@ -148,7 +148,7 @@ challenge that wasn't considered.
 
 ---
 
-<a href="#smlap">*</a> That wasn't a typo. A smlap is when you try to
+<span id="#smlap">*</span> That wasn't a typo. A smlap is when you try to
 touch something but can't decide on a "smack" or a "slap," so you do a
 flaccid combination of the two.  It's that thing that you do to a
 touchscreen, a keyboard, or a mouse to convey dismissiveness to the
