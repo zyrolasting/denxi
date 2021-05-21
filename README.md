@@ -45,14 +45,8 @@ and with no distractions like unnecessary files or version conflicts.
 There's no way that command exists, right? I think it does. It's just
 hard to make.
 
-I started by designing a zero-trust security model. _Nothing_ happens
-unless the user typed in the means to consent to _exact_
-scenarios. Sounds great, but how do you solve that brain-numbingly
-horrid problem that Windows UAC had? You know, when you were asked one
-question at a time by a single-file line of dialog boxes? It doesn't
-matter how much you just signed away in that one box with the funny
-words, you're just smlapping<sup><a href="#1">[1]</a></sup> it all
-away to get things done.
+
+## Balancing Security and Convenience
 
 Xiden approaches the Security/UX problem by defining both extremes and
 leaving the practical compromise up to configuration.
@@ -68,8 +62,11 @@ environment variables, and the launcher will probably still complain
 about something they missed. The user also cannot access some of
 Xiden's most sensitive configurations through the default launcher.
 The built-in launcher tries to be the best approach to InfoSec that a
-program written in a high-level langugage can be, but it's clunky to
-use.
+program written in a high-level langugage can be, but it has that
+horrid Windows UAC problem where you have to answer a bunch of
+prompts. It doesn't matter how much they signed away in that one box
+with the funny words, most users just smlap<sup><a
+href="#1">[1]</a></sup> the prompts away to get things done.
 
 The other extreme is that Xiden deems the user controlling it through
 a command line or its libraries as an absolute authority. Despite
@@ -83,17 +80,20 @@ all the internal websites smoothly. Oh, and the launcher has its own
 copy of public keys so it will only install what came from people you
 trust.
 
-You can do all that, and put a simpler interface on top by making a
-custom launcher. That's the user-friendly program that "bakes in" the
-smart answers to prompts I mentioned earlier. That launcher controls
-Xiden, so it can configure Xiden to trust what the launcher
-trusts. But how would you distribute something so particular to your
+The compromise is to build a custom launcher on top of the zero-trust
+model. That's the user-friendly program that "bakes in" the smart
+answers to prompts I mentioned earlier. That launcher controls Xiden,
+so it can configure Xiden to trust what the launcher trusts. But how
+would you distribute something so particular to your
 team/fans/customers/disinterested-mailing-list safely?  With Xiden's
 built-in launcher! Xiden's rules for data distribution and
 verification applies equally to itself, so you can use it to
 distribute custom launchers signed by your private key. And when an
 information security incident comes up in the industry, you can adapt
 your launchers to survive this cyberpunk hellscape we call society.
+
+
+## Handling Dependency Hell
 
 Xiden is built to handle dependency hell. It detects circular
 dependencies, prevents data duplication on a per-file level (even for
@@ -103,49 +103,64 @@ can go as far as to make Xiden completely override ranges of
 dependencies depending on what's happening to them in the
 community. This addresses an oft-overlooked problem in dependency
 management: What developers release is often not the same as what a
-user expects or allows, now or in the future. Xiden allows you to
-reconcile that dilemma in a custom launcher, such that even if a user
-_tries_ to install an known insecure or broken dependency, they'll
-simply get a safe functional equivalent from the same trusted party.
+user expects or allows, now or in the future.
 
-Granted, you have to know how to program Xiden to do cool stuff like
-that. But that knowledge pays off with the ability to set up powerful
-platforms, along with the ability to distribute extensions of
-itself.
+Xiden allows you to reconcile that dilemma in a custom launcher, such
+that even if a user _tries_ to install an known insecure or broken
+dependency, they'll simply get a safe functional equivalent from the
+same trusted party. Put another way, you can leverage the zero-trust
+model to only ever allow what you want on your system at the time.
+
+
+## Distribution Languages
+
+Xiden abstracts over the _solutions_ dependency managers use.  In that
+sense, Xiden is both a dependency manager and a library for one. It
+can do this because it is written in Racket, so it uses DSLs dedicated
+to software distribution problems.
 
 With the custom launcher DSL, Xiden can be adjusted behave like NPM,
 PyPi, `raco pkg`, or like a back-end to an app store. You can even
 customize the notation you use for Xiden's built-in command line
 interface like switching between SemVer and Xiden's package query
-syntax. This is possible because Xiden is highly-modular, and it
-abstracts over the _solutions_ dependency managers use. In that sense,
-Xiden is both a dependency manager and a library for one.  Also, it
-just so happens that Xiden cares about a lot of the same problems that
-operating systems and continuous integration systems use. Case in
-point: Xiden's language for package definitions resembles a build
-specification language.
+syntax.
 
-Versioning is another tough problem to consider, and Xiden addresses
-it by factoring a target audience as part of a version. Software
-releases are categorized under providers and editions, codifying the
-distributor of a release and the intended kind of person who intends
-to download it. This creates a way to adapt software to new audiences
-(breaking changes and all) without disrupting existing users.
+Xiden's language for package definitions resembles a build
+specification language, and it includes recipes for archive extraction
+and Racket module compilation. Are you missing a feature or support
+for a file format? Put it in the launcher, and distribute that
+launcher!
+
+
+## Versioning
+
+Xiden addresses versioning by factoring a target audience as part of a
+version. Software releases are categorized under providers and
+editions, codifying the distributor of a release and the intended kind
+of person who intends to download it. This creates a way to adapt
+software to new audiences--breaking changes and all--without
+disrupting your brand, or your existing users. This also makes
+versions useful as discovery information.
+
+
+## Localization
 
 Xiden includes localization facilities for translating its messages to
 other human languages. Xiden can also print its output as a
 machine-readable document. Together, those features allow for
-international use.  Arlise, a Belgian engineer, can accumulate logs
-from Xiden during offline builds. She reads the logs in Dutch.  When
-Arlise next establishes an Internet connection, she can email the logs
-to her German colleage. The German colleague reads the same attached
-log in German.
+international use.  A Belgian engineer can accumulate logs from Xiden
+during offline builds, which appear to her in Dutch.  When she next
+establishes an Internet connection, she emails the logs to her German
+colleage. The German colleague can full up the attached log in German.
 
-With that, I'm off the soapbox. I'm biased, and I like my solution. If
-you don't want to use Xiden after watching me present it like a
-grinning game show host, then please raise an issue in the Issues
-tab. I find this domain fascinating and would be happy to meet a
-challenge that wasn't considered.
+
+## Oh my God, will you shut up?
+
+Yep. I'm off the soapbox. I'm biased, and I like my solution. If you
+don't want to use Xiden after watching me present it like a grinning
+game show host, then please raise an issue in the Issues tab. I find
+this domain fascinating and would be happy to meet a challenge that
+wasn't considered.
 
 ---
 
