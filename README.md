@@ -66,31 +66,32 @@ program written in a high-level langugage can be, but it has that
 horrid Windows UAC problem where you have to answer a bunch of
 prompts. It doesn't matter how much they signed away in that one box
 with the funny words, most users just smlap<sup><a
-href="#1">[1]</a></sup> the prompts away to get things done.
+href="#1">[1]</a></sup> the prompts away to get things done. The
+zero-trust launcher doesn't even prompt, though. It just mechanically
+says "you didn't consent to this scenario" and halts.
 
-The other extreme is that Xiden deems the user controlling it through
-a command line or its libraries as an absolute authority. Despite
-having many checks, Xiden does not define accounts, so it does not set
-OS-level restrictions on the user running it as a process. So with a
-little study, you can leverage that power to decide what names are
-canonical for any software release. So when you tell it to install
-`browser`, you get Brave, because that's the browser you always
-install. Except when you are at work, where only Chrome seems to show
-all the internal websites smoothly. Oh, and the launcher has its own
-copy of public keys so it will only install what came from people you
-trust.
+The zero-trust extreme makes for a usabilty _nightmare_, so the other
+extreme is to define a Xiden user as an absolute authority. Despite
+having many checks, Xiden does not extend OS-level security for the
+user running it as a process.  You can leverage this to write trusted
+code (think "Allow All") to launch Xiden.
 
-The compromise is to build a custom launcher on top of the zero-trust
-model. That's the user-friendly program that "bakes in" the smart
-answers to prompts I mentioned earlier. That launcher controls Xiden,
-so it can configure Xiden to trust what the launcher trusts. But how
-would you distribute something so particular to your
+The compromise between the "Deny All" and "Allow All" extremes is to
+build a custom launcher on top of "Deny All" part, that flips all of
+Xiden's switches and knobs on behalf of a less technical user. The
+custom launcher is the user-friendly program that "bakes in" the smart
+answers to prompts I mentioned earlier, moving you closer to the Magic
+Install Command. For example, the launcher can embed its own trusted
+public keys so it will only install payloads from certain sources.
+
+But how would you distribute something so particular to your
 team/fans/customers/disinterested-mailing-list safely?  With Xiden's
 built-in launcher! Xiden's rules for data distribution and
-verification applies equally to itself, so you can use it to
-distribute custom launchers signed by your private key. And when an
-information security incident comes up in the industry, you can adapt
-your launchers to survive this cyberpunk hellscape we call society.
+verification applies equally to itself, so you can use the "Deny All"
+model to distribute custom launchers signed by your private key. And
+when an information security incident comes up in the industry, you
+can update your launchers to survive this cyberpunk hellscape we call
+society.
 
 
 ## Handling Dependency Hell
