@@ -658,7 +658,7 @@
                             #:buffer-size buffer-size
                             #:timeout-ms timeout-ms
                             #:est-size est-size))))
-            (define digest (make-digest tmp 'sha384))
+            (define digest (make-digest tmp DEFAULT_CHF))
             (define path (build-addressable-path digest))
             (make-directory* (path-only path))
             (rename-file-or-directory tmp path #t)
