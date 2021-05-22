@@ -491,7 +491,7 @@
        "Please report it to the maintainer.")]
 
   [($openssl:unavailable-chf requested available)
-   (let ([r-available (map ~a (reverse available))])
+   (let ([r-available (map symbol->string (reverse available))])
    (L (~a "The requested CHF " requested " is not available in your OpenSSL build.")
       "The currently available CHFs are"
       (~a (string-join (reverse (cdr r-available)) ",")
