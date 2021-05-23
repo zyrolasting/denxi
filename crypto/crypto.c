@@ -23,7 +23,7 @@ unsigned char digest(const char* mdname, port_read_t fn) {
   unsigned int len = 0;
   unsigned char *outdigest = NULL;
   unsigned char errnum = 0;
-  unsigned int available;
+  int available;
   unsigned int buffer_size = 1024;
   const char buf[buffer_size];
 
@@ -45,10 +45,12 @@ unsigned char digest(const char* mdname, port_read_t fn) {
 
   while (1) {
     available = fn(buf, buffer_size);
-    if (available == 0) break;
-    if (!EVP_DigestUpdate(ctx, buf, available)) {
-      errnum = 3;
-      goto err;
+    if (available == -1) break;
+    if (available > 0) {
+      if (!EVP_DigestUpdate(ctx, buf, available)) {
+        errnum = 3;
+        goto err;
+      }
     }
   }
 
