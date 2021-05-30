@@ -14,7 +14,6 @@ First, make sure the following programs are available in your @tt{PATH}.
 @itemlist[
 @item{SQLite 3.24.0+. Verify with @litchar{sqlite3 -version}}
 @item{Racket 7.0+. Verify with @litchar{racket -v}}
-@item{OpenSSL 0.9.8+. Verify with @litchar{openssl version}}
 ]
 
 
@@ -24,25 +23,9 @@ Xiden is available as a vanilla Racket package on the default
 catalog. Run @litchar|{raco pkg install xiden}| to install it, and
 you're done.
 
-If this fails and you can connect to the catalog fine, then these are
-the likely reasons:
-
-@itemlist[
-
-@item{Your Racket installation may contain a package that defines a
-conflicting @litchar|{xiden}| collection. That package can either be a
-different edition of Xiden, or any package snuck into your
-installation designed to create that conflict.}
-
-@item{Xiden's package tracks the latest release and is
-subject to backwards-incompatible changes as a
-@hyperlink["https://sagegerard.com/new-racket-pkg-releases.html"]{matter
-of policy.} In this case, uninstall the old version of Xiden and
-review the
-@hyperlink["https://github.com/zyrolasting/xiden/blob/master/CHANGELOG.md"]{change
-log}.}
-
-]
+If this fails and you can connect to the catalog fine, then your
+Racket installation may define a conflicting @litchar|{xiden}|
+collection. Remove that collection, then try again.
 
 
 @section{Install from Source}
