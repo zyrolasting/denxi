@@ -5,35 +5,44 @@
 #include <errno.h>
 #include <unistd.h>
 
-typedef int (*port_read_t)(const char*, int);
+typedef unsigned char* (*port_read_t)(int*);
 
+#define SUPPORTED_CHF_COUNT 10
+#define BUFFER_SIZE 1024
 
-char* SUPPORTED_CHFS[20] = {"SHA256", "SHA3-512", "SM3", "BLAKE2S-256", "SHA3-256", "SHA3-224",
-                            "SHA2-384", "SHA2-512", "SHA512-224", "SHAKE-256", "SHA-1", "SHA3-384",
-                            "SHAKE-128", "MD5-SHA1", "MD5", "SHA2-224", "BLAKE2B-512",
-                            "SHA2-512/256", "KECCAK-KMAC-128", "KECCAK-KMAC-256" };
+char* XIDEN_SUPPORTED_CHFS[SUPPORTED_CHF_COUNT] = {
+  "MD5",
+  "SHA1",
+  "SHA2-224",
+  "SHA2-384",
+  "SHA2-512",
+  "SHA256",
+  "SHA3-224",
+  "SHA3-256",
+  "SHA3-384",
+  "SHA3-512"
+};
 
-char** get_supported_chfs() {
-  return SUPPORTED_CHFS;
+const unsigned int XIDEN_AVAILABLE_CHF_COUNT = SUPPORTED_CHF_COUNT;
+const unsigned int XIDEN_DEFAULT_CHF_INDEX = 8; // SHA3-384
+
+EVP_MD* get_chf_handle(unsigned int mdindex) {
+  return (mdindex < XIDEN_AVAILABLE_CHF_COUNT)
+    ? EVP_MD_fetch(NULL, XIDEN_SUPPORTED_CHFS[mdindex], NULL)
+    : NULL;
 }
 
-unsigned char digest(const char* mdname, port_read_t fn) {
-  EVP_MD_CTX *ctx = NULL;
-  EVP_MD *md = NULL;
+int get_digest_size(const EVP_MD* md) {
+  return EVP_MD_size(md);
+}
+
+unsigned char make_digest_unsafe(EVP_MD* md, char* outdigest, port_read_t fn) {
   unsigned int len = 0;
-  unsigned char *outdigest = NULL;
-  unsigned char errnum = 0;
-  int available;
-  unsigned int buffer_size = 1024;
-  const char buf[buffer_size];
+  char errnum = 0;
+  char* buf;
 
-  ctx = EVP_MD_CTX_new();
-  if (ctx == NULL)
-    goto err;
-
-  // TODO: Have opinion on provider and criteria.
-  md = EVP_MD_fetch(NULL, mdname, NULL);
-  if (md == NULL) {
+  EVP_MD_CTX* ctx = EVP_MD_CTX_new();
+  if (ctx == NULL) {
     errnum = 1;
     goto err;
   }
@@ -43,34 +52,20 @@ unsigned char digest(const char* mdname, port_read_t fn) {
     goto err;
   }
 
-  while (1) {
-    available = fn(buf, buffer_size);
-    if (available == -1) break;
-    if (available > 0) {
-      if (!EVP_DigestUpdate(ctx, buf, available)) {
-        errnum = 3;
-        goto err;
-      }
+  while ((buf = fn(&len)) != NULL) {
+    if (EVP_DigestUpdate(ctx, buf, len) == 0) {
+      errnum = 3;
+      goto err;
     }
   }
 
-  outdigest = OPENSSL_malloc(EVP_MD_size(md));
-  if (outdigest == NULL) {
+  if (!EVP_DigestFinal_ex(ctx, outdigest, NULL)) {
     errnum = 4;
-    goto err;
   }
 
-  if (!EVP_DigestFinal_ex(ctx, outdigest, &len)) {
-    errnum = 5;
-    goto err;
-  }
-
-  write(1, outdigest, len);
  err:
-  OPENSSL_free(outdigest);
   EVP_MD_free(md);
   EVP_MD_CTX_free(ctx);
 
   return errnum;
 }
-
