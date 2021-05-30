@@ -35,7 +35,7 @@
 (define-runtime-path crypto.dynlib "crypto/crypto.dynlib")
 
 (define+provide-message $crypto ())
-(define+provide-message $crypto:md-failure $crypto (error-code))
+(define+provide-message $crypto:make-digest-failure $crypto (error-code))
 
 
 (define crypto-lib-file
@@ -103,7 +103,7 @@
                                                 gc-buffer)))))))
 
          (unless (equal? error-code 0)
-           (raise ($crypto:md-failure error-code)))
+           (raise ($crypto:make-digest-failure error-code)))
 
          digest-buffer]))
 
