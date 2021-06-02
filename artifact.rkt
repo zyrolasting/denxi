@@ -134,16 +134,10 @@
   (define siginfo (artifact-info-signature arti))
   (define intinfo (artifact-info-integrity arti))
 
-  ; The module level contract insists on a path string due
-  ; to the file-oriented implementation in signature.rkt, but
-  ; the signature info may not be declared. Use an unlikely
-  ; path as a workaround, since other checks won't actually
-  ; use the path.
-  (define public-key-path
+  (define public-key
     (if (signature-info? siginfo)
-        (fetch-signature-payload (signature-info-pubkey siginfo)
-                                 (λ _ "__nowhere"))
-        "__nowhere"))
+        (signature-info-pubkey siginfo)
+        #""))
 
   (define trust-public-key?
     (if (XIDEN_TRUST_ANY_PUBLIC_KEY)
@@ -151,7 +145,7 @@
         (bind-trust-list (XIDEN_TRUST_PUBLIC_KEYS))))
 
   (define status
-    (check-signature #:public-key-path public-key-path
+    (check-signature #:public-key public-key
                      #:trust-unsigned (XIDEN_TRUST_UNSIGNED)
                      #:trust-bad-digest (XIDEN_TRUST_BAD_DIGEST)
                      #:trust-public-key? trust-public-key?
@@ -166,7 +160,6 @@
 (module+ test
   (require rackunit
            racket/file
-           "private/test.rkt"
            (submod "state.rkt" test)
            (submod "subprogram.rkt" test))
 
@@ -180,15 +173,19 @@
          (check-equal? (file->bytes (path-record-path record)) data)
 
          (test-case "Verify artifacts"
-           (define-values (intinfo siginfo)
-             (make-dummy-integrity+signature
-              (open-input-bytes data)))
-           (define arti (artifact (byte-source data) intinfo siginfo))
+           (define intinfo
+             (make-trusted-integrity-info data))
+           (define siginfo
+             (make-snake-oil-signature-info
+              (integrity-info-digest intinfo)
+              (integrity-info-algorithm intinfo)))
+           (define arti
+             (artifact (byte-source data) intinfo siginfo))
            (check-subprogram (verify-artifact arti record)
                              (λ (result messages)
                                (check-equal? result FAILURE)))
 
-           (call-with-dummy-trust
+           (call-with-faith-in-snake-oil
             (λ ()
               (check-subprogram (verify-artifact arti record)
                                 (λ (result messages)

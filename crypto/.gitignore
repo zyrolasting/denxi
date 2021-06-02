@@ -2,3 +2,4 @@ openssl
 dist
 *.o
 *.so
+a.out

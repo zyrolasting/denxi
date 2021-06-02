@@ -30,11 +30,15 @@ dist: openssl
 		no-ssl3 \
 		no-weak-ssl-ciphers \
 		shared && \
-   make && make test && make install
+   make && make test && make install_sw install_ssldirs
 
-crypto.so:
+crypto.so: crypto.c
 	gcc -shared -o crypto.so -fPIC -Idist/include crypto.c \
 		-Ldist/lib -lpthread -lc -l:libcrypto.a -l:libssl.a -ldl 
+
+a.out: crypto.c
+	gcc -D XIDEN_CRYPTO_MAIN -Idist/include crypto.c \
+		-Ldist/lib -lc -l:libcrypto.a -l:libssl.a -ldl  -lpthread
 
 clean:
 	rm -rf openssl

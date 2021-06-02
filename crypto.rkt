@@ -1,41 +1,128 @@
 #lang racket/base
 
 (require racket/contract
+         racket/file
          racket/format
          racket/list
          racket/port
          racket/runtime-path
-         ffi/unsafe/atomic
-         ffi/unsafe/define
          ffi/vector
          (rename-in ffi/unsafe [-> -->])
          "message.rkt"
          "setting.rkt"
          "codec.rkt")
 
-(define md-bytes-source/c
-  (or/c path-string? bytes? input-port?))
+(define+provide-message $crypto ())
+(define+provide-message $crypto:error $crypto (queue))
 
-(provide (contract-out
-          [cryptographic-hash-functions
-           (listof symbol?)]
-          [chf/c
-           flat-contract?]
-          [DEFAULT_CHF
-            chf/c]
-          [md-bytes-source/c
-           flat-contract?]
-          [make-digest
-           (->* (md-bytes-source/c)
-                (chf/c)
-                bytes?)]))
+(provide
+ (contract-out
+  [cryptographic-hash-functions (listof symbol?)]
+  [chf/c flat-contract?]
+  [DEFAULT_CHF chf/c]
+  [sign-with-snake-oil
+   (->* (bytes?)
+        (chf/c)
+        bytes?)]
+  [make-digest
+   (->* ((or/c bytes? path-string? input-port?))
+        (chf/c)
+        bytes?)]
+  [verify-signature
+   (-> bytes?
+       chf/c
+       bytes?
+       bytes?
+       boolean?)]
+  [snake-oil-private-key bytes?]
+  [snake-oil-public-key bytes?]
+  [snake-oil-private-key-password bytes?]
+  [get-crypto-error-strings
+   (-> (or/c (listof exact-positive-integer?) $crypto:error?)
+       (listof string?))]
+  [make-signature
+   (->* (bytes?
+         chf/c
+         bytes?)
+        ((or/c #f bytes?))
+        bytes?)]))
+
+  
+
+
+;-------------------------------------------------------------------------------
+; Snake oil data for use in prototyping.
+
+(define snake-oil-private-key-password #"foobar")
+
+(define snake-oil-private-key (string->bytes/utf-8 #<<EOF
+-----BEGIN RSA PRIVATE KEY-----
+Proc-Type: 4,ENCRYPTED
+DEK-Info: AES-128-CBC,E1A24462AABA790A82015D69D2548D52
+
+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
+-----END RSA PRIVATE KEY-----
+EOF
+))
+  
+
+(define snake-oil-public-key (string->bytes/utf-8 #<<EOF
+-----BEGIN PUBLIC KEY-----
+MIIBojANBgkqhkiG9w0BAQEFAAOCAY8AMIIBigKCAYEA0Damo9DNCiQcgYmcUsY/
+Gm3Y3fQIQseUuuwphnnleTl9/9m7F4KEIsj+f4vCFbcPc1iiKh8d9UE+brF2ShjR
+QbggsPPjUtfMF8Z9HiokIkNf2uM4uduBuzoejgqyLpkr6fLFyKxh0a+nwB+O6hLI
+8zJnt0BJZhA0pYds0eZJLdwArjJ4fi3H7q+64tSlHSXBQ+FETcBpk4bNTrSHIKYy
+0FX7k5kW9QLlZ3Kr33x06TAROC92pyKSJrXYmN/85wDlZs0mTMmsc6M3tbAzDEWn
+0ef0BCCowNgJunrzKzbEOHEcxmA8Y6bstPeasBL4W6/Vm3udRHueIE5N5ZQEbOhw
+HcQcXTapPM3yw9sWO28pKGZKPTs+uqEsuFk3PfTWbpEmm/OLnx7PYsoHFlVvp0d/
+h9a1LhC00b6/p9132U4JiRRHdGsWagVD7dwHahuWUT1Kx+uzkT01lJwzucurKtzX
+1L31+I0V/bhUAvsFpuPA99jWRS3zoynA3/8ESHslLtU9AgMBAAE=
+-----END PUBLIC KEY-----
+EOF
+))
+
+;-------------------------------------------------------------------------------
+; FFI
 
 (define-runtime-path crypto.so "crypto/crypto.so")
 (define-runtime-path crypto.dll "crypto/crypto.dll")
 (define-runtime-path crypto.dynlib "crypto/crypto.dynlib")
-
-(define+provide-message $crypto ())
-(define+provide-message $crypto:make-digest-failure $crypto (error-code))
 
 
 (define crypto-lib-file
@@ -44,73 +131,233 @@
     [(unix) crypto.so]
     [(macosx) crypto.dynlib]))
 
-(define (chf/c v)
-  (and (member v cryptographic-hash-functions) #t))
+(define crypto-lib
+  (ffi-lib crypto-lib-file))
 
-(define+provide-setting XIDEN_TRUST_CHFS (listof chf/c) null)
+(define _EVP_MD-pointer _pointer)
 
-(define-ffi-definer define-crypto (ffi-lib crypto-lib-file))
+(define (get-ffi-obj* sym type)
+  (get-ffi-obj sym crypto-lib type))
 
-(define-crypto make_digest_unsafe
-  (_fun _pointer
-        _pointer
-        (_fun _pointer --> _u8vector)
-        --> _int))
+(define XIDEN_AVAILABLE_CHF_COUNT
+  (get-ffi-obj* #"XIDEN_AVAILABLE_CHF_COUNT"
+                _uint))
 
-(define-crypto get_chf_handle (_fun _uint --> _pointer))
-(define-crypto get_digest_size (_fun _pointer --> _int))
-(define-crypto XIDEN_AVAILABLE_CHF_COUNT _uint)
-(define-crypto XIDEN_SUPPORTED_CHFS (_array _string XIDEN_AVAILABLE_CHF_COUNT))
-(define-crypto XIDEN_DEFAULT_CHF_INDEX _uint)
+
+(define XIDEN_DEFAULT_CHF_INDEX
+  (get-ffi-obj* #"XIDEN_DEFAULT_CHF_INDEX" _uint))
+
+
+(define XIDEN_SUPPORTED_CHFS
+  (get-ffi-obj* #"XIDEN_SUPPORTED_CHFS"
+               (_array _string XIDEN_AVAILABLE_CHF_COUNT)))
+
+
+(define load-chf/unsafe
+  (get-ffi-obj* #"xiden_load_chf"
+               (_fun _uint --> _EVP_MD-pointer)))
+
+
+(define get-digest-size/unsafe
+  (get-ffi-obj* #"xiden_get_digest_size"
+               (_fun _EVP_MD-pointer --> _int)))
+
+
+(define make-digest/unsafe!
+  (get-ffi-obj* #"xiden_make_digest"
+               (_fun _EVP_MD-pointer
+                     _pointer
+                     (_fun (_cpointer _int)
+                           _uint
+                           --> _pointer)
+                     --> _int)))
+
+(define start-signature/unsafe!
+  (get-ffi-obj* #"xiden_start_signature"
+                (_fun _pointer ; EVP_MD* p_md,
+                      _pointer ; EVP_MD_CTX* p_md_ctx,
+                      _bytes   ; char* p_private_key_content,
+                      _bytes   ; char* p_private_Key_password,
+                      _pointer ; char* p_digest,
+                      _size    ; size_t digest_length
+                      --> _int)))
+
+(define find-signature-size/unsafe!
+  (get-ffi-obj* #"xiden_find_signature_size"
+                (_fun _pointer ; EVP_MD_CTX* p_md_ctx
+                      --> _size)))
+
+(define end-signature/unsafe!
+  (get-ffi-obj* #"xiden_end_signature"
+                (_fun _pointer ; EVP_MD_CTX* p_ctx
+                      _pointer ; char* p_signature
+                      _uint    ; size_t signature_length
+                      --> _int)))
+
+(define verify-signature/unsafe!
+  (get-ffi-obj* #"xiden_verify_signature"
+                (_fun _pointer ; EVP_MD* md,
+                      _pointer ; char* pSignature,
+                      _uint    ; size_t signatureLength
+                      _pointer ; char* pPublicKeyContent,
+                      _pointer ; char* pDigest,
+                      _uint    ; size_t digestLength
+                      --> _int)))
+
+(define make-md-context/unsafe
+  (get-ffi-obj* #"EVP_MD_CTX_new"
+                (_fun --> _pointer)))
+
+(define get-next-libcrypt-error-code/unsafe
+  (get-ffi-obj* #"ERR_get_error"
+                (_fun --> _ulong)))
+
+(define translate-libcrypt-error-code/unsafe
+  (get-ffi-obj* #"ERR_error_string"
+                (_fun _ulong _pointer --> _string)))
+
+;-------------------------------------------------------------------------------
+; User-friendly forms of foreign data
 
 (define cryptographic-hash-functions
   (let* ([arr XIDEN_SUPPORTED_CHFS])
     (for/list ([i (in-range XIDEN_AVAILABLE_CHF_COUNT)])
       (string->symbol (string-downcase (array-ref arr i))))))
 
+
 (define DEFAULT_CHF
   (list-ref cryptographic-hash-functions
             XIDEN_DEFAULT_CHF_INDEX))
 
+
+(define (chf/c v)
+  (and (member v cryptographic-hash-functions) #t))
+
+(define (load-chf chf)
+  (define mdindex (index-of cryptographic-hash-functions chf))
+  (define p_md (load-chf/unsafe mdindex))
+  (unless p_md (raise (raise-crypto-failure)))
+  p_md)
+
+
+(define (dump-error-queue [q null])
+  (define code (get-next-libcrypt-error-code/unsafe))
+  (if (zero? code)
+      (reverse q)
+      (dump-error-queue (cons code q))))
+
+
+(define (get-crypto-error-strings $)
+  (if ($crypto:error? $)
+      (get-crypto-error-strings ($crypto:error-queue $))
+      (map (let ([buffer (make-bytes 256)])
+             (λ (n)
+               (translate-libcrypt-error-code/unsafe n buffer)
+               (bytes->string/utf-8 buffer)))
+           $)))
+
+(define (print-crypto-error $)
+  (for ([m (in-list (get-crypto-error-strings $))])
+    (displayln m)))
+
+
 (define (make-digest variant [algorithm DEFAULT_CHF])
-  (cond [(path-string? variant)
-         (call-with-input-file* (expand-user-path variant)
-           (λ (i) (make-digest i algorithm)))]
-        [(bytes? variant)
+  (cond [(bytes? variant)
          (make-digest (open-input-bytes variant) algorithm)]
-        [(input-port? variant)
-         (define mdindex (index-of cryptographic-hash-functions algorithm))
-         (unless mdindex (error "Invalid index"))
-         (define handle (get_chf_handle mdindex))
-         (unless handle (error "Invalid handle"))
-         (define digest-size (get_digest_size handle))
+        [(path-string? variant)
+         (call-with-input-file*
+           variant
+           (λ (from-file)
+             (make-digest from-file algorithm)))]
+        [else
+         (define p-md (load-chf algorithm))
+         (define digest-size (get-digest-size/unsafe p-md))
          (define read-buffer-size (* 128 1024))
          (define gc-buffer (make-bytes read-buffer-size))
          (define digest-buffer (make-bytes digest-size))
-         (define error-code
-           (call-as-atomic
-            (λ ()
-              (make_digest_unsafe handle
-                                  digest-buffer
-                                  (λ (pSize)
-                                    (define bytes-read
-                                      (read-bytes! gc-buffer
-                                                   variant
-                                                   0
-                                                   read-buffer-size))
-                                    (and (not (eof-object? bytes-read))
-                                         (begin (ptr-set! pSize _uint bytes-read)
-                                                gc-buffer)))))))
 
-         (unless (equal? error-code 0)
-           (raise ($crypto:make-digest-failure error-code)))
+         (define (read-more p-size read-so-far)
+           (define bytes-read
+             (read-bytes! gc-buffer
+                          variant
+                          0
+                          read-buffer-size))
+           (and (not (eof-object? bytes-read))
+                (begin (ptr-set! p-size _uint bytes-read)
+                       gc-buffer)))
 
-         digest-buffer]))
+         (define status
+           (make-digest/unsafe! p-md digest-buffer read-more))
+
+         (if (equal? status 1)
+             digest-buffer
+             (raise-crypto-failure))]))
+
+
+(define (raise-crypto-failure)
+  (raise ($crypto:error (dump-error-queue))))
+
+
+(define (verify-signature digest algorithm signature-bytes public-key-bytes)
+  (define p-md (load-chf algorithm))
+  (define digest-size (get-digest-size/unsafe p-md))
+
+  (define status
+    (verify-signature/unsafe! p-md
+                              signature-bytes
+                              (bytes-length signature-bytes)
+                              public-key-bytes
+                              digest
+                              digest-size))
+
+  (if (< status 0)
+      (raise-crypto-failure)
+      (equal? status 1)))
+
+
+(define (make-signature digest algorithm private-key-bytes [private-key-password-bytes #f])
+  (define p-md (load-chf algorithm))
+  (define digest-size (get-digest-size/unsafe p-md))
+  (define p-ctx (make-md-context/unsafe))
+
+  ; Create new context
+  (start-signature/unsafe! p-md
+                           p-ctx
+                           private-key-bytes
+                           private-key-password-bytes
+                           digest
+                           digest-size)
+
+  ; Allocate memory and read finished signature
+  (define signature-size
+    (find-signature-size/unsafe! p-ctx))
+
+  (unless (> signature-size 0)
+    (raise-crypto-failure))
+
+  (define signature
+    (make-bytes signature-size))
+
+  (end-signature/unsafe! p-ctx
+                         signature
+                         signature-size)
+  
+  signature)
+
+
+(define (sign-with-snake-oil digest [chf DEFAULT_CHF])
+  (make-signature digest
+                  chf
+                  snake-oil-private-key
+                  snake-oil-private-key-password))
+
 
 (module+ test
   (require rackunit
+           racket/file
            "codec.rkt")
 
+  
   (test-pred (format "Make ~a-specific library available"
                      (system-type 'os))
              file-exists?
@@ -140,6 +387,32 @@
   (for ([pair (in-list digests)])
     (define chf (car pair))
     (define expected-digest (base64 (cdr pair)))
-    (test-equal? (format "Make digest using ~a" chf)
-                 (make-digest data chf)
-                 expected-digest)))
+    (test-case (format "Support CHF ~a" chf)
+      (with-handlers ([$crypto:error?
+                       (λ ($)
+                         (print-crypto-error $)
+                         (fail))])
+        (check-equal? (make-digest data chf)
+                      expected-digest)
+
+        (define signature
+          (sign-with-snake-oil expected-digest
+                               chf))
+
+        (define (valid? #:expected-digest [e expected-digest]
+                        #:chf [c chf]
+                        #:signature [s signature]
+                        #:public-key [p snake-oil-public-key])
+          (verify-signature e c s p))
+
+        (define (tamper bstr)
+          (define copy (bytes-copy bstr))
+          (bytes-set! copy 0 (modulo (add1 (bytes-ref bstr 0)) 255))
+          copy)
+
+        (check-true (valid?))
+        #;(check-false
+         (valid? #:chf (findf (λ (v) (not (equal? v chf)))
+                              cryptographic-hash-functions)))
+        #;(check-false (valid? #:signature (tamper signature)))
+        #;(check-false (valid? #:expected-digest (tamper expected-digest)))))))

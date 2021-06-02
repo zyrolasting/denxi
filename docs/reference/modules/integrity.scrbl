@@ -16,6 +16,8 @@
 
 @defmodule[xiden/integrity]
 
+@racketmodname[xiden/integrity] extends @racket[xiden/crypto] with
+utilities tailored for integrity checking.
 
 @defstruct*[integrity-info ([algorithm chf/c] [digest source-variant?])]{
 Represents integrity information for bytes. Given bytes from some
@@ -50,7 +52,7 @@ the value from @racket[exhaust].
 @defproc[(check-integrity [#:trust-bad-digest trust-bad-digest any/c] [intinfo (or/c #f integrity-info?)] [variant source-variant?]) $integrity?]{
 Performs an @deftech{integrity check}. See @racket[$integrity].
 
-If @racket[trust-bad-digest] is a true value, the integrity check
+If @racket[trust-bad-digest] is a true value, then the integrity check
 passes unconditionally. Otherwise, the check passes if a message
 digest derived from @racket[variant] is consistent with
 @racket[intinfo].
@@ -61,6 +63,11 @@ The check fails in all other conditions.
 
 @defsetting*[XIDEN_TRUST_BAD_DIGEST]{
 @bold{Highly dangerous}. When true, disable integrity checking.
+}
+
+@defsetting*[XIDEN_TRUST_CHFS]{
+A list of @tech{cryptographic hash functions} to trust when checking
+data integrity.
 }
 
 @defstruct*[($integrity $message) ([ok? boolean?] [stage symbol?] [info any/c]) #:prefab]{
@@ -82,11 +89,12 @@ An abbreviated constructor for @racket[integrity-info] that performs stronger va
 Meant for use in @tech{package definitions} when declaring @tech{package inputs}.
 }
 
-@defproc[(bind-trust-list [trusted (listof well-formed-integrity-info/c)]) (-> path-string? boolean?)]{
-Returns a procedure @racket[P], such that @racket[(P
-"/path/to/file")] (for example) is @racket[#t] if the given file
-passes an @tech{integrity check} for one of the
-@racket[integrity-info] structures in @racket[trusted].
+@defproc[(bind-trust-list [trusted (listof well-formed-integrity-info/c)])
+                          (-> (or/c bytes? path-string? input-port?)
+                              boolean?)]{
+Returns a procedure @racket[P], such that @racket[(P v)] is
+@racket[#t] if @racket[v] passes an @tech{integrity check} for one of
+the @racket[integrity-info] structures in @racket[trusted].
 }
 
 @defproc[(make-sourced-digest [variant source-variant]

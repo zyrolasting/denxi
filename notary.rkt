@@ -7,12 +7,12 @@
           [make-notary
            (->* ()
                 (#:chf chf/c
-                 #:private-key-path
-                 (or/c #f path-string?)
+                 #:private-key
+                 (or/c #f source-variant?)
                  #:public-key-source
                  (or/c #f source-variant?)
-                 #:private-key-password-path
-                 (or/c #f path-string?))
+                 #:private-key-password
+                 (or/c #f source-variant?))
                 notary?)]
           [notarize
            (-> notary?
@@ -21,25 +21,25 @@
           [lazy-notary notary?]
           [fraudulent-notary notary?]))
 
-(require racket/match
+(require racket/file
+         racket/match
          "artifact.rkt"
          "crypto.rkt"
          "integrity.rkt"
          "signature.rkt"
          "source.rkt"
-         "subprogram.rkt"
-         "private/test.rkt")
+         "subprogram.rkt")
 
 (struct notary
   (chf
    public-key-source
-   private-key-path
-   private-key-password-path))
+   private-key
+   private-key-password))
 
 (define (make-notary #:chf [chf DEFAULT_CHF]
                      #:public-key-source [pb #f]
-                     #:private-key-path [pk #f]
-                     #:private-key-password-path [pkp #f])
+                     #:private-key [pk #f]
+                     #:private-key-password [pkp #f])
   (notary chf pb pk pkp))
 
 
@@ -51,11 +51,11 @@
 (define fraudulent-notary
   (make-notary #:chf DEFAULT_CHF
                #:public-key-source
-               useless-public-key-path
-               #:private-key-path
-               leaked-private-key-path
-               #:private-key-password-path
-               leaked-private-key-password-path))
+               snake-oil-public-key
+               #:private-key
+               snake-oil-private-key
+               #:private-key-password
+               snake-oil-private-key-password))
 
 
 (define (notarize the-notary content)
@@ -89,8 +89,9 @@
                         prvkey
                         (signature-info
                          pubkey
-                         (make-signature-bytes
+                         (make-signature
                           (integrity-info-digest intinfo)
+                          (integrity-info-algorithm intinfo)
                           prvkey
                           prvkeypass))))))
       (subprogram-unit (artifact-info user-source #f #f))))
@@ -98,9 +99,7 @@
 (module+ test
   (require rackunit
            (submod "subprogram.rkt" test))
-
   (check-pred notary? (make-notary))
-
   (check-match
     (get-subprogram-value
      (notarize fraudulent-notary
