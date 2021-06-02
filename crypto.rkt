@@ -46,7 +46,6 @@
          bytes?)
         ((or/c #f bytes?))
         bytes?)]))
-
   
 
 
@@ -166,7 +165,7 @@ EOF
 (define make-digest/unsafe!
   (get-ffi-obj* #"xiden_make_digest"
                (_fun _EVP_MD-pointer
-                     _pointer
+                     _gcpointer
                      (_fun (_cpointer _int)
                            _uint
                            --> _pointer)
@@ -176,9 +175,9 @@ EOF
   (get-ffi-obj* #"xiden_start_signature"
                 (_fun _pointer ; EVP_MD* p_md,
                       _pointer ; EVP_MD_CTX* p_md_ctx,
-                      _bytes   ; char* p_private_key_content,
-                      _bytes   ; char* p_private_Key_password,
-                      _pointer ; char* p_digest,
+                      _bytes/nul-terminated  ; char* p_private_key_content,
+                      _bytes/nul-terminated  ; char* p_private_key_password,
+                      _bytes/nul-terminated ; char* p_digest,
                       _size    ; size_t digest_length
                       --> _int)))
 
@@ -197,10 +196,10 @@ EOF
 (define verify-signature/unsafe!
   (get-ffi-obj* #"xiden_verify_signature"
                 (_fun _pointer ; EVP_MD* md,
-                      _pointer ; char* pSignature,
+                      _bytes/nul-terminated ; char* pSignature,
                       _uint    ; size_t signatureLength
-                      _pointer ; char* pPublicKeyContent,
-                      _pointer ; char* pDigest,
+                      _bytes/nul-terminated ; char* pPublicKeyContent,
+                      _bytes/nul-terminated ; char* pDigest,
                       _uint    ; size_t digestLength
                       --> _int)))
 
@@ -411,8 +410,8 @@ EOF
           copy)
 
         (check-true (valid?))
-        #;(check-false
+        (check-false
          (valid? #:chf (findf (λ (v) (not (equal? v chf)))
                               cryptographic-hash-functions)))
-        #;(check-false (valid? #:signature (tamper signature)))
-        #;(check-false (valid? #:expected-digest (tamper expected-digest)))))))
+        (check-false (valid? #:signature (tamper signature)))
+        (check-false (valid? #:expected-digest (tamper expected-digest)))))))

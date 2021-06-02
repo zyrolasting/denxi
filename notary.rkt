@@ -107,5 +107,5 @@
     (artifact-info (not #f)
                    (integrity-info (? chf/c _)
                                    (? bytes? _))
-                   (signature-info (? path-string? _)
+                   (signature-info (? bytes? _)
                                    (? bytes? _)))))
