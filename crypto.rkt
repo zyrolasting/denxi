@@ -165,7 +165,7 @@ EOF
 (define make-digest/unsafe!
   (get-ffi-obj* #"xiden_make_digest"
                (_fun _EVP_MD-pointer
-                     _gcpointer
+                     _bytes
                      (_fun (_cpointer _int)
                            _uint
                            --> _gcpointer)
