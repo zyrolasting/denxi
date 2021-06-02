@@ -168,7 +168,7 @@ EOF
                      _gcpointer
                      (_fun (_cpointer _int)
                            _uint
-                           --> _pointer)
+                           --> _gcpointer)
                      --> _int)))
 
 (define start-signature/unsafe!
