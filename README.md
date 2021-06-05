@@ -123,13 +123,13 @@ Each edition of software has revisions defined by the natural numbers,
 such that a revision's name maps to exactly one natural number. This
 makes Xiden supports queries that capture revision intervals with
 inclusive and exclusive bounds. So,
-`example.com:http-client:beta:production:ie` means "The `http-client`
-package made by `example.com`, from the `beta` revision up to but NOT
-including the `production` revision.
+`example.com:http-client:draft:beta:production:ie` means "The `draft`
+edition of the `http-client` package made by `example.com`, from the
+`beta` revision up to but NOT including the `production` revision.
 
 Undet this approach, a developer can rewrite code for a new audience
 without affecting the brand. Users that want backwards-compatibility
-can seek out an edition promising that.
+can seek out an edition with that promise.
 
 
 ## Localization
