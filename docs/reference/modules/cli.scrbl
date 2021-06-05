@@ -73,6 +73,13 @@ code 0 and output @racket[(list ($show-string S) ...)], where
 package output and a directory path. The list represents all installed
 outputs in the @tech{target workspace}.
 
+If @racketid[A] is @racket{log}, the program halts with exit code 0
+and an empty program log. As a side-effect, the program prints all
+data read from standard input using
+@racket[(current-message-formatter)].  This is useful when one Xiden
+user dumps a log to a file, and another wants to read the messages in
+a different human language or notation.
+
 If @racket{links}, the program halts with exit code 0 and output
 @racket[(list ($show-string L) ...)], where @racket[L] is a string
 containing a path to a symbolic link and a path to another filesystem

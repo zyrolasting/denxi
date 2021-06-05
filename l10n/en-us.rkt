@@ -19,6 +19,7 @@
     [(show-command-help)
      (L "where <what> is one of"
         "  installed  Show a list of installed outputs"
+        "  log        Show all logged messages read from standard input"
         "  links      Show a list of issued links")]
 
     [(backwards-racket-version-interval)

@@ -177,6 +177,14 @@
                               (in-all-installed))))]
 
 
+                     ["log"
+                      (let loop ([next (read)])
+                        (unless (eof-object? next)
+                          (if ($message? next)
+                              (write-message next)
+                              (writeln next))
+                          (loop (read))))
+                      (halt 0 null)]
 
                      ["links"
                       (halt 0
@@ -408,4 +416,13 @@
                               (list ($finished-collecting-garbage
                                      (? (λ (v) (> v 0)) _))))
                  (check-false (link-exists? expected-file-link-path))
-                 (check-false (file-exists? expected-file-link-path))))))
+                 (check-false (file-exists? expected-file-link-path)))))
+
+
+  (test-case "Echo logs"
+    (parameterize ([current-input-port (open-input-bytes #"1 #s(($show-string $message 0) \"a\") 2")])
+      (check-cli (list "show" "log")
+                 (λ (exit-code messages stdout stderr)
+                   (check-equal? exit-code 0)
+                   (check-equal? stderr #"")
+                   (check-equal? stdout #"1\na\n2\n"))))))
