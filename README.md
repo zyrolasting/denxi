@@ -1,7 +1,7 @@
 [![](https://img.shields.io/badge/%24-donate-success)](https://sagegerard.com/show-support.html)
-[![Documentation](https://img.shields.io/badge/Docs-Scribble-blue.svg)](https://docs.racket-lang.org/xiden-index/index.html)
+[![Documentation](https://img.shields.io/badge/docs-Scribble-blue.svg)](https://docs.racket-lang.org/xiden-index/index.html)
 [![Xiden is licensed under GPLv3](https://img.shields.io/badge/license-GPLv3-yellowgreen)](./COPYING)
-[![Xiden Youtube Presentation](https://img.shields.io/badge/youtube-RacketCon%202020%20Presentation-red)](https://youtu.be/bIi-tUzOwdw?t=2330)
+[![Xiden Youtube Presentation](https://img.shields.io/badge/youtube-RacketCon%202020-red)](https://youtu.be/bIi-tUzOwdw?t=2330)
 
 Xiden distributes software _well_.
 
