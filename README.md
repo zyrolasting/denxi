@@ -25,11 +25,11 @@ For a presentation of Xiden during it's alpha stage, see this
 Windows users sometimes deal with forced updates that either interrupt
 you, or break something. A Tesla owner [could not start their
 car][tesla] because an update failed. If it weren't for Samsung asking
-researchers to audit their [smart refrigerator][], we might have heard
-about how the box that keeps your food cold leaked your Google
+researchers to audit their [smart refrigerator][fridge], we might have
+heard about how the box that keeps your food cold leaked your Google
 credentials due to a botched update.
 
-[refrigerator]: https://www.pentestpartners.com/security-blog/hacking-defcon-23s-iot-village-samsung-fridge/
+[fridge]: https://www.pentestpartners.com/security-blog/hacking-defcon-23s-iot-village-samsung-fridge/
 [tesla]: https://teslamotorsclub.com/tmc/threads/car-wont-start-software-update-failed.111866/
 
 This is software distribution done badly.
