@@ -1,23 +1,17 @@
 [![](https://img.shields.io/badge/%E2%99%A5-Support%20Ethical%20Software-red)](https://sagegerard.com/show-support.html)
 [![Documentation](https://img.shields.io/badge/Docs-Scribble-blue.svg)](https://docs.racket-lang.org/xiden-index/index.html)
+[![Xiden is licensed under GPLv3](https://img.shields.io/badge/license-GPLv3-yellowgreen)](./COPYING)
+[![Xiden Youtube Presentation](https://img.shields.io/badge/youtube-RacketCon%202020%20Presentation-red)](https://youtu.be/bIi-tUzOwdw?t=2330)
 
-Xiden is a platform for distributing software.
+Xiden distributes software _well_.
 
-You can use Xiden as a dependency manager, or as a back-end to your
-own Steam, App Store, or Play Store. Xiden is also a viable component
-of continuous integration systems and operating systems.
+Use Xiden as a dependency manager for your projects, as a back-end to
+your own App Store, as a back-end for a continuous integration system,
+or as part of an operating system.
 
-Xiden is this flexible because it solves software distribution
-problems _well_. Think of it as Racket's answer to Guix.
-
-If you are a release-management nerd, or want to know what
-release-management NerdSpeak sounds like, then read [The Long
-Answer](#the-long-answer).  In it, I will bore you to tears by
-explaining how well the problems were solved.
-
-For a presentation of Xiden during it's alpha stage, see this
-[RacketCon 2020 talk](https://youtu.be/bIi-tUzOwdw?t=2330) (Starts at
-38:50)!
+Think of Xiden as Racket's answer to Guix. If you are a release
+management nerd and want to know why you should switch to Xiden, read
+[The Long Answer](#the-long-answer).
 
 
 # The Long Answer
