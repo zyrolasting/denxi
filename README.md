@@ -3,15 +3,14 @@
 [![Xiden is licensed under GPLv3](https://img.shields.io/badge/license-GPLv3-yellowgreen)](./COPYING)
 [![Xiden Youtube Presentation](https://img.shields.io/badge/youtube-RacketCon%202020-red)](https://youtu.be/bIi-tUzOwdw?t=2330)
 
-Xiden distributes software _well_.
+Xiden distributes software. Think of it as Racket's answer to Guix.
 
 Use Xiden as a dependency manager for your projects, as a back-end to
 your own App Store, as a back-end for a continuous integration system,
 or as part of an operating system.
 
-Think of Xiden as Racket's answer to Guix. If you are a release
-management nerd and want to know why you should switch to Xiden, read
-[The Long Answer](#the-long-answer).
+If you are a release management nerd and/or want to know why you
+should switch to Xiden, read [The Long Answer](#the-long-answer).
 
 
 # The Long Answer
