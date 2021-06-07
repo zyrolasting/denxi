@@ -119,19 +119,15 @@ EOF
 ;-------------------------------------------------------------------------------
 ; FFI
 
-(define-runtime-path crypto.so "crypto/crypto.so")
-(define-runtime-path crypto.dll "crypto/crypto.dll")
-(define-runtime-path crypto.dynlib "crypto/crypto.dynlib")
-
-
-(define crypto-lib-file
-  (case (system-type 'os)
-    [(windows) crypto.dll]
-    [(unix) crypto.so]
-    [(macosx) crypto.dynlib]))
+(define-runtime-path crypto/ "crypto")
 
 (define crypto-lib
-  (ffi-lib crypto-lib-file))
+  (ffi-lib
+   (path-replace-extension
+    (build-path crypto/
+                (~a (system-type 'arch) "-" (system-type 'os))
+                "crypto")
+    (system-type 'so-suffix))))
 
 (define _EVP_MD-pointer _pointer)
 
@@ -355,12 +351,6 @@ EOF
   (require rackunit
            racket/file
            "codec.rkt")
-
-  
-  (test-pred (format "Make ~a-specific library available"
-                     (system-type 'os))
-             file-exists?
-             crypto-lib-file)
 
   (test-case "Load CHF data from library"
     (check-true

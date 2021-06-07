@@ -1,5 +1,9 @@
-This subsystem statically links `libcrypto.a.3` to provide a
-simplified interface for creating message digests, creating signatures
-using assymetric keys, and verifying signatures.
+This product includes software developed by the OpenSSL Project
+for use in the OpenSSL Toolkit. (http://www.openssl.org/)
 
-See `Makefile` for reproduction steps.
+---
+
+This subsystem statically-links OpenSSL libraries across platforms to
+provide a simplified interface for creating message digests, creating
+signatures using assymetric keys, and verifying signatures. Each
+architecture and operating system is represented using its own library.
