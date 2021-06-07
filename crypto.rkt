@@ -376,32 +376,38 @@ EOF
   (for ([pair (in-list digests)])
     (define chf (car pair))
     (define expected-digest (base64 (cdr pair)))
-    (test-case (format "Support CHF ~a" chf)
-      (with-handlers ([$crypto:error?
-                       (λ ($)
-                         (print-crypto-error $)
-                         (fail))])
-        (check-equal? (make-digest data chf)
-                      expected-digest)
+    (with-handlers ([$crypto:error?
+                     (λ ($)
+                       (print-crypto-error $)
+                       (fail))])
+      (test-equal? (format "Create digest using CHF ~a" chf)
+                   (make-digest data chf)
+                   expected-digest)
 
-        (define signature
-          (sign-with-snake-oil expected-digest
-                               chf))
+      (define signature
+        (sign-with-snake-oil expected-digest
+                             chf))
 
-        (define (valid? #:expected-digest [e expected-digest]
-                        #:chf [c chf]
-                        #:signature [s signature]
-                        #:public-key [p snake-oil-public-key])
-          (verify-signature e c s p))
+      (define (valid? #:expected-digest [e expected-digest]
+                      #:chf [c chf]
+                      #:signature [s signature]
+                      #:public-key [p snake-oil-public-key])
+        (verify-signature e c s p))
 
-        (define (tamper bstr)
-          (define copy (bytes-copy bstr))
-          (bytes-set! copy 0 (modulo (add1 (bytes-ref bstr 0)) 255))
-          copy)
+      (define (tamper bstr)
+        (define copy (bytes-copy bstr))
+        (bytes-set! copy 0 (modulo (add1 (bytes-ref bstr 0)) 255))
+        copy)
 
-        (check-true (valid?))
-        (check-false
-         (valid? #:chf (findf (λ (v) (not (equal? v chf)))
-                              cryptographic-hash-functions)))
-        (check-false (valid? #:signature (tamper signature)))
-        (check-false (valid? #:expected-digest (tamper expected-digest)))))))
+      (test-true "Create and verify signature"
+                 (valid?))
+
+      (test-false "Reject signatures with the wrong CHF"
+                  (valid? #:chf (findf (λ (v) (not (equal? v chf)))
+                                       cryptographic-hash-functions)))
+
+      (test-false "Reject doctored signatures"
+                  (valid? #:signature (tamper signature)))
+
+      (test-false "Reject signatures against the wrong digest"
+                  (valid? #:expected-digest (tamper expected-digest))))))
