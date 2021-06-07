@@ -46,7 +46,7 @@
          bytes?)
         ((or/c #f bytes?))
         bytes?)]))
-  
+
 
 
 ;-------------------------------------------------------------------------------
@@ -99,7 +99,7 @@ w5bxdb4zyCLUPwjYJY+fS4SFTt0ImeEXW01G9muXbU8NT7vGjA+cNZIko2qna0qt
 -----END RSA PRIVATE KEY-----
 EOF
 ))
-  
+
 
 (define snake-oil-public-key (string->bytes/utf-8 #<<EOF
 -----BEGIN PUBLIC KEY-----
@@ -336,7 +336,7 @@ EOF
   (end-signature/unsafe! p-ctx
                          signature
                          signature-size)
-  
+
   signature)
 
 
