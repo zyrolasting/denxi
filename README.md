@@ -190,3 +190,10 @@ that thing that you do to a touchscreen, a keyboard, or a mouse to
 convey dismissiveness to the computer that's just doing its job.  If
 you've ever been smlapped, it feels as unpleasant as the portmanteu
 sounds when you say it out loud.
+
+# Credits
+
+Thank you to all who assisted with the project!
+
+* @samui-dono: For providing a CMake-powered template for compiling OpenSSL artifacts, with a build recipe for Windows.
+* @countvajhula: For showing a discrepency in the guide and available CHFs on macOS.
