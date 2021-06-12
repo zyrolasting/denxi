@@ -3,6 +3,8 @@
 [![Xiden is licensed under GPLv3](https://img.shields.io/badge/license-GPLv3-yellowgreen)](./COPYING)
 [![Xiden Youtube Presentation](https://img.shields.io/badge/youtube-RacketCon%202020-red)](https://youtu.be/bIi-tUzOwdw?t=2330)
 
+![](./logo.png)
+
 Xiden distributes software. Think of it as Racket's answer to Guix.
 
 Use Xiden as a dependency manager for your projects, as a back-end to
