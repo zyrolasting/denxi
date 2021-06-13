@@ -24,10 +24,6 @@
 Xiden distributes software, and this is its documentation.  Each
 document links back to this one.
 
-@hyperlink["https://github.com/zyrolasting/xiden"]{Xiden's README}
-covers promotional notes from the author, along with the benefits a
-user can expect when using Xiden.
-
 @other-doc[xiden-guide] covers how to install Xiden, and the most
 typical ways to use it. It does not spend much time on corner cases or
 nuances. New users should read this first.
