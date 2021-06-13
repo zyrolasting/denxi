@@ -179,8 +179,8 @@ and generative bindings from functionally-equivalent programs can
 thwart even the most robust systems. Most developers make judgement
 calls to get past these problems, and then caution users against
 incompatible practices. Xiden lets users choose and change their own
-reaction to both the underlying problems, and individual scenarios
-that can only appear in practice.
+reaction to the underlying problems, and the scenarios that only seem
+to appear in practice.
 
 For example, Xiden allows users to decide what names are canonical in
 the event of a conflict. If two programmers claim the name
