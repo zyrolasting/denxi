@@ -9,6 +9,7 @@
    "artifact.rkt"
    "cli.rkt"
    "codec.rkt"
+   "format.rkt"
    "state.rkt"
    "integrity.rkt"
    "openssl.rkt"
@@ -17,6 +18,7 @@
    "security.rkt"
    "signature.rkt"
    "source.rkt"
+   "subprogram.rkt"
    "system.rkt")
 
 (module reader syntax/module-reader xiden/launcher)
