@@ -32,6 +32,9 @@
 (define xiden-practices
   '(lib "xiden/docs/practices/xiden-practices.scrbl"))
 
+(define xiden-white-paper
+  '(lib "xiden/docs/white-paper/xiden-white-paper.scrbl"))
+
 (define-for-syntax (reformat-syntax stx v)
   (replace-context stx
     (read-syntax #f (open-input-string (with-output-to-string (λ () (pretty-write v)))))))

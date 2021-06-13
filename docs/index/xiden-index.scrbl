@@ -1,19 +1,28 @@
 #lang scribble/manual
 
-@require["../shared.rkt"]
+@require[racket/format
+         racket/runtime-path
+         scribble/core
+         scribble/html-properties
+         "../shared.rkt"]
 
-@title[#:style '(toc)]{Xiden: Functional Dependency Management in Racket}
+@title[#:style '(toc)]{Xiden Documentation}
 @author[(author+email "Sage L. Gerard" "sage@sagegerard.com" #:obfuscate? #t)]
 
-Xiden is a dependency manager, and a platform for distributing
-software. Think of it as Racket's answer to Guix. Licensed under
-GPLv3.
+@define-runtime-path[logo]{doc-logo.png}
 
+@(define logo-element
+   (elem #:style
+    (style #f
+           (list (alt-tag "img")
+                 (attributes
+                  `((src . "./doc-logo.png")
+                    (style . "max-width: 100%")))))))
 
-@section{How to Use this Documentation}
+@logo-element
 
-Xiden's documentation is indexed here.  Each other document links back
-to this one for navigation purposes.
+Xiden distributes software, and this is its documentation.  Each
+document links back to this one.
 
 @hyperlink["https://github.com/zyrolasting/xiden"]{Xiden's README}
 covers promotional notes from the author, along with the benefits a
@@ -22,6 +31,9 @@ user can expect when using Xiden.
 @other-doc[xiden-guide] covers how to install Xiden, and the most
 typical ways to use it. It does not spend much time on corner cases or
 nuances. New users should read this first.
+
+@other-doc[xiden-white-paper] covers distribution problems and Xiden's
+overall approach to them.
 
 @other-doc[xiden-tutorials] is similar to the guide, but each section
 covers a well-defined topic. Any problems or scenarios shown in a
