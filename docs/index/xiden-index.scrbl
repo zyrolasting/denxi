@@ -1,37 +1,36 @@
 #lang scribble/manual
 
-@require["../shared.rkt"]
+@require[racket/format
+         racket/runtime-path
+         scribble/core
+         scribble/html-properties
+         "../shared.rkt"]
 
-@title[#:style '(toc)]{Xiden: Functional Dependency Management in Racket}
+@title[#:style '(toc)]{Xiden Documentation}
 @author[(author+email "Sage L. Gerard" "sage@sagegerard.com" #:obfuscate? #t)]
 
-Xiden is a dependency manager, and a platform for distributing
-software. Think of it as Racket's answer to Guix. Licensed under
-GPLv3.
+@define-runtime-path[logo]{doc-logo.png}
 
+@(define logo-element
+   (elem #:style
+    (style #f
+           (list (alt-tag "img")
+                 (attributes
+                  `((src . "./doc-logo.png")
+                    (style . "max-width: 100%")))))))
 
-@section{How to Use this Documentation}
+@logo-element
 
-Xiden's documentation is indexed here.  Each other document links back
-to this one for navigation purposes.
+Xiden distributes software, and this is its documentation.
 
-@hyperlink["https://github.com/zyrolasting/xiden"]{Xiden's README}
-covers promotional notes from the author, along with the benefits a
-user can expect when using Xiden.
+@other-doc[xiden-guide] covers how to install and use Xiden.
 
-@other-doc[xiden-guide] covers how to install Xiden, and the most
-typical ways to use it. It does not spend much time on corner cases or
-nuances. New users should read this first.
+@other-doc[xiden-white-paper] covers Xiden's approach to distribution
+problems.
 
-@other-doc[xiden-tutorials] is similar to the guide, but each section
-covers a well-defined topic. Any problems or scenarios shown in a
-tutorial have well-defined solutions.
+@other-doc[xiden-tutorials] covers how to perform well-defined tasks.
 
-@other-doc[xiden-practices] has sections that are similar to
-tutorials, where problems come from human error or habits.  The
-document focuses on practices because @italic{how} the programmer
-approaches the problem is more important than @italic{what} the
-programmer uses.
+@other-doc[xiden-practices] covers problems without clear-cut
+solutions.
 
-@other-doc[xiden-reference] is a formal definition of the API, and all
-modules in the @litchar{xiden} collection.
+@other-doc[xiden-reference] covers a formal API definition.

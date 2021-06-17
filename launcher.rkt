@@ -10,6 +10,7 @@
    "cli.rkt"
    "codec.rkt"
    "crypto.rkt"
+   "format.rkt"
    "state.rkt"
    "integrity.rkt"
    "package.rkt"
@@ -17,6 +18,7 @@
    "security.rkt"
    "signature.rkt"
    "source.rkt"
+   "subprogram.rkt"
    "system.rkt")
 
 (module reader syntax/module-reader xiden/launcher)
