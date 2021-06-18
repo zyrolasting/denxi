@@ -6,6 +6,7 @@
          racket/list
          racket/port
          racket/runtime-path
+         racket/string
          ffi/vector
          (rename-in ffi/unsafe [-> -->])
          "message.rkt"
@@ -121,11 +122,17 @@ EOF
 
 (define-runtime-path crypto/ "crypto")
 
+(define arch
+  (let ([subpath (~a (system-library-subpath))])
+    (if (equal? (system-path-convention-type) 'windows)
+        (cadr (string-split subpath "\\"))
+        (car (string-split subpath "-")))))
+
 (define crypto-lib
   (ffi-lib
    (path-replace-extension
     (build-path crypto/
-                (~a (system-type 'arch) "-" (system-type 'os))
+                (~a arch "-" (system-type 'os))
                 "crypto")
     (system-type 'so-suffix))))
 
