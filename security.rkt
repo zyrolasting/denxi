@@ -12,10 +12,10 @@
          racket/list
          openssl
          "codec.rkt"
+         "crypto.rkt"
          "integrity.rkt"
          "state.rkt"
          "message.rkt"
-         "openssl.rkt"
          "path.rkt"
          "port.rkt"
          "setting.rkt")

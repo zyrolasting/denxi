@@ -8,7 +8,7 @@
                     xiden/integrity
                     xiden/signature
                     xiden/source
-                    xiden/openssl]
+                    xiden/crypto]
                     "../shared.rkt"]
 
 This tutorial assumes you have read and understand @secref{integrity}.

@@ -14,39 +14,9 @@
 
 @defmodule[xiden/signature]
 
-@racketmodname[xiden/signature] authenticates data providers
-through their digital signatures.
+@racketmodname[xiden/signature] extends @racket[xiden/crypto] with
+utilities tailored for data authentication.
 
-@section{Signature Verification Model}
-
-Xiden's signature checking process is equivalent to the
-following OpenSSL command:
-
-@verbatim|{$ openssl pkeyutl -verify -sigfile SIGFILE -pubin -inkey PUBKEY <DIGEST}|
-
-Specifically, it reads @italic{unencoded} bytes for a message digest
-(a.k.a. content hash) and verifies a signature from a signature file
-(@tt{SIGFILE}) and a public key file (@tt{PUBKEY}).
-
-This implies that Xiden accepts any format OpenSSL does for the
-signature and public key, but the cipher algorithm used to create the
-signature must support the message digest algorithm used to create the
-digest. Xiden does not check if this invariant holds, and will forward
-any errors raised by OpenSSL.
-
-If you create a signature and cannot seem to pass the signature check,
-make sure that you are actually signing the raw bytes for a message
-digest, not an encoded form of that digest. For example, if you use a
-command like @litchar{openssl dgst -sign ...}, then you would be
-signing an ANS.1-encoded digest. Use @litchar{openssl pkeyutl -binary
-...}  instead.
-
-In the event a cipher algorithm is compromised, then Xiden will adapt
-by using different OpenSSL commands. The interface documented in this
-section is not expected to change for that reason.
-
-
-@section{Signature Check Bindings}
 
 @defstruct*[signature-info ([pubkey source-variant?] [body source-variant?])]{
 Holds an expression of a public key file and the bytes of a signature
@@ -65,26 +35,15 @@ use with @racket[check-signature].
 @defproc[(fetch-signature-payload [src source-variant?] [exhaust exhaust/c]) any/c]{
 Like @racket[fetch], except transfer limits are capped to
 @racket[MAX_EXPECTED_SIGNATURE_PAYLOAD_LENGTH] and no transfer status
-information is reported.
+information is reported. When the source has been successfully
+@tech{tapped}, the return value is a byte string representing the full
+content of the requested resource.
 
 In practice, the fetched bytes are expected to contain either a public
 key or a signature.  In any case, the output is assumed to be
 compatible with the tool used to verify signatures.
 }
 
-
-@defproc[(make-signature-bytes [digest bytes?]
-                               [private-key-path path-string?]
-                               [private-key-password-path (or/c #f path-string?)])
-                               bytes?]{
-Returns bytes representing the unencoded signature for
-@racket[digest]. Requires access to a private key on the filesystem.
-
-If the private key has a password, then pass a path to a text file
-containing that password to @racket[private-key-password-path].  If
-not provided, the user will be prompted for the password through
-@racket[(current-input-port)].
-}
 
 @defthing[current-verify-signature
           (parameter/c (-> integrity-info?
@@ -104,8 +63,8 @@ procedure in the context of a @tech{launcher}.
 }
 
 
-@defproc[(check-signature [#:trust-public-key? trust-public-key? (-> path-string? any/c)]
-                          [#:public-key-path public-key-path path-string?]
+@defproc[(check-signature [#:trust-public-key? trust-public-key? (-> input-port? any/c)]
+                          [#:public-key public-key bytes?]
                           [#:trust-unsigned trust-unsigned any/c]
                           [#:trust-bad-digest trust-bad-digest any/c]
                           [siginfo (or/c #f signature-info?)]
@@ -125,12 +84,10 @@ the check passes. This is because a failure to declare a signature is
 the same as not providing a signature. Trusting unsigned input means
 being okay with this.
 
-If @racket[(trust-public-key? public-key-path)] is true, both
+Given @racket[(trust-public-key? (open-input-bytes public-key))], both
 @racket[siginfo] and @racket[intinfo] are well-formed, and the public
-key verifies the signature against the integrity information, the check
-passes.
-
-The check fails in all other conditions.
+key verifies the signature against the integrity information, the
+check passes. The check fails in all other conditions.
 }
 
 
@@ -149,14 +106,43 @@ Like @racket[lock-integrity-info], but for the fields of a
 @racket[signature-info] instance.
 }
 
+@defproc[(make-snake-oil-signature-info [digest bytes?]
+                                        [chf chf/c DEFAULT_CHF])
+                                        well-formed-signature-info/c]{
+Return a new @racket[signature-info] using
+@racket[snake-oil-public-key] and @racket[sign-with-snake-oil].  Do
+not use in production code.
+}
+
+
 @defthing[MAX_EXPECTED_SIGNATURE_PAYLOAD_LENGTH budget/c]{
 An estimated maximum number of bytes (chosen empirically) for a public
 key or signature.
 }
 
+@defproc[(call-with-trust-in-snake-oil [f (-> any)]) any]{
+Returns @racket[(f)]. While control is in @racket[f],
+@racket[XIDEN_TRUST_CHFS] and @racket[XIDEN_TRUST_PUBLIC_KEYS] are
+extended to trust @racket[DEFAULT_CHF] and
+@racket[snake-oil-public-key], respectively.
+
+Use to prototype new verifications in the context of an existing
+configuration.
+}
+
+@defproc[(call-with-faith-in-snake-oil [f (-> any)]) any]{
+Like @racket[call-with-trust-in-snake-oil], except
+@racket[XIDEN_TRUST_CHFS] and @racket[XIDEN_TRUST_PUBLIC_KEYS] are
+@italic{replaced} such that they @italic{only} trust
+@racket[DEFAULT_CHF] and @racket[snake-oil-public-key], respectively.
+
+Use to prototype verifications in what would otherwise be a zero-trust
+configuration.
+}
+
 @defstruct*[($signature $message) ([ok? boolean?]
                                    [stage symbol?]
-                                   [public-key-path (or/c #f path-string?)])
+                                   [public-key (or/c #f bytes?)])
                                   #:prefab]{
 A @tech{message} that reports the results of a signature check.
 
@@ -165,8 +151,8 @@ A @tech{message} that reports the results of a signature check.
 @racket[stage] is a symbol representing the procedure responsible for
 the check result.
 
-@racket[public-key-path] is a path to a cached public key file
-used for a check, or @racket[#f] if a public key is not relevant.
+@racket[public-key] is the public key used for a check, or @racket[#f]
+if a public key is not available or relevant.
 }
 
 @defsetting*[XIDEN_TRUST_ANY_PUBLIC_KEY]{

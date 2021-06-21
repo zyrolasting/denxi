@@ -3,11 +3,11 @@
 ; Verify integrity of bytes
 
 (require racket/contract
+         "crypto.rkt"
          "file.rkt"
          "format.rkt"
          "state.rkt"
          "message.rkt"
-         "openssl.rkt"
          "port.rkt"
          "setting.rkt"
          "source.rkt")
@@ -31,7 +31,8 @@
            flat-contract?]
           [bind-trust-list
            (-> (listof well-formed-integrity-info/c)
-               (-> path-string? boolean?))]
+               (-> (or/c bytes? path-string? input-port?)
+                   boolean?))]
           [make-trusted-integrity-info
            (->* (source-variant?)
                 (chf/c)
@@ -49,12 +50,14 @@
 
 (define+provide-message $integrity (ok? stage info))
 (define+provide-setting XIDEN_TRUST_BAD_DIGEST boolean? #f)
+(define+provide-setting XIDEN_TRUST_CHFS (listof chf/c) null)
 
 (struct integrity-info (algorithm digest) #:prefab)
 
 (define integrity integrity-info)
 
 (define MAX_EXPECTED_DIGEST_LENGTH 128)
+
 
 (define (make-trusted-integrity-info source [chf DEFAULT_CHF])
   (fetch (coerce-source source)
@@ -74,13 +77,13 @@
 
 
 (define (bind-trust-list trusted)
-  (λ (path)
+  (λ (in)
     (for/or ([integrity trusted])
       ($integrity-ok? (check-integrity
                        #:trust-bad-digest #f
                        #:trust-message-digest-algorithms (XIDEN_TRUST_CHFS)
                        integrity
-                       (make-digest path
+                       (make-digest in
                                     (integrity-info-algorithm integrity)))))))
 
 
@@ -200,14 +203,14 @@
                  (lock-integrity-info (integrity 'md5 (exhausted-source 1))))
                1)
 
-  (test-case "Bind trust in specific paths"
+  (test-case "Bind trust in data"
     (define trust?
       (bind-trust-list
        (list (integrity-info 'sha1 (make-digest integrity.rkt 'sha1)))))
     (XIDEN_TRUST_CHFS '(sha1)
       (λ ()
-        (check-true (trust? integrity.rkt))
-        (check-false (trust? main.rkt)))))
+        (check-true (call-with-input-file* integrity.rkt trust?))
+        (check-false (call-with-input-file* main.rkt trust?)))))
 
   (test-true "Trust only certain CHFs"
              (consider-chf-trust #:trust-message-digest-algorithms '(md5)

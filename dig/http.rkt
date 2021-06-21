@@ -12,10 +12,10 @@
 (require racket/format
          racket/list
          "../artifact.rkt"
+         "../crypto.rkt"
          "../dig.rkt"
          "../integrity.rkt"
          "../subprogram.rkt"
-         "../openssl.rkt"
          "../signature.rkt"
          "../source.rkt"
          "../url.rkt")

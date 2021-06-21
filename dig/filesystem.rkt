@@ -17,12 +17,12 @@
          racket/match
          racket/path
          "../artifact.rkt"
+         "../crypto.rkt"
          "../dig.rkt"
          "../input.rkt"
          "../integrity.rkt"
          "../subprogram.rkt"
          "../monad.rkt"
-         "../openssl.rkt"
          "../query.rkt"
          "../signature.rkt"
          "../source.rkt"

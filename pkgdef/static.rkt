@@ -4,7 +4,7 @@
 
 (require racket/contract
          "../codec.rkt"
-         "../openssl.rkt"
+         "../crypto.rkt"
          "../path.rkt"
          "../query.rkt"
          "../racket-module.rkt"
