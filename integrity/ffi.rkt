@@ -34,6 +34,10 @@
          (hash-set! private-table 'id id)))
 
 
+(define-syntax-rule (define-ffi-procedure sig . body)
+  (define sig (assert-crypto-availability) . body))
+
+
 (define (integrity-ffi-available?!)
   (and (for/and ([(k v) (in-hash private-table)]) v)
        #t))
@@ -79,7 +83,7 @@
                    (_array _string (integrity-ffi-get-chf-count!))))
 
 
-(define (integrity-ffi-get-c-chfs!)
+(define-ffi-procedure (integrity-ffi-get-c-chfs!)
   (define chf-count (integrity-ffi-get-chf-count!))
   (define available (integrity-ffi-get-supported-chfs!))
   (if (and chf-count available)
@@ -88,14 +92,14 @@
       null))
 
 
-(define (integrity-ffi-find-default-chf!)
+(define-ffi-procedure (integrity-ffi-find-default-chf!)
   (define default-index (integrity-ffi-get-default-chf-index!))
   (and default-index
        (list-ref (integrity-ffi-get-c-chfs!)
                  default-index)))
 
 
-(define (integrity-ffi-make-digest! in algorithm)
+(define-ffi-procedure (integrity-ffi-make-digest! in algorithm)
   (define p-md (integrity-ffi-load-chf! algorithm))
   (define digest-size ((integrity-ffi-get-get-digest-size!) p-md))
   (define read-buffer-size (* 128 1024))
@@ -120,7 +124,7 @@
       (crypto-raise!)))
 
 
-(define (integrity-ffi-load-chf! chf)
+(define-ffi-procedure (integrity-ffi-load-chf! chf)
   (define mdindex (index-of (integrity-ffi-get-c-chfs!) chf))
   (if mdindex
       (let ([p_md ((integrity-ffi-get-load-chf!) mdindex)])
