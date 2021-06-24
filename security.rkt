@@ -330,37 +330,38 @@
 
 
   (test-case "Build executable trust profiles"
-    (define my-file "security.rkt")
-    (define my-path (build-path here my-file))
-    (define other-path (build-path here "main.rkt"))
+    (call-with-snake-oil-chf-profile
+     (λ ()
+       (define my-file "security.rkt")
+       (define my-path (build-path here my-file))
+       (define other-path (build-path here "main.rkt"))
 
-    (define trusts-anything
-      (make-executable-trust-predicate #t '() '()))
+       (define trusts-anything
+         (make-executable-trust-predicate #t '() '()))
 
-    (define trusts-nothing
-      (make-executable-trust-predicate #f '() '()))
+       (define trusts-nothing
+         (make-executable-trust-predicate #f '() '()))
 
-    (define trusts-exact-things
-      (make-executable-trust-predicate #f
-                                       (list (integrity 'sha1 (make-digest my-path 'sha1)))
-                                       '()))
+       (define trusts-exact-things
+         (make-executable-trust-predicate #f
+                                          (list (integrity 'snake-oil
+                                                           (make-digest my-path 'snake-oil)))
+                                          '()))
 
-    (define trusts-hosted-things
-      (make-executable-trust-predicate #f '() '("security.rkt") (λ (p) my-path)))
+       (define trusts-hosted-things
+         (make-executable-trust-predicate #f '() '("security.rkt") (λ (p) my-path)))
 
-    (check-true  (trusts-anything my-path))
-    (check-true  (trusts-anything other-path))
+       (check-true  (trusts-anything my-path))
+       (check-true  (trusts-anything other-path))
 
-    (check-false (trusts-nothing my-path))
-    (check-false (trusts-nothing other-path))
+       (check-false (trusts-nothing my-path))
+       (check-false (trusts-nothing other-path))
 
-    (XIDEN_TRUST_CHFS '(sha1)
-                      (λ ()
-                        (check-true  (trusts-exact-things my-path))
-                        (check-false (trusts-exact-things other-path))))
+       (check-true  (trusts-exact-things my-path))
+       (check-false (trusts-exact-things other-path))
 
-    (check-true  (trusts-hosted-things my-path))
-    (check-false (trusts-hosted-things other-path)))
+       (check-true  (trusts-hosted-things my-path))
+       (check-false (trusts-hosted-things other-path)))))
 
 
   (test-case "Make envvar subset"
