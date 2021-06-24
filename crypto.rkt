@@ -9,6 +9,7 @@
 
 (define+provide-message $crypto ())
 (define+provide-message $crypto:error $crypto (queue))
+(define+provide-message $crypto:unavailable $crypto ())
 (define-runtime-path crypto/ "crypto")
 
 (provide
@@ -26,6 +27,8 @@
   [crypto-translate-error!
    (-> exact-integer?
        (or/c #f string?))]
+  [assert-crypto-availability
+   procedure?]
   [crypto-raise!
    procedure?]))
 
@@ -71,6 +74,9 @@
                (and (not (exn? l))
                     (get-ffi-obj sym l type)))))
 
+(define (assert-crypto-availability)
+  (when (exn? (crypto-get-lib!))
+    (raise ($crypto:unavailable))))
 
 (define (crypto-dump-error-queue!)
   (define get (crypto-get-obj! #"ERR_get_error" (_fun --> _ulong)))
