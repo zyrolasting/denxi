@@ -131,18 +131,45 @@
 (module+ test
   (require rackunit
            "snake-oil.rkt"
-           "../integrity/ffi.rkt")
+           "../codec.rkt"
+           "../integrity/ffi.rkt"
+           (submod "../integrity/chf.rkt" test))
   (when (and (signature-ffi-available?!)
              (integrity-ffi-available?!))
-    (define chf 'sha1)
-    (define digest (integrity-ffi-make-digest! (open-input-bytes #"abc") chf))
-    (check-true
-     (signature-ffi-verify-signature!
-      digest
-      chf
-      (signature-ffi-make-signature!
-       digest
-       chf
-       snake-oil-private-key
-       snake-oil-private-key-password)
-      snake-oil-public-key))))
+
+    (define available-chfs (map car test-digests))
+
+    (for ([pair (in-list test-digests)])
+      (define chf (car pair))
+      (define expected-digest (base64 (cdr pair)))
+      (with-handlers ([$crypto:error? (λ ($) (fail))])
+        (define signature
+          (signature-ffi-make-signature!
+           expected-digest
+           chf
+           snake-oil-private-key
+           snake-oil-private-key-password))
+
+        (define (valid? #:expected-digest [e expected-digest]
+                        #:chf [c chf]
+                        #:signature [s signature]
+                        #:public-key [p snake-oil-public-key])
+          (signature-ffi-verify-signature! e c s p))
+
+        (define (tamper bstr)
+          (define copy (bytes-copy bstr))
+          (bytes-set! copy 0 (modulo (add1 (bytes-ref bstr 0)) 255))
+          copy)
+
+        (test-true "Create and verify signature"
+                   (valid?))
+
+        (test-false "Reject signatures with the wrong CHF"
+                    (valid? #:chf (findf (λ (v) (not (equal? v chf)))
+                                         available-chfs)))
+
+        (test-false "Reject doctored signatures"
+                    (valid? #:signature (tamper signature)))
+
+        (test-false "Reject signatures against the wrong digest"
+                    (valid? #:expected-digest (tamper expected-digest)))))))
