@@ -12,6 +12,10 @@
  (contract-out
   [chf-bind-trust (-> chf-trust/c predicate/c)]
   [chf-alias/c flat-contract?]
+  [chf-fold-trust
+   (-> (-> symbol? chf-implementation/c)
+       (listof symbol?)
+       chf-trust/c)]
   [chf-implementation/c chaperone-contract?]
   [chf-names/c flat-contract?]
   [chf-trust/c chaperone-contract?]
@@ -74,6 +78,17 @@
   (and (symbol? sym)
        (find-chf-implementation table sym)
        #t))
+
+
+
+(define (chf-fold-trust f trusted-chf-names)
+  (for/fold ([wip null] #:result (reverse wip))
+            ([name trusted-chf-names])
+    (cons (list (list name
+                      (pregexp (format "^(?i:~a)$" name)))
+                (f name))
+          wip)))
+
 
 (define (get-default-chf [table (current-chfs)])
   (and (not (null? table))
@@ -183,7 +198,13 @@
     (check* 'SHA1)
     (check* 'SHA-1)
     (check* 'Sha1))
-  
+
+  (check-equal?
+   (chf-fold-trust (λ (s) s) '(a b c))
+   `(([a #px"^(?i:a)$"] a)
+     ([b #px"^(?i:b)$"] b)
+     ([c #px"^(?i:c)$"] c)))
+
   (parameterize ([current-chfs `(([sha1 #px"s1"] ,(λ _ #"")))])
     (let ([trust? (chf-bind-trust (current-chfs))])
       (check-true (trust? 'sha1))
