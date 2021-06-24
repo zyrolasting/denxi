@@ -15,7 +15,7 @@
          racket/path
          "crypto.rkt"
          "format.rkt"
-         "state.rkt"
+         "integrity/chf.rkt"
          "message.rkt"
          "port.rkt"
          "printer.rkt"
@@ -144,7 +144,7 @@
 
 (define (make-source-key src)
   (define id (identify src))
-  (and id (make-digest id DEFAULT_CHF)))
+  (and id (make-digest id)))
 
 
 (define (coerce-key-port variant)

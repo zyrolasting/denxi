@@ -13,6 +13,8 @@
         ((or/c #f (listof symbol?)))
         (-> (or/c bytes? path-string? input-port?)
             boolean?))]
+  [call-with-snake-oil-chf-profile
+   (-> (-> any) any)]
   [fetch-digest
    (-> well-formed-integrity-info/c exhaust/c any/c)]
   [integrity

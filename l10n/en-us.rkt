@@ -489,4 +489,4 @@
        "Please report it to the maintainer.")]
 
   [($crypto:error queue)
-   (string-join (get-crypto-error-strings queue) "\n")])
+   (string-join (map crypto-translate-error! queue) "\n")])

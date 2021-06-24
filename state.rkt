@@ -28,6 +28,7 @@
          "crypto.rkt"
          "file.rkt"
          "format.rkt"
+         "integrity/chf.rkt"
          "message.rkt"
          "path.rkt"
          "port.rkt"
@@ -658,10 +659,7 @@
                             #:buffer-size buffer-size
                             #:timeout-ms timeout-ms
                             #:est-size est-size))))
-            (define digest
-              (call-with-input-file* tmp
-                (λ (in) (make-digest in DEFAULT_CHF))))
-            
+            (define digest (call-with-input-file* tmp make-digest))
             (define path (build-addressable-path digest))
             (make-directory* (path-only path))
             (rename-file-or-directory tmp path #t)
@@ -804,7 +802,7 @@
       (path->string path)))
 
 
-(define (make-directory-digest dir [chf DEFAULT_CHF])
+(define (make-directory-digest dir [chf (get-default-chf)])
   (make-digest
    (sequence-fold
     (λ (accum path)
@@ -826,7 +824,7 @@
     (in-directory dir))))
 
 
-(define (make-file-digest path [chf DEFAULT_CHF])
+(define (make-file-digest path [chf (get-default-chf)])
   (make-digest
    (input-port-append #t
                       (open-input-string (~a (file-name-from-path path)))

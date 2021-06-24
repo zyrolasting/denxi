@@ -4,9 +4,12 @@
 
 (provide (struct-out notary)
          (contract-out
+          [lazy-notary notary?]
+          [make-fraudulent-notary
+           (-> symbol? notary?)]
           [make-notary
            (->* ()
-                (#:chf chf/c
+                (#:chf symbol?
                  #:private-key
                  (or/c #f source-variant?)
                  #:public-key-source
@@ -17,9 +20,7 @@
           [notarize
            (-> notary?
                (or/c artifact-info? source-variant?)
-               (subprogram/c artifact-info?))]
-          [lazy-notary notary?]
-          [fraudulent-notary notary?]))
+               (subprogram/c artifact-info?))]))
 
 (require racket/file
          racket/match
@@ -36,7 +37,7 @@
    private-key
    private-key-password))
 
-(define (make-notary #:chf [chf DEFAULT_CHF]
+(define (make-notary #:chf [chf (get-default-chf)]
                      #:public-key-source [pb #f]
                      #:private-key [pk #f]
                      #:private-key-password [pkp #f])
@@ -48,8 +49,8 @@
 
 ; Don't reduce to normal constructor call. This counts as implicit
 ; test coverage based on module instantiations.
-(define fraudulent-notary
-  (make-notary #:chf DEFAULT_CHF
+(define (make-fraudulent-notary [chf (get-default-chf)])
+  (make-notary #:chf chf
                #:public-key-source
                snake-oil-public-key
                #:private-key
@@ -102,10 +103,10 @@
   (check-pred notary? (make-notary))
   (check-match
     (get-subprogram-value
-     (notarize fraudulent-notary
+     (notarize (make-fraudulent-notary)
                (artifact #"abc")))
     (artifact-info (not #f)
-                   (integrity-info (? chf/c _)
+                   (integrity-info (? symbol? _)
                                    (? bytes? _))
                    (signature-info (? bytes? _)
                                    (? bytes? _)))))

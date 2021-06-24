@@ -5,10 +5,10 @@
 (provide
  (contract-out
   [make-filesystem-shovel
-   (->* (complete-path? chf/c source-variant?)
+   (->* (complete-path? symbol? source-variant?)
         shovel/c)]
   [make-filesystem-shovel/pkgdef
-   (->* (complete-path? chf/c)
+   (->* (complete-path? symbol?)
         (package-query-defaults-implementation/c)
         shovel/c)]))
 

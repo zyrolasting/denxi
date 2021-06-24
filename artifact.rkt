@@ -185,7 +185,7 @@
                              (λ (result messages)
                                (check-equal? result FAILURE)))
 
-           (call-with-faith-in-snake-oil
+           (call-with-trust-in-snake-oil
             (λ ()
               (check-subprogram (verify-artifact arti record)
                                 (λ (result messages)
