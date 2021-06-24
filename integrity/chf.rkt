@@ -10,6 +10,7 @@
 (provide
  (struct-out $chf-unavailable)
  (contract-out
+  [chf-bind-trust (-> chf-trust/c predicate/c)]
   [chf-alias/c flat-contract?]
   [chf-implementation/c chaperone-contract?]
   [chf-names/c flat-contract?]
@@ -68,6 +69,11 @@
 (define current-chfs
   (make-parameter null))
 
+
+(define ((chf-bind-trust [table (current-chfs)]) sym)
+  (and (symbol? sym)
+       (find-chf-implementation table sym)
+       #t))
 
 (define (get-default-chf [table (current-chfs)])
   (and (not (null? table))
@@ -169,6 +175,8 @@
   (check-true (chf-match? 'a '(a))) 
   (check-true (chf-match? "b" '(a "b")))
 
+  (check-false ((chf-bind-trust) 'anything))
+
   (let ([check* (λ (v) (check-true (chf-match? v '(sha1 #px"^(?i:sha-?1)$"))))])
     (check* 'sha1)
     (check* 'sha-1)
@@ -177,6 +185,13 @@
     (check* 'Sha1))
   
   (parameterize ([current-chfs `(([sha1 #px"s1"] ,(λ _ #"")))])
+    (let ([trust? (chf-bind-trust (current-chfs))])
+      (check-true (trust? 'sha1))
+      (check-true (trust? 's1))
+      (check-true (trust? 'as1b))
+      (check-false (trust? 's))
+      (check-false (trust? '||))
+      (check-false (trust? 'md5)))
     (check-eq? (get-default-chf (current-chfs)) 'sha1)
     (check-eq? (get-default-chf) 'sha1)
     (check-eq? (find-chf-canonical-name 's1) 'sha1)
