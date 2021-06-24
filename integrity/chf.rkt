@@ -81,7 +81,6 @@
        #t))
 
 
-
 (define (chf-fold-trust f trusted-chf-names)
   (for/fold ([wip null] #:result (reverse wip))
             ([name trusted-chf-names])
@@ -111,7 +110,6 @@
                (try (string=? needle-string next))]
               [(or (regexp? next) (byte-regexp? next))
                (try (regexp-match? next needle-string))]))))
-
 
 
 (define (find-chf-implementation [table (current-chfs)] [sym (get-default-chf table)])
