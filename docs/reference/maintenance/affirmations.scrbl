@@ -5,13 +5,17 @@
 @title{Affirmations}
 
 Each security-critical check is implemented using a composition of
-@deftech{affirmations}.  An @tech{affirmation} is a pure procedure
-that either returns a @tech/xiden-reference{message}, or the result of
-applying another procedure in tail position. The message says if an
-operation is consistent with the user's affirmative consent, and names
-the @tech{affirmation} used to create that message.  Additionally, an
-affirmation procedure must have a cyclomatic complexity of at most
-@racket[2].
+@deftech{affirmations}.  An @tech{affirmation} is a Racket procedure
+that meets several requirements.
+
+@itemlist[
+@item{The procedure is pure}
+@item{The procedure uses continuation-passing style}
+@item{The procedure has a cyclomatic complexity of exactly @racket[2].}
+@item{The procedure has no default arguments}
+@item{If the procedure returns a value without applying a continuation,
+      then that value contains the procedure's name.}
+]
 
 For example, let's look at a procedure that returns @racket[#t] if a
 real number is an element of an exclusive interval.
@@ -45,8 +49,8 @@ becomes far more verbose.
                           ($between #t (object-name num-between)))))))
 ]
 
-Why do it this way? Because @racket[num-between] returns an answer and
-the reason behind the answer in a single value. The original
+This form returns an answer, any desired context, and the name of the
+procedure responsible for the answer in a single value. The original
 @racket[num-between] would tell us if a number is not an element of
 @litchar{(lo, hi)}, but the modified version tells us @italic{why} it
 isn't. If we see @racket[(object-name affirm-<)], then we know that
