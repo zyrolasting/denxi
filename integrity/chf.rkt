@@ -166,7 +166,6 @@
   (require rackunit)
 
   (define test-digest-data #"the rain in spain falls mainly on the plain\n")
-
   (define test-digests
     '((sha3-384 . "C5cwjJB4SzrDF0DDwfxIQeTwulzTMGSpKSZmW1BSzEs4GLQJy5emOmigwBAO5DUY")
       (sha256 . "2AQkOghwLerAkbcbvdWrtocTeBXV5UnbPA56MsyClqk=")
@@ -178,7 +177,7 @@
       (sha3-256 . "dHGOrfdKJB1Agz8mMafKamWzJg7Cu1Cg1G3XM3vWFJc=")
       (sha3-384 . "C5cwjJB4SzrDF0DDwfxIQeTwulzTMGSpKSZmW1BSzEs4GLQJy5emOmigwBAO5DUY")
       (sha3-512 . "UQqbIueWYFqdA9ibHPS2O0l+gX9DPySh4KPIv97XDBHPlPZB5MMzN4mXamWIuTLxLaZO8r2euZx0tfoksyevaQ==")))
-  
+
   (define empty-aliases '(#rx#"" #px#"" #px"" #rx"" "" ||))
 
   (for ([alias (in-list empty-aliases)])
@@ -188,7 +187,7 @@
   (check-pred chf-names/c '(sym . ,empty-aliases))
 
   (check-false (chf-match? '|| null))
-  (check-true (chf-match? 'a '(a))) 
+  (check-true (chf-match? 'a '(a)))
   (check-true (chf-match? "b" '(a "b")))
 
   (check-false ((chf-bind-trust) 'anything))
