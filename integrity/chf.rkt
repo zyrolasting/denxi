@@ -23,7 +23,8 @@
   [get-default-chf (->* () (chf-trust/c) (or/c #f symbol?))]
   [make-digest
    (->* ((or/c input-port? path? bytes?))
-        ((or/c #f symbol?))
+        ((or/c #f symbol?)
+         #:expect (or/c #f bytes?))
         bytes?)]
   [find-chf-canonical-name
    (->* (symbol?) (chf-trust/c) (or/c #f symbol?))]
@@ -134,7 +135,7 @@
             (find-chf-canonical-name sym (cdr table))))))
 
 
-(define (make-digest variant [algorithm (get-default-chf)])
+(define (make-digest #:expect [expect #f] variant [algorithm (get-default-chf)])
   (cond [(not algorithm)
          (raise ($chf-unavailable algorithm))]
         [(bytes? variant)
@@ -147,7 +148,7 @@
         [else
          (let ([f (find-chf-implementation (current-chfs) algorithm)])
            (if f
-               (f variant)
+               (f variant expect)
                (raise ($chf-unavailable algorithm))))]))
 
 
