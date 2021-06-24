@@ -21,15 +21,22 @@
 
 
 (require "../integrity.rkt"
-         "../message.rkt")
+         "../message.rkt"
+         "ffi.rkt")
 
 
 (define current-verify-signature
-  (make-parameter (λ _ #f)))
+  (make-parameter
+   (if (signature-ffi-available?!)
+       signature-ffi-verify-signature!
+       (λ _ #f))))
 
 
 (define current-make-signature
-  (make-parameter (λ _ #"")))
+  (make-parameter
+   (if (signature-ffi-available?!)
+       signature-ffi-make-signature!
+       (λ _ #""))))
 
 
 (define-message $signature
