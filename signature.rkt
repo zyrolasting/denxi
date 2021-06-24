@@ -29,11 +29,11 @@
        exhaust/c
        bytes?)]
   [lock-signature-info
-   (->* (well-formed-signature-info/c)
+   (->* ((or/c signature-info/sourced? signature-info?))
         (#:public-key-budget (or/c +inf.0 exact-nonnegative-integer?)
          #:signature-budget (or/c +inf.0 exact-nonnegative-integer?)
          exhaust/c)
-        well-formed-signature-info/c)]
+        signature-info?)]
   [make-snake-oil-signature-info
    (-> bytes? symbol? signature-info?)]
   [verify-signature
@@ -41,12 +41,12 @@
                      signature-info/sourced?)
                (or/c integrity-info?
                      integrity-info/sourced?)
-               boolean?)
+               $signature?)
            (-> bytes?
                symbol?
                bytes?
                bytes?
-               boolean?))]
+               $signature?))]
   [call-with-trust-in-snake-oil
    (-> (-> any) any)]
   [make-signature
@@ -57,7 +57,8 @@
 
 (define+provide-setting XIDEN_TRUST_ANY_PUBLIC_KEY boolean? #f)
 (define+provide-setting XIDEN_TRUST_BAD_SIGNATURE boolean? #f)
-(define+provide-setting XIDEN_TRUST_PUBLIC_KEYS (listof integrity-info/sourced?) null)
+(define+provide-setting XIDEN_TRUST_PUBLIC_KEYS
+  (listof (or/c integrity-info? integrity-info/sourced?)) null)
 (define+provide-setting XIDEN_TRUST_UNSIGNED boolean? #f)
 
 (struct signature-info/sourced (pubkey body))
@@ -71,11 +72,15 @@
      (verify-signature (integrity chf digest)
                        (signature pubkey body))]
     [(siginfo intinfo)
-     (check-signature #:trust-public-key? (bind-trust-list (XIDEN_TRUST_PUBLIC_KEYS))
-                      #:trust-unsigned (XIDEN_TRUST_UNSIGNED)
-                      #:trust-bad-digest (XIDEN_TRUST_BAD_DIGEST)
-                      (lock-signature-info siginfo)
-                      (lock-integrity-info intinfo))]))
+     (let ([trust-public-key?
+            (if (XIDEN_TRUST_ANY_PUBLIC_KEY)
+                (λ (p) #t)
+                (bind-trust-list (XIDEN_TRUST_PUBLIC_KEYS)))])
+       (check-signature #:trust-public-key? trust-public-key?
+                        #:trust-unsigned (XIDEN_TRUST_UNSIGNED)
+                        #:trust-bad-digest (XIDEN_TRUST_BAD_DIGEST)
+                        (lock-signature-info siginfo)
+                        (lock-integrity-info intinfo)))]))
 
 (define (make-snake-oil-signature-info digest chf)
   (signature-info snake-oil-public-key
@@ -88,7 +93,8 @@
   (call-with-snake-oil-chf-profile
    (λ ()
      (XIDEN_TRUST_PUBLIC_KEYS
-      (list (integrity-info 'snake-oil (make-digest snake-oil-public-key)))
+      (list (integrity-info (get-default-chf)
+                            (make-digest snake-oil-public-key)))
       f))))
 
 (define (make-signature . xs)
@@ -125,12 +131,14 @@
      (define (exhaust* v)
        (abort (exhaust v)))
      (signature-info
-      (lock-source (signature-info-pubkey siginfo)
-                   public-key-budget
-                   exhaust*)
-      (lock-source (signature-info-body siginfo)
-                   signature-budget
-                   exhaust*)))))
+      (and (signature-info-pubkey siginfo)
+           (lock-source (signature-info-pubkey siginfo)
+                        public-key-budget
+                        exhaust*))
+      (and (signature-info-body siginfo)
+           (lock-source (signature-info-body siginfo)
+                        signature-budget
+                        exhaust*))))))
 
 
 (module+ test
