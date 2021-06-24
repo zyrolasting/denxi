@@ -24,15 +24,17 @@
   [load-builtin-chf
    (-> symbol? (-> any) any)]
   [lock-integrity-info
-   (->* ((or/c integrity-info/sourced? well-formed-integrity-info/c))
+   (->* ((or/c integrity-info/sourced? integrity-info?))
         (#:digest-budget budget/c exhaust/c)
-        well-formed-integrity-info/c)]
+        integrity-info?)]
   [make-sourced-digest
    (->* (source-variant? symbol?) (exhaust/c) bytes?)]
   [make-trusted-integrity-info
    (->* (source-variant?)
         (symbol?)
         integrity-info?)]
+  [make-user-chf-trust-predicate
+   (-> (-> symbol? boolean?))]
   [XIDEN_TRUST_BAD_DIGEST setting?]
   [XIDEN_TRUST_CHFS setting?]))
 
@@ -63,6 +65,10 @@
    load-builtin-chf
    (remove-duplicates trust-chfs)))
 
+(define (make-user-chf-trust-predicate)
+  (chf-bind-trust
+   (append (current-chfs)
+           (build-builtin-chf-trust (XIDEN_TRUST_CHFS)))))
 
 (define (load-builtin-chf xiden-sym [fail-thunk (λ () (raise ($chf-unavailable xiden-sym)))])
   (or (and (integrity-ffi-available?!)
@@ -112,11 +118,12 @@
   (if (integrity-info? intinfo)
       intinfo
       (integrity-info
-       (find-chf-canonical-name (integrity-info/sourced-chf intinfo)
-                                (current-chfs))
-       (lock-source (integrity-info/sourced-digest-source intinfo)
-                    digest-budget
-                    exhaust))))
+       (or (find-chf-canonical-name (integrity-info/sourced-chf intinfo))
+           (integrity-info/sourced-chf intinfo))
+       (and (integrity-info/sourced-digest-source intinfo)
+            (lock-source (integrity-info/sourced-digest-source intinfo)
+                         digest-budget
+                         exhaust)))))
 
 
 
@@ -136,7 +143,7 @@
 
 
 (define snake-oil-chf-profile
-  `([snake-oil] ,(λ (in _) (fallback-make-digest in 'sha1))))
+  `([sha1 snake-oil] ,(λ (in _) (fallback-make-digest in 'sha1))))
 
 
 (define (call-with-snake-oil-chf-profile f)
@@ -161,29 +168,29 @@
      (define expected-digest #"\251\231>6G\6\201j\272>%qxP\302l\234\320\330\235")
 
      (test-case "Make trusted integrity info"
-       (define val (make-trusted-integrity-info #"abc" 'snake-oil))
+       (define val (make-trusted-integrity-info #"abc" 'sha1))
        (check-pred integrity-info? val)
-       (check-equal? (integrity-info-algorithm val) 'snake-oil)
+       (check-equal? (integrity-info-algorithm val) 'sha1)
        (check-equal? (integrity-info-digest val) expected-digest))
 
      (test-equal? "Lock integrity info"
-                  (lock-integrity-info (integrity 'snake-oil (text-source "abc")))
-                  (integrity-info 'snake-oil #"abc"))
+                  (lock-integrity-info (integrity 'sha1 (text-source "abc")))
+                  (integrity-info 'sha1 #"abc"))
 
      (test-case "Do not lock integrity info if budget is too low"
        (check-match (lock-integrity-info #:digest-budget 0
-                                         (integrity-info 'snake-oil (text-source "abc")))
-                    (integrity-info 'snake-oil (text-source "abc"))))
+                                         (integrity-info 'sha1 (text-source "abc")))
+                    (integrity-info 'sha1 (text-source "abc"))))
 
      (test-equal? "Forward exhaust procedure"
                   (with-handlers ([real? values])
-                    (lock-integrity-info (integrity 'snake-oil (exhausted-source 1))))
+                    (lock-integrity-info (integrity 'sha1 (exhausted-source 1))))
                   1)
 
      (test-case "Bind trust in data"
        (define trust?
          (bind-trust-list
-          (list (integrity-info 'snake-oil expected-digest))))
+          (list (integrity-info 'sha1 expected-digest))))
        (check-true  (trust? (open-input-bytes #"abc")))
        (define (check-fail v)
          (check-false (trust? (open-input-bytes v))))
