@@ -5,135 +5,79 @@
 @require[@for-label[racket/base
                     racket/contract
                     racket/pretty
+                    ffi/unsafe
                     xiden/crypto]
          racket/pretty
-         @for-syntax[xiden/crypto]
          xiden/crypto
          "../../shared.rkt"]
 
 @defmodule[xiden/crypto]
 
-@racketmodname[xiden/crypto] is a high-level interface for a bundled
-@tt{libcrypto} extension. Error information may require knowledge of
-low-level operations, because breakages in the underlying library are
-critical failures in the Xiden runtime.
+@racketmodname[xiden/crypto] interacts with a bundled @tt{libcrypto}
+derivative. This module has no side-effects on instantiation, but will
+mutate either a FFI object in the Racket runtime, or an error code
+cache in the C runtime. To reset the Racket runtime cache, call
+@racket[crypto-clear-ffi-cache!]. To dump the error code cache, call
+@racket[crypto-dump-error-queue!].
 
-
-@section{Cryptographic Hash Functions}
-
-@racketmodname[xiden/crypto] defines supported @deftech{cryptographic
-hash functions} or (@deftech{CHF}s) based on the underlying
-@tt{libcrypto} build.
-
-@defthing[DEFAULT_CHF chf/c]{
-A cryptographic hash function considered to be collision resistant for
-the current Xiden installation.
-
-This value is subject to change for security reasons.
+@defproc[(crypto-clear-ffi-cache!) void?]{
+Clears an internal cache for the low-level library and its
+objects. The cache operates independently of accumulated errors.
 }
 
-@defthing[chf/c flat-contract?]
-Returns @racket[#t] if the argument is an element of @racket[cryptographic-hash-functions].
-}
+@defproc[(crypto-get-lib!) (or/c ffi-lib? exn?)]{
+Returns a @tech/reference{foreign-library value} for the bundled
+cryptographic library, or an exception explaining why it failed to
+load.
 
-@defthing[cryptographic-hash-functions (listof symbol?)]{
-A list of symbols that represent supported @tech{cryptographic hash functions}.
-
-Bound to @typeset-code[(pretty-format #:mode 'print cryptographic-hash-functions)]
+The value returned from this function is cached in Racket-managed
+memory. If the cached value is an exception, then
+@racket[(get-crypto-lib!)] will attempt to load the library
+again. This will replace the cached exception.
 }
 
 
-@section{High-Level Crypto API}
+@defproc[(crypto-get-obj! [objname (or/c bytes? symbol? string?)]
+                          [type ctype?])
+                          any/c]{
+Behaves like @racket[get-ffi-obj] when @racket[(get-crypto-lib!)] is
+a @tech/reference{foreign-library value}.
 
-@bold{All procedures in this section may @racket[raise] a
-@racket[$crypto] message instead of returning a value.}
+Returns @racket[#f] if the cryptography library is cached as an
+exception, or if @racket[objname] was not found in the library.
 
-@defproc[(make-digest [in (or/c bytes? path-string? input-port?)]
-                      [chf chf/c DEFAULT_CHF])
-                      bytes?]{
-Returns the unencoded bytes for a message digest computed using
-@racket[chf], using bytes drawn from a given input port.
-
-If @racket[in] is a path string, it is coerced to an input port using
-@racket[call-with-input-file*].
-
-If @racket[in] is a byte string, it is coerced to an input port using
-@racket[open-input-bytes].
+The value returned from this function is cached in Racket-managed
+memory.
 }
 
-@define[pk-read-url
-"https://www.openssl.org/docs/man1.1.0/man3/PEM_read_bio_PrivateKey.html"]
+@defproc[(crypto-dump-error-queue!) (or/c #f list?)]{
+Empties the error queue in the C runtime, then returns the error codes
+as a Racket list.
 
-@defproc[(make-signature [digest bytes?]
-                         [chf chf/c]
-                         [private-key bytes?]
-                         [private-key-password (or/c #f bytes?) #f])
-                         bytes?]{
-Returns unencoded bytes for a signature. The signature applies to a
-digest computed using @racket[(make-digest digest chf)]. The private
-key and its password (if any) are provided to the underlying
-@hyperlink[pk-read-url]{@tt{PEM_read_bio_PrivateKey}} function in
-@tt{libcrypto}.
-
-@bold{Caveat:} @racket[make-signature] expects cleartext secrets,
-which means it should only be used as the final step of a secured
-process using trusted software. Take care with where and how long the
-@racketfont{private-*} arguments remain in memory. Also be careful
-with how you ask users to provide the secrets to load into
-memory. OpenSSL binaries typically advise users to store them in files
-to avoid leaking them in monitoring utilities like @tt{ps} or
-@tt{htop}.
-
-@bold{Caveat:} @racket[private-key] must be a PEM-encoded text file,
-but the key type may be anything supported by the underlying
-@tt{libcrypto} build. Whether the operation succeeds depends on
-whether the cipher algorithm implied by the key type supports signing
-and verification, and is compatible with @racket[chf].
-@racket[make-signature] does not verify these conditions, but will
-communicate these errors by raising a @racket[$crypto] instance.
+If the cryptography library is currently cached as an exception, this
+function will always return @racket[#f].
 }
 
-@defproc[(verify-signature [digest bytes?]
-                           [chf chf/c]
-                           [signature bytes?]
-                           [public-key bytes?])
-                           boolean?]{
-Returns @racket[#t] if @tt{libcrypto} confirms that the private key
-corresponding the the given public key has signed @racket[digest].
-For verification to pass, the value bound to @racket[signature] must
-be produced using @racket[make-signature], the value bound to
-@racket[digest] must be produced using @racket[make-digest] and
-@racket[chf], and the public key must be 
+@defproc[(crypto-translate-error! exact-integer?
+        (or/c #f string?))]{
+Returns a human-readable string of the given error code from the
+underlying C library, or @racket[#f] if the cryptography library is
+currently cached as an exception.
 
+This function operates independently from
+@racketmodname[xiden/l10n]. If the output string does not respect the
+user's locale, then supply translations to the correct
+@racketmodname[xiden/l10n] extention and use that extension instead.
 }
 
+@defproc[(crypto-raise!) any]{
+Raises @racket[($crypto:error (crypto-dump-error-queue!))].
 
-@deftogether[(
-@defthing[snake-oil-public-key bytes?]
-@defthing[snake-oil-private-key bytes?]
-@defthing[snake-oil-private-key-password bytes?]
-)]{
-Intentionally-leaked RSA keypair in PEM-format, including password.  The
-private key must be unlocked with the password. Do not use in production.
+Note that the side-effect implies movement of the entire error queue
+from the C runtime into the raised Racket value. Leverage this when
+you have reason to expect that the queue contains @italic{only} the
+errors that pertain to a failed operation.
 }
-
-@defproc[(sign-with-snake-oil [digest bytes?] [chf chf/c DEFAULT_CHF]) bytes?]{
-Signs the given digest (presumably produced using @racket[chf]) using
-an intentionally-leaked private key. Do not use in production.
-}
-
-@defproc[(get-crypto-error-strings [variant (or/c $crypto:error?
-                                                  (listof exact-positive-integer?))])
-                                   (listof string?)]{
-Like @racket[map], where each element of the input list (accessed using
-@racket[$crypto:error-queue], if needed) is replaced by an error
-strings fetched from the underlying C library.
-
-This procedure operates independently of @racketmodname[xiden/l10n].
-}
-
-
-@section{Cryptography Failure Messages}
 
 @defstruct*[$crypto ()]{
 A @tech{message} about a cryptographic operation.
@@ -142,7 +86,7 @@ A @tech{message} about a cryptographic operation.
 @defstruct*[($crypto:error $crypto)
             ([queue (listof exact-integer?)])]{
 A low-level cryptographic option failed. @racket[queue] holds all
-error codes on the @tt{libcrypto} error queue at the time the instance
-was constructed. In the unlikely event of @racket[(null?
+error codes on the bundled @tt{libcrypto} error queue at the time the
+instance was constructed. In the unlikely event of @racket[(null?
 queue)], a context trace may be necessary to interpret the root cause.
 }
