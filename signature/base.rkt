@@ -10,8 +10,8 @@
        #:verify-signature verify-signature/c
        #:trust-unsigned any/c
        #:trust-bad-digest any/c
-       signature?
-       integrity?
+       (or/c #f signature?)
+       (or/c #f integrity?)
        symbol?)]
   [current-make-signature
    (parameter/c make-signature/c)]
@@ -68,7 +68,8 @@
                          intinfo)
   (if trust-bad-digest
       'skip
-      (if (raw-signature? siginfo)
+      (if (and (raw-signature? siginfo)
+               (raw-integrity? intinfo))
           (let ([public-key (signature-public-key siginfo)])
             (if (trust-pk? (open-input-bytes public-key))
                 (if (trust-sig?
@@ -92,7 +93,14 @@
   (define unsigned (signature #"pubkey" #f))
   (define (T . _) #t)
   (define (F . _) #f)
-  
+
+  (check-true  (signature-check-passed? 'skip))
+  (check-true  (signature-check-passed? 'signature-verified))
+  (check-true  (signature-check-passed? 'skip-unsigned))
+  (check-false (signature-check-passed? 'blocked-public-key))
+  (check-false (signature-check-passed? 'unsigned))
+  (check-false (signature-check-passed? 'signature-unverified))
+
   (check-eq? (check-signature
               #:trust-public-key? F
               #:verify-signature F

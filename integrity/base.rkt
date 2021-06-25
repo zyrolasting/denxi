@@ -12,9 +12,8 @@
   [check-integrity
    (-> #:trust-bad-digest any/c
        (-> symbol? any/c)
-       symbol?
-       bytes?
-       bytes?
+       (or/c #f integrity?)
+       (or/c #f bytes?)
        symbol?)]
   [chf-bind-trust
    (-> (listof chf?) predicate/c)]
@@ -67,16 +66,24 @@
 ; Return explicit outcomes for transparency.
 (define (check-integrity #:trust-bad-digest trust-bad-digest
                          trust-chf?
-                         chf
-                         digest
+                         intinfo
                          other-digest)
   (if trust-bad-digest
       'skip
-      (if (trust-chf? chf)
-          (if (equal? digest other-digest)
-              'pass
-              'fail)
-          'curb)))
+      (if (raw-integrity? intinfo)
+          (if (trust-chf? (integrity-chf-symbol intinfo))
+              (if (equal? (integrity-digest intinfo)
+                          other-digest)
+                  'digests-match
+                  'digests-differ)
+              'blocked-chf)
+          'malformed-input)))
+
+
+(define integrity-check-passed?
+  (and/c symbol?
+         (or/c 'skip
+               'digests-match)))
 
 
 (struct chf (canonical-name alias-pattern implementation)
@@ -165,10 +172,18 @@
 
   (require rackunit)
 
-  (check-eq? (check-integrity #:trust-bad-digest #t (λ _ #f) '_ #"x" #"x") 'skip)
-  (check-eq? (check-integrity #:trust-bad-digest #f (λ _ #f) '_ #"x" #"x") 'curb)
-  (check-eq? (check-integrity #:trust-bad-digest #f (λ _ #t) '_ #"x" #"y") 'fail)
-  (check-eq? (check-integrity #:trust-bad-digest #f (λ _ #t) '_ #"x" #"x") 'pass)
+  (define info (integrity '_ #"x"))
+  (check-eq? (check-integrity #:trust-bad-digest #t (λ _ #f) info #"x") 'skip)
+  (check-eq? (check-integrity #:trust-bad-digest #f (λ _ #f) info #"x") 'blocked-chf)
+  (check-eq? (check-integrity #:trust-bad-digest #f (λ _ #t) info #"y") 'digests-differ)
+  (check-eq? (check-integrity #:trust-bad-digest #f (λ _ #t) info #"x") 'digests-match)
+  (check-eq? (check-integrity #:trust-bad-digest #f (λ _ #t) #f   #"x") 'malformed-input)
+
+  (check-true  (integrity-check-passed? 'skip))
+  (check-true  (integrity-check-passed? 'digests-match))
+  (check-false (integrity-check-passed? 'blocked-chf))
+  (check-false (integrity-check-passed? 'digests-differ))
+  (check-false (integrity-check-passed? 'malformed-input))
 
   (check-true  (raw-integrity? (integrity '|| #"")))
   (check-false (raw-integrity? (integrity #f #"")))
