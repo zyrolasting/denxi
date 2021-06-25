@@ -17,19 +17,21 @@
   [call-with-snake-oil-chf-trust
    (-> (-> any) any)]
   [fetch-digest
-   (-> integrity? exhaust/c any/c)]
+   (-> well-formed-integrity?
+       exhaust/c
+       any/c)]
   [load-builtin-chf
    (-> symbol? (-> any) any)]
   [lock-integrity
-   (->* ((or/c integrity? integrity?))
+   (->* (well-formed-integrity?)
         (#:digest-budget budget/c exhaust/c)
-        integrity?)]
+        well-formed-integrity?)]
   [make-sourced-digest
    (->* (source-variant? symbol?) (exhaust/c) bytes?)]
   [make-trusted-integrity
    (->* (source-variant?)
         (symbol?)
-        integrity?)]
+        raw-integrity?)]
   [make-user-chf-trust-predicate
    (-> (-> symbol? boolean?))]
   [malformed-integrity?
