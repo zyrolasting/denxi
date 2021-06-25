@@ -20,14 +20,10 @@
  (contract-out
   [MAX_EXPECTED_SIGNATURE_PAYLOAD_LENGTH
    budget/c]
-  [fetch-signature-payload
-   (-> source-variant?
-       exhaust/c
-       bytes?)]
   [lock-signature
    (->* (signature?)
-        (#:public-key-budget (or/c +inf.0 exact-nonnegative-integer?)
-         #:signature-budget (or/c +inf.0 exact-nonnegative-integer?)
+        (#:public-key-budget budget/c
+         #:signature-budget budget/c
          exhaust/c)
         signature?)]
   [make-snake-oil-signature
@@ -52,14 +48,17 @@
   [sourced-signature?
    flat-contract?]
   [well-formed-signature?
-   flat-contract?]))
+   flat-contract?]
+  [XIDEN_TRUST_ANY_PUBLIC_KEY setting?]
+  [XIDEN_TRUST_BAD_SIGNATURE setting?]
+  [XIDEN_TRUST_PUBLIC_KEYS setting?]
+  [XIDEN_TRUST_UNSIGNED setting?]))
+
 
 (define (sourced-signature? v)
   (and (signature? v)
-       (let ([other (source? (signature-body v))]) 
-         (if (source? (signature-public-key v))
-             (not other)
-             other))))
+       (or (source? (signature-body v))
+           (source? (signature-public-key v)))))
 
 (define well-formed-signature?
   (or/c raw-signature? sourced-signature?))
@@ -67,12 +66,10 @@
 (define malformed-signature?
   (not/c well-formed-signature?))
 
-
-(define+provide-setting XIDEN_TRUST_ANY_PUBLIC_KEY boolean? #f)
-(define+provide-setting XIDEN_TRUST_BAD_SIGNATURE boolean? #f)
-(define+provide-setting XIDEN_TRUST_PUBLIC_KEYS
-  (listof (or/c integrity? integrity?)) null)
-(define+provide-setting XIDEN_TRUST_UNSIGNED boolean? #f)
+(define-setting XIDEN_TRUST_ANY_PUBLIC_KEY boolean? #f)
+(define-setting XIDEN_TRUST_BAD_SIGNATURE boolean? #f)
+(define-setting XIDEN_TRUST_PUBLIC_KEYS (listof well-formed-integrity?) null)
+(define-setting XIDEN_TRUST_UNSIGNED boolean? #f)
 
 (define MAX_EXPECTED_SIGNATURE_PAYLOAD_LENGTH 24000)
 
@@ -114,24 +111,6 @@
 (define (make-signature . xs)
   (apply (current-make-signature) xs))
 
-
-(define (fetch-signature-payload source-variant exhaust)
-  (let ([source (coerce-source source-variant)])
-    (fetch source
-           (λ (in est-size)
-             (file->bytes
-              (build-workspace-path
-               (path-record-path
-                (make-addressable-file
-                 #:cache-key (make-source-key source)
-                 #:max-size MAX_EXPECTED_SIGNATURE_PAYLOAD_LENGTH
-                 #:buffer-size MAX_EXPECTED_SIGNATURE_PAYLOAD_LENGTH
-                 #:timeout-ms (XIDEN_FETCH_TIMEOUT_MS)
-                 #:on-status void
-                 "_"
-                 in
-                 est-size)))))
-           exhaust)))
 
 
 (define (lock-signature siginfo
