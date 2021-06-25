@@ -11,7 +11,7 @@
  (contract-out
   [bind-trust-list
    (->* ((listof integrity?))
-        ((or/c #f (listof symbol?)))
+        ((listof chf?))
         (-> (or/c bytes? path-string? input-port?)
             boolean?))]
   [call-with-snake-oil-chf-trust
