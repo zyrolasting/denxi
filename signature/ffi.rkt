@@ -133,10 +133,9 @@
            "snake-oil.rkt"
            "../codec.rkt"
            "../integrity/ffi.rkt"
-           (submod "../integrity/chf.rkt" test))
+           (submod "../integrity/base.rkt" test))
   (when (and (signature-ffi-available?!)
              (integrity-ffi-available?!))
-
     (define available-chfs (map car test-digests))
 
     (for ([pair (in-list test-digests)])
