@@ -78,7 +78,7 @@ If @racket[in] is a byte string, it is coerced to an input port using
 
 If @racket[chf-name] is @racket[#f], or no CHF implementation is
 available for it, @racket[make-digest] will @racket[raise]
-@racket[$chf-unavailable].
+@racket[($chf-unavailable chf-name)].
 }
 
 
@@ -146,7 +146,7 @@ digest must represent @italic{all} bytes drawn from the port.
 }
 
 
-@defthing[current-chfs (parameter/c (listof chf?))]
+@defthing[current-chfs (parameter/c (listof chf?))]{
 The CHFs trusted by the user for digest creation.
 
 Defaults to @racket[null], which disables digest creation and
