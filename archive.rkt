@@ -114,12 +114,11 @@
                      o)))
 
     ; We don't want to protect against use of this dummy data.
-    (XIDEN_TRUST_BAD_DIGEST
-     #t
+    (XIDEN_TRUST_BAD_DIGEST #t
      (λ ()
        (define faux-archive
          (package-input "archive.tgz"
-                        (artifact (file-source .tar))))
+                        (make-artifact (file-source .tar))))
 
        (parameterize ([current-inputs (list faux-archive)]
                       [current-output-port (open-output-nowhere)])
@@ -135,11 +134,13 @@
          (delete-file input-b)
          (delete-file input-c)
 
-         (check-subprogram
-          (extract-input #:keep? #t
-                         (package-input-name faux-archive))
-          (λ (result messages)
-            (check-true (link-exists? (package-input-name faux-archive)))
-            (test-file input-a)
-            (test-file input-b)
-            (test-file input-c))))))))
+         (call-with-snake-oil-chf-trust
+          (λ ()
+            (check-subprogram
+             (extract-input #:keep? #t
+                            (package-input-name faux-archive))
+             (λ (result messages)
+               (check-true (link-exists? (package-input-name faux-archive)))
+               (test-file input-a)
+               (test-file input-b)
+               (test-file input-c))))))))))

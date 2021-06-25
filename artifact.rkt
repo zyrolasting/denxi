@@ -127,33 +127,47 @@
 
 (define-subprogram (check-artifact-integrity arti workspace-relative-path)
   (match-define (artifact content int sig) arti)
-  (if (well-formed-integrity? int)
-      (let* ([int/use (lock-integrity int)]
-             [status
-              (check-integrity
-               #:trust-bad-digest (XIDEN_TRUST_BAD_DIGEST)
-               (make-user-chf-trust-predicate)
-               (integrity-chf-symbol int/use)
-               (integrity-digest int/use)
-               (make-digest (build-workspace-path workspace-relative-path)
-                            (integrity-chf-symbol (artifact-integrity arti))))])
-        ($attach (or (eq? 'pass status) FAILURE)
-                 ($artifact:integrity status
-                                      (integrity-chf-symbol int/use))))
-      ($fail ($artifact:integrity 'malformed-input #f))))
+  (cond [(XIDEN_TRUST_BAD_DIGEST)
+         ($attach #t
+                  ($artifact:integrity 'pass
+                                       (and (well-formed-integrity? int)
+                                            (integrity-chf-symbol int))))]
+        [(well-formed-integrity? int)
+         (define int/use (lock-integrity int))
+         (define status
+           (check-integrity
+            #:trust-bad-digest #f
+            (make-user-chf-trust-predicate)
+            (integrity-chf-symbol int/use)
+            (integrity-digest int/use)
+            (make-digest (build-workspace-path workspace-relative-path)
+                         (integrity-chf-symbol (artifact-integrity arti)))))
+         ($attach (or (eq? 'pass status) FAILURE)
+                  ($artifact:integrity status
+                                       (integrity-chf-symbol int/use)))]
+        [else
+         ($fail ($artifact:integrity 'malformed-input #f))]))
 
 
 
 (define-subprogram (check-artifact-signature arti path)
   (match-define (artifact content int sig) arti)
-  (if (well-formed-signature? sig)
-      (let* ([sig/use (lock-signature sig)]
-             [int/use (lock-integrity int)]
-             [status (verify-signature sig/use int/use)])
-        ($attach (or (eq? 'pass status) FAILURE)
-                 ($artifact:signature status
-                                      (signature-public-key sig/use))))
-      ($fail ($artifact:signature 'malformed-input #f))))
+  (cond [(XIDEN_TRUST_BAD_DIGEST)
+         ($attach #t
+                  ($artifact:signature 'pass
+                                       (and (well-formed-signature? sig)
+                                            (signature-public-key sig))))]
+
+        [(well-formed-signature? sig)
+         (define sig/use (lock-signature sig))
+         (define int/use (lock-integrity int))
+         (define status (verify-signature sig/use int/use))
+         ($attach (or (eq? 'pass status) FAILURE)
+                  ($artifact:signature status
+                                       (signature-public-key sig/use)))]
+
+        [else
+         ($fail ($artifact:signature 'malformed-input #f))]))
 
 
 (module+ test
