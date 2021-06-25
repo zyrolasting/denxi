@@ -145,14 +145,15 @@
         [trust? (chf-bind-trust chf-trust)])
     (λ (in)
       (for/or ([instance (in-list trusted)])
-        (equal? 'pass
-                (check-integrity
-                 #:trust-bad-digest #f
-                 trust?
-                 (integrity-chf-symbol instance)
-                 (integrity-digest instance)
-                 (make-digest (peeking-input-port in)
-                              (integrity-chf-symbol instance))))))))
+        (integrity-check-passed?
+         (check-integrity
+          #:trust-bad-digest #f
+          trust?
+          instance
+          (make-digest (if (input-port? in)
+                           (peeking-input-port in)
+                           in)
+                       (integrity-chf-symbol instance))))))))
 
 
 (define snake-oil-chf

@@ -127,47 +127,47 @@
 
 (define-subprogram (check-artifact-integrity arti workspace-relative-path)
   (match-define (artifact content int sig) arti)
-  (cond [(XIDEN_TRUST_BAD_DIGEST)
-         ($attach #t
-                  ($artifact:integrity 'pass
-                                       (and (well-formed-integrity? int)
-                                            (integrity-chf-symbol int))))]
-        [(well-formed-integrity? int)
-         (define int/use (lock-integrity int))
-         (define status
-           (check-integrity
-            #:trust-bad-digest #f
-            (make-user-chf-trust-predicate)
-            (integrity-chf-symbol int/use)
-            (integrity-digest int/use)
-            (make-digest (build-workspace-path workspace-relative-path)
-                         (integrity-chf-symbol (artifact-integrity arti)))))
-         ($attach (or (eq? 'pass status) FAILURE)
-                  ($artifact:integrity status
-                                       (integrity-chf-symbol int/use)))]
-        [else
-         ($fail ($artifact:integrity 'malformed-input #f))]))
+  (define-values (int/use chf)
+    (if (well-formed-integrity? int)
+        (values (lock-integrity int)
+                (integrity-chf-symbol int))
+        (values #f #f)))
+  (define status
+    (check-integrity
+     #:trust-bad-digest (XIDEN_TRUST_BAD_DIGEST)
+     (make-user-chf-trust-predicate)
+     int/use
+     (and chf
+          (make-digest (build-workspace-path workspace-relative-path)
+                       (integrity-chf-symbol (artifact-integrity arti))))))
+  ($attach (or (integrity-check-passed? status) FAILURE)
+           ($artifact:integrity status chf)))
 
 
 
 (define-subprogram (check-artifact-signature arti path)
   (match-define (artifact content int sig) arti)
-  (cond [(XIDEN_TRUST_BAD_DIGEST)
-         ($attach #t
-                  ($artifact:signature 'pass
-                                       (and (well-formed-signature? sig)
-                                            (signature-public-key sig))))]
-
-        [(well-formed-signature? sig)
-         (define sig/use (lock-signature sig))
-         (define int/use (lock-integrity int))
-         (define status (verify-signature sig/use int/use))
-         ($attach (or (eq? 'pass status) FAILURE)
-                  ($artifact:signature status
-                                       (signature-public-key sig/use)))]
-
-        [else
-         ($fail ($artifact:signature 'malformed-input #f))]))
+  (define sig/use
+    (and (well-formed-signature? sig)
+         (lock-signature sig)))
+  (define int/use
+    (and (well-formed-integrity? int)
+         (lock-integrity int)))
+  (define trust-public-key?
+    (if (XIDEN_TRUST_ANY_PUBLIC_KEY)
+        (λ (p) #t)
+        (bind-trust-list (XIDEN_TRUST_PUBLIC_KEYS))))
+  (define status
+    (check-signature #:trust-unsigned (XIDEN_TRUST_UNSIGNED)
+                     #:trust-bad-digest (XIDEN_TRUST_BAD_DIGEST)
+                     #:trust-public-key? trust-public-key?
+                     #:verify-signature (current-verify-signature)
+                     sig/use
+                     int/use))
+  ($attach (or (signature-check-passed? status) FAILURE)
+           ($artifact:signature status
+                                (and (signature? sig/use)
+                                     (signature-public-key sig/use)))))
 
 
 (module+ test

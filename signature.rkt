@@ -28,15 +28,6 @@
         signature?)]
   [make-snake-oil-signature
    (-> bytes? symbol? signature?)]
-  [verify-signature
-   (case-> (-> signature?
-               integrity?
-               symbol?)
-           (-> bytes?
-               symbol?
-               bytes?
-               bytes?
-               symbol?))]
   [call-with-snake-oil-cipher-trust
    (-> (-> any) any)]
   [make-signature
@@ -72,23 +63,6 @@
 (define-setting XIDEN_TRUST_UNSIGNED boolean? #f)
 
 (define MAX_EXPECTED_SIGNATURE_PAYLOAD_LENGTH 24000)
-
-(define verify-signature
-  (case-lambda
-    [(digest chf pubkey body)
-     (verify-signature (integrity chf digest)
-                       (signature pubkey body))]
-    [(siginfo intinfo)
-     (let ([trust-public-key?
-            (if (XIDEN_TRUST_ANY_PUBLIC_KEY)
-                (λ (p) #t)
-                (bind-trust-list (XIDEN_TRUST_PUBLIC_KEYS)))])
-       (check-signature #:trust-public-key? trust-public-key?
-                        #:trust-signature? (current-verify-signature)
-                        #:trust-unsigned (XIDEN_TRUST_UNSIGNED)
-                        #:trust-bad-digest (XIDEN_TRUST_BAD_DIGEST)
-                        (lock-signature siginfo)
-                        (lock-integrity intinfo)))]))
 
 
 (define (make-snake-oil-signature digest chf)
