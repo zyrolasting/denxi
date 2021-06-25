@@ -148,9 +148,8 @@
                  trust?
                  (integrity-chf-symbol instance)
                  (integrity-digest instance)
-                 (make-digest in
-                              (integrity-chf-symbol instance)
-                              (integrity-digest instance))))))))
+                 (make-digest (peeking-input-port in)
+                              (integrity-chf-symbol instance))))))))
 
 
 (define snake-oil-chf

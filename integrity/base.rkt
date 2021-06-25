@@ -34,8 +34,7 @@
    (->* () ((listof chf?)) (or/c #f symbol?))]
   [make-digest
    (->* ((or/c input-port? path? bytes?))
-        ((or/c #f symbol?)
-         (or/c #f bytes?))
+        ((or/c #f symbol?))
         bytes?)]
   [raw-integrity?
    flat-contract?]
@@ -99,9 +98,7 @@
 
 
 (define chf-impl/c
-  (-> input-port?      ; Where content comes from
-      (or/c #f bytes?) ; Expected digest (in context of integrity check)
-      bytes?))         ; Output digest
+  (-> input-port? bytes?))
 
 
 (define current-chfs
@@ -148,7 +145,7 @@
 ; `expect` is an expected digest in an integrity check. This allows a
 ; user to trivially pass the checks, but also a way to compare
 ; different implementations of the same algorithm.
-(define (make-digest variant [chf (get-default-chf)] [expect #f])
+(define (make-digest variant [chf (get-default-chf)])
   (cond [(not chf)
          (raise ($chf-unavailable chf))]
         [(bytes? variant)
@@ -161,7 +158,7 @@
         [else
          (let ([chf-instance (chf-find (current-chfs) chf)])
            (if chf-instance
-               (chf-instance variant expect)
+               (chf-instance variant)
                (raise ($chf-unavailable chf))))]))
 
 
