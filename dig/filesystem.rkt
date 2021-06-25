@@ -35,9 +35,9 @@
       (let ([complete-path (build-path directory-path key)])
         (if (file-exists? complete-path)
             (subprogram-unit
-             (artifact-info (file-source (normalize-path complete-path))
-                            (try-integrity complete-path chf)
-                            (try-signature complete-path chf public-key-source)))
+             (artifact (file-source (normalize-path complete-path))
+                       (try-integrity complete-path chf)
+                       (try-signature complete-path chf public-key-source)))
             (dig-failure 'filesystem-shovel key)))
       (dig-failure 'filesystem-shovel key)))
 
@@ -165,12 +165,12 @@
 
        (test-case "Find full artifact in filesystem dig"
          (define result (get-subprogram-value (dig content-path)))
-         (check-pred artifact-info? result)
+         (check-pred artifact? result)
 
          (match-define
-           (artifact-info c
-                          (integrity-info actual-chf i)
-                          (signature-info actual-pk s))
+           (artifact c
+                     (integrity-info actual-chf i)
+                     (signature-info actual-pk s))
            result)
          (check-eq? public-key-source actual-pk)
          (check-eq? actual-chf chf)
@@ -182,16 +182,16 @@
          (delete-file sig-path)
          (delete-file digest-path)
          (define partial (get-subprogram-value (dig content-path)))
-         (check-source content-path (artifact-info-source partial))
-         (check-false (artifact-info-integrity partial))
-         (check-false (artifact-info-signature partial)))
+         (check-source content-path (artifact-source partial))
+         (check-false (artifact-integrity partial))
+         (check-false (artifact-signature partial)))
 
        (test-case "Resolve symlinks in filesystem dig"
          (make-file-or-directory-link content-path "link")
          (define linked (get-subprogram-value (dig "link")))
-         (check-source content-path (artifact-info-source linked))
-         (check-false (artifact-info-integrity linked))
-         (check-false (artifact-info-signature linked))))))
+         (check-source content-path (artifact-source linked))
+         (check-false (artifact-integrity linked))
+         (check-false (artifact-signature linked))))))
 
   (test-case "Bind directory trees with package definition files"
     (call-with-temporary-directory
@@ -222,12 +222,12 @@
        (make-file-or-directory-link provider (build-path directory-path DEFAULT_STRING))
        
        (define default-artifact (get-subprogram-value (dig ":::0:cool")))
-       (check-pred artifact-info? default-artifact)
+       (check-pred artifact? default-artifact)
 
-       (match-define (artifact-info content-source
-                                    (integrity-info actual-chf digest-source)
-                                    (signature-info public-key-source
-                                                    signature-source))
+       (match-define (artifact content-source
+                               (integrity-info actual-chf digest-source)
+                               (signature-info public-key-source
+                                               signature-source))
          default-artifact)
 
        (check-eq? actual-chf chf)

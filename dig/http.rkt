@@ -72,39 +72,39 @@
   (test-case "Create artifacts expecting only content"
     (define dig (make-http-shovel "https://example.com/pkg"))
     (define arti (get-subprogram-value (dig "/cool/stuff?a=b")))
-    (check-pred artifact-info? arti)
-    (check-false (artifact-info-integrity arti))
-    (check-false (artifact-info-signature arti))
-    (check-source (artifact-info-source arti)
+    (check-pred artifact? arti)
+    (check-false (artifact-integrity arti))
+    (check-false (artifact-signature arti))
+    (check-source (artifact-source arti)
                   "https://example.com/pkg/cool/stuff?a=b"))
 
   (test-case "Create artifacts expecting content and integrity info"
     (define dig (make-http-shovel "https://example.com/pkg" 'md5))
     (define arti (get-subprogram-value (dig "x")))
-    (check-pred artifact-info? arti)
-    (check-pred integrity-info? (artifact-info-integrity arti))
-    (check-false (artifact-info-signature arti))
+    (check-pred artifact? arti)
+    (check-pred integrity-info? (artifact-integrity arti))
+    (check-false (artifact-signature arti))
 
-    (check-source (artifact-info-source arti)
+    (check-source (artifact-source arti)
                   "https://example.com/pkg/x")
-    (check-source (integrity-info-digest (artifact-info-integrity arti))
+    (check-source (integrity-info-digest (artifact-integrity arti))
                   "https://example.com/pkg/x.md5"))
 
   (test-case "Create artifacts expecting all info"
     (define dig (make-http-shovel "https://example.com/pkg" 'md5 empty-source))
     (define arti (get-subprogram-value (dig "x")))
-    (check-pred artifact-info? arti)
-    (check-pred integrity-info? (artifact-info-integrity arti))
-    (check-pred signature-info? (artifact-info-signature arti))
+    (check-pred artifact? arti)
+    (check-pred integrity-info? (artifact-integrity arti))
+    (check-pred signature-info? (artifact-signature arti))
 
-    (check-source (artifact-info-source arti)
+    (check-source (artifact-source arti)
                   "https://example.com/pkg/x")
-    (check-source (integrity-info-digest (artifact-info-integrity arti))
+    (check-source (integrity-info-digest (artifact-integrity arti))
                   "https://example.com/pkg/x.md5")
 
-    (check-eq? (signature-info-pubkey (artifact-info-signature arti))
+    (check-eq? (signature-info-pubkey (artifact-signature arti))
                empty-source)
 
-    (check-source (signature-info-body (artifact-info-signature arti))
+    (check-source (signature-info-body (artifact-signature arti))
                   "https://example.com/pkg/x.md5.sig")))
 

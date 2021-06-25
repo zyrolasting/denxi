@@ -4,7 +4,7 @@
 (provide
  (contract-out
   [make-memory-shovel
-   (-> (hash/c any/c artifact-info?) shovel/c)]
+   (-> (hash/c any/c artifact?) shovel/c)]
   [make-memory-shovel/pkgdef
    (->* (hash?)
         (package-query-defaults-implementation/c)
@@ -108,9 +108,9 @@
 
     (define (check-expected q)
       (define-values (actual m) (run-subprogram (dig q)))
-      (check-pred artifact-info? actual)
-      (match-define (artifact-info (byte-source edata) eii esi) expected)
-      (match-define (artifact-info (byte-source adata) aii asi) actual)
+      (check-pred artifact? actual)
+      (match-define (artifact (byte-source edata) eii esi) expected)
+      (match-define (artifact (byte-source adata) aii asi) actual)
       (check-equal? adata edata)
       (check-equal? aii eii)
       (check-equal? asi esi))

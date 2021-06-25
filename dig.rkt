@@ -3,14 +3,14 @@
 (require racket/contract)
 
 (define shovel/c
-  (-> any/c (subprogram/c artifact-info?)))
+  (-> any/c (subprogram/c artifact?)))
 
 (provide
  (contract-out
   [find-artifact
    (->* (any/c)
         (shovel/c)
-        (subprogram/c artifact-info?))]
+        (subprogram/c artifact?))]
   [shovel/c
    chaperone-contract?]
   [broken-shovel
@@ -47,7 +47,7 @@
 (define ((shovel-cons a b) k)
   (subprogram (λ (m)
                 (define-values (r m*) (run-subprogram (a k) m))
-                (if (artifact-info? r)
+                (if (artifact? r)
                     (values r m*)
                     (run-subprogram (b k) m*)))))
 
@@ -66,7 +66,7 @@
 
 
 (define-subprogram (find-artifact plinth [dig (current-shovel)])
-  (if (artifact-info? plinth)
+  (if (artifact? plinth)
       ($use plinth)
       ($run! (dig plinth))))
 
@@ -88,7 +88,7 @@
        (bind-shovel #"c")))
 
     (define (check expected)
-      (check-equal? (artifact-info-source (get-subprogram-value (shovel expected)))
+      (check-equal? (artifact-source (get-subprogram-value (shovel expected)))
                     expected))
 
     (check #"a")
@@ -109,7 +109,7 @@
    "Trivially find provided artifact"
    (find-artifact (artifact #"") broken-shovel)
    (λ (result)
-     (check-equal? (artifact-info-source result) #"")))
+     (check-equal? (artifact-source result) #"")))
 
   (test-subprogram
    "Do not find an artifact by default when none is available"
@@ -129,7 +129,7 @@
       (check-subprogram-value
        (find-artifact v indy)
        (λ (result)
-         (check-equal? (artifact-info-source result) expected))))
+         (check-equal? (artifact-source result) expected))))
 
     (check #t #"t")
     (check #f #"f")))

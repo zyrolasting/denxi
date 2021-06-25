@@ -6,7 +6,7 @@
          #%datum
          :=
          apply
-         artifact
+         (rename-out [artifact make-artifact])
          base32
          base64
          byte-source
@@ -259,13 +259,13 @@
       (hash-table ('boo "1") ('foo "2"))
       (list (package-input "archive" #f)
             (package-input "int"
-                           (artifact-info (? source? _)
-                                          (integrity-info 'sha1 #"\253\315")
-                                          #f))
+                           (artifact (? source? _)
+                                     (integrity-info 'sha1 #"\253\315")
+                                     #f))
             (package-input "sig"
-                           (artifact-info (? source? _)
-                                          (integrity-info 'sha1 #"\253\315")
-                                          (signature-info "pub" #"bytes"))))
+                           (artifact (? source? _)
+                                     (integrity-info 'sha1 #"\253\315")
+                                     (signature-info "pub" #"bytes"))))
       '("default" "min")
       (? procedure? _)))
 

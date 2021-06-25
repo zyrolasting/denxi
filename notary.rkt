@@ -19,8 +19,8 @@
                 notary?)]
           [notarize
            (-> notary?
-               (or/c artifact-info? source-variant?)
-               (subprogram/c artifact-info?))]))
+               (or/c artifact? source-variant?)
+               (subprogram/c artifact?))]))
 
 (require racket/file
          racket/match
@@ -65,7 +65,7 @@
   (define user-source
     (if (source-variant? content)
         content
-        (artifact-info-source content)))
+        (artifact-source content)))
 
   (define content-source
     (coerce-source user-source))
@@ -95,18 +95,18 @@
                           (integrity-info-algorithm intinfo)
                           prvkey
                           prvkeypass))))))
-      (subprogram-unit (artifact-info user-source #f #f))))
+      (subprogram-unit (artifact user-source #f #f))))
 
 (module+ test
   (require rackunit
            (submod "subprogram.rkt" test))
   (check-pred notary? (make-notary))
   (check-match
-    (get-subprogram-value
-     (notarize (make-fraudulent-notary)
-               (artifact #"abc")))
-    (artifact-info (not #f)
-                   (integrity-info (? symbol? _)
-                                   (? bytes? _))
-                   (signature-info (? bytes? _)
-                                   (? bytes? _)))))
+   (get-subprogram-value
+    (notarize (make-fraudulent-notary)
+              (artifact #"abc")))
+   (artifact (not #f)
+             (integrity-info (? symbol? _)
+                             (? bytes? _))
+             (signature-info (? bytes? _)
+                             (? bytes? _)))))

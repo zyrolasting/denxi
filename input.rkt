@@ -28,7 +28,7 @@
                (subprogram/c package-input?))]
           [find-artifact-for-input
            (-> package-input?
-               (subprogram/c artifact-info?))]
+               (subprogram/c artifact?))]
           [current-inputs
            (parameter/c (listof package-input?))]))
 
@@ -122,8 +122,8 @@
   (match-define (package-input name plinth) i)
   (input-port-append
    (open-input-string name)
-   (if (artifact-info? plinth)
-       (or (identify (artifact-info-source plinth))
+   (if (artifact? plinth)
+       (or (identify (artifact-source plinth))
            (open-input-bytes #""))
        (open-input-string
         (with-handlers ([values (λ (e) (open-input-bytes #""))])
