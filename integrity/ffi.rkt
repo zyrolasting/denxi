@@ -5,7 +5,7 @@
 (require racket/contract
          (only-in racket/list index-of)
          (rename-in ffi/unsafe [-> -->])
-         "chf.rkt"
+         "base.rkt"
          "../crypto.rkt")
 
 (provide
@@ -137,7 +137,7 @@
 
   (require rackunit
            "../codec.rkt"
-           (submod "chf.rkt" test)
+           (submod "base.rkt" test)
            (only-in racket/string non-empty-string?)
            (only-in ffi/unsafe array-ref))
 
