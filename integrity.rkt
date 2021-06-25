@@ -128,15 +128,16 @@
 (define (lock-integrity intinfo
                         #:digest-budget [digest-budget MAX_EXPECTED_DIGEST_LENGTH]
                         [exhaust raise])
-  (integrity
-   (let ([chf-instance (chf-find (current-chfs) (integrity-chf-symbol intinfo))])
-     (if chf-instance
-         (chf-canonical-name chf-instance)
-         (integrity-chf-symbol intinfo)))
-   (and (integrity-digest intinfo)
-        (lock-source (integrity-digest intinfo)
-                     digest-budget
-                     exhaust))))
+  (define locked
+    (lock-source (integrity-digest intinfo)
+                 digest-budget
+                 exhaust))
+
+  (if (eq? locked (integrity-digest intinfo))
+      intinfo
+      (integrity
+       (integrity-chf-symbol intinfo)
+       locked)))
 
 
 (define (bind-trust-list claims [chf-trust (current-chfs)])
