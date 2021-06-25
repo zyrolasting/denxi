@@ -3,6 +3,7 @@
 @require[@for-label[racket/base
                     racket/contract
                     xiden/message
+                    xiden/integrity
                     xiden/integrity/base
                     xiden/crypto
                     xiden/source]
@@ -58,7 +59,7 @@ Returns
 }
 
 
-@defthing[MAX_EXPECTED_DIGEST_LENGTH exact-positive-integer?]
+@defthing[MAX_EXPECTED_DIGEST_LENGTH exact-positive-integer?]{
 The maximum number of bytes expected from any message digest.
 }
 
