@@ -1,24 +1,27 @@
 #lang racket/base
 
-(require racket/contract)
+(require racket/contract
+         "integrity.rkt"
+         "signature.rkt")
+
 (provide
- (struct-out artifact-info)
+ (struct-out artifact)
  (contract-out
   [verify-artifact
-   (-> artifact-info?
+   (-> artifact?
        path-record?
        (subprogram/c void?))]
   [fetch-artifact
    (-> string?
-       artifact-info?
+       artifact?
        (subprogram/c path-record?))]
-  [artifact
+  [make-artifact
    (->* (source-variant?)
-        ((or/c #f well-formed-integrity-info/c)
-         (or/c #f well-formed-signature-info/c))
-        artifact-info?)]
+        ((or/c #f integrity?)
+         (or/c #f signature?))
+        artifact?)]
   [lock-artifact
-   (->* (artifact-info?)
+   (->* (artifact?)
         (exhaust/c
          #:content? any/c
          #:integrity? any/c
@@ -27,29 +30,32 @@
          #:digest-budget budget/c
          #:public-key-budget budget/c
          #:signature-budget budget/c)
-         artifact-info?)]))
+        artifact?)]))
 
 
-(require "crypto.rkt"
+(require racket/match
+         "crypto.rkt"
          "format.rkt"
-         "integrity.rkt"
          "state.rkt"
          "subprogram.rkt"
+         "message.rkt"
          "monad.rkt"
          "port.rkt"
          "printer.rkt"
-         "signature.rkt"
          "source.rkt")
 
+(define-message $artifact ())
+(define-message $artifact:integrity (status))
+(define-message $artifact:signature (status))
 
-(struct artifact-info
+(struct artifact
   (source      ; Defines where bytes come from
    integrity   ; Integrity information: Did I get the right bytes?
    signature)) ; Signature for authentication: Did the bytes come from someone I trust?
 
 
-(define (artifact source [integrity #f] [signature #f])
-  (artifact-info source integrity signature))
+(define (make-artifact source [integrity #f] [signature #f])
+  (artifact source integrity signature))
 
 
 (define (verify-artifact arti record)
@@ -60,10 +66,10 @@
 
 (define (fetch-artifact name arti)
   (subprogram-fetch name
-                    (artifact-info-source arti)
+                    (artifact-source arti)
                     (λ (in est-size)
                       (make-addressable-file
-                       #:cache-key (make-source-key (artifact-info-source arti))
+                       #:cache-key (make-source-key (artifact-source arti))
                        #:max-size (mebibytes->bytes (XIDEN_FETCH_TOTAL_SIZE_MB))
                        #:buffer-size (mebibytes->bytes (XIDEN_FETCH_BUFFER_SIZE_MB))
                        #:timeout-ms (XIDEN_FETCH_TIMEOUT_MS)
@@ -86,25 +92,25 @@
      (define (exhaust* v)
        (abort (exhaust v)))
      (let ([lock (λ (? s c) (if (and ? s) (c s) s))])
-       (artifact-info (lock content?
-                            (artifact-info-source arti)
-                            (λ (content)
-                              (lock-source content
-                                           content-budget
-                                           exhaust*)))
-                      (lock integrity?
-                            (artifact-info-integrity arti)
-                            (λ (intinfo)
-                              (lock-integrity-info #:digest-budget digest-budget
-                                                   intinfo
-                                                   exhaust*)))
-                      (lock signature?
-                            (artifact-info-signature arti)
-                            (λ (siginfo)
-                              (lock-signature-info #:public-key-budget public-key-budget
-                                                   #:signature-budget signature-budget
-                                                   siginfo
-                                                   exhaust*))))))))
+       (artifact (lock content?
+                       (artifact-source arti)
+                       (λ (content)
+                         (lock-source content
+                                      content-budget
+                                      exhaust*)))
+                 (lock integrity?
+                       (artifact-integrity arti)
+                       (λ (intinfo)
+                         (lock-integrity #:digest-budget digest-budget
+                                         intinfo
+                                         exhaust*)))
+                 (lock signature?
+                       (artifact-signature arti)
+                       (λ (siginfo)
+                         (lock-signature #:public-key-budget public-key-budget
+                                         #:signature-budget signature-budget
+                                         siginfo
+                                         exhaust*))))))))
 
 
 (define ((make-on-status formatter) m)
@@ -117,44 +123,32 @@
 
 
 (define-subprogram (check-artifact-integrity arti workspace-relative-path)
+  (match-define (artifact content int sig) arti)
+
+  (define int/use
+    (if int
+        int
+        (integrity (integrity-chf-symbol int)
+                   #"")))
+
   (define status
     (check-integrity #:trust-bad-digest (XIDEN_TRUST_BAD_DIGEST)
-                     #:trust-message-digest-algorithms (XIDEN_TRUST_CHFS)
-                     (artifact-info-integrity arti)
-                     (if (artifact-info-integrity arti)
-                         (make-digest (build-workspace-path workspace-relative-path)
-                                      (integrity-info-algorithm (artifact-info-integrity arti)))
-                         #"")))
+                     (make-user-chf-trust-predicate)
+                     (integrity-chf-symbol int/use)
+                     (integrity-digest int/use)
+                     (make-digest (build-workspace-path workspace-relative-path)
+                                  (integrity-chf-symbol (artifact-integrity arti)))))
 
-  ($attach (or ($integrity-ok? status) FAILURE)
-           status))
+  ($attach (or (eq? 'pass status) FAILURE)
+           ($artifact:integrity status)))
 
 
 (define-subprogram (check-artifact-signature arti path)
-  (define siginfo (artifact-info-signature arti))
-  (define intinfo (artifact-info-integrity arti))
-
-  (define public-key
-    (if (signature-info? siginfo)
-        (signature-info-pubkey siginfo)
-        #""))
-
-  (define trust-public-key?
-    (if (XIDEN_TRUST_ANY_PUBLIC_KEY)
-        (λ (p) #t)
-        (bind-trust-list (XIDEN_TRUST_PUBLIC_KEYS))))
-
   (define status
-    (check-signature #:public-key public-key
-                     #:trust-unsigned (XIDEN_TRUST_UNSIGNED)
-                     #:trust-bad-digest (XIDEN_TRUST_BAD_DIGEST)
-                     #:trust-public-key? trust-public-key?
-                     siginfo
-                     intinfo))
-
-  ($attach (or ($signature-ok? status)
-               FAILURE)
-           status))
+    (verify-signature (artifact-signature arti)
+                      (artifact-integrity arti)))
+  ($attach (or (eq? 'pass status) FAILURE)
+           ($artifact:signature status)))
 
 
 (module+ test
@@ -164,40 +158,39 @@
            (submod "subprogram.rkt" test))
 
   (test-workspace "Fetch artifacts"
-    (define data #"abc")
-    (parameterize ([current-output-port (open-output-nowhere)])
-      (check-subprogram
-       (fetch-artifact "anon" (artifact (byte-source data)))
-       (λ (record messages)
-         (check-pred path-record? record)
-         (check-equal? (file->bytes (path-record-path record)) data)
-
-         (test-case "Verify artifacts"
-           (define intinfo
-             (make-trusted-integrity-info data))
-           (define siginfo
-             (make-snake-oil-signature-info
-              (integrity-info-digest intinfo)
-              (integrity-info-algorithm intinfo)))
-           (define arti
-             (artifact (byte-source data) intinfo siginfo))
-           (check-subprogram (verify-artifact arti record)
-                             (λ (result messages)
-                               (check-equal? result FAILURE)))
-
-           (call-with-trust-in-snake-oil
-            (λ ()
-              (check-subprogram (verify-artifact arti record)
-                                (λ (result messages)
-                                  (check-pred void? result))))))))))
-
+                  (define data #"abc")
+                  (parameterize ([current-output-port (open-output-nowhere)])
+                    (call-with-snake-oil-chf-trust
+                     (λ ()
+                       (check-subprogram
+                        (fetch-artifact "anon" (make-artifact (byte-source data)))
+                        (λ (record messages)
+                          (check-pred path-record? record)
+                          (check-equal? (file->bytes (path-record-path record)) data)
+                          (test-case "Verify artifacts"
+                            (define intinfo
+                              (make-trusted-integrity data))
+                            (define siginfo
+                              (make-snake-oil-signature
+                               (integrity-digest intinfo)
+                               (integrity-chf-symbol intinfo)))
+                            (define arti
+                              (artifact (byte-source data) intinfo siginfo))
+                            (check-subprogram (verify-artifact arti record)
+                                              (λ (result messages)
+                                                (check-equal? result FAILURE)))
+                            (call-with-snake-oil-cipher-trust
+                             (λ ()
+                               (check-subprogram (verify-artifact arti record)
+                                                 (λ (result messages)
+                                                   (check-pred void? result))))))))))))
 
   (test-case "Lock artifacts"
     (define with-content
-      (artifact-info (text-source "qr")
-                     (integrity-info 'md5 (text-source "st"))
-                     (signature-info (text-source "uv")
-                                     (text-source "wx"))))
+      (artifact (text-source "qr")
+                (integrity 'sha1 (text-source "st"))
+                (signature (text-source "uv")
+                           (text-source "wx"))))
 
 
     (define (try content?
@@ -219,89 +212,89 @@
                      values))
 
     (check-match (try #t #t #t +inf.0 +inf.0 +inf.0 +inf.0)
-                 (artifact-info #"qr"
-                                (integrity-info 'md5 #"st")
-                                (signature-info #"uv" #"wx")))
+                 (artifact #"qr"
+                           (integrity 'sha1 #"st")
+                           (signature #"uv" #"wx")))
 
     (check-match (try #f #t #t +inf.0 +inf.0 +inf.0 +inf.0)
-                 (artifact-info (text-source "qr")
-                                (integrity-info 'md5 #"st")
-                                (signature-info #"uv" #"wx")))
+                 (artifact (text-source "qr")
+                           (integrity 'sha1 #"st")
+                           (signature #"uv" #"wx")))
 
     (check-match (try #t #f #t +inf.0 +inf.0 +inf.0 +inf.0)
-                 (artifact-info #"qr"
-                                (integrity-info 'md5 (text-source "st"))
-                                (signature-info #"uv" #"wx")))
+                 (artifact #"qr"
+                           (integrity 'sha1 (text-source "st"))
+                           (signature #"uv" #"wx")))
 
     (check-match (try #t #t #f +inf.0 +inf.0 +inf.0 +inf.0)
-                 (artifact-info #"qr"
-                                (integrity-info 'md5 #"st")
-                                (signature-info (text-source "uv")
-                                                (text-source "wx"))))
+                 (artifact #"qr"
+                           (integrity 'sha1 #"st")
+                           (signature (text-source "uv")
+                                      (text-source "wx"))))
 
     (check-match (try #t #t #t 0 +inf.0 +inf.0 +inf.0)
-                 (artifact-info (text-source "qr")
-                                (integrity-info 'md5 #"st")
-                                (signature-info #"uv" #"wx")))
+                 (artifact (text-source "qr")
+                           (integrity 'sha1 #"st")
+                           (signature #"uv" #"wx")))
 
     (check-match (try #t #t #t 0 0 +inf.0 +inf.0)
-                 (artifact-info (text-source "qr")
-                                (integrity-info 'md5 (text-source "st"))
-                                (signature-info #"uv" #"wx")))
+                 (artifact (text-source "qr")
+                           (integrity 'sha1 (text-source "st"))
+                           (signature #"uv" #"wx")))
 
     (check-match (try #t #t #t 0 0 0 +inf.0)
-                 (artifact-info (text-source "qr")
-                                (integrity-info 'md5 (text-source "st"))
-                                (signature-info (text-source "uv") #"wx")))
+                 (artifact (text-source "qr")
+                           (integrity 'sha1 (text-source "st"))
+                           (signature (text-source "uv") #"wx")))
 
     (define (check-exhaust arti [expected 1])
       (check-equal? (lock-artifact arti values)
                     expected))
 
     (check-exhaust
-     (artifact-info (exhausted-source 1)
-                    (integrity-info 'md5 #"")
-                    (signature-info #"" #"")))
+     (artifact (exhausted-source 1)
+               (integrity 'sha1 #"")
+               (signature #"" #"")))
 
     (check-exhaust
-     (artifact-info #""
-                    (integrity-info 'md5 (exhausted-source 1))
-                    (signature-info #"" #"")))
+     (artifact #""
+               (integrity 'sha1 (exhausted-source 1))
+               (signature #"" #"")))
 
     (check-exhaust
-     (artifact-info #""
-                    (integrity-info 'md5 #"")
-                    (signature-info (exhausted-source 1) #"")))
+     (artifact #""
+               (integrity 'sha1 #"")
+               (signature (exhausted-source 1) #"")))
 
     (check-exhaust
-     (artifact-info #""
-                    (integrity-info 'md5 #"")
-                    (signature-info #"" (exhausted-source 1))))
+     (artifact #""
+               (integrity 'sha1 #"")
+               (signature #"" (exhausted-source 1))))
 
     (check-exhaust
-     (artifact-info (exhausted-source 1)
-                    (integrity-info 'md5 (exhausted-source 2))
-                    (signature-info (exhausted-source 3)
-                                    (exhausted-source 4)))
+     (artifact (exhausted-source 1)
+               (integrity 'sha1 (exhausted-source 2))
+               (signature (exhausted-source 3)
+                          (exhausted-source 4)))
      1)
 
     (check-exhaust
-     (artifact-info #""
-                    (integrity-info 'md5 (exhausted-source 2))
-                    (signature-info (exhausted-source 3)
-                                    (exhausted-source 4)))
+     (artifact #""
+               (integrity 'sha1 (exhausted-source 2))
+               (signature (exhausted-source 3)
+                          (exhausted-source 4)))
      2)
 
     (check-exhaust
-     (artifact-info #""
-                    (integrity-info 'md5 #"")
-                    (signature-info (exhausted-source 3)
-                                    (exhausted-source 4)))
+     (artifact #""
+               (integrity 'sha1 #"")
+               (signature (exhausted-source 3)
+                          (exhausted-source 4)))
      3)
 
     (check-exhaust
-     (artifact-info #""
-                    (integrity-info 'md5 #"")
-                    (signature-info #""
-                                    (exhausted-source 4)))
+     (artifact #""
+               (integrity 'sha1 #"")
+               (signature #""
+                          (exhausted-source 4)))
      4)))
