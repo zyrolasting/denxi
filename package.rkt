@@ -359,9 +359,9 @@
 
   (let ([ev (build-package
              [inputs (list (package-input "c1"
-                                          (artifact (sources "s")))
+                                          (make-artifact (sources "s")))
                            (package-input "c2"
-                                          (artifact (sources "s2"))))])])
+                                          (make-artifact (sources "s2"))))])])
     (test-subprogram
      "Allow all concrete inputs"
      (validate-inputs ev)
@@ -373,7 +373,7 @@
    "Disallow abstract inputs"
    (validate-inputs
     (build-package [inputs (list (package-input "concrete"
-                                                (artifact
+                                                (make-artifact
                                                  (sources "s")
                                                  (integrity 'sha1 #"")))
                                  (make-package-input "a"))]))
