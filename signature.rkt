@@ -46,7 +46,26 @@
   [make-signature
    (->* (bytes? symbol? bytes?)
         ((or/c #f bytes?))
-        bytes?)]))
+        bytes?)]
+  [malformed-signature?
+   flat-contract?]
+  [sourced-signature?
+   flat-contract?]
+  [well-formed-signature?
+   flat-contract?]))
+
+(define (sourced-signature? v)
+  (and (signature? v)
+       (let ([other (source? (signature-body v))]) 
+         (if (source? (signature-public-key v))
+             (not other)
+             other))))
+
+(define well-formed-signature?
+  (or/c raw-signature? sourced-signature?))
+
+(define malformed-signature?
+  (not/c well-formed-signature?))
 
 
 (define+provide-setting XIDEN_TRUST_ANY_PUBLIC_KEY boolean? #f)

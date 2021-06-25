@@ -6,6 +6,9 @@
 
 (provide
  (struct-out artifact)
+ (struct-out $artifact)
+ (struct-out $artifact:signature)
+ (struct-out $artifact:integrity)
  (contract-out
   [verify-artifact
    (-> artifact?
@@ -45,8 +48,8 @@
          "source.rkt")
 
 (define-message $artifact ())
-(define-message $artifact:integrity (status))
-(define-message $artifact:signature (status))
+(define-message $artifact:integrity (status chf-symbol))
+(define-message $artifact:signature (status public-key))
 
 (struct artifact
   (source      ; Defines where bytes come from
@@ -124,31 +127,33 @@
 
 (define-subprogram (check-artifact-integrity arti workspace-relative-path)
   (match-define (artifact content int sig) arti)
+  (if (well-formed-integrity? int)
+      (let* ([int/use (lock-integrity int)]
+             [status
+              (check-integrity
+               #:trust-bad-digest (XIDEN_TRUST_BAD_DIGEST)
+               (make-user-chf-trust-predicate)
+               (integrity-chf-symbol int/use)
+               (integrity-digest int/use)
+               (make-digest (build-workspace-path workspace-relative-path)
+                            (integrity-chf-symbol (artifact-integrity arti))))])
+        ($attach (or (eq? 'pass status) FAILURE)
+                 ($artifact:integrity status
+                                      (integrity-chf-symbol int/use))))
+      ($fail ($artifact:integrity 'malformed-input #f))))
 
-  (define int/use
-    (if int
-        int
-        (integrity (integrity-chf-symbol int)
-                   #"")))
-
-  (define status
-    (check-integrity #:trust-bad-digest (XIDEN_TRUST_BAD_DIGEST)
-                     (make-user-chf-trust-predicate)
-                     (integrity-chf-symbol int/use)
-                     (integrity-digest int/use)
-                     (make-digest (build-workspace-path workspace-relative-path)
-                                  (integrity-chf-symbol (artifact-integrity arti)))))
-
-  ($attach (or (eq? 'pass status) FAILURE)
-           ($artifact:integrity status)))
 
 
 (define-subprogram (check-artifact-signature arti path)
-  (define status
-    (verify-signature (artifact-signature arti)
-                      (artifact-integrity arti)))
-  ($attach (or (eq? 'pass status) FAILURE)
-           ($artifact:signature status)))
+  (match-define (artifact content int sig) arti)
+  (if (well-formed-signature? sig)
+      (let* ([sig/use (lock-signature sig)]
+             [int/use (lock-integrity int)]
+             [status (verify-signature sig/use int/use)])
+        ($attach (or (eq? 'pass status) FAILURE)
+                 ($artifact:signature status
+                                      (signature-public-key sig/use))))
+      ($fail ($artifact:signature 'malformed-input #f))))
 
 
 (module+ test

@@ -61,7 +61,6 @@
 (define-setting XIDEN_TRUST_CHFS (listof symbol?) null)
 
 
-; This is easier and consistent with query.rkt.
 (define sourced-integrity?
   (struct/c integrity symbol? source?))
 

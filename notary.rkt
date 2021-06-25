@@ -77,7 +77,7 @@
        (λ (in est-size)
          (define intinfo
            (and chf
-                (integrity-info
+                (integrity
                  chf
                  (make-digest in chf))))
 
@@ -88,11 +88,11 @@
                    (and intinfo
                         pubkey
                         prvkey
-                        (signature-info
+                        (signature
                          pubkey
                          (make-signature
-                          (integrity-info-digest intinfo)
-                          (integrity-info-algorithm intinfo)
+                          (integrity-digest intinfo)
+                          (integrity-chf-symbol intinfo)
                           prvkey
                           prvkeypass))))))
       (subprogram-unit (artifact user-source #f #f))))
@@ -106,7 +106,7 @@
     (notarize (make-fraudulent-notary)
               (artifact #"abc")))
    (artifact (not #f)
-             (integrity-info (? symbol? _)
-                             (? bytes? _))
-             (signature-info (? bytes? _)
-                             (? bytes? _)))))
+             (integrity (? symbol? _)
+                        (? bytes? _))
+             (signature (? bytes? _)
+                        (? bytes? _)))))

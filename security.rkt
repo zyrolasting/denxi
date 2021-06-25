@@ -27,7 +27,7 @@
 (define+provide-message $restrict:budget $restrict (kind amount))
 
 (define+provide-setting XIDEN_ALLOW_ENV (listof (or/c bytes-environment-variable-name? string?)) null)
-(define+provide-setting XIDEN_TRUST_EXECUTABLES (listof well-formed-integrity-info/c) null)
+(define+provide-setting XIDEN_TRUST_EXECUTABLES (listof well-formed-integrity?) null)
 (define+provide-setting XIDEN_TRUST_ANY_EXECUTABLE boolean? #f)
 (define+provide-setting XIDEN_TRUST_CERTIFICATES (listof path-string?) null)
 (define+provide-setting XIDEN_TRUST_HOST_EXECUTABLES (listof string?) null)
@@ -330,7 +330,7 @@
 
 
   (test-case "Build executable trust profiles"
-    (call-with-snake-oil-chf-profile
+    (call-with-snake-oil-chf-trust
      (λ ()
        (define my-file "security.rkt")
        (define my-path (build-path here my-file))
@@ -344,8 +344,8 @@
 
        (define trusts-exact-things
          (make-executable-trust-predicate #f
-                                          (list (integrity 'snake-oil
-                                                           (make-digest my-path 'snake-oil)))
+                                          (list (integrity (get-default-chf)
+                                                           (make-digest my-path)))
                                           '()))
 
        (define trusts-hosted-things

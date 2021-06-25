@@ -273,63 +273,57 @@
                (string-join (map format-message errors)
                             "\n")))]
 
-  [($signature ok? stage public-key)
-   (format (~a "signature ~a: ~a")
-           (if ok? "ok" "violation")
-           (case stage
-             [(consider-integrity-trust)
-              (if ok?
-                  "trusting implicitly"
-                  "requires verification")]
+  [($artifact:signature status public-key)
+   (~a "signature check: "
+       (case status
+         [(pass)
+          "pass"]
 
-             [(consider-signature-info)
-              (if ok?
-                  "trusting unsigned"
-                  (format "signature required (bypass: ~a)"
-                          (format-cli-flags --trust-unsigned)))]
+         [(pass/unsigned)
+          "trusting unsigned"]
 
-             [(consider-public-key-trust)
-              (if ok?
-                  "basing trust in input on trust in public key"
-                  (format (~a "public key not trusted. To trust this key, add this to ~a:~n"
-                              "(integrity 'sha384 (base64 ~s))")
-                          (setting-id XIDEN_TRUST_PUBLIC_KEYS)
-                          (~a (encode 'base64 (make-digest public-key 'sha384)))))]
+         [(fail/unsigned)
+          (format "signature required (bypass: ~a)"
+                  (format-cli-flags --trust-unsigned))]
 
-             [(consider-signature)
-              (if ok?
-                  "verified"
-                  "unverified")]))]
+         [(curb)
+          (define preamble "untrusted public key")
+          (define chf (get-default-chf))
+          (if chf
+              ((λ (relevant-setting-id encoded)
+                 (~a preamble "\n"
+                     "To trust this key, add this to " relevant-setting-id ":\n"
+                     "(integrity '" chf " (base64 " (~s encoded) "))"))
+               (setting-id XIDEN_TRUST_PUBLIC_KEYS)
+               (encode 'base64 (make-digest public-key)))
+              preamble)]
+
+         [(fail)
+          "signature failed verification"]))]
 
 
-  [($integrity ok? stage intinfo)
-   (format (~a "integrity ~a: ~a")
-           (if ok? "ok" "violation")
-           (case stage
-             [(consider-chf-trust)
-              (if ok?
-                  (format "trusting CHF ~a" (integrity-info-algorithm intinfo))
-                  (format "not trusting CHF ~a. To bypass, add it to ~a"
-                          (integrity-info-algorithm intinfo)
-                          (setting-id XIDEN_TRUST_CHFS)))]
+  [($artifact:integrity status chf)
+   (~a "integrity check:"
+       (case status
+         [(pass)
+          "digest match"]
 
-             [(consider-digest-trust)
-              (if ok?
-                  "trusting implicitly"
-                  "not trusting")]
+         [(fail)
+          "digest mismatch. To bypass (at great risk) use ~a"
+          (format-cli-flags --trust-any-digest)]
 
-             [(consider-integrity-info)
-              (if ok?
-                  "trusting implicitly"
-                  "no well-formed integrity information")]
+         [(malformed-input)
+          "malformed input"]
 
-             [(consider-digest-match)
-              (format "~a integrity ~a" (integrity-info-algorithm intinfo)
-                      (if ok? "verified" (format "violation (bypass: ~a)"
-                                                 (format-cli-flags --trust-any-digest))))]
+         [(curb)
+          (format "not trusting CHF ~a. To bypass, add '~a to ~a"
+                  chf
+                  (setting-id XIDEN_TRUST_CHFS))]
 
-             [else (format "Unknown integrity status: ~s Please inform the maintainers!"
-                           stage)]))]
+         [(skip)
+          "trusting implicitly"]
+
+         [else (format "unknown status: ~s" status)]))]
 
   [($subprocess:report cmd args wd max-runtime actual-runtime expected-exit-codes actual-exit-code stderr?)
    (L (format "subprocess `~a`" (string-join (cons (~a cmd) args) "` `"))

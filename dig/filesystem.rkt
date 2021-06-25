@@ -169,8 +169,8 @@
 
          (match-define
            (artifact c
-                     (integrity-info actual-chf i)
-                     (signature-info actual-pk s))
+                     (integrity actual-chf i)
+                     (signature actual-pk s))
            result)
          (check-eq? public-key-source actual-pk)
          (check-eq? actual-chf chf)
@@ -225,9 +225,9 @@
        (check-pred artifact? default-artifact)
 
        (match-define (artifact content-source
-                               (integrity-info actual-chf digest-source)
-                               (signature-info public-key-source
-                                               signature-source))
+                               (integrity actual-chf digest-source)
+                               (signature public-key-source
+                                          signature-source))
          default-artifact)
 
        (check-eq? actual-chf chf)

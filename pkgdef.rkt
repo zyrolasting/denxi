@@ -260,12 +260,12 @@
       (list (package-input "archive" #f)
             (package-input "int"
                            (artifact (? source? _)
-                                     (integrity-info 'sha1 #"\253\315")
+                                     (integrity 'sha1 #"\253\315")
                                      #f))
             (package-input "sig"
                            (artifact (? source? _)
-                                     (integrity-info 'sha1 #"\253\315")
-                                     (signature-info "pub" #"bytes"))))
+                                     (integrity 'sha1 #"\253\315")
+                                     (signature "pub" #"bytes"))))
       '("default" "min")
       (? procedure? _)))
 
