@@ -37,6 +37,8 @@
         ((or/c #f symbol?)
          (or/c #f bytes?))
         bytes?)]
+  [raw-integrity?
+   flat-contract?]
   [MAX_EXPECTED_DIGEST_LENGTH exact-positive-integer?]))
 
 
@@ -52,6 +54,8 @@
 (struct integrity (chf-symbol digest)
   #:transparent)
 
+(define raw-integrity?
+  (struct/c integrity symbol? bytes?))
 
 (define-message $chf-unavailable
   (name))
@@ -174,6 +178,10 @@
   (check-eq? (check-integrity #:trust-bad-digest #f (λ _ #t) '_ #"x" #"y") 'fail)
   (check-eq? (check-integrity #:trust-bad-digest #f (λ _ #t) '_ #"x" #"x") 'pass)
 
+  (check-true  (raw-integrity? (integrity '|| #"")))
+  (check-false (raw-integrity? (integrity #f #"")))
+  (check-false (raw-integrity? (integrity '|| #f)))
+  (check-false (raw-integrity? (integrity #f #f)))
 
   ; For other tests
   (define test-digest-data #"the rain in spain falls mainly on the plain\n")
