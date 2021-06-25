@@ -23,31 +23,31 @@
   [signature
    (-> source-variant?
        source-variant?
-       signature-info/sourced?)]
+       signature?)]
   [fetch-signature-payload
    (-> source-variant?
        exhaust/c
        bytes?)]
-  [lock-signature-info
-   (->* ((or/c signature-info/sourced? signature-info?))
+  [lock-signature
+   (->* ((or/c signature? signature?))
         (#:public-key-budget (or/c +inf.0 exact-nonnegative-integer?)
          #:signature-budget (or/c +inf.0 exact-nonnegative-integer?)
          exhaust/c)
-        signature-info?)]
-  [make-snake-oil-signature-info
-   (-> bytes? symbol? signature-info?)]
+        signature?)]
+  [make-snake-oil-signature
+   (-> bytes? symbol? signature?)]
   [verify-signature
-   (case-> (-> (or/c signature-info?
-                     signature-info/sourced?)
-               (or/c integrity-info?
-                     integrity-info/sourced?)
-               $signature?)
+   (case-> (-> (or/c signature?
+                     signature?)
+               (or/c integrity?
+                     integrity?)
+               symbol?)
            (-> bytes?
                symbol?
                bytes?
                bytes?
-               $signature?))]
-  [call-with-trust-in-snake-oil
+               symbol?))]
+  [call-with-snake-oil-cipher-trust
    (-> (-> any) any)]
   [make-signature
    (->* (bytes? symbol? bytes?)
@@ -58,11 +58,10 @@
 (define+provide-setting XIDEN_TRUST_ANY_PUBLIC_KEY boolean? #f)
 (define+provide-setting XIDEN_TRUST_BAD_SIGNATURE boolean? #f)
 (define+provide-setting XIDEN_TRUST_PUBLIC_KEYS
-  (listof (or/c integrity-info? integrity-info/sourced?)) null)
+  (listof (or/c integrity? integrity?)) null)
 (define+provide-setting XIDEN_TRUST_UNSIGNED boolean? #f)
 
-(struct signature-info/sourced (pubkey body))
-(define signature signature-info/sourced)
+(struct signature (pubkey body))
 
 (define MAX_EXPECTED_SIGNATURE_PAYLOAD_LENGTH 24000)
 
@@ -77,25 +76,29 @@
                 (λ (p) #t)
                 (bind-trust-list (XIDEN_TRUST_PUBLIC_KEYS)))])
        (check-signature #:trust-public-key? trust-public-key?
+                        #:trust-signature? (current-verify-signature)
                         #:trust-unsigned (XIDEN_TRUST_UNSIGNED)
                         #:trust-bad-digest (XIDEN_TRUST_BAD_DIGEST)
-                        (lock-signature-info siginfo)
-                        (lock-integrity-info intinfo)))]))
+                        (lock-signature siginfo)
+                        (lock-integrity intinfo)))]))
 
-(define (make-snake-oil-signature-info digest chf)
-  (signature-info snake-oil-public-key
-                  (make-signature digest
-                                  chf
-                                  snake-oil-private-key
-                                  snake-oil-private-key-password)))
 
-(define (call-with-trust-in-snake-oil f)
-  (call-with-snake-oil-chf-profile
+(define (make-snake-oil-signature digest chf)
+  (signature snake-oil-public-key
+             (make-signature digest
+                             chf
+                             snake-oil-private-key
+                             snake-oil-private-key-password)))
+
+
+(define (call-with-snake-oil-cipher-trust f)
+  (call-with-snake-oil-chf-trust
    (λ ()
      (XIDEN_TRUST_PUBLIC_KEYS
-      (list (integrity-info (get-default-chf)
-                            (make-digest snake-oil-public-key)))
+      (list (integrity (get-default-chf)
+                       (make-digest snake-oil-public-key)))
       f))))
+
 
 (define (make-signature . xs)
   (apply (current-make-signature) xs))
@@ -120,23 +123,23 @@
            exhaust)))
 
 
-(define (lock-signature-info siginfo
-                             #:public-key-budget
-                             [public-key-budget MAX_EXPECTED_SIGNATURE_PAYLOAD_LENGTH]
-                             #:signature-budget
-                             [signature-budget MAX_EXPECTED_SIGNATURE_PAYLOAD_LENGTH]
-                             [exhaust raise])
+(define (lock-signature siginfo
+                        #:public-key-budget
+                        [public-key-budget MAX_EXPECTED_SIGNATURE_PAYLOAD_LENGTH]
+                        #:signature-budget
+                        [signature-budget MAX_EXPECTED_SIGNATURE_PAYLOAD_LENGTH]
+                        [exhaust raise])
   (call/cc
    (λ (abort)
      (define (exhaust* v)
        (abort (exhaust v)))
-     (signature-info
-      (and (signature-info-pubkey siginfo)
-           (lock-source (signature-info-pubkey siginfo)
+     (signature
+      (and (signature-pubkey siginfo)
+           (lock-source (signature-pubkey siginfo)
                         public-key-budget
                         exhaust*))
-      (and (signature-info-body siginfo)
-           (lock-source (signature-info-body siginfo)
+      (and (signature-body siginfo)
+           (lock-source (signature-body siginfo)
                         signature-budget
                         exhaust*))))))
 
@@ -147,40 +150,32 @@
            (submod "integrity.rkt" test))
 
   (define pubkey-bytes #"pubkey")
-  (define digest (make-digest #"abc"))
-  (define intinfo (integrity-info (get-default-chf) digest))
+  (define digest (call-with-snake-oil-chf-trust (λ () (make-digest #"abc"))))
+  (define intinfo (integrity 'snake-oil digest))
   (define signature-bytes #"sig")
 
   ; The content used for the integrity info does not matter. All
   ; that matters is if the signature matches based on it.
   (define siginfo
-    (signature-info pubkey-bytes signature-bytes))
-
+    (signature pubkey-bytes signature-bytes))
   
   (test-case "Lock signature info"
-    (define example (signature-info (text-source "wx") (text-source "yz")))
+    (define example (signature (text-source "wx") (text-source "yz")))
 
     (define (try pb sb)
-      (lock-signature-info #:public-key-budget pb
-                           #:signature-budget sb
-                           example))
+      (lock-signature #:public-key-budget pb
+                      #:signature-budget sb
+                      example))
 
-    (check-match (try 0 0)
-                 (signature-info (text-source "wx") (text-source "yz")))
-
-    (check-match (try 2 2)
-                 (signature-info #"wx" #"yz"))
-
-    (check-match (try 0 2)
-                 (signature-info (text-source "wx") #"yz"))
-
-    (check-match (try 2 0)
-                 (signature-info #"wx" (text-source "yz")))
+    (check-match (try 0 0) (signature (text-source "wx") (text-source "yz")))
+    (check-match (try 2 2) (signature #"wx" #"yz"))
+    (check-match (try 0 2) (signature (text-source "wx") #"yz"))
+    (check-match (try 2 0) (signature #"wx" (text-source "yz")))
 
     (test-case "Exhaust a lock on first lock-signature failure"
       (define (try-exhaust p s)
-        (check-equal? (lock-signature-info (signature-info p s)
-                                           values)
+        (check-equal? (lock-signature (signature p s)
+                                      values)
                       1))
       (try-exhaust (exhausted-source 1) #"")
       (try-exhaust #"" (exhausted-source 1))
