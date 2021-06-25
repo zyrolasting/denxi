@@ -129,7 +129,7 @@
               siginfo
               intinfo)
              'signature-unverified)
-  
+
   (check-eq? (check-signature
               #:trust-public-key? T
               #:verify-signature T
