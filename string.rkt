@@ -23,6 +23,14 @@
                  (string-join opts "|")
                  ")"))
 
+(define (string-hash-code str)
+  (for/sum ([char (in-string str)])
+    (char->integer char)))
+
+(define (string-secondary-hash-code str)
+  (define code (string-hash-code str))
+  (* code code))
+
 (define (make-extension-pattern-string . exts)
   (format "\\.(~a)$"
           (string-join exts "|")))
