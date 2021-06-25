@@ -111,12 +111,11 @@
 ; For building a new (current-chfs) value using only names and an
 ; implementation lookup procedure.
 (define (chf-fold-trust select-implementation trusted-chf-names)
-  (for/fold ([wip null] #:result (reverse wip))
-            ([name trusted-chf-names])
-    (cons (chf name
-               (pregexp (format "^(?i:~a)$" name))
-               (select-implementation name))
-          wip)))
+  (map (λ (name)
+         (chf name
+              (pregexp (format "^(?i:~a)$" name))
+              (select-implementation name)))
+       trusted-chf-names))
 
 
 ; Convention: First element is the default, because I cannot make a
