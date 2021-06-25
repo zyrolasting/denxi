@@ -36,6 +36,8 @@
    (-> (-> symbol? boolean?))]
   [malformed-integrity?
    flat-contract?]
+  [snake-oil-chf
+   chf?]
   [sourced-integrity?
    flat-contract?]
   [well-formed-integrity?
