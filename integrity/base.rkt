@@ -31,6 +31,8 @@
    (parameter/c (listof chf?))]
   [get-default-chf
    (->* () ((listof chf?)) (or/c #f symbol?))]
+  [integrity-check-passed?
+   flat-contract?]
   [make-digest
    (->* ((or/c input-port? path? bytes?))
         ((or/c #f symbol?))

@@ -21,6 +21,8 @@
    chaperone-contract?]
   [raw-signature?
    flat-contract?]
+  [signature-check-passed?
+   flat-contract?]
   [verify-signature/c
    chaperone-contract?]))
 
