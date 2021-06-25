@@ -83,8 +83,8 @@
               #:trust-signature? F
               #:trust-unsigned #f
               #:trust-bad-digest #t
-              intinfo
-              siginfo)
+              siginfo
+              intinfo)
              'skip)
 
   (check-eq? (check-signature
@@ -92,8 +92,8 @@
               #:trust-signature? F
               #:trust-unsigned #f
               #:trust-bad-digest #f
-              intinfo
-              siginfo)
+              siginfo
+              intinfo)
              'curb)
 
   (check-eq? (check-signature
@@ -101,8 +101,8 @@
               #:trust-signature? F
               #:trust-unsigned #f
               #:trust-bad-digest #f
-              intinfo
-              siginfo)
+              siginfo
+              intinfo)
              'fail)
   
   (check-eq? (check-signature
@@ -110,6 +110,6 @@
               #:trust-signature? T
               #:trust-unsigned #f
               #:trust-bad-digest #f
-              intinfo
-              siginfo)
+              siginfo
+              intinfo)
              'pass))
