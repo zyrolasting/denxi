@@ -79,18 +79,14 @@
           'curb)))
 
 
-(define (chf-eqv? a b ?)
-  (eq? (chf-canonical-name a)
-       (chf-canonical-name b)))
-
-
 (struct chf (canonical-name alias-pattern implementation)
   #:property prop:procedure
   (λ (self in [expected #f])
     ((chf-implementation self) in expected))
   #:methods gen:equal+hash
-  [(define equal-proc
-     chf-eqv?)
+  [(define (equal-proc a b ?)
+     (eq? (chf-canonical-name a)
+          (chf-canonical-name b)))
    (define (hash-proc c ?)
      (string-hash-code (symbol->string (chf-canonical-name c))))
    (define (hash2-proc c ?)
