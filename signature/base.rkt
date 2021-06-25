@@ -7,26 +7,32 @@
  (contract-out
   [check-signature
    (-> #:trust-public-key? (-> input-port? any/c)
-       #:trust-signature? trust-signature-predicate/c
+       #:verify-signature verify-signature/c
        #:trust-unsigned any/c
        #:trust-bad-digest any/c
-       raw-signature?
-       raw-integrity?
+       signature?
+       integrity?
        symbol?)]
   [current-make-signature
-   (parameter/c (-> bytes? symbol? bytes? (or/c #f bytes?) bytes?))]
+   (parameter/c make-signature/c)]
   [current-verify-signature
-   (parameter/c trust-signature-predicate/c)]
+   (parameter/c verify-signature/c)]
+  [make-signature/c
+   chaperone-contract?]
   [raw-signature?
-   flat-contract?]))
-
-(define trust-signature-predicate/c
-  (-> bytes? symbol? bytes? bytes? boolean?))
+   flat-contract?]
+  [verify-signature/c
+   chaperone-contract?]))
 
 (require "../integrity.rkt"
          "../message.rkt"
          "ffi.rkt")
 
+(define make-signature/c
+  (-> bytes? symbol? bytes? (or/c #f bytes?) bytes?))
+
+(define verify-signature/c
+  (-> bytes? symbol? bytes? bytes? boolean?))
 
 (define current-verify-signature
   (make-parameter
@@ -48,25 +54,34 @@
 (define raw-signature?
   (struct/c signature bytes? bytes?))
 
+(define signature-check-passed?
+  (and/c symbol?
+         (or/c 'signature-verified
+               'skip
+               'skip-unsigned)))
 
 (define (check-signature #:trust-bad-digest trust-bad-digest
                          #:trust-unsigned trust-unsigned
                          #:trust-public-key? trust-pk?
-                         #:trust-signature? trust-sig?
+                         #:verify-signature trust-sig?
                          siginfo
                          intinfo)
   (if trust-bad-digest
       'skip
-      (let ([public-key (signature-public-key siginfo)])
-        (if (trust-pk? (open-input-bytes public-key))
-            (if (trust-sig?
-                 (integrity-digest intinfo)
-                 (integrity-chf-symbol intinfo)
-                 (signature-body siginfo)
-                 public-key)
-                'pass
-                'fail)
-            'curb))))
+      (if (raw-signature? siginfo)
+          (let ([public-key (signature-public-key siginfo)])
+            (if (trust-pk? (open-input-bytes public-key))
+                (if (trust-sig?
+                     (integrity-digest intinfo)
+                     (integrity-chf-symbol intinfo)
+                     (signature-body siginfo)
+                     public-key)
+                    'signature-verified
+                    'signature-unverified)
+                'blocked-public-key))
+          (if trust-unsigned
+              'skip-unsigned
+              'unsigned))))
 
 
 (module+ test
@@ -80,7 +95,7 @@
   
   (check-eq? (check-signature
               #:trust-public-key? F
-              #:trust-signature? F
+              #:verify-signature F
               #:trust-unsigned #f
               #:trust-bad-digest #t
               siginfo
@@ -89,27 +104,27 @@
 
   (check-eq? (check-signature
               #:trust-public-key? F
-              #:trust-signature? F
+              #:verify-signature F
               #:trust-unsigned #f
               #:trust-bad-digest #f
               siginfo
               intinfo)
-             'curb)
+             'blocked-public-key)
 
   (check-eq? (check-signature
               #:trust-public-key? T
-              #:trust-signature? F
+              #:verify-signature F
               #:trust-unsigned #f
               #:trust-bad-digest #f
               siginfo
               intinfo)
-             'fail)
+             'signature-unverified)
   
   (check-eq? (check-signature
               #:trust-public-key? T
-              #:trust-signature? T
+              #:verify-signature T
               #:trust-unsigned #f
               #:trust-bad-digest #f
               siginfo
               intinfo)
-             'pass))
+             'signature-verified))
