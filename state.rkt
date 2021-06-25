@@ -28,7 +28,7 @@
          "crypto.rkt"
          "file.rkt"
          "format.rkt"
-         "integrity/chf.rkt"
+         "integrity/base.rkt"
          "message.rkt"
          "path.rkt"
          "port.rkt"
