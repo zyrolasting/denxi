@@ -277,7 +277,7 @@
    (~a "signature check: "
        (case status
          [(pass)
-          "pass"]
+          "passed verification"]
 
          [(pass/unsigned)
           "trusting unsigned"]
@@ -299,11 +299,11 @@
               preamble)]
 
          [(fail)
-          "signature failed verification"]))]
+          "failed verification"]))]
 
 
   [($artifact:integrity status chf)
-   (~a "integrity check:"
+   (~a "integrity check: "
        (case status
          [(pass)
           "digest match"]
@@ -454,6 +454,13 @@
            (url-host uri)
            (setting-id XIDEN_TRUST_CERTIFICATES)
            (exn->string original-exn))]
+
+  [($chf-unavailable chf)
+   (if chf
+       (~a "No implementation available for CHF " chf)
+       (~a "No CHF implementations installed. Did you set "
+           (setting-id XIDEN_TRUST_CHFS)
+           "?"))]
 
   [($cycle key)
    (format "Found cycle at ~s. You may have a circular dependency." key)]
