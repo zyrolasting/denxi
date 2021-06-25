@@ -101,12 +101,14 @@
   (require rackunit
            (submod "subprogram.rkt" test))
   (check-pred notary? (make-notary))
-  (check-match
-   (get-subprogram-value
-    (notarize (make-fraudulent-notary)
-              (artifact #"abc")))
-   (artifact (not #f)
-             (integrity (? symbol? _)
-                        (? bytes? _))
-             (signature (? bytes? _)
-                        (? bytes? _)))))
+  (call-with-snake-oil-cipher-trust
+   (λ ()
+     (check-match
+      (get-subprogram-value
+       (notarize (make-fraudulent-notary)
+                 (make-artifact #"abc")))
+      (artifact #"abc"
+                (integrity (? symbol? _)
+                           (? bytes? _))
+                (signature (? bytes? _)
+                           (? bytes? _)))))))
