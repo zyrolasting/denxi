@@ -42,20 +42,29 @@ instance that passes this contract is suitable for use with
 }
 
 
+@margin-note{Allowing @racket[#f] in the arguments is intentional due
+to the possibility of missing information.}
 @defproc[(check-integrity [#:trust-bad-digest trust-bad-digest any/c]
                           [trust-chf? (-> symbol? any/c)]
-                          [chf-name symbol?]
-                          [actual-digest bytes?]
-                          [expected-digest bytes?])
+                          [int (or/c #f integrity?)]
+                          [expected-digest (or/c #f bytes?)])
                           symbol?]{
 Returns
 
 @itemlist[
-@item{@racket['pass] if the digests are @racket[equal?] and the user trusts the CHF.}
-@item{@racket['fail] if the digests are not @racket[equal?], but the user trusts the CHF.}
+@item{@racket['digests-match] if the digests are @racket[equal?] and the user trusts the CHF.}
+@item{@racket['digests-differ] if the digests are not @racket[equal?], but the user trusts the CHF.}
 @item{@racket['skip] if @racket[trust-bad-digest] is a true value.}
-@item{@racket['curb] if the user does not trust the CHF.}
+@item{@racket['blocked-chf] if the user does not trust the CHF.}
+@item{@racket['malformed-input] if @racket[(raw-integrity? int)] is @racket[#f].}
 ]
+}
+
+
+@defthing[integrity-check-passed? predicate/c]{
+Returns @racket[#t] if the argument is in the range of
+@racket[check-integrity], and you can interpret it as permission to
+proceed in a larger procedure.
 }
 
 

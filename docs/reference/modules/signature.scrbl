@@ -14,23 +14,25 @@
 
 @defmodule[xiden/signature]
 
-@racketmodname[xiden/signature] extends @racket[xiden/crypto] with
-utilities tailored for data authentication.
+@racketmodname[xiden/signature] uses asymmetric cryptography to verify
+if a @tech{digest} was signed by a private key. The quality of
+signature verification is therefore dependent on the quality of the
+@tech{CHF} used to create the digest.
 
 
-@defstruct*[signature-info ([pubkey source-variant?] [body source-variant?])]{
-Holds an expression of a public key file and the bytes of a signature
-created using a private key.
+@deftogether[(
+@defthing[sourced-signature? flat-contract?]
+@defthing[well-formed-signature? flat-contract? #:value (or/c raw-signature? sourced-signature?)]
+@defthing[malformed-signature? flat-contract? #:value (not/c well-formed-signature?)]
+)]{
+Duck typing contracts for @racket[signature] instances.
+
+@racket[sourced-signature?] returns @racket[#t] if at least one of the
+fields of the instance is a @tech{source}. This is unlike
+@racket[sourced-integrity?], which only checks if the digest field is
+a @tech{source}.
 }
 
-@defproc[(signature [pubkey source-variant?] [body source-variant?]) signature-info?]{
-An abbreviated @racket[signature-info] constructor.
-}
-
-@defthing[well-formed-signature-info/c flat-contract?]{
-Recognizes an instance of @racket[signature-info] that is suitable for
-use with @racket[check-signature].
-}
 
 @defproc[(fetch-signature-payload [src source-variant?] [exhaust exhaust/c]) any/c]{
 Like @racket[fetch], except transfer limits are capped to
@@ -45,114 +47,39 @@ compatible with the tool used to verify signatures.
 }
 
 
-@defthing[current-verify-signature
-          (parameter/c (-> integrity-info?
-                           signature-info?
-                           boolean?))]{
-A parameter containing a procedure for signature verification.
-Returns @racket[#t] if Xiden may assume that the signature in the
-second argument is valid for the digest found in the first
-argument. Making this procedure always return @racket[#t] is
-equivalent to setting @racket[XIDEN_TRUST_UNSIGNED] to @racket[#t].
-
-The default implementation is a procedure that uses the host's OpenSSL
-installation to verify the signature.
-
-You may assume that the public key is trusted if control reaches this
-procedure in the context of a @tech{launcher}.
+@defproc[(lock-signature [#:public-key-budget
+                          public-key-budget
+                          budget/c
+                          MAX_EXPECTED_SIGNATURE_PAYLOAD_LENGTH]
+                          [#:signature-budget
+                           signature-budget
+                           budget/c
+                           MAX_EXPECTED_SIGNATURE_PAYLOAD_LENGTH]
+                          [siginfo well-formed-signature?]
+                          [exhaust exhaust/c])
+                          signature?]{
+Like @racket[lock-integrity] for @racket[signature]s.
 }
 
+@defproc[(make-snake-oil-signature [digest bytes?]
+                                   [chf-name symbol? (get-default-chf)])
+                                   raw-signature?]{
+Return a new signature using @racket[snake-oil-private-key].
 
-@defproc[(check-signature [#:trust-public-key? trust-public-key? (-> input-port? any/c)]
-                          [#:public-key public-key bytes?]
-                          [#:trust-unsigned trust-unsigned any/c]
-                          [#:trust-bad-digest trust-bad-digest any/c]
-                          [siginfo (or/c #f signature-info?)]
-                          [intinfo well-formed-integrity-info/c])
-                          $signature?]{
-This procedure returns the result of a @deftech{signature check},
-which follows the high-level rules shown below. Each rule is processed
-in the order shown.
-
-If @racket[trust-bad-digest] is true, then the check passes regardless
-of the value set for any other argument. This is because if any data
-are trusted, then the same applies to any signature.
-
-If @racket[trust-unsigned] is true and
-@racket[(well-formed-signature-info/c siginfo)] is @racket[#f], then
-the check passes. This is because a failure to declare a signature is
-the same as not providing a signature. Trusting unsigned input means
-being okay with this.
-
-Given @racket[(trust-public-key? (open-input-bytes public-key))], both
-@racket[siginfo] and @racket[intinfo] are well-formed, and the public
-key verifies the signature against the integrity information, the
-check passes. The check fails in all other conditions.
+Do not use in production code.
 }
-
-
-@defproc[(lock-signature-info [#:public-key-budget
-                               public-key-budget
-                               budget/c
-                               MAX_EXPECTED_SIGNATURE_PAYLOAD_LENGTH]
-                              [#:signature-budget
-                               signature-budget
-                               budget/c
-                               MAX_EXPECTED_SIGNATURE_PAYLOAD_LENGTH]
-                              [siginfo well-formed-signature-info/c]
-                              [exhaust exhaust/c])
-                              well-formed-signature-info/c]{
-Like @racket[lock-integrity-info], but for the fields of a
-@racket[signature-info] instance.
-}
-
-@defproc[(make-snake-oil-signature-info [digest bytes?]
-                                        [chf chf/c DEFAULT_CHF])
-                                        well-formed-signature-info/c]{
-Return a new @racket[signature-info] using
-@racket[snake-oil-public-key] and @racket[sign-with-snake-oil].  Do
-not use in production code.
-}
-
 
 @defthing[MAX_EXPECTED_SIGNATURE_PAYLOAD_LENGTH budget/c]{
 An estimated maximum number of bytes (chosen empirically) for a public
 key or signature.
 }
 
-@defproc[(call-with-trust-in-snake-oil [f (-> any)]) any]{
-Returns @racket[(f)]. While control is in @racket[f],
-@racket[XIDEN_TRUST_CHFS] and @racket[XIDEN_TRUST_PUBLIC_KEYS] are
-extended to trust @racket[DEFAULT_CHF] and
-@racket[snake-oil-public-key], respectively.
+@defproc[(call-with-snake-oil-cipher-trust [thunk (-> any)]) any]{
+Calls @racket[thunk] in tail position.  While control is in the
+@racket[thunk], @racket[(XIDEN_TRUST_PUBLIC_KEYS)] is @racket[(list
+snake-oil-public-key)].
 
-Use to prototype new verifications in the context of an existing
-configuration.
-}
-
-@defproc[(call-with-faith-in-snake-oil [f (-> any)]) any]{
-Like @racket[call-with-trust-in-snake-oil], except
-@racket[XIDEN_TRUST_CHFS] and @racket[XIDEN_TRUST_PUBLIC_KEYS] are
-@italic{replaced} such that they @italic{only} trust
-@racket[DEFAULT_CHF] and @racket[snake-oil-public-key], respectively.
-
-Use to prototype verifications in what would otherwise be a zero-trust
-configuration.
-}
-
-@defstruct*[($signature $message) ([ok? boolean?]
-                                   [stage symbol?]
-                                   [public-key (or/c #f bytes?)])
-                                  #:prefab]{
-A @tech{message} that reports the results of a signature check.
-
-@racket[ok?] is @racket[#t] if the check passed.
-
-@racket[stage] is a symbol representing the procedure responsible for
-the check result.
-
-@racket[public-key] is the public key used for a check, or @racket[#f]
-if a public key is not available or relevant.
+Implies @racket[call-with-snake-oil-chf-trust].
 }
 
 @defsetting*[XIDEN_TRUST_ANY_PUBLIC_KEY]{
@@ -160,16 +87,22 @@ if a public key is not available or relevant.
 }
 
 @defsetting*[XIDEN_TRUST_UNSIGNED]{
-@bold{Dangerous}. When true, trust any input that lacks a signature.
+@bold{Dangerous}. When true, trust any input that lacks a valid signature.
 }
 
 @defsetting*[XIDEN_TRUST_BAD_SIGNATURE]{
-@bold{Dangerous}. When true, trust any input that has a signature that does not match the input's integrity information.
+@bold{Dangerous}. When true, trust any input that has a signature that
+does not match the input's integrity information.
 }
 
-@defsetting[XIDEN_TRUST_PUBLIC_KEYS (listof well-formed-integrity-info/c)]{
-A list of integrity information used to verify public keys. If a
-public key fetched for an input passes the integrity check for an
-element of @racket[XIDEN_TRUST_PUBLIC_KEYS], then the public key is
-considered trustworthy.
+@defsetting[XIDEN_TRUST_PUBLIC_KEYS (listof well-formed-integrity?)]{
+A list of integrity information for public keys. Trusts public keys
+that can be used to reproduce an element of this list.
 }
+
+@define[pk-read-url
+"https://www.openssl.org/docs/man1.1.0/man3/PEM_read_bio_PrivateKey.html"]
+
+@include-section{signature/base.scrbl}
+@include-section{signature/ffi.scrbl}
+@include-section{signature/snake-oil.scrbl}

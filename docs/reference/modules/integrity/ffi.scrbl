@@ -15,8 +15,6 @@ FFI bindings for a bundled library dedicated to integrity checking.
 @defproc[(integrity-ffi-available?!) boolean?]{
 Returns @racket[#t] if the FFI dynamically linked against the bundled
 foreign library for the purposes of integrity checking operations.
-
-Calls all procedures below as a side-effect before returning control.
 }
 
 @defthing[integrity-ffi-chf-available?! predicate/c]{
@@ -72,4 +70,5 @@ elements in the array.
 
 @section{Integrity Foreign Functions}
 
-The underying C functions are not yet documented.
+To be included.
+
