@@ -53,8 +53,8 @@
                          #:trust-unsigned trust-unsigned
                          #:trust-public-key? trust-pk?
                          #:trust-signature? trust-sig?
-                         intinfo
-                         siginfo)
+                         siginfo
+                         intinfo)
   (if trust-bad-digest
       'skip
       (let ([public-key (signature-public-key siginfo)])
