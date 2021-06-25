@@ -32,6 +32,12 @@
         integrity?)]
   [make-user-chf-trust-predicate
    (-> (-> symbol? boolean?))]
+  [malformed-integrity?
+   flat-contract?]
+  [sourced-integrity?
+   flat-contract?]
+  [well-formed-integrity?
+   flat-contract?]
   [XIDEN_TRUST_BAD_DIGEST setting?]
   [XIDEN_TRUST_CHFS setting?]))
 
@@ -51,6 +57,17 @@
 
 (define-setting XIDEN_TRUST_BAD_DIGEST boolean? #f)
 (define-setting XIDEN_TRUST_CHFS (listof symbol?) null)
+
+
+; This is easier and consistent with query.rkt.
+(define sourced-integrity?
+  (struct/c integrity symbol? source?))
+
+(define well-formed-integrity?
+  (or/c raw-integrity? sourced-integrity?))
+
+(define malformed-integrity?
+  (not/c well-formed-integrity?))
 
 
 (define (build-builtin-chf-trust [trust-chfs (XIDEN_TRUST_CHFS)])
@@ -152,6 +169,17 @@
            "codec.rkt"
            "crypto.rkt"
            "source.rkt")
+
+
+  (check-false (sourced-integrity? (integrity '|| #"")))
+  (check-true (sourced-integrity? (integrity '|| (byte-source #""))))
+  (define (check-symmetry v)
+    (check-eq? (not (well-formed-integrity? v))
+               (malformed-integrity? v)))
+
+  (check-symmetry (integrity '|| #""))
+  (check-symmetry (integrity #f #""))
+  (check-symmetry (integrity '|| #f))
 
   (call-with-snake-oil-chf-trust
    (λ ()
