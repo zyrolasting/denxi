@@ -6,7 +6,7 @@
          #%datum
          :=
          apply
-         (rename-out [artifact make-artifact])
+         (rename-out [make-artifact artifact])
          base32
          base64
          byte-source
