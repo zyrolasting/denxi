@@ -28,7 +28,6 @@
 
 (define private-table (make-hash))
 
-
 (define-syntax-rule (define-ffi-accessor id expr)
   (begin (define (id) expr)
          (hash-set! private-table 'id id)))
