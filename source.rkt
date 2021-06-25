@@ -15,7 +15,7 @@
          racket/path
          "crypto.rkt"
          "format.rkt"
-         "integrity/chf.rkt"
+         "integrity/base.rkt"
          "message.rkt"
          "port.rkt"
          "printer.rkt"
