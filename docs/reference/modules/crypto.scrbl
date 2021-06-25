@@ -13,10 +13,10 @@
 
 @defmodule[xiden/crypto]
 
-@racketmodname[xiden/crypto] interacts with a bundled @tt{libcrypto}
-derivative. This module has no side-effects on instantiation, but will
-mutate either a FFI object in the Racket runtime, or an error code
-cache in the C runtime. To reset the Racket runtime cache, call
+@racketmodname[xiden/crypto] interacts with a bundled derivative of an
+OpenSSL library. This module has no side-effects on instantiation, but
+will mutate either a FFI object in the Racket runtime, or an error
+code cache in the C runtime. To reset the Racket runtime cache, call
 @racket[crypto-clear-ffi-cache!]. To dump the error code cache, call
 @racket[crypto-dump-error-queue!].
 
@@ -58,8 +58,7 @@ If the cryptography library is currently cached as an exception, this
 function will always return @racket[#f].
 }
 
-@defproc[(crypto-translate-error! exact-integer?
-        (or/c #f string?))]{
+@defproc[(crypto-translate-error! [code exact-integer?]) (or/c #f string?)]{
 Returns a human-readable string of the given error code from the
 underlying C library, or @racket[#f] if the cryptography library is
 currently cached as an exception.
