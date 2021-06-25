@@ -20,16 +20,12 @@
  (contract-out
   [MAX_EXPECTED_SIGNATURE_PAYLOAD_LENGTH
    budget/c]
-  [signature
-   (-> source-variant?
-       source-variant?
-       signature?)]
   [fetch-signature-payload
    (-> source-variant?
        exhaust/c
        bytes?)]
   [lock-signature
-   (->* ((or/c signature? signature?))
+   (->* (signature?)
         (#:public-key-budget (or/c +inf.0 exact-nonnegative-integer?)
          #:signature-budget (or/c +inf.0 exact-nonnegative-integer?)
          exhaust/c)
@@ -37,10 +33,8 @@
   [make-snake-oil-signature
    (-> bytes? symbol? signature?)]
   [verify-signature
-   (case-> (-> (or/c signature?
-                     signature?)
-               (or/c integrity?
-                     integrity?)
+   (case-> (-> signature?
+               integrity?
                symbol?)
            (-> bytes?
                symbol?
@@ -60,8 +54,6 @@
 (define+provide-setting XIDEN_TRUST_PUBLIC_KEYS
   (listof (or/c integrity? integrity?)) null)
 (define+provide-setting XIDEN_TRUST_UNSIGNED boolean? #f)
-
-(struct signature (pubkey body))
 
 (define MAX_EXPECTED_SIGNATURE_PAYLOAD_LENGTH 24000)
 
@@ -134,8 +126,8 @@
      (define (exhaust* v)
        (abort (exhaust v)))
      (signature
-      (and (signature-pubkey siginfo)
-           (lock-source (signature-pubkey siginfo)
+      (and (signature-public-key siginfo)
+           (lock-source (signature-public-key siginfo)
                         public-key-budget
                         exhaust*))
       (and (signature-body siginfo)
