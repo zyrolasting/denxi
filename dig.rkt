@@ -78,7 +78,7 @@
   (test-case "Combine shovels"
     (define ((bind-shovel v) k)
       (if (eq? k v)
-          (subprogram-unit (artifact v))
+          (subprogram-unit (make-artifact v))
           (dig-failure v k)))
 
     (define shovel
@@ -107,7 +107,7 @@
 
   (test-subprogram-value
    "Trivially find provided artifact"
-   (find-artifact (artifact #"") broken-shovel)
+   (find-artifact (make-artifact #"") broken-shovel)
    (λ (result)
      (check-equal? (artifact-source result) #"")))
 
@@ -122,7 +122,7 @@
   (test-case "Find an artifact using the right shovel"
     (define (indy req)
       (subprogram-unit
-       (artifact
+       (make-artifact
         (if req #"t" #"f"))))
 
     (define (check v expected)
