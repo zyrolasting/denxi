@@ -85,10 +85,10 @@ Given a shovel with all expectations...
 
 @racketblock[
 (artifact (http-source "https://example.com/some-file")
-          (integrity-info 'sha3-384
-                          (http-source "https://example.com/some-file.sha3-384"))
-          (signature-info (http-source "https://example.com/public.pem")
-                          (http-source "https://example.com/some-file.sha3-384.sig")))
+          (integrity 'sha3-384
+                     (http-source "https://example.com/some-file.sha3-384"))
+          (signature (http-source "https://example.com/public.pem")
+                     (http-source "https://example.com/some-file.sha3-384.sig")))
 ]
 
 }

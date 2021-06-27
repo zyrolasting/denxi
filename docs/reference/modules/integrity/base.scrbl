@@ -20,9 +20,9 @@ concern for the implementation of said functions.
 
 
 @defstruct*[integrity ([chf-symbol any/c] [digest any/c])]{
-Represents integrity information for content. Content passes an
-@tech{integrity check} if it, when applied to the CHF named by
-@racket[chf-symbol], produces @racket[digest].
+Represents integrity information for content. An instance passes
+@racket[check-integrity] if data processed by the CHF named by
+@racket[chf-symbol] maps to @racket[digest].
 
 The fields may be any value to address particular scenarios.  Use
 @racket[raw-integrity?], @racket[well-formed-integrity?],
@@ -159,7 +159,7 @@ digest must represent @italic{all} bytes drawn from the port.
 The CHFs trusted by the user for digest creation.
 
 Defaults to @racket[null], which disables digest creation and
-@tech{integrity checks}.
+integrity checks.
 }
 
 

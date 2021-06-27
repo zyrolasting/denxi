@@ -5,7 +5,7 @@
 @require[@for-label[racket/base
                     racket/contract
                     racket/pretty
-                    ffi/unsafe
+                    @rename-in[ffi/unsafe (-> -->)]
                     xiden/crypto]
          racket/pretty
          xiden/crypto
@@ -26,7 +26,7 @@ objects. The cache operates independently of accumulated errors.
 }
 
 @defproc[(crypto-get-lib!) (or/c ffi-lib? exn?)]{
-Returns a @tech/reference{foreign-library value} for the bundled
+Returns a @tech/foreign{foreign-library value} for the bundled
 cryptographic library, or an exception explaining why it failed to
 load.
 
@@ -41,7 +41,7 @@ again. This will replace the cached exception.
                           [type ctype?])
                           any/c]{
 Behaves like @racket[get-ffi-obj] when @racket[(get-crypto-lib!)] is
-a @tech/reference{foreign-library value}.
+a @tech/foreign{foreign-library value}.
 
 Returns @racket[#f] if the cryptography library is cached as an
 exception, or if @racket[objname] was not found in the library.

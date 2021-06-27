@@ -5,6 +5,7 @@
                     xiden/message
                     xiden/integrity
                     xiden/signature
+                    xiden/signature/base
                     xiden/signature/ffi
                     xiden/source]]
 
@@ -24,13 +25,11 @@ foreign library for the purposes of integrity checking operations.
 
 @defthing[signature-ffi-make-signature! make-signature/c]{
 Returns bytes for a new signature.
-See @racket[make-signature/c].
 }
 
 
 @defthing[signature-ffi-verify-signature! verify-signature/c]{
 Returns @racket[#t] if a signature was verified by a public key.
-See @racket[make-signature/c].
 }
 
 

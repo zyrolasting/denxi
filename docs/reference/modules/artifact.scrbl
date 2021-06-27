@@ -16,23 +16,51 @@
 
 @defmodule[xiden/artifact]
 
-@defstruct*[artifact-info ([source source-variant?]
-                           [integrity (or/c #f well-formed-integrity-info/c)]
-                           [signature (or/c #f well-formed-signature-info/c)])]{
-An @deftech{artifact} is an instance of @racket[artifact-info].  Each
+
+@defstruct*[($artifact $message) () #:prefab]{
+A @tech{message} pertaining to an artifact.
+}
+
+@defstruct*[($artifact:integrity $artifact)
+            ([status symbol?]
+             [chf-symbol (or/c #f symbol?)]) #:prefab]{
+Shows the status of an integrity check performed on an artifact.
+
+@racket[status] is a value returned from @racket[check-integrity].
+
+@racket[chf-symbol] is the symbolic name of the CHF used in the
+integrity check, or @racket[#f] if the CHF was missing.
+}
+
+@defstruct*[($artifact:signature $artifact)
+            ([status symbol?]
+             [public-key (or/c #f bytes?)]) #:prefab]{
+Shows the status of a signature verification performed on an artifact.
+
+@racket[status] is a value returned from @racket[check-signature].
+
+@racket[public-key] is the unencoded bytes of the public key used to
+verify the signature, or @racket[#f] if the public key was missing.
+}
+
+
+@defstruct*[artifact ([source source-variant?]
+                      [integrity (or/c #f well-formed-integrity?)]
+                      [signature (or/c #f well-formed-signature?)])]{
+An @deftech{artifact} is an instance of @racket[artifact].  Each
 instance provides a @tech{source} and the means to verify the bytes
 produced when the source is @tech{tapped}.
 }
 
-@defproc[(artifact [source source-variant?]
-                   [int (or/c #f well-formed-integrity-info/c) #f]
-                   [sig (or/c #f well-formed-signature-info/c) #f])
-                   artifact-info?]{
-An abbreviated constructor for @racket[artifact-info].
+@defproc[(make-artifact [source source-variant?]
+                        [int (or/c #f well-formed-integrity?) #f]
+                        [sig (or/c #f well-formed-signature?) #f])
+                        artifact?]{
+A constructor for @racket[artifact].
 }
 
 
-@defproc[(verify-artifact [arti artifact-info?] [pathrec path-record?])
+@defproc[(verify-artifact [arti artifact?] [pathrec path-record?])
          (subprogram/c void?)]{
 Returns a @tech{subprogram} that fails in the event an @tech{artifact}
 does not meet the restrictions set by the @tech{runtime
@@ -45,14 +73,14 @@ ability to halt @tech{subprograms} when an artifact fails
 verification.
 }
 
-@defproc[(fetch-artifact [name string?] [arti artifact-info?])
+@defproc[(fetch-artifact [name string?] [arti artifact?])
          (subprogram/c path-record?)]{
 Like @racket[subprogram-fetch], but the content is expected to be an
 @tech{artifact}.
 }
 
 
-@defproc[(lock-artifact [arti artifact-info?]
+@defproc[(lock-artifact [arti artifact?]
                         [exhaust exhaust/c raise]
                         [#:content? content? any/c #t]
                         [#:integrity? integrity? any/c #t]
@@ -61,30 +89,30 @@ Like @racket[subprogram-fetch], but the content is expected to be an
                         [#:digest-budget digest-budget budget/c +inf.0]
                         [#:public-key-budget public-key-budget budget/c +inf.0]
                         [#:signature-budget signature-budget budget/c +inf.0])
-                        artifact-info?]{
-Returns a functionally-updated @racket[artifact-info].
+                        artifact?]{
+Returns a functionally-updated @racket[artifact].
 
 When @racket[content?] is a true value, then the
-@racket[artifact-info-source] field @racketid[C] is replaced by
+@racket[artifact-source] field @racketid[C] is replaced by
 
 @racketblock[
 (lock-source C content-budget exhaust)
 ]
 
 When @racket[integrity?] is a true value, then the
-@racket[artifact-info-integrity] field @racketid[I] is replaced by
+@racket[artifact-integrity] field @racketid[I] is replaced by
 
 @racketblock[
-(lock-integrity-info #:digest-budget digest-budget
-                     exhaust)
+(lock-integrity #:digest-budget digest-budget
+                exhaust)
 ]
 
-When @racket[signature?] is a true value, then the @racket[artifact-info-signature]
+When @racket[signature?] is a true value, then the @racket[artifact-signature]
 field @racketid[S] is replaced by
 
 @racketblock[
-(lock-signature-info #:public-key-budget public-key-budget
-                     #:signature-budget signature-budget
-                     S exhaust)
+(lock-signature #:public-key-budget public-key-budget
+                #:signature-budget signature-budget
+                S exhaust)
 ]
 }

@@ -13,11 +13,11 @@
                     xiden/query
                     xiden/version
                     @only-in[xiden/url url-string?]
-                    @except-in[xiden/pkgdef #%module-begin]]
+                    @except-in[xiden/pkgdef artifact #%module-begin]]
          @for-syntax[racket/base
                      racket/list
                      racket/match
-                     @except-in[xiden/pkgdef #%module-begin]]
+                     @except-in[xiden/pkgdef artifact #%module-begin]]
          "../../shared.rkt"]
 
 @title{Package Definitions}

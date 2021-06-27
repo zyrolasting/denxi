@@ -35,6 +35,9 @@
 (define xiden-white-paper
   '(lib "xiden/docs/white-paper/xiden-white-paper.scrbl"))
 
+(define foreign
+  '(lib "scribblings/foreign/foreign.scrbl"))
+
 (define-for-syntax (reformat-syntax stx v)
   (replace-context stx
     (read-syntax #f (open-input-string (with-output-to-string (λ () (pretty-write v)))))))
@@ -50,6 +53,9 @@
 
 (define (tech/xiden-tutorials tag)
   (tech #:doc xiden-tutorials tag))
+
+(define (tech/foreign tag)
+  (tech #:doc foreign tag))
 
 (define (tutorial tag)
   (secref #:doc xiden-tutorials tag))

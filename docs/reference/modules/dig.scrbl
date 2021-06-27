@@ -50,7 +50,7 @@ argument used for the shovel.
 
 
 @defthing[shovel/c chaperone-contract?
-                   #:value (-> any/c (subprogram/c artifact-info?))]{
+                   #:value (-> any/c (subprogram/c artifact?))]{
 A @tech/reference{chaperone contract} for procedures that carry out
 @tech{digs}. They must return @tech{subprograms} to capture
 possible @tech{messages} for failure conditions.
@@ -59,7 +59,7 @@ possible @tech{messages} for failure conditions.
 
 @defproc[(find-artifact [hint any/c]
                         [shovel shovel/c (current-shovel)])
-                        (subprogram/c artifact-info?)]{
+                        (subprogram/c artifact?)]{
 Returns a @tech{subprogram} used to find an @tech{artifact} with
 the given @tech{shovel}.
 

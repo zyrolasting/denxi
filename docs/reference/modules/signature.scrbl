@@ -6,6 +6,7 @@
                     xiden/message
                     xiden/integrity
                     xiden/signature
+                    xiden/signature/base
                     xiden/source]
          @for-syntax[xiden/signature]
          xiden/signature]

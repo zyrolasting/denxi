@@ -14,7 +14,7 @@
 
 @defmodule[xiden/dig/memory]
 
-@defproc[(make-memory-shovel [contents (hash/c any/c artifact-info?)]) shovel/c]{
+@defproc[(make-memory-shovel [contents (hash/c any/c artifact?)]) shovel/c]{
 Returns a @tech{shovel} that behaves similarly to @racket[(curry
 hash-ref contents)]. If the returned procedure cannot find an artifact
 in @racket[contents] for some @racketid[key], then it will behave like
@@ -43,9 +43,9 @@ names and numbers as shown.
 (define packages (hash-ref providers "example.com"))
 (define editions (hash-ref packages "rpg"))
 (define revisions (hash-ref editions "directors-cut"))
-(artifact-info? (hash-ref revisions 0))
-(artifact-info? (hash-ref revisions 28))
-(artifact-info? (hash-ref revisions (hash-ref revisions "re-release")))
+(artifact? (hash-ref revisions 0))
+(artifact? (hash-ref revisions 28))
+(artifact? (hash-ref revisions (hash-ref revisions "re-release")))
 ]
 
 As indicated by the last line, each hash table may map keys to other

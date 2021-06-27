@@ -14,13 +14,13 @@
 
 @title{Integrity Checking}
 
-@section{High-level Integrity Operations}
-
 @defmodule[xiden/integrity]
 
 @racketmodname[xiden/integrity] reprovides
 @racketmodname[xiden/integrity/base], and is meant for use as a
 high-level interface to the integrity checking subsystem.
+
+@section{High-level Integrity Operations}
 
 @defproc[(load-builtin-chf [name symbol?]
                            [fail-thunk (-> any) (lambda () (raise ($chf-unavailable name)))])
@@ -58,7 +58,7 @@ Or, if the integrity information uses a @tech{source} for the digest
 and that source is exhausted, returns @racket[exhaust] applied to the
 contextual failure value.
 
-@racket[(raw-integrity-info? L)] is @racket[#t] if a new digest can be
+@racket[(raw-integrity? L)] is @racket[#t] if a new digest can be
 created using no more than @racket[digest-budget] bytes of overhead in
 the content. Otherwise, @racket[L] is @racket[eq?] to @racket[to-lock].
 }

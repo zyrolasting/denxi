@@ -52,8 +52,8 @@ notary only when prototyping signature verification.
 }
 
 @defproc[(notarize [the-notary notary?]
-                   [trusted-content (or/c artifact-info? source-variant?)])
-                   (subprogram/c artifact-info?)]{
+                   [trusted-content (or/c artifact? source-variant?)])
+                   (subprogram/c artifact?)]{
 Returns a @tech{subprogram} that computes a new @tech{artifact} in
 terms of the @tech{source} accessible through
 @racket[trusted-content].
@@ -71,13 +71,13 @@ trusted by the caller. No safety limits will be in place when drawing
 bytes from its @tech{source} to compute a digest.
 
 If integrity information @racketid[I] is in the output artifact, then
-@racket[(integrity-info-algorithm I)] is @racket[eq?] to
-@racket[(notary-chf the-notary)]. @racket[(integrity-info-digest I)]
+@racket[(integrity-chf-symbol I)] is @racket[eq?] to
+@racket[(notary-chf the-notary)]. @racket[(integrity-digest I)]
 is the digest computed using @racket[trusted-content].
 
 If signature information @racketid[S] is in the output artifact, then
-@racket[(signature-info-pubkey S)] is @racket[eq?] to
+@racket[(signature-pubkey S)] is @racket[eq?] to
 @racket[(notary-public-key-source
-the-notary)]. @racket[(signature-info-body S)] is a signature computed
-using @racket[(integrity-info-digest I)].
+the-notary)]. @racket[(signature-body S)] is a signature computed
+using @racket[(integrity-digest I)].
 }

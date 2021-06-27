@@ -27,7 +27,7 @@ configuration"], which ultimately controls arguments to
 
 @defproc[(restrict [#:memory-limit memory-limit (>=/c 0)]
                    [#:time-limit time-limit (>=/c 0)]
-                   [#:trusted-executables trusted-executables (listof well-formed-integrity-info/c)]
+                   [#:trusted-executables trusted-executables (listof well-formed-integrity?)]
                    [#:allowed-envvars allowed-envvars (listof (or/c bytes-environment-variable-name? string?))]
                    [#:implicitly-trusted-host-executables implicitly-trusted-host-executables (listof string?)]
                    [#:trust-any-executable? trust-any-executable? any/c]
@@ -157,7 +157,7 @@ certificates are verified by a trusted party.
 @bold{Dangerous}. When true, allow the Racket runtime to start a subprocess with any executable.
 }
 
-@defsetting[XIDEN_TRUST_EXECUTABLES (listof well-formed-integrity-info/c)]{
+@defsetting[XIDEN_TRUST_EXECUTABLES (listof well-formed-integrity?)]{
 Like @racket[XIDEN_TRUST_PUBLIC_KEYS], but used to verify
 executables a @tech{package} tries to use when creating a subprocess.
 

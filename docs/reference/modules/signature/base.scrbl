@@ -4,7 +4,7 @@
          @for-label[racket
                     xiden/message
                     xiden/integrity
-                    xiden/signature
+                    xiden/signature/base
                     xiden/signature/ffi
                     xiden/source]]
 
@@ -41,7 +41,7 @@ Arguments
 ]
 }
 
-@defthing[trust-signature/c
+@defthing[verify-signature/c
           chaperone-contract?
           #:value (-> bytes?
                       symbol?
