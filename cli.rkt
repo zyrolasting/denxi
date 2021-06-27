@@ -300,22 +300,24 @@
     (define formatter (get-message-formatter))
     (define stdout (open-output-bytes))
     (define stderr (open-output-bytes))
-    (call-with-values
+    (call-with-snake-oil-cipher-trust
      (λ ()
-       (parameterize ([current-output-port stdout]
-                      [current-error-port stderr])
-         (launch-xiden! #:arguments args
-                        #:format-message
-                        (λ (m)
-                          (set! messages (cons m messages))
-                          (formatter m))
-                        #:handle-exit
-                        (λ (status)
-                          (values status
-                                  (reverse messages)
-                                  (get-output-bytes stdout #t)
-                                  (get-output-bytes stderr #t))))))
-     continue))
+       (call-with-values
+        (λ ()
+          (parameterize ([current-output-port stdout]
+                         [current-error-port stderr])
+            (launch-xiden! #:arguments args
+                           #:format-message
+                           (λ (m)
+                             (set! messages (cons m messages))
+                             (formatter m))
+                           #:handle-exit
+                           (λ (status)
+                             (values status
+                                     (reverse messages)
+                                     (get-output-bytes stdout #t)
+                                     (get-output-bytes stderr #t))))))
+        continue))))
 
   (define (check-link link-path path)
     (check-pred link-exists? link-path)
