@@ -276,19 +276,27 @@
   [($artifact:signature status public-key)
    (~a "signature check: "
        (case status
-         [(pass)
+         [(signature-verified)
           "passed verification"]
 
-         [(pass/unsigned)
+         [(signature-unverified)
+          "failed verification"]
+
+         [(skip)
+          "trusting implicitly"]
+
+         [(skip-unsigned)
           "trusting unsigned"]
 
-         [(fail/unsigned)
+         [(unsigned)
           (format "signature required (bypass: ~a)"
                   (format-cli-flags --trust-unsigned))]
 
-         [(curb)
+         [(blocked-public-key)
           (define preamble "untrusted public key")
           (define chf (get-default-chf))
+          (copy-port (open-input-bytes public-key)
+                     (current-output-port))
           (if chf
               ((λ (relevant-setting-id encoded)
                  (~a preamble "\n"
@@ -296,26 +304,22 @@
                      "(integrity '" chf " (base64 " (~s encoded) "))"))
                (setting-id XIDEN_TRUST_PUBLIC_KEYS)
                (encode 'base64 (make-digest public-key)))
-              preamble)]
-
-         [(fail)
-          "failed verification"]))]
-
+              preamble)]))]
 
   [($artifact:integrity status chf)
    (~a "integrity check: "
        (case status
-         [(pass)
-          "digest match"]
+         [(digests-match)
+          "digests match"]
 
-         [(fail)
-          "digest mismatch. To bypass (at great risk) use ~a"
-          (format-cli-flags --trust-any-digest)]
+         [(digests-differ)
+          (format "digests differ. To (dangerously) bypass, use ~a"
+                  (format-cli-flags --trust-any-digest))]
 
          [(malformed-input)
           "malformed input"]
 
-         [(curb)
+         [(blocked-chf)
           (format "not trusting CHF ~a. To bypass, add '~a to ~a"
                   chf
                   (setting-id XIDEN_TRUST_CHFS))]
@@ -458,9 +462,7 @@
   [($chf-unavailable chf)
    (if chf
        (~a "No implementation available for CHF " chf)
-       (~a "No CHF implementations installed. Did you set "
-           (setting-id XIDEN_TRUST_CHFS)
-           "?"))]
+       "No cryptographic hash functions installed")]
 
   [($cycle key)
    (format "Found cycle at ~s. You may have a circular dependency." key)]
