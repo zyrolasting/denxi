@@ -5,7 +5,7 @@
 @title{Abstract Package I/O}
 
 An @deftech{abstract package input} (or just “abstract input”) is a
-@tech/xiden-guide{package input} with only a name.
+package input with only a name.
 
 @racketblock[(input "server.rkt")]
 

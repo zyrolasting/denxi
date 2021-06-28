@@ -208,7 +208,7 @@ more resources, and are vulnerable to non-termination. Stop using
 @racket[sxs] the moment you don't need it.
 
 @racket[sxs] is useful for handling unwanted
-@tech/xiden-tutorials{package conflicts}. Re-running a single
+@tech/xiden-topics{package conflicts}. Re-running a single
 installation using @racket[sxs] will force installation of conflicting
 packages without disturbing other installed packages.
 

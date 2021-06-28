@@ -5,7 +5,7 @@
 @title[#:tag "queries"]{Queries}
 
 A @deftech{package query} is a colon-separated string used to identify
-@tech{package definitions}. An example looks like
+@tech/xiden-guide{package definitions}. An example looks like
 @tt{example.com:calculator}, and that one is understood to mean “the
 @tt{calculator} package provided by @tt{example.com}.”
 
@@ -23,8 +23,8 @@ provider, and not the package name.
 @section{Specifying an Edition}
 
 If you prefer a scientific calculator, the package author can provide
-that design under a different @tech{edition}. Specify an edition using
-the next field.
+that design under a different @tech/xiden-reference{edition}. Specify
+an edition using the next field.
 
 @verbatim|{
 example.com:calculator:scientific
@@ -33,7 +33,8 @@ example.com:calculator:scientific
 
 @section{Specifying Accepted Revisions}
 
-The next field is for requesting a specific @tech{revision} of a package.
+The next field is for requesting a specific
+@tech/xiden-reference{revision} of a package.
 
 @verbatim|{
 example.com:calculator:scientific:288
@@ -94,8 +95,9 @@ beta, then you would have to know the revision number in advance of
 writing the query. With the interval flags, you do not have to know
 any revision numbers.
 
-When resolving @tech{revision names}, Xiden will raise an error for
-queries like these because they each resolve to a backwards interval:
+When resolving @tech/xiden-reference{revision names}, Xiden will raise
+an error for queries like these because they each resolve to a
+backwards interval:
 
 @verbatim|{
 example.com:calculator:scientific:production:closed-beta

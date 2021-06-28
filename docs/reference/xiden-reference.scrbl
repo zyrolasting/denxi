@@ -6,24 +6,9 @@
 @title[#:style '(toc)]{Xiden Reference}
 @author[(author+email "Sage L. Gerard" "sage@sagegerard.com" #:obfuscate? #t)]
 
-This is the API reference for Xiden.
+Xiden distributes software, and this is its reference material.
 
 For all documentation, see @other-doc[xiden-index].
-
-@bold{Warning}: The API is currently unstable.
-
-Xiden uses @tech{package definitions} to build directories and issue
-symbolic links to those directories.  A garbage collector deletes any
-directory it created once it has no known symbolic links. When given
-the oppurtunity to perform file or network I/O, Xiden will proceed
-only with the user's consent.
-
-Since dependency management is subjective, Xiden allows users to
-define custom @tech{launchers} that configure Xiden with privileged
-code. For security, Xiden also ships with a launcher called
-@litchar{xiden} that defaults to a zero-trust configuration.
-
-This section covers the modules that cooperate to these ends.
 
 @table-of-contents[]
 

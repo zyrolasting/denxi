@@ -3,11 +3,13 @@
 @require[@for-label[racket/base]
          "../shared.rkt"]
 
-@title{Xiden Tutorials}
+@title{Xiden Topics}
 
-Each section of this document covers how to accomplish a well-defined
-task using Xiden, when doing so would be tangential to other
-documents. For the most part, each section stands alone.
+Xiden distributes software, and this document covers related topics in
+no particular order.
+
+The best way to use this document is to visit cited sections from the
+context of other documents.
 
 For all documentation, see @other-doc[xiden-index].
 
@@ -23,3 +25,9 @@ For all documentation, see @other-doc[xiden-index].
 @include-section{override-inputs.scrbl}
 @include-section{securing-launch.scrbl}
 @include-section{conflicts.scrbl}
+@include-section{duplicate-outputs.scrbl}
+@include-section{determinism.scrbl}
+@include-section{fetch-command.scrbl}
+@include-section{show-command.scrbl}
+@include-section{queries.scrbl}
+@include-section{launcher-security.scrbl}

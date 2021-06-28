@@ -33,6 +33,5 @@
   '(("docs/index/xiden-index.scrbl" () (tool))
     ("docs/reference/xiden-reference.scrbl" (multi-page) (tool-library))
     ("docs/guide/xiden-guide.scrbl" (multi-page) (other))
-    ("docs/practices/xiden-practices.scrbl" (multi-page) (other))
-    ("docs/tutorials/xiden-tutorials.scrbl" (multi-page) (other))
+    ("docs/topics/xiden-topics.scrbl" (multi-page) (other))
     ("docs/white-paper/xiden-white-paper.scrbl" () (other))))

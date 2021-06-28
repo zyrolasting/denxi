@@ -2,56 +2,33 @@
 
 @require["../shared.rkt" @for-label[racket/base]]
 
-@title{What is Xiden? Why use it?}
+@title{Why Xiden?}
 
-Xiden creates symbolic links and the directories they mention. Xiden
-is useful because it does so in a reproducible way, under a lot of
-safety checks and a default zero-trust configuration.
-
-I inially wrote Xiden to transcend the limitations of @tt{raco
-pkg}. In @tt{raco pkg}, you couldn't pin versions, you couldn't
-release breaking changes elegantly, and each package installation
-mutated the running Racket installation. Worse, I found that conflicts
-were possible if two complete strangers have an overlapping directory
-structure in their projects, and those conflicts were not easy to
-reconcile.
-
-Now, I am writing Xiden to fulfil a mission: To make a dependency
-manager that adapts to any process. No matter what form of dependency
-hell or human error you encounter in third-party software, Xiden's
-goal is to solve it without changing anything more than a
-configuration.
-
-Those open to trying Xiden will enjoy a few benefits.
+@margin-note{@other-doc[xiden-white-paper] covers the thinking behind
+Xiden.}
+Xiden is an application and a library for distributing software.  It
+is one of many projects to make that claim, so you'll want to use it
+for these benefits.
 
 @itemlist[
 
-@item{Xiden treats your explicit consent as sacrosanct, and the
-documentation educates you on the implications of your decisions.}
-
-@item{Xiden defaults to a zero-trust configuration, because the
-alternative is
+@item{Your explicit, informed consent is considered sacred because of
+a zero-trust configuration (The alternative is
 @hyperlink["http://www.ranum.com/security/computer_security/editorials/dumb/"]{a
-really bad idea}.}
+really bad idea)}.}
 
-@item{Xiden has checks everywhere, from server authentication and
-signature verification to safety limits on data transfers. You can
-even revoke trust in cryptographic hash functions if one is
-compromised. It is also not difficult to swap Xiden's verification
-backends from (say) OpenSSL to GPG.}
+@item{If you don't like how a software installation affects your system, you can override it.}
 
-@item{Xiden does not mutate your Racket installation when working.}
+@item{If you don't like Xiden itself, it will help you create an alternative that fits you.}
 
-@item{Xiden is cross platform.}
+@item{(@litchar{npm} users) You'll have more safety checks to protect your system.}
 
-@item{Xiden, being a Racket program, enables you to write DSLs for
-custom software distribution.}
+@item{(@litchar{raco pkg} users) You won't mutate your Racket installation when installing software.}
 
-@item{Xiden can be configured to accept custom notations in its
-command-line interface, and to use data from any source.}
+@item{(PLaneT users) You can install multiple versions of a project without generating non-@racket[eq?] bindings.}
 
-@item{Xiden follows functional programming principles to such a degree
-that an entire Xiden program can be stored in memory as a Racket
-value.}
+@item{(Guix/Nix users) You get the benefits you expect on Windows, macOS, and GNU/Linux distributions out of the box.}
+
+@item{(End users on Steam, Play Store, etc.) Someone can use Xiden to help you get out from under corporate interests.}
 
 ]

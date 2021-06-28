@@ -4,6 +4,7 @@
 
 (require scribble/manual
          syntax/strip-context
+         racket/format
          (for-syntax racket
                      syntax/stx
                      syntax/strip-context
@@ -26,11 +27,8 @@
 (define xiden-guide
   '(lib "xiden/docs/guide/xiden-guide.scrbl"))
 
-(define xiden-tutorials
-  '(lib "xiden/docs/tutorials/xiden-tutorials.scrbl"))
-
-(define xiden-practices
-  '(lib "xiden/docs/practices/xiden-practices.scrbl"))
+(define xiden-topics
+  '(lib "xiden/docs/topics/xiden-topics.scrbl"))
 
 (define xiden-white-paper
   '(lib "xiden/docs/white-paper/xiden-white-paper.scrbl"))
@@ -51,17 +49,14 @@
 (define (tech/xiden-reference tag)
   (tech #:doc xiden-reference tag))
 
-(define (tech/xiden-tutorials tag)
-  (tech #:doc xiden-tutorials tag))
+(define (tech/xiden-topics tag)
+  (tech #:doc xiden-topics tag))
 
 (define (tech/foreign tag)
   (tech #:doc foreign tag))
 
-(define (tutorial tag)
-  (secref #:doc xiden-tutorials tag))
-
-(define (practice tag)
-  (secref #:doc xiden-practices tag))
+(define (topic . tags)
+  (secref #:doc xiden-topics (apply ~a tags)))
 
 (define-for-syntax (infer-contract-expr stx s)
    (define proc (setting-valid? s))

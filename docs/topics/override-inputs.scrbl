@@ -5,8 +5,8 @@
 
 @title{Overriding Inputs}
 
-You may override @tech/xiden-guide{package inputs} using some launcher
-@litchar{xi}. One way is to use the command line interface.
+You may override package inputs for some launcher @litchar{xi}. One
+way is to use the command line interface.
 
 @verbatim|{
 $ xi do +a definition.rkt +o '^leagues:baseball' '(input "umpire" ...)'
@@ -16,8 +16,7 @@ The command line adds overrides to @racket[XIDEN_INPUT_OVERRIDES],
 which applies to all packages in the scope of a transaction.  Each
 override takes two arguments. The first is a readable Perl-style
 (@racket[pregexp]) regular expression that matches against a
-@tech/xiden-guide{package query}. The second is the code for an input
-expression.
+@tech{package query}. The second is the code for an input expression.
 
 When Xiden processes packages, it will build a package query using
 only the provider, package name, edition and revision number

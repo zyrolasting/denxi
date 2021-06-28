@@ -27,11 +27,10 @@ names are part of an installed directory's identity. If they
 @italic{all} match for a package that's about to be installed, then we
 get a cache hit.
 
-You can imagine that conflicts would be rare in practice, but there
-are scenarios where they pop up. Conflicts are a problem when you are
-expecting to install something other than what's cached, and you don't
-want to uninstall anything either. This tutorial explains how to have
-@italic{and} eat that cake.
+You can imagine that conflicts would be rare in practice, but they pop
+up if you are prototyping your own packages. In general, conflicts are
+a problem anytime you expect to install something other than what's
+cached.
 
 Depending on the nature of the code leading up to the cache hit, a
 Xiden programmer might respond differently. This tutorial will cause
@@ -96,7 +95,7 @@ Assume you want to quickly test a package definition. You fire up your
 text editor, jot this down, save the file, and exit the text editor
 faster than the time it will take for you to finish this paragraph.
 You don't re-open the file to proofread. Parentheses flow from you
-like the walking printing press that we all know you are.
+like the Lisp master that we all know you are.
 
 @racketmod[
 xiden

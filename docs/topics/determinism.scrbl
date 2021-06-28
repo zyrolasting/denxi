@@ -30,33 +30,31 @@ One can ease the chore using remote sources.
            (http-source "https://example.com/my-file.sha384.sig")))
 ]
 
-This decouples the package definition from content. When an
-administrator updates the file, digest, or signature, the package
-definition does not have to change. Xiden will still protect the user
-from unwanted data by checking trust against public keys,
-cryptographic hash functions, and network safety limits. However, the
-act of fetching artifact data is no longer deterministic because
-servers can go down, or return different responses for the same
-request.
+This decouples the artifact from its content, and Xiden will still
+protect the user from unwanted data by checking trust against public
+keys, cryptographic hash functions, and network safety
+limits. However, the act of fetching artifact data is no longer
+deterministic because servers can go down, or return different
+responses for the same request. If signature checking is disabled,
+this arrangement is especially dangerous.
 
 The first step towards determinism is hosting a local copy of at least
 the integrity information. This does not make the build fully
-reproducible because content and signature infromation might still be
-unavailable.  Local integrity still makes a difference because you or
-your team asserts what bytes are correct, and not an external
-source. Lock files are built on this premise for other dependency
-managers.
+reproducible because the content and signature might be unavailable.
+Local integrity still makes a difference because you or your team
+asserts what bytes are correct, and not an external source. Lock files
+are built on this premise for other dependency managers.
 
 Lock files are not necessary when you leverage Xiden's design, which
 caches all fulfilled data. When you install software starting from
 zero-trust, a successful installation implies that your system
 contains an integrous copy of authenticated data. You can either check
-your @tech/xiden-reference{workspace} into source control or archive
-it for distribution as a file. You may need to sign the archive or
-commit for others to decide if they trust your distribution. When the
-workspace is sent to another user's system, the links may be invalid,
-but the data will be locally present. This means that when a user
-installs package definitions, outputs will be reused normally. On the
-other hand, collecting garbage before installing anything will delete
-everything in that workspace unless symbolic links are preserved in
-the transfer.
+your @tech/xiden-reference{workspace} into source control, archive it
+for distribution as a file, and write a package definition to download
+that workspace. You may need to sign the archive or commit for others
+to decide if they trust your distribution. When the workspace is sent
+to another user's system, the links may be invalid, but the data will
+be locally present. This means that when a user installs package
+definitions, outputs will be reused normally. On the other hand,
+collecting garbage before installing anything will delete everything
+in that workspace unless symbolic links are preserved in the transfer.

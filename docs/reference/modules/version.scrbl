@@ -3,7 +3,7 @@
 @require[@for-label[racket/base racket/contract xiden/version]
           "../../shared.rkt"]
 
-@title{Versions}
+@title[#:tag "versions"]{Versions}
 
 @defmodule[xiden/version]
 
@@ -12,20 +12,21 @@ A @tech{package definition} has a @tech{version}.
 A @deftech{version} is a combination of an @tech{edition} and a
 @tech{revision}.
 
-An @deftech{edition} is a non-empty string.
+An @deftech{edition} is a non-empty string that names a target
+audience.
 
 An @tech{edition} has at least one @tech{revision}.
 
-A @deftech{revision} is either a @tech{revision number} or a @tech{revision name}.
+A @deftech{revision} is an implementation of an @tech{edition}. We
+select a revision using a @tech{revision number} or a @tech{revision
+name}.
 
-A @deftech{revision number} is an exact non-negative integer.
+A @deftech{revision number} is an exact non-negative integer that
+starts at @racket[0].
 
-A @deftech{revision name} is a string alias for a @tech{revision number}.
-
-A @tech{revision name} should not repeat within an @tech{edition}, but
-may repeat across editions.
-
-@tech{Revision numbers} start counting from @racket[0].
+A @deftech{revision name} is a string alias for a @tech{revision
+number} that contains at least one non-digit. A revision name may
+repeat across but not within @tech{editions}.
 
 
 @defthing[revision-number? predicate/c]{

@@ -7,7 +7,7 @@
                     xiden/monad
                     @only-in[xiden/pkgdef output]]]
 
-@title[#:tag "monads"]{An Informal Overview of Xiden's Monadic “Do” Notation}
+@title[#:tag "monads"]{Monads}
 
 Some subprograms in Xiden use an alternative notation within a
 @racket[output] or @racket[mdo] form.

@@ -8,46 +8,40 @@
                     xiden/crypto]
                     "../shared.rkt"]
 
+We need confidence that data has good integrity, meaning that it
+wasn't tampered with during transmission.
+
 Xiden uses @deftech{cryptographic hash functions}
 (@tech/xiden-reference{CHF}s) to turn data into fixed-length byte
 strings called @italic{digests}. If two digests match, then we can
-reasonably assume they were created using the same content. That is,
-unless the CHF has a @italic{collision}, where two blobs produce the
-same digest. In the event a CHF is compromised by a researcher or
-attacker, you can revoke trust in that CHF by removing it from the
-@racket[XIDEN_TRUST_CHFS] setting.
+reasonably assume they were created using the same content.
 
-Xiden checks the integrity for some data using the following
-expression:
+It's possible for a CHF to have a @italic{collision}, where different
+data maps to the same digest. In the event a CHF is compromised by a
+researcher or attacker, you can revoke trust in that CHF.
 
-@racketblock[
-(require xiden/integrity)
-(check-integrity #:trust-bad-digest
-                 (XIDEN_TRUST_BAD_DIGEST)
-                 #:trust-message-digest-algorithms
-                 (XIDEN_TRUST_CHFS)
-                 data)]
-
-Since an integrity check is controlled by a
-@tech/xiden-reference{runtime configuration}, you can see why it is
-part of Xiden's attack surface.
+Xiden checks the integrity for some data using
+@racket[check-integrity].
 
 
 @section{Relationship to OpenSSL}
 
-When you have OpenSSL installed on your system, you can create a
-digest using the @litchar{openssl dgst} command.
+If you have an @litchar{openssl} binary, you can use it to create a
+digest.
+
+@margin-note{@litchar{-sha3-384} might not be available on your
+system, which will make @litchar{openssl dgst} complain that it
+doesn't recognize the option. The error should show you a command to
+list supported CHFs that you can use instead.}
 
 @verbatim|{
-$ openssl dgst -sha3-384 default.tgz
+$ openssl dgst -sha3-384 my-file
 SHA3-384(default.tgz)= 299e3eb744725387e...
 }|
 
-There's a nuance: You'll only want to trust the digest if you trust
-the input file and the CHF. That's up to you.
-
-Since the OpenSSL command gave us the digest as a hex-string, we can
-express it as integrity information in Xiden.
+You'll only want to trust the digest if you trust the input file and
+the CHF. Since the OpenSSL command gave us the digest as a hex string,
+we can express it as integrity information in Xiden.
 
 @racketblock[
 (require (only-in xiden/codec hex)
@@ -81,5 +75,5 @@ from trusted data using @racket[make-trusted-integrity-info].
 
 @racketblock[
 (require xiden/integrity)
-(make-trusted-integrity-info (build-path "data.tgz") 'sha384)
+(make-trusted-integrity (build-path "data.tgz") 'sha384)
 ]
