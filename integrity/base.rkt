@@ -90,8 +90,8 @@
 
 (struct chf (canonical-name alias-pattern implementation)
   #:property prop:procedure
-  (λ (self in [expected #f])
-    ((chf-implementation self) in expected))
+  (λ (self in)
+    ((chf-implementation self) in))
   #:methods gen:equal+hash
   [(define (equal-proc a b ?)
      (eq? (chf-canonical-name a)
