@@ -271,8 +271,9 @@
               (if content-length-pair
                   (string->number (or (cdr content-length-pair) "+inf.0"))
                   +inf.0))
-        (%fail ($http-failure (string->url coerced-url)
-                              (regexp-match #px"[^\n]+\n" headers-string)
+        (%fail ($http-failure (url->string coerced-url)
+                              (let ([m (regexp-match #px"[^\n]+\n" headers-string)])
+                                (and m (car m)))
                               headers
                               (read-bytes 512 in)))))
 
