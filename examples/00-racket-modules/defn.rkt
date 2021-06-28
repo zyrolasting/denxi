@@ -12,4 +12,6 @@
                       '("(module hello racket/base"
                         "  (provide say-hello)"
                         "  (define (say-hello)"
-                        "    (displayln \"Hello!\")))"))))
+                        "    (displayln \"Hello!\")))"))
+        #f
+        #f))
