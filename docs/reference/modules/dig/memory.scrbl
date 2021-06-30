@@ -30,7 +30,7 @@ in @racket[contents] for some @racketid[key], then it will behave like
 
 @defproc[(make-memory-shovel/pkgdef [contents hash?]
                                     [defaults package-query-defaults-implementation/c])
-                                    dig/c]{
+                                    shovel/c]{
 Returns a @tech{shovel} that searches @racket[contents] for artifacts
 using @tech{package queries}.
 

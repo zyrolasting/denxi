@@ -307,11 +307,43 @@ Like @racket[run-subprogram], but returns only the computed value.
 
 @defmodule[(submod xiden/subprogram test)]
 
+@defproc[(check-subprogram [#:with initial (listof $message?) null]
+                           [subprg subprogram?]
+                           [continue procedure?])
+                           void?]{
+Equivalent to
+
+@racketblock[
+(call-with-values
+  (λ () (run-subprogram subprg initial))
+  continue)]
+
+Use to write assertions against values produced by the
+@tech{subprogram}.
+
+@racketblock[
+(check-subprogram subprg
+  (lambda (value log)
+    (check-eq? value FAILURE)
+    (check-equal? log (list ($show-string "whoops")))))
+]
+
+}
+
 @defproc[(test-subprogram [#:with initial (listof $message?) null]
                           [test-message string?]
                           [subprogram-procedure subprogram?]
                           [continue procedure?])
                           void?]{
-Equivalent to a unit test case with the given @racket[test-message], where the
-test evaluates @racketblock[(call-with-values (λ () (run-subprogram subprogram-procedure initial)) continue)].
+The test form of @racket[check-subprogram].
+}
+
+
+@defproc[(check-subprogram-value [subprg subprogram?] [continue procedure?]) void?]{
+Asserts that @racket[subprg] produces an empty @tech{subprogram log},
+then applies @racket[continue] to the subprogram value.
+}
+
+@defproc[(test-subprogram-value [test-message string?] [subprg subprogram?] [continue procedure?]) void?]{
+The test form of @racket[check-subprogram-value].
 }

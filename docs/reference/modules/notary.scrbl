@@ -14,7 +14,7 @@
 
 @defmodule[xiden/notary]
 
-@defstruct*[notary ([chf chf/c]
+@defstruct*[notary ([chf symbol?]
                     [public-key-source (or/c #f source-variant?)]
                     [private-key-path (or/c #f path-string?)]
                     [private-key-password-path  (or/c #f path-string?)])]{
@@ -26,7 +26,7 @@ perform complete work. Those secrets must be available on the file
 system.
 }
 
-@defproc[(make-notary [#:chf chf chf/c DEFAULT_CHF]
+@defproc[(make-notary [#:chf chf symbol? (get-default-chf)]
                       [#:public-key-source public-key-source (or/c #f path-string?) #f]
                       [#:private-key-path private-key-path (or/c #f path-string?) #f]
                       [#:private-key-password-path
@@ -40,15 +40,18 @@ values for fields.
 
 @defthing[lazy-notary notary?]{
 A @tech{notary} that only creates integrity information using
-@racket[DEFAULT_CHF].
+@racket[(get-default-chf)].
 }
 
-@defthing[fraudulent-notary notary?]{
-A @tech{notary} that creates complete artifacts, using an
-intentionally-leaked keypair sent to your system when installing
-Xiden. @racket[(notarize fraudulent-notary trusted-content)] values
-are implicitly compromised for all @racket[trusted-content]. Use this
-notary only when prototyping signature verification.
+@defproc[(make-fraudulent-notary [chf-name symbol? (get-default-chf)]) notary?]{
+A @tech{notary} that creates complete artifacts using the
+implementation of the named @tech{CHF}, and the
+@racketmodname[xiden/signature/snake-oil] keypair. @racket[(notarize
+(make-fraudulent-notary chf-name) trusted-content)] values are
+implicitly compromised for all values of @racket[trusted-content] and
+@racket[chf-name].
+
+Use only for prototyping signature verification.
 }
 
 @defproc[(notarize [the-notary notary?]
@@ -76,7 +79,7 @@ If integrity information @racketid[I] is in the output artifact, then
 is the digest computed using @racket[trusted-content].
 
 If signature information @racketid[S] is in the output artifact, then
-@racket[(signature-pubkey S)] is @racket[eq?] to
+@racket[(signature-public-key S)] is @racket[eq?] to
 @racket[(notary-public-key-source
 the-notary)]. @racket[(signature-body S)] is a signature computed
 using @racket[(integrity-digest I)].

@@ -24,7 +24,7 @@ of the @tech{digsite metaphor}, the shovels defined herein always
 follow symbolic links.
 
 @defproc[(make-filesystem-shovel [directory-path complete-path?]
-                                 [chf chf/c]
+                                 [chf symbol?]
                                  [public-key-source source-variant?])
                                  shovel/c]{
 Returns a procedure @racket[S], which attempts to produce
@@ -51,7 +51,7 @@ From here, @racket[(S "example")] will produce an artifact based on
 the existing file.
 
 @racketblock[
-(artifact-info (file-source (string->path "/tmp/example")) #f #f)
+(artifact (file-source (string->path "/tmp/example")) #f #f)
 ]
 
 If a file does not exist, then @racket[S] behaves like
@@ -67,10 +67,10 @@ If you do this, then @racket[(dig "example")] will produce this
 enhanced artifact.
 
 @racketblock[
-(artifact-info
+(artifact
   (file-source (string->path "/tmp/example"))
-  (integrity-info 'md5
-                  (file-source (string->path "/tmp/example.md5")))
+  (integrity 'md5
+              (file-source (string->path "/tmp/example.md5")))
   #f)
 ]
 
@@ -95,12 +95,12 @@ In this scenario, @racket[(dig "example")] will produce a complete
 artifact.
 
 @racketblock[
-(artifact-info
+(artifact
  (file-source (string->path "/tmp/example"))
- (integrity-info 'md5
-                 (file-source (string->path "/tmp/example.md5")))
- (signature-info public-key-source
-                 (file-source (string->path "/tmp/example.md5.sig"))))
+ (integrity 'md5
+            (file-source (string->path "/tmp/example.md5")))
+ (signature public-key-source
+            (file-source (string->path "/tmp/example.md5.sig"))))
 ]
 
 
@@ -111,9 +111,9 @@ Formally, signature information appears in the artifact when
 
 
 @defproc[(make-filesystem-shovel/pkgdef [directory-path complete-path?]
-                                        [chf chf/c]
+                                        [chf symbol?]
                                         [defaults package-query-defaults-implementation/c default-package-query-defaults])
-                                        dig/c]{
+                                        shovel/c]{
 Like @racket[make-filesystem-shovel], but specialized for files
 containing @tech{package definitions}.
 

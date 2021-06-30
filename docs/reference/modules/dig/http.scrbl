@@ -6,6 +6,7 @@
                     racket/string
                     xiden/artifact
                     xiden/dig
+                    xiden/dig/filesystem
                     xiden/dig/http
                     xiden/message
                     xiden/integrity
@@ -21,7 +22,7 @@
 @defmodule[xiden/dig/http]
 
 @defproc[(make-http-shovel [base-url url-variant?]
-                           [optional-chf (or/c #f chf/c) #f]
+                           [optional-chf (or/c #f symbol?) #f]
                            [optional-pubkey (or/c #f source-variant?) #f])
                            shovel/c]{
 Returns a @tech{shovel} used to find artifacts @italic{anticipating}

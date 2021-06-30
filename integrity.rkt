@@ -159,7 +159,7 @@
 (define snake-oil-chf
   (chf 'sha1
        #px"^(?i:sha-?1)$"
-       (λ (in _) (sha1-bytes in))))
+       sha1-bytes))
 
 
 (define (call-with-snake-oil-chf-trust f)

@@ -5,6 +5,7 @@
                     racket/contract
                     racket/path
                     racket/sequence
+                    xiden/codec
                     xiden/message
                     xiden/query
                     xiden/state
@@ -403,6 +404,5 @@ deletes any installed files or directories in the @tech{target
 workspace} with no known links.
 
 Returns the estimated number of bytes recovered from disk. Empty
-directories and links are treated as negligibly small, as if they no
-size.
+directories and links are assumed to have no size.
 }

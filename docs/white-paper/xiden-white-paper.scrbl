@@ -36,32 +36,35 @@ other people, assuming that how they operate internally is, by
 definition, separate from an end user's life. It isn't, but we don't
 consult our users about how we should work. So the question is: How
 can I limit the impact of my own biases, and minimize the chance of
-interruption for others when I start changing stuff? It turns out
-versioning is not that helpful of an answer.
+interruption for others when I start changing stuff? I don't think
+versioning was that helpful of an answer.
 
-This comes down to responsibility and control. If something I control
-impacts users and I cannot please everybody, then users should have
-the control. The problem is that users are not always technical, and
-there are still powers that I might need. The line between the two
-might blur, so we need a way to adapt to the complex social dynamics
-that mess with software distribution, I designed Xiden to help
-assemble and distribute its own alternatives, while preserving the end
-user's right to understand and change those alternatives. For more on
-this, see @secref{competition}.
+It comes down to responsibility and control. If something I control
+impacts users and I cannot please everybody else, then everybody
+should have the control. That way they can take responsibility for
+themselves. The problem is that users are not always technical, and
+there are still some powers that I might need to give them good
+software. The line gets blurry, so we need a way to adapt to the
+complex social dynamics that mess with software distribution. I
+designed Xiden to help assemble and distribute its own alternatives,
+while preserving the end user's right to understand and change those
+alternatives. For more on this, see @secref{competition}.
 
-If you aren't familiar with software distribution as a practice and
-cannot understand what I'm on about, that's fine. I'd bet you still
-know that we have a problem with strangers acting like whatever you're
-doing can't be more important than their update. We have confirmation
-dialogs to collect consent, but consent and software have a weird
-relationship.  We have dialogs that act like ”no” doesn't
-@italic{really} mean ”no.” Worse, when you say “yes”, things happen
-that you cannot easily audit.  Updates either hide too much detail for
-informed consent, or show so much detail that you wouldn't want to
-learn it all in the first place. And even if you had good reason to
-deny an update, you don't have the access necessary to make a desired
-change. The end result is the same: You click “Yes” to keep moving,
-and whatever happens happens.
+If you cannot understand what I'm on about, that's fine. I'm a release
+management nerd and I care a lot about very, very boring things. You
+still know that we have a problem with strangers acting like whatever
+you're doing can't be more important than their update. Maybe you get
+an annoying little weather dashboard thing that nobody wants.
+
+We have confirmation dialogs to collect consent, but consent and
+software have a weird relationship.  We have dialogs that act like
+”no” doesn't @italic{really} mean ”no.” Worse, when you say “yes”,
+things happen that you cannot easily audit.  Updates either hide too
+much detail for informed consent, or show so much detail that you
+wouldn't want to learn it all in the first place. And even if you had
+good reason to deny an update, you don't have the access necessary to
+make your own changes. The end result is the same: You click “Yes” to
+keep moving, and whatever happens happens.
 
 Most software teams are not trying to break your devices, but it's
 easy for them to do so. This is where I have to get technical. Below
