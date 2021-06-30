@@ -15,14 +15,14 @@
 
 Unlike @racketmodname[xiden/integrity],
 @racketmodname[xiden/integrity/base] provides fundamental definitions
-for integrity checking and @tech{cryptographic hash functions} without
-concern for the implementation of said functions.
+for integrity checking.
 
 
 @defstruct*[integrity ([chf-symbol any/c] [digest any/c])]{
 Represents integrity information for content. An instance passes
 @racket[check-integrity] if data processed by the CHF named by
-@racket[chf-symbol] maps to @racket[digest].
+@racket[chf-symbol] maps to @racket[digest]. An instance does not
+indicate which implementation of a CHF to use.
 
 The fields may be any value to address particular scenarios.  Use
 @racket[raw-integrity?], @racket[well-formed-integrity?],
@@ -93,21 +93,16 @@ available for it, @racket[make-digest] will @racket[raise]
 
 @section{Cryptographic Hash Functions}
 
-A @deftech{cryptographic hash function}, or @deftech{CHF}, is an
-algorithm that consumes bytes to produced a fixed-length byte string
-called a @deftech{message digest}, or simply @deftech{digest}.
-
-
 @defstruct*[chf ([canonical-name symbol?]
                  [alias-pattern regexp?]
                  [implementation chf-impl/c])]{
-@racket[chf] represents an implementation of a @tech{CHF}, and the
-many names it might go by.
+@racket[chf] represents an implementation of a cryptographic hash
+function, and the many names it might go by.
 
 @racket[canonical-name] represents the primary name of the CHF in the
 context of the running process. @racket[alias-pattern] captures
 variations of the canonical name. @racket[implementation] produces a
-@tech{digest} using the CHF's specification.
+digest using the CHF's specification.
 
 An instance might encode SHA-1 as follows:
 
@@ -145,9 +140,10 @@ The process could not find an instance of @racket[chf] using
 @defthing[chf-impl/c
           chaperone-contract?
           #:value (-> input-port? bytes?)]{
-Represents a high level implementation of a @tech{CHF}.
+Represents a high level implementation of a cryptographic hash
+function.
 
-The procedure must return a byte string representing a @tech{digest}.
+The procedure must return a byte string representing a digest.
 
 The first argument is an input port that produces bytes from an
 arbitrary source, such as an HTTP response or a file. The output

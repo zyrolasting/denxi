@@ -8,14 +8,12 @@
 
 @title[#:tag "new-pkg"]{Packages}
 
-Here we discuss a program that will install software in the next
-section. The program is a @deftech{package definition}, because it
-defines possible software distributions. The difference between a
+A @deftech{package definition} is a program. The difference between a
 package definition and a package is like the difference between a
 program and a process.
 
 This package definition declares a @tech/xiden-reference{version} and
-an archive for extraction.
+a text file.
 
 @racketmod[#:file "definition.rkt"
 xiden
@@ -26,37 +24,25 @@ xiden
 (revision-names "initial" "oldest")
 
 (output "default"
-  (extract-input "archive.tgz"))
+  (keep-input "hello.txt"))
 
-(input "archive.tgz"
-  (artifact
-    (http-source "https://sagegerard.com/xiden-guide/archive.tgz")
-    (integrity
-      'sha1
-      (http-source "https://sagegerard.com/xiden-guide/archive.sha1"))
-    (signature
-      (http-source "https://sagegerard.com/xiden-guide/public.pem")
-      (http-source "https://sagegerard.com/xiden-guide/archive.sha1.sign"))))
+(input "hello.txt"
+       (artifact (text-source "Hello, world!") #f #f))
 ]
 
+We define a package @racket[input] as a named source of data.  In this
+case, we will define the data in the definition itself using an
+@racket[artifact] containing hard-coded text. You can adjust an
+artifact to fetch data over HTTP, verify the download, and even check
+for a valid signature. You will learn these features in the examples
+at the end of the guide.
 
-@margin-note{Careful readers will notice that content and verification
-information come from the same place. Don't be alarmed. Xiden does not
-volunteer trust in this situation [@topic{determinism}]. In fact, even
-if the payload was somehow malicious, Xiden still defaults to strict
-restrictions for network I/O, file I/O, and code execution.}
+We define a package @racket[output] as a named subprogram that builds
+files using package inputs. When users install software, they select a
+package output to install. The output is then installed within a
+file-system transaction.
 
-A package input is a named source of data.  We define package inputs
-using the @racket[input] term. The input holds an @racket[artifact],
-which references content, evidence the content is correct
-[@topic{integrity}], and evidence the content comes from someone we
-trust [@topic{signature}].
-
-A package output is a named subprogram that builds files using package
-inputs. We define package outputs using the @racket[output] term. When
-users install software, they select a package output to install. The
-output is then installed within a file-system transaction. Note that
-package outputs use monadic types [@topic{monads}].
-
-There are many other terms and nuances to this language, but this is
-enough for us to proceed.
+I'm skipping a mountain of information because there are many other
+terms and nuances to this language. For now, it is enough know that
+package definitions define may define multiple inputs and outputs
+under a precise identity.

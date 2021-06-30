@@ -25,8 +25,6 @@ Xiden distributes software, and this is its documentation.
 
 @other-doc[xiden-white-paper] covers the thinking behind Xiden.
 
-@other-doc[xiden-guide] shows how to install and use Xiden.
+@other-doc[xiden-guide] shows how to use Xiden.
 
-@other-doc[xiden-reference] defines the API.
-
-@other-doc[xiden-topics] explains details from other documents.
+@other-doc[xiden-reference] defines Xiden's API.

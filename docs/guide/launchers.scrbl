@@ -14,11 +14,12 @@ Xiden's built-in launcher with the @litchar{xiden} command. Run it now
 with no arguments, and remember what the output looks like.
 
 Xiden observes @deftech{zero-trust architecture} (“@deftech{ZTA}”)
-principles. It refuses to do anything you did not explicitly allow, so
-it is a @deftech{zero-trust launcher}. This makes @litchar{xiden}
-intensely bereaucratic, so make Xiden easier to use with a custom
-launcher. Save this code to a new @litchar{my-xiden.rkt} launcher
-file.
+principles. It refuses to do anything you did not explicitly allow.
+@litchar{xiden} is an equally bureaucratic @deftech{zero-trust
+launcher}.
+
+We'll make things easier by writing a custom launcher. Save this code
+to a new @litchar{my-xiden.rkt} launcher file.
 
 @racketmod[#:file "my-xiden.rkt"
 xiden/launcher
@@ -28,80 +29,66 @@ xiden/launcher
 
 The output of @litchar{racket my-xiden.rkt} is the same as just
 @litchar{xiden}. They make no change to default settings, so they are
-both @tech{zero-trust launchers}. The difference is that in our
-launcher, we can control Xiden with trusted code
-[@topic{launcher-security}]. We'll start with the same verbose
-commands as the built-in launcher, and simplify it as we go.
+both the same @tech{zero-trust launcher} implementation. The
+difference is that in our launcher, we can control Xiden with trusted
+code.
 
-To install software, we'll give the package definition file
-@litchar{definition.rkt} to the @litchar{do} command. @litchar{do}
-runs a transaction against your file system. The word “transaction”
-essentially means “Install everything I give you. If there's any
-problem, put everything back the way it was.”
+To install software, we'll give our @litchar{definition.rkt} file from
+the last section to the @litchar{do} command. @litchar{do} runs a
+transaction against your file system. The word “transaction”
+essentially means “Install what I give you. If there's any problem,
+put everything back the way it was.”
 
 @verbatim[#:indent 2]|{
 $ racket my-xiden.rkt do ++install-abbreviated definition.rkt
 }|
 
-If you use the definition we wrote earlier in the guide, then you'll
-see @litchar{No cryptographic hash functions installed} in the output
-[@topic{integrity}]. To fix this, open your @tech{launcher} and paste
-in this code.
+It's not going to work, and it doesn't even matter what output you see
+at this point. The command is just going to show you the first of many
+messages that explain why it @italic{didn't} install the software,
+because of @tech{ZTA}.
 
-@racketblock[
-(require file/sha1)
-(current-chfs (list (chf 'sha1 #px"^(?i:sha[-_]?1)$" sha1-bytes)))
+From here we could discuss the command line arguments to finish the
+installation. Or, we could be bad and disable data verification with
+our launcher. Don't use this launcher in security-critical code!
+
+@racketmod[#:file "my-xiden.rkt"
+xiden/launcher
+
+(current-chfs (list snake-oil-chf))
+(XIDEN_TRUST_BAD_DIGEST #t)
+
+(module+ main (launch-xiden!))
 ]
 
-@margin-note{SHA-1 is a poor choice for security-critical code, which
-this guide is not. In fact, Xiden provides that same @racket[chf]
-value as @racket[snake-oil-chf] to discourage misuse.}
+We won't neglect security, we just don't address it here for brevity.
+After the guide, you'll be shown examples that build on top of what
+you'll learn here.
 
-This defines a SHA-1 name, a pattern for accepted aliases, and an
-implementation.  That way we can use the same function when we run
-into @racket['sha1], @racket['SHA-1], or @racket['Sha_1] symbols.
-
-Run the installation again. You'll see some output ending in
+Run the installation one last time, and you'll see a symbolic link
+appear that points to installed software. The installed software is
+actually a composition of symbolic links that point to data resolved
+during the transaction. This is a powerful setup because it allows
+Xiden to prevent duplication on a per-input level.
 
 @verbatim[#:indent 2]|{
-signature check: untrusted public key
-To trust this key, add this to XIDEN_TRUST_PUBLIC_KEYS:
-(integrity 'sha1 (base64 #"MKFCv/e0xEtZME35JRflXixsxyE="))
+.
+├── definition.rkt
+├── my-first-package -> $HOME/.xiden/objects/mrtkmty0b3txrhe3gn25s7tvg3wkf63c
+│   └── hello.txt -> ../jgx70b86yd2skbq1z3d8xyfq55g33nms
+└── my-xiden.rkt
 }|
 
-Now we have to trust the public key used to verify a signature
-[@topic{signature}]. It's from a keypair made specifically for this
-tutorial, so you don't need to trust it for more than a few
-seconds. Copy this code to your launcher.
-
-@racketblock[
-(XIDEN_TRUST_PUBLIC_KEYS
-  (list (integrity 'sha1 (base64 #"MKFCv/e0xEtZME35JRflXixsxyE="))))
-]
-
-Run @litchar{racket my-xiden.rkt do +a definition.rkt} one last time,
-and you'll see a symbolic link appear that points to your installed
-software.
-
-To uninstall the software, delete the link and collect garbage
-using the @litchar{gc} command.
+To uninstall the software, delete the link and collect garbage using
+the @litchar{gc} command. Xiden will delete the files that have no
+incoming links.
 
 @verbatim[#:indent 2]|{
 $ rm my-first-package
 $ racket my-xiden.rkt gc
+Recovered 13 bytes
 }|
 
-Notice that this entire time we never changed the install command.
-Our launcher filled in gaps that @litchar{xiden} would expect as
-command-line flags.
-
-@verbatim[#:indent 2]|{
-$ xiden do ++install-abbreviated definition.rkt \
-        ++XIDEN_TRUST_CHFS sha1 \
-        ++XIDEN_TRUST_PUBLIC_KEYS \
-        '(integrity \'sha1 (base64 #"MKFCv/e0xEtZME35JRflXixsxyE="))'
-}|
-
-The more configuration you add, the simpler the default CLI becomes.
-After sufficient work, you can start replacing entire Xiden commands
-with equivalents that make sense for you and your target audience.
+Notice that we didn't change the install command.  Our launcher
+configured Xiden such that the default CLI no longer required flags to
+complete our transaction.

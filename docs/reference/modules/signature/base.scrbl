@@ -34,8 +34,8 @@ bytes.
 
 Arguments
 @itemlist[#:style 'ordered
-@item{A @tech{digest} as unencoded bytes}
-@item{A symbol representing the name of the @tech{CHF} used to create the first argument.}
+@item{A digest as unencoded bytes}
+@item{A symbol representing the name of the cryptographic hash function used to create the first argument.}
 @item{A private key of some encoding.}
 @item{A password for the private key, or @racket[#f] if there is no password.}
 ]
@@ -53,8 +53,8 @@ signatures.
 
 Arguments
 @itemlist[#:style 'ordered
-@item{A @tech{digest} as unencoded bytes}
-@item{A symbol representing the name of the @tech{CHF} used to create the first argument.}
+@item{A digest as unencoded bytes}
+@item{A symbol representing the name of the cryptographic hash function used to create the first argument.}
 @item{A public key of some encoding.}
 @item{An unencoded signature}
 ]

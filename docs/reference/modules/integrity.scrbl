@@ -89,8 +89,8 @@ Duck typing contracts for @racket[integrity] instances.
 }
 
 @defsetting*[XIDEN_TRUST_CHFS]{
-A list of @tech{cryptographic hash functions} to trust when checking
-data integrity. This list strictly excludes the fallback CHF.
+A list of possible canonical names for @racket[chf]s to trust when
+checking data integrity.
 }
 
 

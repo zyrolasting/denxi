@@ -45,7 +45,7 @@ A @tech{notary} that only creates integrity information using
 
 @defproc[(make-fraudulent-notary [chf-name symbol? (get-default-chf)]) notary?]{
 A @tech{notary} that creates complete artifacts using the
-implementation of the named @tech{CHF}, and the
+implementation of the named cryptographic hash functions, and the
 @racketmodname[xiden/signature/snake-oil] keypair. @racket[(notarize
 (make-fraudulent-notary chf-name) trusted-content)] values are
 implicitly compromised for all values of @racket[trusted-content] and

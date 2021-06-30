@@ -16,9 +16,9 @@
 @defmodule[xiden/signature]
 
 @racketmodname[xiden/signature] uses asymmetric cryptography to verify
-if a @tech{digest} was signed by a private key. The quality of
-signature verification is therefore dependent on the quality of the
-@tech{CHF} used to create the digest.
+if a digest was signed by a private key. The quality of signature
+verification is therefore dependent on the quality of the CHF used to
+create the digest.
 
 
 @deftogether[(

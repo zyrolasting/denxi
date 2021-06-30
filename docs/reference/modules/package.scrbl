@@ -207,10 +207,10 @@ times for them to matter.  Installations using @racket[sxs] consume
 more resources, and are vulnerable to non-termination. Stop using
 @racket[sxs] the moment you don't need it.
 
-@racket[sxs] is useful for handling unwanted
-@tech/xiden-topics{package conflicts}. Re-running a single
-installation using @racket[sxs] will force installation of conflicting
-packages without disturbing other installed packages.
+@racket[sxs] is useful for handling unwanted package
+conflicts. Re-running a single installation using @racket[sxs] will
+force installation of conflicting packages without disturbing other
+installed packages.
 
 Note that the package inputs are still subject to caching. Only the
 output directories that would hold links to inputs are not cached.
