@@ -31,30 +31,31 @@ failed update is nowhere near as bad as a failed sunrise, your plans
 are probably still ruined, and you might wish to avoid future updates.
 
 Part of the problem is people like me, and I don't say that to
-self-deprecate. It's just that software teams choose tradeoffs for
-other people, assuming that how they operate internally is, by
-definition, separate from an end user's life. It isn't, but we don't
-consult our users about how we should work. So the question is: How
-can I limit the impact of my own biases, and minimize the chance of
-interruption for others when I start changing stuff? I don't think
-versioning was that helpful of an answer.
+self-deprecate. It's just that software teams choose tradeoffs that
+impact their users. How can we limit the impact of our biases, and
+minimize the chance of interruption for others when we start changing
+stuff? I don't think versioning was that helpful of an answer.
 
 It comes down to responsibility and control. If something I control
-impacts users and I cannot please everybody else, then everybody
-should have the control. That way they can take responsibility for
-themselves. The problem is that users are not always technical, and
-there are still some powers that I might need to give them good
-software. The line gets blurry, so we need a way to adapt to the
-complex social dynamics that mess with software distribution. I
-designed Xiden to help assemble and distribute its own alternatives,
-while preserving the end user's right to understand and change those
-alternatives. For more on this, see @secref{competition}.
+impacts users and I cannot please everybody, then everybody should
+have a way to assert control over parts of distribution. A lot of
+release management nerds would gasp and cringe at the idea, and I'll
+get to why. All I mean is that it helps when users have a way to take
+responsibility for themselves.
+
+Most end-users are not technical, and there are still some powers that
+developers need to deliver software to them. That line blurs quite a
+bit, so we need a way to adapt to the complex social dynamics that
+mess with software distribution. I designed Xiden to help assemble and
+distribute its own alternatives, while preserving the end user's right
+to understand and change those alternatives. For more on this, see
+@secref{competition}.
 
 If you cannot understand what I'm on about, that's fine. I'm a release
-management nerd and I care a lot about very, very boring things. You
-still know that we have a problem with strangers acting like whatever
-you're doing can't be more important than their update. Maybe you get
-an annoying little weather dashboard thing that nobody wants.
+management nerd and I care more than I should about boring things.  I
+care because the results are @italic{not} boring! We have a problem
+with strangers acting like whatever you're doing can't be more
+important than their update.
 
 We have confirmation dialogs to collect consent, but consent and
 software have a weird relationship.  We have dialogs that act like

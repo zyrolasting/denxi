@@ -25,8 +25,8 @@ Each instance represents data that a package may lazily fetch.
 
 The @racket[plinth] acts as a placeholder for a value used to retrieve
 an @tech{artifact}.  If the plinth does not hold an instance of
-@racket[artifact], then an @tech{dig} must use the value bound to
-@racket[plinth] to find one.
+@racket[artifact], then we use that value in the @tech{digsite
+metaphor} to find an artifact.
 }
 
 @defproc[(make-package-input [name string?]

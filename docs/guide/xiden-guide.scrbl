@@ -6,8 +6,9 @@
 @title[#:style '(toc)]{Xiden Guide}
 @author[(author+email "Sage L. Gerard" "sage@sagegerard.com" #:obfuscate? #t)]
 
-This document shows you how to use Xiden, and prepares you to read
-example code.
+This is a short introduction to Xiden. By the end of this guide,
+you'll know what Xiden is, what it can do for you, and how to practice
+using it.
 
 For all documentation, see @other-doc[xiden-index].
 

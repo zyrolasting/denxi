@@ -21,10 +21,11 @@
 
 @defmodule[xiden/dig]
 
-The @deftech{digsite metaphor} states that a process must use a
-@deftech{shovel} to @deftech{dig} for @tech{artifacts}. Despite
-putting the same amount of effort into each scoop, what the shovel
-impacts and yields may change.
+The @deftech{digsite metaphor} says that one uses a @deftech{shovel}
+to @deftech{dig} for @tech{artifacts}. Despite putting the same amount
+of effort into each scoop, what the shovel encounters may change.
+This metaphor helps explain non-deterministic attempts to find a
+resource.
 
 In Racket, a shovel is a @racket[shovel/c] procedure and a dig is
 underway when such a procedure has program control.

@@ -2,13 +2,13 @@
 
 @require["../shared.rkt" @for-label[racket/base]]
 
-@title{Why Xiden?}
+@title{Motivation}
 
 @margin-note{@other-doc[xiden-white-paper] covers the thinking behind
 Xiden.}
 Xiden is an application and a library for distributing software.  It
-is one of many projects to make that claim, so you'll want to use it
-for these benefits.
+is one of many projects to make that claim, so here are the benefits
+that help it stand out.
 
 @itemlist[
 

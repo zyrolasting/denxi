@@ -2,28 +2,29 @@
 
 @require["../shared.rkt"]
 
-@title[#:tag "guide-end"]{Now What?}
+@title[#:tag "outroduction"]{Next}
 
-You installed Xiden, wrote a package definition, installed software
-using your own launcher, then uninstalled that software.
+You installed Xiden, wrote a package definition, wrote a launcher,
+then used the launcher to install and uninstall a file using the
+definition.
 
-We did @italic{not} discuss integrity checking, signature
-verification, package conflicts, dependency hell, or other problems
-that plague software distribution. Xiden handles them, which means
-more learning.
-
-I mentioned that your motiviation for learning comes from Xiden's
-benefits, but there's one other detail you might appreciate now: You
-can distribute your custom launcher using @litchar{xiden}. That is,
-Xiden can distribute its own alternative interfaces.
-
-To continue, run this command to print where Xiden's examples are on
-your disk. Go to that directory and look for a README to continue.
+We did @italic{not} discuss a lot of information, but this guide isn't
+meant to front-load everything. It's only here to show you that
+@italic{everything in Xiden boils down to launchers and package
+definitions}. Now that you know what they are, you can understand
+examples in context. Run this command to print where Xiden's examples
+are on your disk. Go to that directory and look for a README. From
+there, you'll learn by doing, and will start with baby steps.
 
 @verbatim[#:indent 2]|{
 racket -e '(~a (collection-file-path "examples" "xiden"))'
 }|
 
-Thank you for reading this guide, and for trying Xiden. My name is
-Sage, and you can email me at the address found on
-@hyperlink["https://sagegerard.com"]{my page}.
+At the end you'll be comfortable reading @other-doc[xiden-reference]
+and can organize your own software distribution setup. You learn to
+appreciate that @litchar{xiden} can distribute your launchers, and
+will gain the benefits mentioned at the beginning of the guide.
+
+Thank you for trying Xiden, and I hope it brings you good fortune. My
+name is Sage, and you can reach me through my
+@hyperlink["https://sagegerard.com"]{website}.
