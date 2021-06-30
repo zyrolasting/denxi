@@ -39,21 +39,24 @@ xiden
       (http-source "https://sagegerard.com/xiden-guide/archive.sha1.sign"))))
 ]
 
-A package input is a named source of data.  We define package inputs
-using the @racket[input] term. In this case we define an archive file
-on a server using an @racket[artifact]. An artifact holds data along
-with the means to verify that the data is correct [@topic{integrity}]
-and comes from someone we trust [@topic{signature}].
 
-Careful readers will notice that content and verification information
-come from the same place. Don't be alarmed. Xiden does not volunteer
-trust in this situation [@topic{determinism}].
+@margin-note{Careful readers will notice that content and verification
+information come from the same place. Don't be alarmed. Xiden does not
+volunteer trust in this situation [@topic{determinism}]. In fact, even
+if the payload was somehow malicious, Xiden still defaults to strict
+restrictions for network I/O, file I/O, and code execution.}
+
+A package input is a named source of data.  We define package inputs
+using the @racket[input] term. The input holds an @racket[artifact],
+which references content, evidence the content is correct
+[@topic{integrity}], and evidence the content comes from someone we
+trust [@topic{signature}].
 
 A package output is a named subprogram that builds files using package
 inputs. We define package outputs using the @racket[output] term. When
 users install software, they select a package output to install. The
-output is then run in a transaction against a new directory on
-disk. As an aside, package outputs use monadic types [@topic{monads}].
+output is then installed within a file-system transaction. Note that
+package outputs use monadic types [@topic{monads}].
 
 There are many other terms and nuances to this language, but this is
 enough for us to proceed.
