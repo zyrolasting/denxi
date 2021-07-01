@@ -1,21 +1,27 @@
 When possible, Xiden will re-use any outputs that are already
-installed. This implies there is a cache. That cache is keyed by
-_exact package queries_. When these keys conflict, Xiden will hand you
-a link to an old directory when you expected a link to a new directory.
+installed. This implies that installed software acts as a cache in
+Xiden. That cache is keyed by _exact package queries_, which creates a
+shared namespace for all installed software. When these keys conflict,
+Xiden will hand you a link to installed software, thinking that is
+what you want. That's often the right thing to do, but we can override
+that when prototyping.
 
-You can make that happen here:
+Let's look at an example. There are two definitions in this file:
+`lub`, and `dub`. They both use the package name `heart`, and default
+names everywhere else. Follow these steps to induce a conflict.
 
-1. Run `racket launcher.rkt do +a a.rkt`
-2. Delete the `my-pkg` link. Do _not_ collect garbage.
-3. Run `racket launcher.rkt do +a b.rkt`
+1. Run `racket launcher.rkt do +a lub.rkt`
+2. Delete the `heart` link. Do _not_ collect garbage.
+3. Run `racket launcher.rkt do +a dub.rkt`
 
-When you do these steps, you'll see that a link called `my-pkg` exists
-after the installation of `b.rkt`, but it points to content provided
-by `a.rkt`. Step 3 would have worked if you collected garbage on Step
-2, but then you have the same conflict in the other direction.
+You'll see a link called `heart` after Step 3, but it shows `lub.rkt`,
+not `dub.rkt`! Step 3 would have created a link pointing to `dub.rkt`
+if you collected garbage on Step 2, because then the name would be
+free again.
 
-The definitions can either change to use different names where they
-conflict, or a launcher can use something like
-`(current-package-editor sxs)` to force side-by-side installations for
-all definitions. Stated more broadly: The problem can be addressed by
-an end-user or a developer.
+The definitions can either agree to use different names, or a launcher
+can force side-by-side installations for all definitions using
+`(current-package-editor sxs)`. The problem can be addressed by an
+end-user or a developer, which is nice. Installations are also scoped
+per-workspace, so you can always get a blank namespace by giving Xiden
+a blank state as input.
