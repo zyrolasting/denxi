@@ -347,11 +347,6 @@
                                      (get-output-bytes stderr #t))))))
         continue))))
 
-  (define (check-link link-path path)
-    (check-pred link-exists? link-path)
-    (check-equal? (file-or-directory-identity link-path)
-                  (file-or-directory-identity path)))
-
 
   (define (split-buffer-lines buf)
     (string-split (bytes->string/utf-8 buf) "\n"))
