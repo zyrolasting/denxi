@@ -33,12 +33,12 @@
   arbitrary code execution when paired with a malicious package
   definition.
 
-  Why allow the risk? Because it lets us talk about security when we're
-  ready, and it's relevant. When we're just dealing with a stupid little
-  string in a package definition, no network access is necessary for an
-  installation. Trusting toy data makes it a lot easier to focus on what
-  the example is about. Subtle changes in user experience like that make
-  these scary settings worth having around.
+  Why allow the risk? Because it lets us talk about security when it's
+  relevant. When we're just dealing with a stupid little string in a
+  package definition, no network access is necessary for an installation.
+  Trusting toy data makes it a lot easier to focus on what the example
+  is about. Subtle changes in user experience like that make these
+  scary settings worth having around.
 
 ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||#
 
