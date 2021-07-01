@@ -1,12 +1,12 @@
 # Xiden Examples
 
-If you've finished Xiden's guide, use this directory to study and
-practice it by example. You'll pick up more as you go, since
-everything boils down to launchers and package definitions. You'll see
-comments every now and then asking you to look up something with `raco
+If you've finished the guide, you've been sent here to
+practice. You'll pick up a lot as you go, since we're just talking
+about launchers and package definitions. You'll see comments
+every now and then asking you to look up something with `raco
 docs`. Do so. It will give you experience with the reference material.
-Once you feel comfortable with the reference material, you won't need
-the examples anymore!
+Once you are comfortable with the reference material, you won't need
+these examples. You can also open a PR to add your own!
 
 
 ## After the Guide
