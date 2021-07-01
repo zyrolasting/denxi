@@ -319,6 +319,7 @@
   (require racket
            racket/runtime-path
            rackunit
+           "file.rkt"
            (submod "state.rkt" test))
 
   (define mkflag shortest-cli-flag)
