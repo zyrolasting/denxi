@@ -8,6 +8,11 @@ This project follows [these versioning rules](https://sagegerard.com/edition-rev
 
 ## Unreleased
 
+- Allow use of custom cryptographic backends to unblock users when the
+  bundled library doesn't load.
+- Merge non-guide and non-reference documentation into examples that
+  double as functional tests.
+- Add draft functional test API
 - Switch to launcher-centric workflow for users
 - Add default CHF that is subject to change
 - Support `file://` URLs in `http-source`
