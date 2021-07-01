@@ -15,8 +15,7 @@
 (define build-deps '("net-doc" "racket-doc"))
 
 (define test-omit-paths
-  '("examples"
-    "docs"
+  '("docs"
     "crypto/openssl"
     "crypto/dist"))
 
