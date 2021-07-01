@@ -59,5 +59,6 @@
 (XIDEN_FETCH_TOTAL_SIZE_MB +inf.0)
 (XIDEN_FETCH_TIMEOUT_MS +inf.0)
 
-; Run as `root` if you love spam and want lots of it.
+; Run at your own risk. Maybe even as an admin if you are okay with
+; your own computer betraying you.
 (module+ main (launch-xiden!))
