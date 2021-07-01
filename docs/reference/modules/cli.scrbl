@@ -68,10 +68,12 @@ Returns a @racket[bound-program/c] with behavior based on the first
 argument @racket[A].
 
 If @racketid[A] is @racket{installed}, the program halts with exit
-code 0 and output @racket[(list ($show-string S) ...)], where
-@racket[S] is a string formatted to show a @tech{package query}, a
-package output and a directory path. The list represents all installed
-outputs in the @tech{target workspace}.
+code 0 and output @racket[(list ($show-datum (list Q O D)) ...)],
+where @racketid[Q] is a string for an @tech{exact package query},
+@racketid[O] is the name of the @racket[output] from a package
+defintion identified by @racketid[Q], and @racketid[D] is a directory
+path containing the files from the output. All entries represent all
+installed outputs in the @tech{target workspace}.
 
 If @racketid[A] is @racket{log}, the program halts with exit code 0
 and an empty program log. As a side-effect, the program prints all
@@ -81,7 +83,7 @@ user dumps a log to a file, and another wants to read the messages in
 a different human language or notation.
 
 If @racket{links}, the program halts with exit code 0 and output
-@racket[(list ($show-datum (cons L T)) ...)], where @racketid[L] is a
+@racket[(list ($show-datum (list L T)) ...)], where @racketid[L] is a
 path to a symbolic link, and @racketid[T] is a path to another
 filesystem entry referenced by that link. These symbolic links are
 tracked by Xiden for garbage collection purposes, and therefore all

@@ -164,16 +164,16 @@
                              (sequence-map
                               (match-lambda*
                                 [(list _ provider _ package _ edition _ revision _ output _ path)
-                                 ($show-string (format "~a ~a ~a"
-                                                       (format-parsed-package-query
-                                                        (parsed-package-query provider
-                                                                              package
-                                                                              edition
-                                                                              (~a revision)
-                                                                              (~a revision)
-                                                                              "ii"))
-                                                       output
-                                                       (file-name-from-path path)))])
+                                 ($show-datum (list
+                                               (format-parsed-package-query
+                                                (parsed-package-query provider
+                                                                      package
+                                                                      edition
+                                                                      (~a revision)
+                                                                      (~a revision)
+                                                                      "ii"))
+                                               output
+                                               (~a (file-name-from-path path))))])
                               (in-all-installed))))]
 
 
@@ -190,7 +190,7 @@
                       (halt 0
                             (sequence->list
                              (sequence-map (λ (link-path target-path)
-                                             ($show-datum (cons link-path target-path)))
+                                             ($show-datum (list link-path target-path)))
                                            (in-issued-links))))]
 
                      [_
@@ -366,7 +366,7 @@
                (λ (exit-code messages stdout stderr)
                  (check-equal? exit-code 0)
                  (for/hash ([entry (in-list messages)] #:when ($show-datum? entry))
-                   (match-define ($show-datum (cons link-path obj-path)) entry)
+                   (match-define ($show-datum (list link-path obj-path)) entry)
                    (check-pred link-exists? (normalize link-path))
                    (check-pred something-exists? (normalize obj-path))
                    (values link-path obj-path)))))
