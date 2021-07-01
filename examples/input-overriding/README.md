@@ -2,10 +2,9 @@ You may override package inputs for some launcher. One way is to use
 the command line interface.
 
 ```
-xiden do \
-  -Y '#t' \
-  +a abstract.rkt \
-  +o '#px""' '(input "data" (artifact #"abc" #f #f))'
+racket launcher.rkt \
+  +a defn.rkt \
+  +o '#px""' '(input "data" (artifact (byte-source #"override") #f #f))'
 ```
 
 This command line adds overrides to `XIDEN_INPUT_OVERRIDES`, which
@@ -24,8 +23,8 @@ you end up with something like multiple slightly different copies of
 Ruby.
 
 ```
-RUBY='(input "ruby" ...)' xiden do \
-  +a whatever.rkt \
+RUBY='(input "ruby" ...)' racket launcher.rkt do \
+  +a ... \
   +o 'syntax-highlighting' "$RUBY" \
   +o 'images' "$RUBY"
 ```
