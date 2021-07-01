@@ -1,13 +1,15 @@
-If you've finished Xiden's guide, use this directory to practice it by
-example. **You do not need to work through all of them,** but make an
-effort to finish the [the required ones](#required). You'll pick up
-more as you go, since everything boils down to launchers and package
-definitions. You'll see comments every now and then asking you to look
-up something with `raco docs`. Do so. It will give you experience with
-the reference material.
+# Xiden Examples
+
+If you've finished Xiden's guide, use this directory to study and
+practice it by example. You'll pick up more as you go, since
+everything boils down to launchers and package definitions. You'll see
+comments every now and then asking you to look up something with `raco
+docs`. Do so. It will give you experience with the reference material.
+Once you feel comfortable with the reference material, you won't need
+the examples anymore!
 
 
-## Required
+## After the Guide
 
 1. [From Guide](./from-guide): The example from the guide, repeated
    for convenience and for comparison to later
