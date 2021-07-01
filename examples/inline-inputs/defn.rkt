@@ -1,9 +1,9 @@
 #lang xiden
 
-(name "example05-output")
-
 (input "dark.css"
-       (artifact (text-source "body { background: black }\n")))
+       (artifact (text-source "body { background: black }\n")
+                 #f
+                 #f))
 
 (input "index.html"
        (artifact
@@ -15,7 +15,9 @@
            "    <link rel=\"stylesheet\" href=\"dark.css\" />"
            "    <title>Colored by output</title>"
            "  </head>"
-           "</html>"))))
+           "</html>"))
+        #f
+        #f))
 
 (output "light"
         (keep-input "index.html"))

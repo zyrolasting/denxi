@@ -46,7 +46,7 @@
 (define+provide-setting XIDEN_DOWNLOAD_MAX_REDIRECTS exact-nonnegative-integer? 2)
 (define+provide-setting XIDEN_FETCH_BUFFER_SIZE_MB (real-in 0.1 20) 10)
 (define+provide-setting XIDEN_FETCH_PKGDEF_SIZE_MB (real-in 0.1 20) 0.1)
-(define+provide-setting XIDEN_FETCH_TIMEOUT_MS (real-in 100 (* 1000 10)) 3000)
+(define+provide-setting XIDEN_FETCH_TIMEOUT_MS (or/c +inf.0 (real-in 100 (* 1000 10))) 3000)
 (define+provide-setting XIDEN_FETCH_TOTAL_SIZE_MB (or/c +inf.0 real?) 100)
 
 (provide define-source

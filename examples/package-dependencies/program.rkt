@@ -1,5 +1,5 @@
 #lang racket/base
 
-(require "example02-output/nested/module.rkt")
+(require "default/nested/module.rkt")
 
 (displayln msg)

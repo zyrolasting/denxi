@@ -15,9 +15,14 @@ the bindings Racket sees without changing `program.rkt`.
 Here we use an input override to force the `"v2.rkt"` input to use the
 same source as the `"v1.rkt"` input.
 
-1. Reset the example.
-2. Run `racket launch.rkt do +a defn.rkt +o '#rx""' '(input "v2.rkt" (artifact (file-source (from-file "sources/v1.rkt"))))'`
-3. Run `racket program.rkt` again. It will print `same`.
+```
+override='(input "v2.rkt" (artifact (file-source (from-file "sources/v1.rkt")) #f #f))'
+match_everything='#rx""'
+racket launch.rkt do +a defn.rkt +o "$match_everything" "$override"
+```
+
+After performing the above setup, run `racket program.rkt` again. It
+will print `same`.
 
 
 # Method: Duplicate Inputs
@@ -26,7 +31,9 @@ Xiden wil not duplicate inputs, so you can leverage its cache such
 that the same files of two different names result in links pointing to
 the same Racket module file.
 
-1. Reset the example.
-2. Run `cp sources/v1.rkt sources/v2.rkt`.
-3. Run `racket launch.rkt do +a defn.rkt`.
-4. Run `racket program.rkt` again. It will print `same`.
+```
+cp sources/v1.rkt sources/v2.rkt
+racket launch.rkt do +a defn.rkt`
+```
+
+Run `racket program.rkt` again. It will print `same`.

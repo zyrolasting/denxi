@@ -8,6 +8,7 @@
   (require (only-in xiden/codec
                     hex)
            (only-in xiden/integrity
+                    current-chfs
                     chf-canonical-name
                     snake-oil-chf)
            (only-in xiden/signature
@@ -26,7 +27,7 @@
            (define sig
              (make-signature (hex "59c826fc854197cbd4d1083bce8fc00d0761e8b3")
                              (chf-canonical-name snake-oil-chf)
-                             (file->bytes private-key)
+                             (file->bytes private-key-path)
                              #f))
            (copy-port (open-input-bytes sig) out)))
        (displayln

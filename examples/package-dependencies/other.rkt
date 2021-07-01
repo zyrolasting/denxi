@@ -7,4 +7,7 @@
         (resolve-input inp))
 
 (input "module.rkt"
-       (artifact (sources (text-source "(module anon racket/base (provide msg) (define msg \"It works!\"))"))))
+       (artifact (text-source
+                  "(module anon racket/base (provide msg) (define msg \"It works!\"))")
+                 #f
+                 #f))

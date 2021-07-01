@@ -24,7 +24,6 @@
     "crypto/openssl"
     "crypto/dist"))
 
-
 (define racket-launcher-names '("xiden"))
 (define racket-launcher-libraries '("cli.rkt"))
 
