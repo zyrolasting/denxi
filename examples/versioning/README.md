@@ -3,11 +3,12 @@ the same product. The editions indicate the design used for the
 software, and the revisions indicate implementations for that design
 made over time. See `raco docs xiden/version` for definitions.
 
-Version information goes into a package definition. I include some
-other names for good measure.
-
-We don't want to conflict on links, so we'll build a transaction that
-uses the default output but allows us to specify our own links.
+Each package definition includes its own version information, but they
+share the name `greeting`. If we abbreviate our installation request
+using `do +a` or `do ++install-abbreviated`, then Xiden will pick as
+`greeting` as the name of each version's link.  We avoid this conflict
+by building a transaction that uses the default output, but allows us
+to specify our own link names.
 
 ```
 racket launch.rkt do \
