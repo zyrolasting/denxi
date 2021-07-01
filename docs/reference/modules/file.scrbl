@@ -58,7 +58,7 @@ resolve to the same filesystem identifier.
 @defproc[(file-link-exists? [link-path path-string?]) boolean?]{
 Returns @racket[#t] if @racket[link-path] refers to an existing link,
 and the link points to a regular file.
-]
+}
 
 @defstruct*[($path-not-found $message) ([pattern (or/c regexp? pregexp? byte-regexp? byte-pregexp? string?)] [wrt path-string?])]{
 A @tech{message} reporting if @racket[(path-matching pattern wrt)] found no path.
