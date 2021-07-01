@@ -290,6 +290,9 @@
 ; verify high-level impact.
 (module+ test
   (provide
+   (all-from-out racket
+                 racket/runtime-path
+                 rackunit)
    (contract-out
     [check-link
      (-> path-string?
@@ -317,7 +320,8 @@
 
 
 
-  (require racket/runtime-path
+  (require racket
+           racket/runtime-path
            rackunit
            (submod "state.rkt" test))
 

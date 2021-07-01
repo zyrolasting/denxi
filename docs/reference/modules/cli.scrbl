@@ -111,6 +111,9 @@ can be halted by settings like @racket[XIDEN_FETCH_TOTAL_SIZE_MB].
 
 @defmodule[(submod xiden/cli test)]
 
+Reprovides @racketmodname[racket],
+@racketmodname[racket/runtime-path], and @tt{rackunit}.
+
 @defproc[(check-cli [arguments (or/c (listof string?) (vectorof string?))]
                     [continue (-> exit-code/c
                                   program-log/c
