@@ -63,6 +63,8 @@
            (-> cli-flag? string?)]
           [format-cli-flags
            (-> cli-flag? string?)]
+          [make-cli-flag-string
+           (-> (or/c string? cli-flag?) string?)]
           [call-with-bound-cli-flags
            (-> (listof cli-flag-state?)
                (-> any)
@@ -87,6 +89,11 @@
 
 (define (shortest-cli-flag c)
   (get-shortest-string (cli-flag-strings c)))
+
+(define (make-cli-flag-string c)
+  (if (cli-flag? c)
+      (shortest-cli-flag c)
+      c))
 
 (define (format-cli-flags c)
   (string-join (sort (cli-flag-strings c) < #:key string-length)
@@ -351,6 +358,14 @@
   (test-equal? "Find the shortest CLI flag to help abbreviate messages to the user"
                (shortest-cli-flag TEST_SETTING/flag)
                "-t")
+
+  (test-equal? "Coerce CLI flag string"
+               (make-cli-flag-string TEST_SETTING/flag)
+               (shortest-cli-flag TEST_SETTING/flag))
+
+  (test-equal? "Return provided CLI flag string"
+               (make-cli-flag-string "--whatever")
+               "--whatever")
 
   (test-equal? "Show all flags in order of increasing length when total message length is a non-issue"
                (format-cli-flags TEST_SETTING/flag)

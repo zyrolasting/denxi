@@ -125,6 +125,12 @@ including the canonical flag derived from @racket[(cli-flag-setting c)].
 Returns the shortest element of @racket[(cli-flag-strings c)].
 }
 
+@defproc[(make-cli-flag-string [variant (or/c string? cli-flag?)] string?)]{
+Returns @racket[(shortest-cli-flag variant)] when
+applicable. @racket[variant] otherwise.
+}
+
+
 @defproc[(format-cli-flags [c cli-flag?]) string?]{
 Returns a single @tt{/}-separated string that shows
 each element of @racket[(cli-flag-strings c)] in order
