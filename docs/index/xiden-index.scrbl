@@ -21,10 +21,8 @@
 
 @logo-element
 
+@centered{
 Xiden distributes software, and this is its documentation.
 
-@other-doc[xiden-guide] introduces Xiden.
-
-@other-doc[xiden-reference] defines Xiden's API.
-
-@other-doc[xiden-white-paper] explains the thinking behind Xiden.
+@other-doc[xiden-guide] - @other-doc[xiden-reference] - @other-doc[xiden-white-paper]
+}

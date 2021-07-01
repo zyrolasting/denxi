@@ -1,9 +1,7 @@
 #lang xiden/launcher
 
-; This is unsafe, and only meant for the demo.  We'll remove these in
-; the next example. In effect, this disables all of Xiden's data
-; verification features.
-
+; Don't use these settings in production.
+; A later example will make that very clear.
 (current-chfs (list snake-oil-chf))
 (XIDEN_TRUST_BAD_DIGEST #t)
 
