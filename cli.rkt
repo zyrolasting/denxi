@@ -294,10 +294,6 @@
                  racket/runtime-path
                  rackunit)
    (contract-out
-    [check-link
-     (-> path-string?
-         path-string?
-         void?)]
     [test-cli
      (-> string?
          (or/c (listof string?)
@@ -316,9 +312,9 @@
              bytes?
              bytes?
              any)
-         any)]))
-
-
+         any)]
+    [check-garbage-collection
+     (-> predicate/c void?)]))
 
   (require racket
            racket/runtime-path

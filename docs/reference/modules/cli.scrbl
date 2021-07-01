@@ -151,3 +151,9 @@ The test form of @racket[check-cli].
 Asserts @racket[(link-exists? link-path)], and that both paths resolve
 to the same file or directory identifier.
 }
+
+@defproc[(check-garbage-collection [ok? predicate/c]) void?]{
+Run the @litchar{gc} command, assert expected behaviors, then assert
+@racket[ok?] returns @racket[#t] when applied to the number of bytes
+recovered.
+}
