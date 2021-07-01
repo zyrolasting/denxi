@@ -63,6 +63,24 @@ such that the first element is the first @tech{message} to report in
 the respective program.
 }
 
+@defproc[(coerce-command-line-argument-string [value any/c]) string?]{
+Returns
+
+@itemlist[
+@item{@racket[value], if @racket[value] is a string.}
+@item{@racket[(make-cli-flag-string value)], if @racket[value] is a @racket[cli-flag].}
+@item{@racket[(~a value)], if @racket[value] is a path.}
+@item{@racket[(~s value)] otherwise.}
+]
+}
+
+
+@defproc[(make-command-line-arguments [value any/c] ...) (listof string?)]{
+Returns a list built using
+@racket[coerce-command-line-argument-string] on the arguments.
+}
+
+
 @section{CLI Flow Control}
 
 @defproc[(run-entry-point! [args arguments/c]

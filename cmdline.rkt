@@ -37,7 +37,14 @@
                message-formatter/c
                argument-parser/c
                exit-handler/c
-               any)]))
+               any)]
+          [coerce-command-line-argument-string
+           (-> any/c string?)]
+          [make-command-line-arguments
+           (->* ()
+                #:rest list?
+                (listof string?))]))
+
 
 (define+provide-message $cli $message ())
 (define+provide-message $cli:undefined-command $cli (command))
@@ -66,7 +73,6 @@
                (call/cc run!)))
            (write-message-log program-output format-message)
            (use-exit-code exit-code))))))))
-
 
 
 
@@ -133,8 +139,34 @@
                            arg-help-strings
                            handle-help)))))
 
+
+(define (coerce-command-line-argument-string value)
+  (cond [(string? value) value]
+        [(path? value) (~a value)]
+        [(cli-flag? value) (make-cli-flag-string value)]
+        [else (~s value)]))
+
+(define (make-command-line-arguments . args)
+  (map coerce-command-line-argument-string args))
+
+
 (module+ test
   (require rackunit)
+
+  (test-equal? "Coerce command-line arguments"
+               (make-command-line-arguments
+                --XIDEN_TRUST_BAD_DIGEST
+                #t
+                ""
+                "hello"
+                123
+                (build-path "x"))
+               (list (make-cli-flag-string --XIDEN_TRUST_BAD_DIGEST)
+                     "#t"
+                     ""
+                     "hello"
+                     "123"
+                     "x"))
 
   (test-case "Ask for help"
     (for ([flag (in-list '("-h" "--help"))])
