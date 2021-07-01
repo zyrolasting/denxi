@@ -30,5 +30,5 @@ these items.
 The definitions can either agree to distinguish themselves on at least
 one of these items, or a launcher can force side-by-side installations
 for all definitions using `(current-package-editor sxs)`. Or, since
-installations are scoped per-workspace, you get a blank namespace by
-giving Xiden a blank state as input.
+installations are scoped per-workspace, you can start a new namespace
+by using a new workspace.
