@@ -1,7 +1,9 @@
 When possible, Xiden will re-use any outputs that are already
 installed. This implies there is a cache. That cache is keyed by
 _exact package queries_. When these keys conflict, Xiden will hand you
-a link to a cached directory when you expected something else.
+a link to an old directory when you expected a link to a new directory.
+
+You can make that happen here:
 
 1. Run `racket launcher.rkt do +a a.rkt`
 2. Delete the `my-pkg` link. Do _not_ collect garbage.
