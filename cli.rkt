@@ -337,7 +337,7 @@
         (λ ()
           (parameterize ([current-output-port stdout]
                          [current-error-port stderr])
-            (launch-xiden! #:arguments args
+            (launch-xiden! #:arguments (coerce-command-line-argument-list args)
                            #:format-message
                            (λ (m)
                              (set! messages (cons m messages))
