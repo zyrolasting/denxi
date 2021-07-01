@@ -81,6 +81,12 @@ Returns a list built using
 }
 
 
+@defproc[(coerce-command-line-argument-list [variant arguments/c]) (listof string?)]{
+Applies @racket[make-command-line-arguments] to a list or vector, and
+returns a list.
+}
+
+
 @section{CLI Flow Control}
 
 @defproc[(run-entry-point! [args arguments/c]

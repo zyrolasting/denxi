@@ -40,6 +40,9 @@
                any)]
           [coerce-command-line-argument-string
            (-> any/c string?)]
+          [coerce-command-line-argument-list
+           (-> arguments/c
+               (listof string?))]
           [make-command-line-arguments
            (->* ()
                 #:rest list?
@@ -149,18 +152,24 @@
 (define (make-command-line-arguments . args)
   (map coerce-command-line-argument-string args))
 
+(define (coerce-command-line-argument-list variant)
+  (apply make-command-line-arguments
+         (if (list? variant)
+             variant
+             (vector->list variant))))
+
 
 (module+ test
   (require rackunit)
 
   (test-equal? "Coerce command-line arguments"
-               (make-command-line-arguments
-                --XIDEN_TRUST_BAD_DIGEST
-                #t
-                ""
-                "hello"
-                123
-                (build-path "x"))
+               (coerce-command-line-argument-list
+                (vector --XIDEN_TRUST_BAD_DIGEST
+                        #t
+                        ""
+                        "hello"
+                        123
+                        (build-path "x")))
                (list (make-cli-flag-string --XIDEN_TRUST_BAD_DIGEST)
                      "#t"
                      ""
