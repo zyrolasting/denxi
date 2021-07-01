@@ -105,3 +105,46 @@ process is sent to @racket[(current-error-port)].
 This all happens under a @tech{runtime configuration}, so transfers
 can be halted by settings like @racket[XIDEN_FETCH_TOTAL_SIZE_MB].
 }
+
+
+@section{CLI Functional Testing}
+
+@defmodule[(submod xiden/cli test)]
+
+@defproc[(check-cli [arguments (or/c (listof string?) (vectorof string?))]
+                    [continue (-> exit-code/c
+                                  program-log/c
+                                  bytes?
+                                  bytes?
+                                  any)])
+                                  any]{
+Sends command line to Xiden to processing.
+
+Applies @racket[continue] in tail position to the following arguments:
+
+@itemlist[#:style 'ordered
+@item{The exit code of the program}
+@item{The @tech{program log} at the end of evaluation.}
+@item{The contents of standard output after evaluation. Includes localized form of program log.}
+@item{The contents of standard error after evaluation.}
+]
+
+@racket[continue] may therefore make assertions about the functional
+correctness of a command line.
+}
+
+@defproc[(test-cli [message string?]
+                   [arguments (or/c (listof string?) (vectorof string?))]
+                   [continue (-> exit-code/c
+                                 program-log/c
+                                 bytes?
+                                 bytes?
+                                 any)])
+                                 any]{
+The test form of @racket[check-cli].
+}
+
+@defproc[(check-link? [link-path path-string?] [path path-string?]) void?]{
+Asserts @racket[(link-exists? link-path)], and that both paths resolve
+to the same file or directory identifier.
+}

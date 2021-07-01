@@ -289,6 +289,34 @@
 ; Functional tests follow. Use to detect changes in the interface and
 ; verify high-level impact.
 (module+ test
+  (provide
+   (contract-out
+    [check-link
+     (-> path-string?
+         path-string?
+         void?)]
+    [test-cli
+     (-> string?
+         (or/c (listof string?)
+               (vectorof string?))
+         (-> exit-code/c
+             program-log/c
+             bytes?
+             bytes?
+             any)
+         any)]
+    [check-cli
+     (-> (or/c (listof string?)
+               (vectorof string?))
+         (-> exit-code/c
+             program-log/c
+             bytes?
+             bytes?
+             any)
+         any)]))
+
+
+
   (require racket/runtime-path
            rackunit
            (submod "state.rkt" test))
