@@ -313,6 +313,8 @@
              bytes?
              any)
          any)]
+    [get-checked-links
+     (-> (hash/c path-string? path-string?))]
     [check-garbage-collection
      (-> predicate/c void?)]))
 
@@ -355,6 +357,19 @@
   (define (test-cli msg args continue)
     (test-case msg (check-cli args continue)))
 
+  (define (get-checked-links)
+    (define (normalize path)
+      (if (complete-path? path)
+          path
+          (build-workspace-path path)))
+    (check-cli '("show" "links")
+               (λ (exit-code messages stdout stderr)
+                 (check-equal? exit-code 0)
+                 (for/hash ([entry (in-list messages)] #:when ($show-datum? entry))
+                   (match-define ($show-datum (cons link-path obj-path)) entry)
+                   (check-pred link-exists? (normalize link-path))
+                   (check-pred something-exists? (normalize obj-path))
+                   (values link-path obj-path)))))
 
   (define (check-garbage-collection ok?)
     (check-cli (list "gc")

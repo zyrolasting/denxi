@@ -148,9 +148,13 @@ correctness of a command line.
 The test form of @racket[check-cli].
 }
 
-@defproc[(check-link? [link-path path-string?] [path path-string?]) void?]{
-Asserts @racket[(link-exists? link-path)], and that both paths resolve
-to the same file or directory identifier.
+@defproc[(get-checked-links) (hash/c path-string? path-string?)]{
+Run the @racket[show-command] with @litchar{links}, makes related
+assertioins on the data, then returns a hash table.  The keys of the
+hash tables are paths to links. The values are the targets of the
+links.
+
+Relative paths are made in regards to @racket[(XIDEN_WORKSPACE)].
 }
 
 @defproc[(check-garbage-collection [ok? predicate/c]) void?]{
