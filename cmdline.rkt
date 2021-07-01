@@ -41,7 +41,7 @@
           [coerce-command-line-argument-string
            (-> any/c string?)]
           [coerce-command-line-argument-list
-           (-> arguments/c
+           (-> (or/c vector? list?)
                (listof string?))]
           [make-command-line-arguments
            (->* ()

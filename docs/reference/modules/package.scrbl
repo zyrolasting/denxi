@@ -105,6 +105,11 @@ Returns a @tech{subprogram} that always fails and adds
 @racket[$package:output:undefined] to the program log.
 }
 
+@defproc[(package->exact-package-query [pkg package?]) exact-package-query?]{
+Returns an @tech{exact package query} built from the information
+available in the package.
+}
+
 @defproc[(install [link-path (or/c #f path-string?)]
                   [output-name (or/c #f string?)]
                   [package-definition-variant any/c])

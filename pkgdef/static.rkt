@@ -28,12 +28,18 @@
            (-> bare-pkgdef? package-query?)]
           [get-static-inputs
            (-> bare-pkgdef? list?)]
+          [get-static-outputs
+           (-> bare-pkgdef? list?)]
           [get-static-simple-value
            (-> bare-pkgdef? symbol? any/c any/c)]
           [get-static-list-value
            (-> bare-pkgdef? symbol? any/c any/c)]
           [get-static-simple-string
            (-> bare-pkgdef? symbol? any/c)]
+          [get-static-exact-package-query
+           (->* (bare-pkgdef?)
+                (package-query-defaults-implementation/c)
+                exact-package-query?)]
           [replace-input-expression
            (-> bare-pkgdef?
                non-empty-string?
@@ -68,6 +74,19 @@
 
 ;-------------------------------------------------------------------------------
 ; Static analysis
+
+(define (get-static-exact-package-query stripped [defaults default-package-query-defaults])
+  (let* ([get (λ (id [default ""]) (get-static-simple-value stripped id default))]
+         [revision-number (format "~a" (get 'revision-number 0))])
+    (autocomplete-parsed-package-query
+     default-package-query-defaults
+     (parsed-package-query
+      (get 'provider)
+      (get 'package)
+      (get 'edition)
+      revision-number
+      revision-number
+      "ii"))))
 
 (define (get-static-input-name stx)
   (syntax-case stx (input) [(input name . xs) (syntax-e #'name)] [_ #f]))

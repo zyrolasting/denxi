@@ -318,12 +318,21 @@
     [get-checked-installed-outputs
      (-> list?)]
     [check-garbage-collection
-     (-> predicate/c void?)]))
+     (-> predicate/c void?)]
+    [functional-test/install-all
+     (-> racket-module-input-variant/c
+         void?)]
+    [functional-test/install-one
+     (->* (racket-module-input-variant/c)
+          (string?)
+          void?)]))
 
   (require racket
            racket/runtime-path
            rackunit
            "file.rkt"
+           "racket-module.rkt"
+           "pkgdef/static.rkt"
            (submod "state.rkt" test))
 
   (define mkflag shortest-cli-flag)
@@ -359,6 +368,102 @@
   (define (test-cli msg args continue)
     (test-case msg (check-cli args continue)))
 
+  (define (read-test-definition definition-datum)
+    (define read-program
+      (read-package-definition definition-datum))
+    (define-values (maybe-definition messages)
+      (run-subprogram read-program))
+    (when (eq? maybe-definition FAILURE)
+      (raise-user-error (~s messages)))
+    maybe-definition)
+
+  (define (make-available-link-name v path-prefix)
+    (let ([candidate (format "test-~a-~a" path-prefix v)])
+      (if (link-exists? candidate)
+          (make-available-link-name (add1 v) path-prefix)
+          candidate)))
+
+  (define (check-no-garbage-collected)
+    (define before-garbage-collection (get-checked-links))
+    (check-garbage-collection zero?)
+    (check-equal? before-garbage-collection (get-checked-links))
+    before-garbage-collection)
+
+  (define (functional-test/install-all definition-datum)
+    (define definition (read-test-definition definition-datum))
+    (define stripped (strip definition))
+    (define outputs (get-static-outputs (strip definition)))
+    (for ([output (in-list outputs)])
+      (define output-name (cadr output))
+      (test-installation definition
+                         stripped
+                         output-name)))
+
+  (define (functional-test/install-one definition-datum [output-name DEFAULT_STRING])
+    (define definition (read-test-definition definition-datum))
+    (test-installation definition
+                       (strip definition)
+                       output-name))
+
+  ; Installs, then uninstalls an output in a new workspace.
+  (define (test-installation definition stripped output-name)
+    (define expected-link-name
+      (make-available-link-name 0 output-name))
+    
+    (define expected-exact-query
+      (get-static-exact-package-query stripped))
+
+    (test-workspace (format "query: ~s, output: ~s, link: ~s"
+                            (abbreviate-exact-package-query expected-exact-query)
+                            output-name
+                            expected-link-name)
+      (define-values (messages stdout stderr)
+        (parameterize ([current-string->source
+                        (λ (_) (text-source (~s (syntax->datum definition))))])
+          (check-cli (list "do"
+                           --XIDEN_INSTALL_SOURCES
+                           expected-link-name
+                           output-name
+                           "_")
+                     (λ (exit-code messages stdout stderr)
+                       (if (zero? exit-code)
+                           (values messages
+                                   stdout
+                                   stderr)
+                           (fail (string-join (map (get-message-formatter)
+                                                   messages)
+                                              "\n")))))))
+
+      (define installed
+        (get-checked-installed-outputs))
+
+      ; Search installed outputs for the one we just requested.
+      (check-true
+       (for/or ([entry (in-list installed)])
+         (match-define (list actual-exact-query
+                             actual-output-name
+                             actual-object-directory-name)
+           entry)
+         (and (equal? actual-exact-query
+                      expected-exact-query)
+              (equal? actual-output-name
+                      output-name)
+              (linked? expected-link-name
+                       (build-object-path actual-object-directory-name)))))
+
+      (define currently-issued-links
+        (check-no-garbage-collected))
+
+      (delete-file expected-link-name)
+
+      (check-equal? (get-checked-links)
+                    currently-issued-links)
+
+      ; Collect garbage
+      (check-garbage-collection positive?)
+      (check-true (hash-empty? (get-checked-links)))))
+
+
   (define (get-checked-links)
     (define (normalize path)
       (if (complete-path? path)
@@ -369,8 +474,8 @@
                  (check-equal? exit-code 0)
                  (for/hash ([entry (in-list messages)] #:when ($show-datum? entry))
                    (match-define ($show-datum (list link-path obj-path)) entry)
-                   (check-pred link-exists? (normalize link-path))
-                   (check-pred something-exists? (normalize obj-path))
+                   (when (link-exists? (normalize link-path))
+                     (check-pred something-exists? (normalize obj-path)))
                    (values link-path obj-path)))))
 
   (define (get-checked-installed-outputs)

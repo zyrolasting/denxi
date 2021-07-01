@@ -117,6 +117,29 @@ can be halted by settings like @racket[XIDEN_FETCH_TOTAL_SIZE_MB].
 Reprovides @racketmodname[racket],
 @racketmodname[racket/runtime-path], and @tt{rackunit}.
 
+
+@defproc[(functional-test/install-all [definition-variant
+                                       racket-module-input-variant/c]) void?]{
+Effect: For each output of the given @tech{package definition}, create
+an ephemeral @tech{workspace}, install the output, and then uninstall
+the output.
+
+Call only in the context of a unit test. This function makes many
+assertions.
+
+If this function runs to completion, the current
+@tech/reference{parameterization} is compatible with the given package
+definition.
+}
+
+@defproc[(functional-test/install-one [definition-variant
+                                       racket-module-input-variant/c]
+                                      [output-name string? DEFAULT_NAME])
+                                      void?]{
+Like @racket[functional-test/install-all], but for a single output
+in the definition.
+}
+
 @defproc[(check-cli [arguments (or/c (listof string?) (vectorof string?))]
                     [continue (-> exit-code/c
                                   program-log/c

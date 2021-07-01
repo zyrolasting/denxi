@@ -46,6 +46,17 @@ A contract that matches a @tech{bare} @tech{package definition}.
 Equivalent to @racket[(racket-module-code? PACKAGE_DEFINITION_MODULE_LANG v)].
 }
 
+@defproc[(get-static-exact-package-query [pkgdef bare-pkgdef?]
+                                         [defaults
+                                          package-query-defaults-implementation/c
+                                          default-package-query-defaults])
+                                         exact-package-query?]{
+Returns an @tech{exact package query} by reading the contents of the
+package definition. Undefined names are given default values from
+@racket[defaults].
+}
+
+
 @defproc[(get-static-abbreviated-query [pkgdef bare-pkgdef?]) package-query?]{
 Returns a @tech{package query} containing the provider, package,
 edition, and revision number in @racket[pkgdef].

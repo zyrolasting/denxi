@@ -36,7 +36,9 @@
           [current-package-editor
            (parameter/c
             (-> package?
-                (or/c package? (subprogram/c package?))))]))
+                (or/c package? (subprogram/c package?))))]
+          [package->exact-package-query
+           (-> package? exact-package-query?)]))
 
 (require racket/file
          racket/format
@@ -299,7 +301,7 @@
                            (validate-racket-support #:allow-unsupported? allow-unsupported-racket? pkg)
                            (reuse-or-build-package-output pkg output-name link-path)) ; 3.2
                       (λ (to-wrap messages)
-                        (cons ($package:log (abbreviate-exact-package-query (package->package-query pkg))
+                        (cons ($package:log (abbreviate-exact-package-query (package->exact-package-query pkg))
                                             output-name
                                             (reverse to-wrap))
                               messages))))
@@ -426,7 +428,7 @@
 
 (define (reuse-or-build-package-output pkg output-name link-path)
   (call-with-reused-output
-   (package->package-query pkg)
+   (package->exact-package-query pkg)
    output-name
    (λ (variant)
      (cond [(exn? variant)
@@ -471,7 +473,7 @@
 
 (define (build-package-output pkg output-name)
   (subprogram-acyclic
-   (~a (abbreviate-exact-package-query (package->package-query pkg)) ", " output-name)
+   (~a (abbreviate-exact-package-query (package->exact-package-query pkg)) ", " output-name)
    (λ (messages)
      (define tmp
        (make-temporary-file "~a"
@@ -522,7 +524,7 @@
 ;===============================================================================
 ; A: Supporting procedures
 
-(define (package->package-query pkg)
+(define (package->exact-package-query pkg)
   (make-exact-package-query
    (package-provider pkg)
    (package-name pkg)
