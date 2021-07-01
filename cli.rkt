@@ -190,7 +190,7 @@
                       (halt 0
                             (sequence->list
                              (sequence-map (λ (link-path target-path)
-                                             ($show-string (format "~a -> ~a" link-path target-path)))
+                                             ($show-datum (cons link-path target-path)))
                                            (in-issued-links))))]
 
                      [_

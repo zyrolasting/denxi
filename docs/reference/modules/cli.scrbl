@@ -81,11 +81,12 @@ user dumps a log to a file, and another wants to read the messages in
 a different human language or notation.
 
 If @racket{links}, the program halts with exit code 0 and output
-@racket[(list ($show-string L) ...)], where @racket[L] is a string
-containing a path to a symbolic link and a path to another filesystem
-entry referenced by that link. These symbolic links are special in
-that they are tracked by Xiden for garbage collection
-purposes.
+@racket[(list ($show-datum (cons L T)) ...)], where @racketid[L] is a
+path to a symbolic link, and @racketid[T] is a path to another
+filesystem entry referenced by that link. These symbolic links are
+tracked by Xiden for garbage collection purposes, and therefore all
+@racketid[T] are deleted by @racket[gc-command] when all relevant
+values of @racketid[L] do not exist.
 
 In all other cases, the program halts with exit code 1 and output
 @racket[($cli:undefined-command A)].
