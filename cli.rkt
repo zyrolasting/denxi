@@ -437,6 +437,8 @@
       (define installed
         (get-checked-installed-outputs))
 
+      (writeln installed)
+
       ; Search installed outputs for the one we just requested.
       (check-true
        (for/or ([entry (in-list installed)])
@@ -451,16 +453,10 @@
               (linked? expected-link-name
                        (build-object-path actual-object-directory-name)))))
 
-      (define currently-issued-links
-        (check-no-garbage-collected))
-
+      (define currently-issued-links (check-no-garbage-collected))
       (delete-file expected-link-name)
-
-      (check-equal? (get-checked-links)
-                    currently-issued-links)
-
-      ; Collect garbage
-      (check-garbage-collection positive?)
+      (check-equal? (get-checked-links) currently-issued-links)
+      (xiden-collect-garbage)
       (check-true (hash-empty? (get-checked-links)))))
 
 
