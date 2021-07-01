@@ -4,8 +4,8 @@ If you've finished the guide, then you've been sent here to
 practice. You'll see what launchers and package definitions can
 do. Every now and then an example will ask you to look up something
 with `raco docs`. Do so. It will give you experience with the
-reference material.  Once you are can work with the reference, you
-will know how to write your own examples. :)
+reference material.  Once you can work with the reference, you will
+know how to write your own examples. :)
 
 
 ## After the Guide
