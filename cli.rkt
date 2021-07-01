@@ -354,6 +354,17 @@
   (define (test-cli msg args continue)
     (test-case msg (check-cli args continue)))
 
+
+  (define (check-garbage-collection ok?)
+    (check-cli (list "gc")
+               (λ (exit-code messages stdout stderr)
+                 (check-equal? exit-code 0)
+                 (match messages
+                   [(list ($finished-collecting-garbage r)) (check-pred ok? r)]
+                   [_ (fail (format (~a "Garbage collection command "
+                                        "returned unexpected messages:~n~s")
+                                    messages))]))))
+
   (test-cli "Fetch from user-provided sources"
             '("fetch" "(byte-source #\"abcdef\")")
             (λ (exit-code messages stdout stderr)
