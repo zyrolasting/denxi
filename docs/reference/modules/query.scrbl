@@ -11,8 +11,8 @@
 @defmodule[xiden/query]
 
 A @deftech{package query} is a colon-separated string that matches
-against discovery and @tech{version} information in @tech{package
-definitions}.
+against @tech{package definition} names or installed outputs in a
+@tech{state}.
 
 
 @section{Package Query Syntax}
@@ -97,6 +97,115 @@ should be set to the empty string like so:
                            (list-ref user-defined i)
                            "")))))
 ]
+
+
+
+@section[#:tag "queries"]{Examples}
+
+Field positions are important. You can still create a query for just
+@tt{calculator}, but @tt{calculator} would be intepreted as the
+provider, and not the package name.
+
+
+@subsection{Specifying an Edition}
+
+If you prefer a scientific calculator, the package author can provide
+that design under a different @tech/xiden-reference{edition}. Specify
+an edition using the next field.
+
+@verbatim|{
+example.com:calculator:scientific
+}|
+
+
+@subsection{Specifying Accepted Revisions}
+
+The next field is for requesting a specific
+@tech/xiden-reference{revision} of a package.
+
+@verbatim|{
+example.com:calculator:scientific:288
+example.com:calculator:scientific:open-beta
+}|
+
+A revision can be an exact nonnegative integer or a name. Names are
+aliases for numbers.
+
+What about version ranges? Just add another revision to act as the
+maximum accepted revision.
+
+@verbatim|{
+example.com:calculator:scientific:288:288
+}|
+
+From here we can change the endpoints of the interval to accept alternative
+packages.  This is useful if some implementations are not available.
+
+@verbatim|{
+example.com:calculator:scientific:102:288
+}|
+
+
+@subsection{Marking Inclusive and Exclusive Endpoints}
+
+By default, revision intervals are inclusive of their endpoints.  You
+can add flags to mark the interval as inclusive or exclusive of each
+endpoint. Use the letter @tt{i} for inclusive, and @tt{e} for
+exclusive.  In the below form, revision @tt{288} will @italic{not}
+match this query because of the @tt{e} on the right side of the two
+flags.
+
+@verbatim|{
+example.com:calculator:scientific:102:288:ie
+}|
+
+Using integer interval notation:
+
+@itemlist[
+@item{@tt{ii} means @litchar|{{102 .. 288}}|}
+@item{@tt{ie} means @litchar|{{102 .. 287}}|}
+@item{@tt{ei} means @litchar|{{103 .. 288}}|}
+@item{@tt{ee} means @litchar|{{103 .. 287}}|}
+]
+
+Marking exclusive bounds are useful with revision names.  The below
+query requests a scientific calculator's closed beta implementation,
+up to but not including the production-ready revision.
+
+@verbatim|{
+example.com:calculator:scientific:closed-beta:production:ie
+}|
+
+
+If the author did not define a revision name marking the end of a
+beta, then you would have to know the revision number in advance of
+writing the query. With the interval flags, you do not have to know
+any revision numbers.
+
+When resolving @tech/xiden-reference{revision names}, Xiden will raise
+an error for queries like these because they each resolve to a
+backwards interval:
+
+@verbatim|{
+example.com:calculator:scientific:production:closed-beta
+example.com:calculator:scientific:9:0
+example.com:calculator:scientific:3:3:ee
+}|
+
+
+@subsection{Omitting Information}
+
+You may omit fields in @tech{package queries}. Two contiguous colons
+will set the associated field to the empty string. Any contiguous
+colon sequence at the end of a query is implied and does not need to
+be typed.
+
+@verbatim|{
+example.com:calculator::production
+}|
+
+Even the empty string is a valid @tech{package query}.  In fact,
+@racket[""] and @racket[":::"] parse the same way.
 
 
 @section{Primitive Package Query Operations}

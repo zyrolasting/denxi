@@ -1,0 +1,20 @@
+A workspace is a directory that Xiden uses to hold its state. Each
+workspace is assumed to be self-contained. Details: `raco doc
+workspace L:xiden/state`
+
+You can see the default workspace by running this command.  If you ran
+another example, look there now to see a database and a
+content-addressable filesystem. Links are issued from workspaces.
+
+  racket -l racket/base -l xiden/state -e '(XIDEN_WORKSPACE)'
+
+This example has two launchers that select different workspace
+locations. Try them out to see where installations end up.
+
+Once you have a workspace directory, open it up and look inside.
+You'll find content-addressable files and links in an `objects`
+directory, and a SQLite3 database called `db`. The database
+is in sync with `objects` unless directly corrupted.
+
+Protect workspaces! Xiden can't prevent or recover from direct
+tampering.

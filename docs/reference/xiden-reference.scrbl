@@ -12,6 +12,7 @@ For all documentation, see @other-doc[xiden-index].
 
 @table-of-contents[]
 
+@include-section{background.scrbl}
 @include-section{modules/cli.scrbl}
 @include-section{modules/cmdline.scrbl}
 @include-section{modules/cli-flag.scrbl}
