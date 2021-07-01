@@ -315,6 +315,8 @@
          any)]
     [get-checked-links
      (-> (hash/c path-string? path-string?))]
+    [get-checked-installed-outputs
+     (-> list?)]
     [check-garbage-collection
      (-> predicate/c void?)]))
 
@@ -370,6 +372,18 @@
                    (check-pred link-exists? (normalize link-path))
                    (check-pred something-exists? (normalize obj-path))
                    (values link-path obj-path)))))
+
+  (define (get-checked-installed-outputs)
+    (check-cli (list "show" "installed")
+               (λ (exit-code messages stdout stderr)
+                 (check-equal? exit-code 0)
+                 (for/list ([entry (in-list messages)])
+                   (match-define ($show-datum (list exact-query output-name dirname)) entry)
+                   (define output-directory (build-workspace-path "objects" dirname))
+                   (define parsed (parse-package-query exact-query))
+                   (check-pred directory-exists? output-directory)
+                   (check-pred exact-package-query? parsed)
+                   (list parsed output-name dirname)))))
 
   (define (check-garbage-collection ok?)
     (check-cli (list "gc")

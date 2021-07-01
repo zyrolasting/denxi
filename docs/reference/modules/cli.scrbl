@@ -159,6 +159,16 @@ links.
 Relative paths are made in regards to @racket[(XIDEN_WORKSPACE)].
 }
 
+@defproc[(get-checked-installed-outputs) (listof (list/c exact-package-query? string? path-string?))]{
+Run the @racket[show-command] with @litchar{installed}, makes related
+assertions on the data, then returns a list of lists. The first
+element of a sublist is an @tech{exact package query} that identifies
+a package definition responsible for an output. The second element is
+the name of that output. The third element, when passed to
+@racket[build-object-path], returns the path to the installed output.
+}
+
+
 @defproc[(check-garbage-collection [ok? predicate/c]) void?]{
 Run the @litchar{gc} command, assert expected behaviors, then assert
 @racket[ok?] returns @racket[#t] when applied to the number of bytes
