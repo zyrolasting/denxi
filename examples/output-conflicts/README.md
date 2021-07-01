@@ -7,21 +7,28 @@ what you want. That's often the right thing to do, but we can override
 that when prototyping.
 
 Let's look at an example. There are two definitions in this file:
-`lub`, and `dub`. They both use the package name `heart`, and default
-names everywhere else. Follow these steps to induce a conflict.
+`lub.rkt`, and `dub.rkt`. They both use the package name `heart`, and
+they both produce a file called `sound`. Beyond the content of
+`sound`, they do not distinguish themselves any further. We can make
+them conflict.
 
-1. Run `racket launcher.rkt do +a lub.rkt`
-2. Delete the `heart` link. Do _not_ collect garbage.
-3. Run `racket launcher.rkt do +a dub.rkt`
+Run `racket launcher.rkt do +a lub.rkt`. You'll see a `heart` link
+appear. Run `cat heart/sound`, and you'll see `lub`. Now delete the
+`heart` link, but do _not_ collect garbage. If we collect garbage, the
+cache would have the name available again.
 
-You'll see a link called `heart` after Step 3, but it shows `lub.rkt`,
-not `dub.rkt`! Step 3 would have created a link pointing to `dub.rkt`
-if you collected garbage on Step 2, because then the name would be
-free again.
+Now run `racket launcher.rkt do +a dub.rkt`. You'll see the `heart`
+link again, but the `sound` file still shows `lub` because of the
+cache hit.
 
-The definitions can either agree to use different names, or a launcher
-can force side-by-side installations for all definitions using
-`(current-package-editor sxs)`. The problem can be addressed by an
-end-user or a developer, which is nice. Installations are also scoped
-per-workspace, so you can always get a blank namespace by giving Xiden
-a blank state as input.
+These conflicts are also easier to make because we didn't version the
+definitions. If they were versioned, they would only conflict if their
+versions matched. The same can be said for the provider name and a
+self-given name, because a definition's identity consists of all of
+these items.
+
+The definitions can either agree to distinguish themselves on at least
+one of these items, or a launcher can force side-by-side installations
+for all definitions using `(current-package-editor sxs)`. Or, since
+installations are scoped per-workspace, you get a blank namespace by
+giving Xiden a blank state as input.
