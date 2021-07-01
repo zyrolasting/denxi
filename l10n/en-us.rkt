@@ -257,7 +257,7 @@
                                       (format "~a - ~a"
                                               (or (car variant)
                                                   PRESUMED_MINIMUM_RACKET_VERSION)
-                                              (or (cdr variant)
+                                              (or (cadr variant)
                                                   PRESUMED_MAXIMUM_RACKET_VERSION))
                                       variant)))
                         versions)))))]

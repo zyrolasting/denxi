@@ -331,7 +331,7 @@
       [(unsupported)
        (if allow-unsupported?
            ($use pkg)
-           ($fail ($package:unsupported-racket-version racket-support)))])))
+           ($fail ($package:unsupported-racket-version (package-racket-versions pkg))))])))
 
 
 (define-subprogram (validate-requested-output pkg requested)
