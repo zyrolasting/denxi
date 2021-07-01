@@ -83,6 +83,24 @@
   (null? (directory-list path)))
 
 
+(define (something-exists? path)
+  (or (file-exists? path)
+      (directory-exists? path)
+      (link-exists? path)))
+
+
+(define (linked? link-path path)
+  (and (link-exists? link-path)
+       (something-exists? path)
+       (equal? (file-or-directory-identity link-path)
+               (file-or-directory-identity path))))
+
+
+(define (file-link-exists? path)
+  (and (link-exists? path)
+       (file-exists? path)))
+
+
 (define (call-with-temporary-directory f #:cd? [cd? #t] #:base [base #f])
   (when base (make-directory* base))
   (define tmp-dir (make-temporary-file "rktdir~a" 'directory base))

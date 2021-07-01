@@ -35,6 +35,31 @@ paths are found.  Otherwise, the procedure uses the first matching
 path.
 }
 
+
+@defproc[(directory-empty? [path path-string?]) boolean?]{
+Returns @racket[(null? (directory-list path))].
+}
+
+
+@defproc[(something-exists? [path path-string?]) boolean?]{
+@racketblock[
+(or (file-exists? path)
+    (directory-exists? path)
+    (link-exists? path))]
+}
+
+
+@defproc[(linked? [link-path path-string?] [path path-string?]) boolean?]{
+Returns @racket[#t] if @racket[link-path] refers to an existing link,
+a file, directory, or link exists at @racket[path], and both paths
+resolve to the same filesystem identifier.
+}
+
+@defproc[(file-link-exists? [link-path path-string?]) boolean?]{
+Returns @racket[#t] if @racket[link-path] refers to an existing link,
+and the link points to a regular file.
+]
+
 @defstruct*[($path-not-found $message) ([pattern (or/c regexp? pregexp? byte-regexp? byte-pregexp? string?)] [wrt path-string?])]{
 A @tech{message} reporting if @racket[(path-matching pattern wrt)] found no path.
 }
