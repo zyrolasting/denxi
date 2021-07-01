@@ -4,6 +4,7 @@
 
 (module+ main (launch-xiden!))
 
+(require racket/function)
 
 ; Override Xiden's cryptographic operations
 ; in a zero-trust context.
