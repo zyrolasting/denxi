@@ -53,4 +53,4 @@ know how to write your own examples. :)
 1. [Maximum Trust](./maximum-trust): What's the _worst_ way to use
    Xiden? (@zyrolasting)
 1. [Cryptography Backends](./cryptographic-backends): Selecting a back
-   end for cryptographic operations.
+   end for cryptographic operations. (@zyrolasting)
