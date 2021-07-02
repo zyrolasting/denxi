@@ -231,6 +231,12 @@
            output-name
            (join-lines (map format-message messages)))]
 
+  [($package:abstract-input name)
+   (~a "cannot use abstract input " (~s name)
+       ". Either override it using "
+       (format-cli-flags --XIDEN_INPUT_OVERRIDES)
+       ", or configure your launcher to address this.")]
+
   [($package:output:built)
    "built output"]
 
