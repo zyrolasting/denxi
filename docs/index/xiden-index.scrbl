@@ -9,14 +9,12 @@
 @title[#:style '(toc)]{Xiden Documentation}
 @author[(author+email "Sage L. Gerard" "sage@sagegerard.com" #:obfuscate? #t)]
 
-@define-runtime-path[logo]{doc-logo.png}
-
 @(define logo-element
    (elem #:style
     (style #f
            (list (alt-tag "img")
                  (attributes
-                  `((src . "./doc-logo.png")
+                  `((src . "https://github.com/zyrolasting/xiden/raw/master/docs/index/doc-logo.png")
                     (style . "max-width: 100%")))))))
 
 @logo-element
