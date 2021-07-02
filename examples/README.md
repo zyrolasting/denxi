@@ -13,6 +13,9 @@ know how to write your own examples. :)
    for convenience and for comparison to later
    examples. (@zyrolasting)
 1. [Workspaces](./workspaces): How Xiden stores state. (@zyrolasting)
+1. [Input and Output Selection](./input-output-selection): Package
+   definitions can have any number of inputs, but outputs decide what
+   make it to disk. (@zyrolasting)
 1. [Integrity Checking](./integrity-checking): Verify that content is
    correct.  (@zyrolasting)
 1. [Signature Checking](./signature-checking): Verify that content

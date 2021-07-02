@@ -1,7 +1,7 @@
 #lang xiden
 
-(input "dark.css"
-       (artifact (text-source "body { background: black }\n")
+(input "light.css"
+       (artifact (text-source "body { background: white }\n")
                  #f
                  #f))
 
@@ -12,7 +12,8 @@
          '("<DOCTYPE html>"
            "<html>"
            "  <head>"
-           "    <link rel=\"stylesheet\" href=\"dark.css\" />"
+           "    <style>body { background: black }</style>"
+           "    <link rel=\"stylesheet\" href=\"light.css\" />"
            "    <title>Colored by output</title>"
            "  </head>"
            "</html>"))
@@ -20,8 +21,9 @@
         #f))
 
 (output "light"
-        (keep-input "index.html"))
-
-(output "dark"
         (keep-input "index.html")
-        (keep-input "dark.css"))
+        (keep-input "light.css"))
+
+; dark = absense of light
+(output "dark"
+        (keep-input "index.html"))
