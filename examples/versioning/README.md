@@ -5,7 +5,7 @@ made over time. See `raco docs xiden/version` for definitions.
 
 Each package definition includes its own version information, but they
 share the name `greeting`. If we abbreviate our installation request
-using `do +a` or `do ++install-abbreviated`, then Xiden will pick as
+using `do +a` or `do ++install-abbreviated`, then Xiden will pick
 `greeting` as the name of each version's link.  We avoid this conflict
 by building a transaction that uses the default output, but allows us
 to specify our own link names.
