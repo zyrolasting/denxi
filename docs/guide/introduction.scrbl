@@ -33,7 +33,7 @@ really bad idea)}.}
 
 @item{If you don't like how a software installation affects your system, you can override it.}
 
-@item{If you don't like Xiden itself, it will help you create an alternative that fits you.}
+@item{If you don't like Xiden itself, it will help you create an alternative interface that fits you.}
 
 @item{(@litchar{npm} users) You'll have more safety checks to protect your system.}
 
