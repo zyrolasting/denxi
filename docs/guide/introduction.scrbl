@@ -2,13 +2,27 @@
 
 @require["../shared.rkt" @for-label[racket/base]]
 
-@title{Motivation}
+@title{Introduction}
 
 @margin-note{@other-doc[xiden-white-paper] covers the thinking behind
 Xiden.}
-Xiden is an application and a library for distributing software.  It
-is one of many projects to make that claim, so here are the benefits
-that help it stand out.
+Xiden is a zero-trust, Guix-like programming model for software
+distribution. That means Xiden approaches software distribution as a
+whole, such that package management, CI/CD, and content management are
+use cases. You provide configuration and code to shape Xiden to your
+particular project, which does not have to be implemented in Racket.
+
+You'll want to use Xiden if you are a developer who wants more control
+over how software arrives on a system, but don't want to spend the
+time it takes to solve that problem well. End-users can also benefit
+from at least knowing about Xiden because they can have their own say
+over how Xiden-powered projects operate on their system. In that
+sense, Xiden as a model gives developers and users more options to
+freely associate and share work.
+
+These benefits of using Xiden affect developers and end-users.
+Developers would realize the benefits first, but are better equipped
+to share them with their users.
 
 @itemlist[
 
@@ -29,6 +43,6 @@ really bad idea)}.}
 
 @item{(Guix/Nix users) You get the benefits you expect on Windows, macOS, and GNU/Linux distributions out of the box.}
 
-@item{(End users on Steam, Play Store, etc.) Someone can use Xiden to help you get out from under corporate interests.}
+@item{(End users on Steam, Play Store, etc.) Someone can use Xiden to help transition you a new platform.}
 
 ]
