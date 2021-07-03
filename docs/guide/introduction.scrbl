@@ -6,23 +6,22 @@
 
 @margin-note{@other-doc[xiden-white-paper] covers the thinking behind
 Xiden.}
-Xiden is a zero-trust, Guix-like programming model for software
-distribution. That means Xiden approaches software distribution as a
-whole, such that package management, CI/CD, and content management are
-use cases. You provide configuration and code to shape Xiden to your
-particular project, which does not have to be implemented in Racket.
+You can think of Xiden as a zero-trust, Guix-like package manager. But
+in truth, Xiden is a programming model in which package management,
+CI/CD, and content management are use cases. You provide configuration
+and code to shape Xiden to your particular project, which does not
+have to be implemented in Racket.
 
-You'll want to use Xiden if you are a developer who wants more control
-over how software arrives on a system, but don't want to spend the
-time it takes to solve that problem well. End-users can also benefit
-from at least knowing about Xiden because they can have their own say
-over how Xiden-powered projects operate on their system. In that
-sense, Xiden as a model gives developers and users more options to
-freely associate and share work.
+Use Xiden if you are a developer who wants to control how software
+arrives on a system, quickly. End-users benefit from at least knowing
+about Xiden because they can have their own say over how Xiden-powered
+projects operate on their system. In that sense, Xiden as a model
+gives developers and users more options to freely associate and share
+work.
 
 These benefits of using Xiden affect developers and end-users.
-Developers would realize the benefits first, but are better equipped
-to share them with their users.
+Developers would realize the benefits first, but they are equipped to
+pass them along to their users.
 
 @itemlist[
 

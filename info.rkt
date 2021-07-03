@@ -30,5 +30,5 @@
 (define scribblings
   '(("docs/index/xiden-index.scrbl" () (tool))
     ("docs/reference/xiden-reference.scrbl" (multi-page) (tool-library))
-    ("docs/guide/xiden-guide.scrbl" (multi-page) (other))
+    ("docs/guide/xiden-guide.scrbl" () (tool))
     ("docs/white-paper/xiden-white-paper.scrbl" () (other))))

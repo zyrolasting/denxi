@@ -2,7 +2,7 @@
 
 @require["../shared.rkt"]
 
-@title[#:tag "outroduction"]{Next}
+@title[#:tag "outroduction"]{Practice}
 
 You installed Xiden, wrote a package definition, wrote a launcher,
 then used the launcher to (un)install something.

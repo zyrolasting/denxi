@@ -11,8 +11,6 @@ practice using it.
 
 For all documentation, see @other-doc[xiden-index].
 
-@table-of-contents[]
-
 @include-section{introduction.scrbl}
 @include-section{setup.scrbl}
 @include-section{creating-packages.scrbl}
