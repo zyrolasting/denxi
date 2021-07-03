@@ -7,10 +7,11 @@
 @margin-note{@other-doc[xiden-white-paper] covers the thinking behind
 Xiden.}
 You can think of Xiden as a zero-trust, Guix-like package manager. But
-in truth, Xiden is a programming model in which package management,
-CI/CD, and content management are use cases. You provide configuration
-and code to shape Xiden to your particular project, which does not
-have to be implemented in Racket.
+in truth, Xiden is a programming model for software
+distribution. Package management, CI/CD, and content management are
+possible use cases. You provide configuration and code to shape Xiden
+to your particular project, which does not have to be implemented in
+Racket.
 
 Use Xiden if you are a developer who wants to control how software
 arrives on a system, quickly. End-users benefit from at least knowing
