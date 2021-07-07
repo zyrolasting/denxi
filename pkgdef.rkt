@@ -81,6 +81,7 @@
          "input.rkt"
          "integrity.rkt"
          "monad.rkt"
+         "output.rkt"
          "package.rkt"
          "racket-module.rkt"
          "setting.rkt"
@@ -186,12 +187,12 @@
 
 (define-modifier (output name:non-empty-string steps:expr ...)
   (λ (st)
-    (set-field (set-field st output-names (cons name (package-output-names st)))
-               build
-               (λ (requested-name)
-                 (if (equal? requested-name name)
-                     (coerce-subprogram (mdo steps ...))
-                     ((package-build st) requested-name))))))
+    (set-field st outputs
+               (cons (package-output
+                      name
+                      '(mdo steps ...)
+                      (λ () (coerce-subprogram (mdo steps ...))))
+                     (package-outputs st)))))
 
 (define-modifier (name n:non-empty-string)
   (set-field* name n))
@@ -219,7 +220,7 @@
   (require racket/contract rackunit)
 
   (test-case "Expand package definition state"
-    (define pkgdef
+    (define pkg
       (expand-instance
        (name "pkg")
        (edition "ed")
@@ -243,8 +244,10 @@
        (output "min" 2)
        (os-support windows macosx)
        (url "https://example.com/url")))
+
+
     (check-match
-     pkgdef
+     pkg
      (package
       "A combined string"
       '("testable" "battle-ready")
@@ -266,16 +269,23 @@
                            (artifact (? source? _)
                                      (integrity 'sha1 #"\253\315")
                                      (signature "pub" #"bytes"))))
-      '("default" "min")
-      (? procedure? _)))
+      (list (package-output "default"
+                            '(mdo 1)
+                            (? procedure? _))
+            (package-output "min"
+                            '(mdo 2)
+                            (? procedure? _)))))
 
-    (define build (package-build pkgdef))
+    (define (check output-name expected)
+      (call-with-values (λ ()
+                          (run-subprogram
+                           ((package-output-make-subprogram
+                            (find-package-output
+                             output-name
+                             (package-outputs pkg))))))
+                        (λ (result messages)
+                          (check-equal? result expected)
+                          (check-pred null? messages))))
 
-    (define (check l e)
-      (call-with-values (λ () (run-subprogram l))
-                        (λ (v m)
-                          (check-equal? v e)
-                          (check-pred null? m))))
-
-    (check (build "default") 1)
-    (check (build "min") 2)))
+    (check "default" 1)
+    (check "min" 2)))

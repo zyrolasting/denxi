@@ -17,8 +17,6 @@
                (or/c #f string?)
                any/c
                subprogram?)]
-          [output-not-found
-           (-> string? subprogram?)]
           [empty-package
            package?]
           [sxs
@@ -52,6 +50,7 @@
          "state.rkt"
          "message.rkt"
          "monad.rkt"
+         "output.rkt"
          "pkgdef/static.rkt"
          "port.rkt"
          "query.rkt"
@@ -111,8 +110,7 @@
    racket-versions
    metadata
    inputs
-   output-names
-   build))
+   outputs))
 
 
 (define (sxs pkg)
@@ -125,10 +123,6 @@
      (values (struct-copy package pkg [provider new-provider])
              (cons ($show-string (~a "sxs: " (package-provider pkg) " ~> " new-provider))
                    messages)))))
-
-
-(define (output-not-found name)
-  (subprogram-failure ($package:output:undefined)))
 
 
 (define empty-package
@@ -144,8 +138,7 @@
            '(("*" "*"))
            (hasheq)
            null
-           null
-           output-not-found))
+           null))
 
 (define-syntax-rule (build-package fields ...)
   (struct-copy package empty-package fields ...))
@@ -337,14 +330,14 @@
 
 
 (define-subprogram (validate-requested-output pkg requested)
-  (let ([available (package-output-names pkg)])
-    (if (member requested available)
-        ($use pkg)
-        ($fail ($package:unavailable-output available)))))
+  (if (find-package-output requested (package-outputs pkg))
+      ($use pkg)
+      ($fail ($package:unavailable-output
+              (map package-output-name (package-outputs pkg))))))
 
 
 (module+ test
-  (let ([ev (build-package [output-names (list DEFAULT_STRING)])])
+  (let ([ev (build-package [outputs (list (package-output DEFAULT_STRING null void))])])
     (test-subprogram
      "Allow only defined outputs"
      (validate-requested-output ev DEFAULT_STRING)
@@ -482,11 +475,14 @@
      (define-values (result messages*)
        (parameterize ([current-directory tmp]
                       [current-inputs (package-inputs pkg)])
-         (run-subprogram ((package-build pkg) output-name)
-                         messages)))
-
+         (let ([output (find-package-output output-name (package-outputs pkg))])
+           (run-subprogram (if output
+                               ((package-output-make-subprogram output))
+                               (subprogram-failure ($package:output:undefined output-name)))
+                           messages))))
      (values (if (eq? result FAILURE) FAILURE tmp)
              messages*))))
+
 
 (define-subprogram (record-package-output pkg output-name directory-record link-path)
   (declare-output (package-provider pkg)

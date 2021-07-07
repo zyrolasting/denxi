@@ -8,6 +8,7 @@
                     xiden/file
                     xiden/input
                     xiden/subprogram
+                    xiden/output
                     xiden/package
                     xiden/pkgdef/static
                     xiden/query
@@ -93,10 +94,7 @@ Each @racket[os] must be a possible value of @racket[(system-type
 
 @defform[(output name body ...)
          #:contracts ([name non-empty-string?])]{
-Defines a @deftech{package output}, which is a named subprogram where
-@racket[body] sits in an implicit @racket[mdo] form.  The output is
-encoded as part of the implementation of @racket[package-build].
-The name is added to @racket[package-output-names].
+Adds a @tech{package output} to @racket[package-outputs].
 
 Blank outputs like @racket[(output "name")] are acceptable, but are
 only useful when expecting cached outputs.

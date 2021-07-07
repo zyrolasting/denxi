@@ -5,6 +5,7 @@
                     racket/string
                     xiden/input
                     xiden/message
+                    xiden/output
                     xiden/package
                     xiden/racket-module
                     xiden/string
@@ -31,8 +32,7 @@
                      [racket-versions (listof (list/c non-empty-string?))]
                      [metadata (hash/c symbol? string?)]
                      [inputs (listof package-input?)]
-                     [output-names (listof non-empty-string?)]
-                     [build (-> non-empty-string? (subprogram/c void?))])]{
+                     [outputs (listof package-output?)])]{
 A @deftech{package} is an instance of @racket[package].
 
 @racket[description] is a human-readable summary of the package's purpose.
@@ -70,39 +70,23 @@ fields, prefer the values in the structure fields.
 
 @racket[inputs] is a list of @tech{package inputs}.
 
-@racket[output-names] is a list of defined @tech{package outputs}.
+@racket[outputs] is a list of defined @tech{package outputs}.
 
-@margin-note{@racket[build] procedures created using
-@racketmodname[xiden/pkgdef] are always surjective, but might not be
-injective.}
-@racket[build] is function that maps the elements of
-@racket[output-names] to @tech{subprograms}. Each subprogram
-procedure installs software into @racket[current-directory] assuming
-@racket[current-inputs] is bound to @racket[inputs]. The behavior of
-@racket[build] is impacted by the @tech{runtime configuration}.
-
-Xiden will not verify if @racket[build] procedures are bijective.  If
-@racket[build] is not bijective, then @racket[build]'s relationship
-with the host system varies slightly. If @racket[build] is not
-injective, then it may create redundant data on disk because Xiden
-assumes that different output names imply different file
-distributions. If @racket[build] is not surjective, then a
+A function that maps output names to subprograms in @racket[outputs] is
+surjective, but might not be injective. Xiden does not distinguish the
+two, meaning that non-injective lookups will create redundant data on
+disk (Xiden assumes that different output names imply different file
+distributions). When non-surjective, then an output's
 @tech{subprogram} might be inaccessible.  This can happen if a
 @racket[package] instance is manually created with faulty data.
-Bijective @racket[build] procedures do not have these problems.
+Bijective lookups do not have these problems, and they are easy to
+make using @racketmodname[xiden/pkgdef].
 }
 
 @defthing[empty-package package?]{
 The @tech{package} with no inputs, no outputs, and all default values.
 The empty package claims to support all operating systems and versions
 of Racket.
-}
-
-@defthing[output-not-found (-> non-empty-string? subprogram?)]{
-The build procedure for the empty package.
-
-Returns a @tech{subprogram} that always fails and adds
-@racket[$package:output:undefined] to the program log.
 }
 
 @defproc[(package->exact-package-query [pkg package?]) exact-package-query?]{

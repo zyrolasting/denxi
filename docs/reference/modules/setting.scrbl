@@ -23,9 +23,12 @@ help to the parameters. Every setting must be configurable using every
 approach in @secref{setting-methods}.
 
 Xiden dynamically binds values to settings when launched. A
-@deftech{runtime configuration} is any
-@tech/reference{parameterization} created after Xiden finishes
-processing @secref{setting-methods}.
+@deftech{runtime configuration} is a Racket
+@tech/reference{parameterization} in effect after Xiden finishes
+processing all @secref{setting-methods}. This implies that a runtime
+configuration accounts for @italic{all} Racket parameters
+(e.g. @racket[current-directory]), and not just the ones defined by
+Xiden.
 
 
 @section[#:tag "setting-methods"]{Methods for Changing Settings}

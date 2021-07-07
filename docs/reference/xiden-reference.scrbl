@@ -24,6 +24,7 @@ For all documentation, see @other-doc[xiden-index].
 @include-section{modules/artifact.scrbl}
 @include-section{modules/message.scrbl}
 @include-section{modules/input.scrbl}
+@include-section{modules/output.scrbl}
 @include-section{modules/integrity.scrbl}
 @include-section{modules/signature.scrbl}
 @include-section{modules/dig.scrbl}
