@@ -2,7 +2,8 @@
 
 (require racket/contract)
 
-(provide (struct-out package-output)
+(provide transparent-package-output
+         (struct-out package-output)
          (contract-out
           [encode-package-output
            (-> package-output?
@@ -12,7 +13,19 @@
                (listof package-output?)
                (or/c #f package-output?))]))
 
+(require (for-syntax racket/base
+                     "string.rkt")
+         syntax/parse/define
+         "monad.rkt"
+         "subprogram.rkt")
+
 (struct package-output (name steps make-subprogram))
+
+(define-syntax-parse-rule (transparent-package-output name:non-empty-string steps:expr ...)
+  (package-output
+   name
+   (quote (mdo steps ...))
+   (lambda () (mdo (coerce-subprogram steps) ...))))
 
 (define (encode-package-output output)
   `(output ,(package-output-name output)

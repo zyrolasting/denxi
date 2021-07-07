@@ -23,9 +23,6 @@ are suitable for use in @racket[mdo].
 @racket[make-subprogram] returns a subprogram that creates files. The
 subprogram does not need to be atomic, but it should mirror the
 content of @racket[steps].
-
-There is no guarentee that @racket[steps] and @racket[make-subprogram]
-are related except for instances built using @racket[output].
 }
 
 @defproc[(find-package-output [name string?] [steps (listof package-output?)])
@@ -45,4 +42,16 @@ Returns a quoted @racket[output] term suitable for use in a
 of the returned list depends on if @racket[(package-output-steps
 to-encode)] and @racket[(package-output-sunprogram to-encode)] are
 equivalent.
+}
+
+@defform[(transparent-package-output name step ...)
+         #:contracts ([name non-empty-string?])]{
+Expands to a new @racket[package-output] where the
+@racket[package-output-steps] and
+@racket[package-output-make-subprogram] fields both use the provided
+sequence of @racketid[step]s.
+
+Specifically, @racket[package-output-steps] is @racket[(quote (mdo
+step ...))]  and @racket[package-output-make-program] is
+@racket[(lambda () (mdo step ...))].
 }

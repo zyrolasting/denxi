@@ -188,10 +188,7 @@
 (define-modifier (output name:non-empty-string steps:expr ...)
   (λ (st)
     (set-field st outputs
-               (cons (package-output
-                      name
-                      '(mdo steps ...)
-                      (λ () (coerce-subprogram (mdo steps ...))))
+               (cons (transparent-package-output name steps ...)
                      (package-outputs st)))))
 
 (define-modifier (name n:non-empty-string)
