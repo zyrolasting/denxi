@@ -254,7 +254,7 @@
                     source
                     (λ (from-source est-size)
                       (make-limited-input-port from-source
-                                               (min max-size est-size)
+                                               (inexact->exact (min max-size est-size))
                                                #f))))
 
 
