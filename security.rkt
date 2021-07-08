@@ -118,8 +118,8 @@
     ; No weak cipher suites
     (ssl-set-ciphers! ctx "DEFAULT:!aNULL:!eNULL:!LOW:!EXPORT:!SSLv2")
     ; Seal context so further changes cannot weaken it
-    (ssl-seal-context! ctx)
-    ctx))
+    (ssl-seal-context! ctx))
+  ctx)
 
 ;-------------------------------------------------------------------------------
 ; Memory management
