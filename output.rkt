@@ -25,7 +25,7 @@
   (package-output
    name
    (quote (mdo steps ...))
-   (lambda () (mdo (coerce-subprogram steps) ...))))
+   (lambda () (coerce-subprogram (mdo steps ...)))))
 
 (define (encode-package-output output)
   `(output ,(package-output-name output)
