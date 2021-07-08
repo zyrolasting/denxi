@@ -437,8 +437,6 @@
       (define installed
         (get-checked-installed-outputs))
 
-      (writeln installed)
-
       ; Search installed outputs for the one we just requested.
       (check-true
        (for/or ([entry (in-list installed)])
