@@ -115,6 +115,12 @@ Returns @racket[(chf-bind-trust configured)], where
 @racket[(XIDEN_TRUST_CHFS)].
 }
 
+@defproc[(build-builtin-chf-trust [trust-chfs (listof symbol?)]) (listof chf?)]{
+Returns a value suitable for use in @racket[current-chfs].
+
+The implementations of the given CHFs come from a bundled C library,
+any input symbols must appear in @racket[(integrity-ffi-get-c-chfs!)].
+}
 
 @section{Prototyping Integrity Checks}
 

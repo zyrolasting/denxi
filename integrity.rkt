@@ -14,6 +14,9 @@
         ((listof chf?))
         (-> (or/c bytes? path-string? input-port?)
             boolean?))]
+  [build-builtin-chf-trust
+   (-> (listof symbol?)
+       (listof chf?))]
   [call-with-snake-oil-chf-trust
    (-> (-> any) any)]
   [fetch-digest
