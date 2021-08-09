@@ -91,7 +91,7 @@
 (define (load-builtin-chf xiden-sym [fail-thunk (λ () (raise ($chf-unavailable xiden-sym)))])
   (or (and (integrity-ffi-available?!)
            (integrity-ffi-chf-available?! xiden-sym)
-           (λ (in _) (integrity-ffi-make-digest! in xiden-sym)))
+           (λ (in) (integrity-ffi-make-digest! in xiden-sym)))
       (fail-thunk)))
 
 
