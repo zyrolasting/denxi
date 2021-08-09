@@ -813,11 +813,12 @@
         (open-input-bytes
          (let ([other-digest (find-path-digest path)])
            (cond [other-digest other-digest]
+                 [(link-exists? path)
+                  (string->bytes/utf-8 (~a (file-name-from-path path)))]
                  [(directory-exists? path)
                   (make-directory-digest path chf)]
                  [(file-exists? path)
                   (make-file-digest path chf)]
-                 ; TODO: Is this a good idea?
                  [else #""]))))
        chf))
     (string->bytes/utf-8 (~a (file-name-from-path dir)))
