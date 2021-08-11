@@ -173,7 +173,7 @@
        (λ (tmp-dir)
          (XIDEN_WORKSPACE tmp-dir
                           (λ () body ...))))))
-  
+
   (define (tmp p)
     (define tmpfile (make-temporary-file "~a"))
     (dynamic-wind void
