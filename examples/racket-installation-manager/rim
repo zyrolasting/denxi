@@ -1,0 +1,129 @@
+#! /usr/bin/env racket
+#lang xiden/launcher
+(require racket net/url version/utils)
+
+(XIDEN_TRUST_HOST_EXECUTABLES '("sh"))
+(XIDEN_TRUST_UNSIGNED #t)
+(XIDEN_FETCH_TOTAL_SIZE_MB +inf.0)
+
+(current-chfs
+ (build-builtin-chf-trust '(sha1 sha256)))
+
+(current-content-scanner
+ (λ (path)
+   (if (directory-exists? path)
+       (open-input-string (~a (file-name-from-path path)))
+       (scan-all-filesystem-content path))))
+
+(define host-url-prefix "https://download.racket-lang.org/releases/")
+
+(module+ main
+  (command-line
+   #:args (racket-version . patterns)
+
+   (unless (valid-version? racket-version)
+     (raise-user-error "Please use a valid-version? string."))
+
+   (let ([available (get-available-racket-versions)])
+     (unless (member racket-version available)
+       (printf "Sorry, but I do not see ~a.~nAvailable versions:~n"
+               racket-version)
+       (print-available-versions! available (car available))
+       (display #\newline)
+       (exit 1)))
+
+   (unless (link-exists? racket-version)
+     (parameterize ([current-message-formatter (get-message-formatter)])
+       (run+print-subprogram
+        (install racket-version
+                 DEFAULT_STRING
+                 (text-source
+                  (~s (make-racket-installer-package racket-version
+                                                     (system-type 'os)
+                                                     patterns)))))))
+
+   (when (link-exists? racket-version)
+     (when (link-exists? "bin")
+       (delete-file "bin"))
+     (make-file-or-directory-link (build-path racket-version "racket" "bin")
+                                  "bin"))))
+
+
+(define (print-available-versions! entries last-seen)
+  (if (null? entries)
+      (void)
+      (let ([next (car entries)])
+        (if (equal? (string-ref next 0) (string-ref last-seen 0))
+            (printf "~a " next)
+            (printf "~n~a " next))
+        (print-available-versions! (cdr entries) next))))
+
+
+(define (get-available-racket-versions)
+  (sort
+   (filter-map
+    (λ (v [as-string (coerce-string (regexp-replace* #px"[^\\d\\.]" v ""))])
+      (and (valid-version? as-string) as-string))
+    (regexp-match* #px"href=\"([\\d\\.]+)\"" (download-page "")))
+   string>?))
+
+
+(define (make-racket-installer-package racket-version os patterns)
+  (define input (make-input racket-version os patterns))
+  `(module anon xiden/pkgdef
+     (provider "download.racket-lang.org")
+     (revision-number ,(version->integer racket-version))
+     (os-support ,os)
+     ,input
+     (output ,DEFAULT_STRING
+             unresolved := (input-ref ,(cadr input))
+             installer := (resolve-input unresolved)
+             (run "sh" installer "--in-place" "--dest" "racket")
+             (release-input unresolved))))
+
+
+(define/contract (make-input racket-version os patterns)
+  (-> valid-version?
+      (or/c 'windows 'unix 'macosx)
+      (listof string?)
+      list?)
+  (define content
+    (download-page racket-version))
+
+  (define (scrape pattern)
+    (map coerce-string (regexp-match* pattern content)))
+
+  (define (in-page? pattern)
+    (regexp-match? pattern content))
+
+  (define-values (chf digest-length)
+    (if (in-page? #rx"SHA256")
+        (values 'sha256 64)
+        (values 'sha1 40)))
+
+  (define digests
+    (scrape (pregexp (format "(?i:([a-f0-9]{~a}))" digest-length))))
+
+  (define installer-urls
+    (scrape #px"(installers/[^\"]+)"))
+
+  (define expected-os?
+    (curry regexp-match?
+           (pregexp (case os [(windows) "win32"] [(macosx) "macosx"] [else "linux"]))))
+    
+  (for/or ([installer-url (in-list installer-urls)] [digest (in-list digests)])
+    (and (expected-os? installer-url)
+         (andmap (λ (p)
+                   (regexp-match? (pregexp p)
+                                  (file-name-from-path installer-url)))
+                 patterns)
+         `(input ,(~a "installer" (coerce-string (path-get-extension installer-url)))
+                 (artifact (http-source ,(~a host-url-prefix racket-version "/" installer-url))
+                           (integrity ',chf (hex ,digest))
+                           #f)))))
+
+
+(define (download-page url-suffix)
+  (port->bytes
+   (get-pure-port #:redirections 3
+                  (string->url (~a host-url-prefix url-suffix)))))
