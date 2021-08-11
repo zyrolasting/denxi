@@ -76,6 +76,11 @@
                string?
                (-> (or/c #f exn? output-record?) any)
                any)]
+          [make-content-address
+           (-> (or/c file-exists?
+                     directory-exists?
+                     link-exists?)
+               bytes?)]
           [in-xiden-outputs
            (-> package-query-variant?
                string?
@@ -109,9 +114,16 @@
            (-> directory-exists?
                path-record?)]
           [make-addressable-link
-           (-> path-record? path-string? path-record?)]))
+           (-> path-record? path-string? path-record?)]
+          [scan-all-filesystem-content
+           (-> path-string? input-port?)]
+          [current-content-scanner
+           (parameter/c (-> path-string? input-port?))]))
+
 
 (define+provide-message $finished-collecting-garbage (bytes-recovered))
+(define+provide-message $no-content-to-address (path))
+
 (define+provide-setting XIDEN_WORKSPACE workspace-directory/c
   (build-path (find-system-path 'home-dir)
               ".xiden"))
@@ -191,6 +203,33 @@
 
 (define (build-addressable-path digest)
   (build-object-path (encoded-file-name digest)))
+
+
+;-------------------------------------------------------------------------------
+; Content addressing
+
+(define (make-content-address path)
+  (make-digest ((current-content-scanner) path)
+               (get-default-chf)))
+
+(define (scan-all-filesystem-content path)
+  (define (open-permissions)
+    (open-input-string (~a (file-or-directory-permissions path 'bits))))
+  (apply input-port-append #t
+         (open-input-string (~a (file-name-from-path path)))
+         (cond [(link-exists? path)
+                null]
+               [(file-exists? path)
+                (list (open-permissions)
+                      (open-input-file path))]
+               [(directory-exists? path)
+                (cons (open-permissions)
+                      (map scan-all-filesystem-content
+                           (directory-list path #:build? #t)))]
+               [else (raise ($no-content-to-address path))])))
+
+(define current-content-scanner
+  (make-parameter scan-all-filesystem-content))
 
 
 ;------------------------------------------------------------------------------
@@ -659,7 +698,7 @@
                             #:buffer-size buffer-size
                             #:timeout-ms timeout-ms
                             #:est-size est-size))))
-            (define digest (call-with-input-file* tmp make-digest))
+            (define digest (make-content-address tmp))
             (define path (build-addressable-path digest))
             (make-directory* (path-only path))
             (rename-file-or-directory tmp path #t)
@@ -673,7 +712,7 @@
           (λ () (close-input-port in))))))
 
 (define (make-addressable-directory directory)
-  (define digest (make-directory-digest directory))
+  (define digest (make-content-address directory))
   (define path (build-addressable-path digest))
   (rename-file-or-directory directory path)
   (declare-path (find-relative-path (XIDEN_WORKSPACE) path)
@@ -801,36 +840,6 @@
       path
       (path->string path)))
 
-
-(define (make-directory-digest dir [chf (get-default-chf)])
-  (make-digest
-   (sequence-fold
-    (λ (accum path)
-      (make-digest
-       (input-port-append
-        #t
-        (open-input-bytes accum)
-        (open-input-bytes
-         (let ([other-digest (find-path-digest path)])
-           (cond [other-digest other-digest]
-                 [(link-exists? path)
-                  (string->bytes/utf-8 (~a (file-name-from-path path)))]
-                 [(directory-exists? path)
-                  (make-directory-digest path chf)]
-                 [(file-exists? path)
-                  (make-file-digest path chf)]
-                 [else #""]))))
-       chf))
-    (string->bytes/utf-8 (~a (file-name-from-path dir)))
-    (in-directory dir))))
-
-
-(define (make-file-digest path [chf (get-default-chf)])
-  (make-digest
-   (input-port-append #t
-                      (open-input-string (~a (file-name-from-path path)))
-                      (open-input-file path))
-   chf))
 
 
 ;----------------------------------------------------------------------------------

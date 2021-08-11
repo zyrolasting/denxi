@@ -271,6 +271,10 @@
   [($package:unavailable-output available)
    (format "Requested output is not available. Available outputs: ~s" available)]
 
+  [($no-content-to-address path)
+   (format "Tried to create address for path where nothing exists:~n  ~a"
+           path)]
+
   [($fetch name errors)
    (if (null? errors)
        (format "~a: fetched" name)
