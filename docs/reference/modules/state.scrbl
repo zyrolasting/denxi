@@ -21,7 +21,7 @@
 
 @defmodule[xiden/state]
 
-Xiden's @deftech{state} depends on the contents of a filesystem
+Xiden's @deftech{state} consists of the contents of a filesystem
 directory, and a @tech{database} in that
 directory. @racketmodname[xiden/state] encapsulates state I/O.
 
