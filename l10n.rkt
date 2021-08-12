@@ -18,10 +18,7 @@
 
 (define (run+print-subprogram subprogram-inst)
   (define-values (result messages) (run-subprogram subprogram-inst))
-  (define format-message (get-message-formatter))
-  (sequence-for-each
-   (λ (m) (write-message m format-message))
-   (in-list (reverse (flatten messages))))
+  (write-message-log messages (get-message-formatter))
   result)
 
 (define (dynamic-require/localized key)
