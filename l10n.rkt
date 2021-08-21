@@ -17,9 +17,10 @@
 (define-runtime-path here "l10n")
 
 (define (run+print-subprogram subprogram-inst)
-  (define-values (result messages) (run-subprogram subprogram-inst))
-  (write-message-log messages (get-message-formatter))
-  result)
+  (parameterize ([current-message-formatter (get-message-formatter)])
+    (define-values (result messages) (run-subprogram subprogram-inst))
+    (write-message-log messages (current-message-formatter))
+    result))
 
 (define (dynamic-require/localized key)
   (let ([on-failure (americentric-fallback key)])
