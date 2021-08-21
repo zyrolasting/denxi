@@ -5,6 +5,7 @@
                     xiden/output
                     xiden/monad
                     xiden/subprogram
+                    xiden/string
                     @except-in[xiden/pkgdef #%module-begin]]
          "../../shared.rkt"]
 
@@ -40,7 +41,7 @@ Returns a quoted @racket[output] term suitable for use in a
 @tech{package definition}. The term will use the elements of
 @racket[(package-output-steps to-encode)], which means the correctness
 of the returned list depends on if @racket[(package-output-steps
-to-encode)] and @racket[(package-output-sunprogram to-encode)] are
+to-encode)] and @racket[(package-output-make-subprogram to-encode)] are
 equivalent.
 }
 
@@ -52,6 +53,6 @@ Expands to a new @racket[package-output] where the
 sequence of @racketid[step]s.
 
 Specifically, @racket[package-output-steps] is @racket[(quote (mdo
-step ...))]  and @racket[package-output-make-program] is
+step ...))]  and @racket[package-output-make-subprogram] is
 @racket[(lambda () (mdo step ...))].
 }
