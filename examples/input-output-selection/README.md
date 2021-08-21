@@ -1,13 +1,11 @@
-This example installs an HTML and CSS files embedded directly in the
-package definition, showing that project assets may appear inline, and
-selecting an output means selecting a new deliverable. Here, an output
-results in a specific page appearance despite using one reference to
-the same HTML file.
+This example installs HTML and CSS files embedded directly in the
+package definition. Selecting an output impacts the page's appearance
+despite using one reference to the same HTML file.
 
 1. Run `racket launch.rkt do +s dark-mode dark defn.rkt`. You will see
    a symlink named `dark-mode` appear. The HTML page inside appears
-   black (Aside: If your browser has trouble with the symbolic link,
-   just copy the HTML file to a normal empty directory).
+   black (If your browser has trouble with the symbolic link, just
+   copy the HTML file somewhere else).
 
 2. Run `racket launch.rkt do +s light-mode light defn.rkt`. You will a
    symlink named `light-mode` appear. Inside is the a link to the
