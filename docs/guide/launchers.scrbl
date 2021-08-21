@@ -48,4 +48,9 @@ Recovered 13 bytes
 }|
 
 To recap, launchers build software from package definitions and issue
-links to their outputs. You're now equipped to learn more by example.
+links to their outputs.
+
+To be fair, this is a toy example, and toy examples are illustrative
+at best.  The good news is that you are now equipped to review working
+examples. As the examples become more advanced, they incorporate more
+real-world information.
