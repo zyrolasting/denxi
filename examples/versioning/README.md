@@ -17,8 +17,8 @@ racket launch.rkt do \
        +d quiet quiet0.rkt
 ```
 
-Once that's done, take this oppurtunity to run `xiden show installed`.
-The output will look something like this.
+Once that's done, run `xiden show installed`.  The output will look
+something like this.
 
 ```
 example.com:greeting:loud:0:0:ii  default yk2bp2qbwrdgtb9gwacv8tdqrjakyp2d
