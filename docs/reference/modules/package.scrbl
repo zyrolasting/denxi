@@ -54,9 +54,8 @@ distributor.
 
 @racket[os-support] is a list of possible values from
 @racket[(system-type 'os)].  If @racket[(system-type 'os)] is not an
-element of @racket[os-support], then either calls to @racket[build]
-will fail, or the software created with @racket[build] will not
-function.
+element of @racket[os-support], then Xiden will not install the
+package.
 
 @racket[racket-versions] is a list of Racket version ranges that
 should be interpreted as a set of supported Racket versions. If
