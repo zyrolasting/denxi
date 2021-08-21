@@ -132,7 +132,7 @@ can control their level of interaction with untrusted and
 formerly-trusted people.
 
 
-@section{On Dependency Hell}
+@section{Handling Dependency Hell}
 
 Like Guix, Xiden uses functional programming principles. Any
 dependency is viewed as an argument to a pure function that builds
@@ -185,44 +185,43 @@ again, just start from a launcher with your favored solutions.
 Xiden is written in Racket. Racket is a programming language, and
 Xiden is a software distribution tool. Both are able to adapt in
 interesting ways because they are what they easily create. Racket can
-make you your own programming language, and Xiden make you your own
-dependency manager.
+make you your own programming language, and Xiden can make you your
+own dependency manager.
 
-Xiden is therefore not designed to anticipate human needs, because
-that's a mistake. It's the kind of thinking that leads to tools that
-expect humans to accomodate them. If a tool fails to anticipate what
-users want, it can't read your mind and reprogram itself. I don't
-think tools get opinions, and I don't think it's wise to assume that
-Xiden will be the final answer on a domain this tricky. That's why I
-designed Xiden to be like Racket in this space: To facilitate rapid
-creation and prototyping of its own alternatives.
+Xiden does not anticipate your needs because that's a mistake.  If a
+tool fails to anticipate what users want, it can't read your mind and
+reprogram itself. Tools don't get opinions, and I don't think it's
+wise to assume that Xiden will be the final answer on a domain this
+tricky. That's why I designed Xiden to be like Racket in this space:
+To facilitate rapid creation and prototyping of its own alternatives.
 
-Oddly enough, I think Racket's own package managers failed to
-translate the Racket experience to this space. PLaneT and
-@litchar{raco pkg} made too many assumptions about how people will
-work with them. My personal motivation to make Xiden came from
-attempting to reconcile my soaring expectations of Racket with the
-inflexibility of its package managers. I cannot critique Racket's
-package manangers on subjective grounds, but I also could not easily
-use something else without giving up a lot of features in Racket's
-ecosystem. I feel like there has to be a middle ground here, and it
-involves separating the subjective parts of software distribution from
-the objective parts.
+I believe Racket's package managers failed to translate the Racket
+experience to this space. PLaneT and @litchar{raco pkg} made many
+assumptions about how people will work with them, which forces the
+surrounding community to work according to those assumptions. My
+personal motivation to make Xiden came from attempting to reconcile my
+soaring expectations of Racket with the inflexibility of its package
+managers. I cannot critique Racket's package manangers on subjective
+grounds, but I also could not easily use something else without giving
+up a lot of features in Racket's ecosystem. There has to be a middle
+ground where you can change how you get dependencies without isolating
+yourself from any community's content. This will involve separating
+the subjective parts of software distribution from the objective
+parts.
 
-If you believe there are too many launchers like Steam, GOG, and the
-App Store, then I understand. But Xiden is built on the assumption
-that those platforms are going to keep proliferating, and that we
-should have more that are completely beholden to what a user expects
-from it. Xiden is free software, so that when Xiden launchers
-proliferate on your system, you have say over how they @italic{all}
-work, even in the strange and wonderful situations I itemized earlier.
+Xiden is built on the assumption that tools like it are going to keep
+proliferating, and that we should have more that are completely
+beholden to what a user expects from it. Xiden is free software, so
+that when Xiden launchers proliferate on your system, you have say
+over how they @italic{all} work, even in the strange and wonderful
+situations I itemized in @secref{scenarios}.
 
 Supporting experimentation and competition in this way is good for end
 users, and as @secref{secconv} explains, it's a victory for informed
 consent.
 
 
-@section{On Localization}
+@section{Localization}
 
 Xiden's output is a @racket[read]able list of
 @tech/xiden-reference{messages} that one can think of as a
@@ -275,7 +274,7 @@ contain discovery information, making it easier to decide what content
 is relevant for them.
 
 
-@section[#:tag "names"]{On Names}
+@section[#:tag "names"]{Handling Names}
 
 Names are subjective, so Xiden recognizes no central authority on what
 they mean. Any launcher can decide what names are canonical, and what
@@ -317,7 +316,7 @@ If you are interested in trying that for yourself, then read
 @other-doc[xiden-guide].
 
 
-@section[#:tag "scenarios"]{Optional: Scenarios}
+@section[#:tag "scenarios"]{Addendum: Scenarios}
 
 I've encountered scenarios that have second-, third-, and fourth-
 order effects on my teams and clients. If you don't know what some of
