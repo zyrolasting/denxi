@@ -12,7 +12,14 @@ and content management are possible use cases for Xiden.  It is
 flexible enough to work as a library, as a framework, or as a
 standalone application.
 
-Xiden's flexible design has many benefits:
+Xiden's API has hundreds of functions, so this guide will briefly
+cover fundamental concepts. You will learn what a package definition
+is, what a launcher is, and a command that will show you where to find
+working examples of both in Xiden's source code.
+
+By reading the examples and writing your own package definitions and
+launchers, you will come to understand Xiden's reference material
+and appreciate a few benefits.
 
 @itemlist[
 @item{Your explicit, informed consent is considered sacred.}
