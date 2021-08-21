@@ -14,7 +14,7 @@ content they write to `sound`, so we can reproduce a conflict easily.
 3. Delete the `heart` link.
 4. Run `racket launcher.rkt do +a dub.rkt`. A `heart` link will appear, but `heart/sound` shows `lub` and not `dub` because of a cache hit.
 
-There are a few ways to avoid a cache hit.
+Here are all of the ways to avoid a cache hit:
 
 - The definitions can distinguish themselves more by declaring different editions, revisions, providers, or package names.
 - A launcher can force side-by-side installations for all definitions using `(current-package-editor sxs)`.
