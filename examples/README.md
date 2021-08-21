@@ -54,3 +54,5 @@ know how to write your own examples. :)
    Xiden? (@zyrolasting)
 1. [Cryptography Backends](./cryptography-backends): Selecting a back
    end for cryptographic operations. (@zyrolasting)
+1. [Racket Installation Manager](./racket-installation-manager):
+   Install and manage multiple versions of Racket. (@zyrolasting)
