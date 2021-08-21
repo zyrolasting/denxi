@@ -6,61 +6,54 @@
                     xiden/integrity]
          "../shared.rkt"]
 
-If you download a file from the Internet, how do you know it's
-actually the file you wanted and not a fake? We check data integrity
-using @deftech{cryptographic hash functions}, or @deftech{CHF}s. A CHF
-turns the file we're worried about into a fixed-length value called a
-@deftech{message digest}.  You may have also heard that byte string
-called a @deftech{digest}, @deftech{checksum}, or @deftech{hash}. All
-terms refer to the output of a CHF in Xiden's documentation.
-
-@(define release-page (hyperlink "https://download.racket-lang.org/releases/8.1/" "Racket's release page"))
+To understand this reference, you should have a working understanding
+of @deftech{cryptographic hash functions}, or @deftech{CHF}s. A CHF
+turns a variable-length value into a fixed-length value called a
+@deftech{message digest}, a.k.a. @deftech{digest}, @deftech{checksum},
+or @deftech{hash}. All terms refer to the output of a CHF in Xiden's
+documentation.
 
 Sometimes download links have a “SHA-256” or some such name by a
-digest. @|release-page| uses SHA-1 and shows digest as hex strings. If
-you download one of those files, you know the file on your disk is
-@italic{correct} if it creates the digest the download page said it
-would.
+digest. Before version 8.2, Racket installers come with with SHA-1
+digests as hex strings. If you download one of those installers, you
+should create your own digest using SHA-1 using the installer's
+contents.  If the digests match, you have reason to believe the
+installer has not been altered in transit. In other words, it
+maintained its integrity.
 
 @verbatim|{
 $ wget -O install-racket.exe \
     https://download.racket-lang.org/releases/8.1/installers/racket-minimal-8.1-i386-win32-bc.exe
 
-# This digest matches the one listed on the page, so the file is correct.
+# This digest matches corresponding digest on the 8.1 releases page, so the file is correct.
 $ openssl dgst -sha1 install-racket.exe
 SHA1(install-racket.exe)= 78e19d25cb2a26264aa58771413653d9d8b5a9dc
 }|
 
-When digests match, we have confidence in the installers integrity so
-long as we trust the
+There's a caveat. Even when digests match, we can only assume the
+installers has good integrity if we trust the
 CHF. @hyperlink["https://www.schneier.com/blog/archives/2020/01/new_sha-1_attac.html"]{Smart
-people broke SHA-1}, so our collective trust in CHFs changes over time.
+people induced a collision in SHA-1}, meaning that it is possible to
+trick you into thinking that a harmful file is safe when you check
+integrity using SHA-1. This is why the word “cryptographic” in
+“cryptographic hash function” carries a lot of weight. If a CHF works
+well, it is hard to reproduce a known digest with doctored content.
 
-The word “cryptographic” in “cryptographic hash function” carries a
-lot of weight. If a CHF works well, it is hard for your arch-nemesis
-to create a fake version of a program with the same digest.
+When CHFs aren't good enough, Xiden uses @deftech{asymmetric
+cryptography} to verify that a file came from a trusted party.
+Assymetric cryptography involves two keys. One key is public, and the
+other is private (that is, known only by you). The public key can
+scramble a message such that only the private key holder can read it.
 
-Okay, so you got the file you want, but how do you know the file came
-from someone you trust? After all, if your nemesis fools you into
-trusting their own digests, then a CHF isn't good enough. For this we
-use @deftech{asymmetric cryptography}, which gives us a way to not
-only hide data from evesdroppers, but also sign data so that we know
-it came from somebody we trust.
+Private keys can also sign data, such that only the corresponding
+public key can verify that the holder of the private key created the
+signature. That way, if you trust the private key holder, you can
+trust the signed data. Xiden verifies signatures this way.
 
-For this we have two keys. One is public, so everyone knows it. The
-other is known only to you. The public key can scramble a message such
-that only you can reveal it. It's hard to think of two keys
-interacting because we normally think of a key and a lock. Only the
-private key actually “opens” anything, so people normally explain this
-with a lockbox or mailbox metaphor. I can't think of a way to phrase
-it that wouldn't look like plagarism, so I'll let you Google that.
-
-The point is that this only works if your private key stays a secret,
-and we know it was you who shared your public key. There are
+All of this only works if your private key stays secret, and we know
+it was you who shared your public key. There are
 @hyperlink["https://en.wikipedia.org/wiki/Key_signing_party"]{gatherings
-for that}.
+for that}, if you are inclined to attend.
 
-Unlike the rest of this reference, I'm allowing myself to be extremely
-loose with my language here. You will need at least a working
-knowledge of what Xiden is doing to interpret some parts of the
-reference.
+As you read this reference, you can assume that any abstractions that
+mention CHFs or signatures are intimately tied to Xiden's trust model.
