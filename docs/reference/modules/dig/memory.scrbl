@@ -59,8 +59,8 @@ e.g.
 
 The shovel will recursively resolve keys in this way until it
 encounters a value of a type not used as a key, in observance of the
-digging metaphor. If the search yields cyclic keys, this function will
-not terminate.
+@tech{digsite metaphor}. If the search yields cyclic keys, this
+function will not terminate.
 
 Package queries are autocompleted using @racket[defaults], and
 converted to canonical form with respect to a canon based on the hash
