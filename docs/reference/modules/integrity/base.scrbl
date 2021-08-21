@@ -143,7 +143,8 @@ The process could not find an instance of @racket[chf] using
 Represents a high level implementation of a cryptographic hash
 function.
 
-The procedure must return a byte string representing a digest.
+The procedure must return a byte string representing an unencoded
+digest.
 
 The first argument is an input port that produces bytes from an
 arbitrary source, such as an HTTP response or a file. The output
