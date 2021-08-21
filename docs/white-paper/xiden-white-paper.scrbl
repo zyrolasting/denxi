@@ -240,36 +240,39 @@ and you can't share work effectively without a way to cross language
 barriets.
 
 
-@section{On Versioning}
+@section{Versioning}
 
-Xiden defines an internal versioning scheme that tracks intellectual
-properties, their distributors, their designs
-(@tech/xiden-reference{editions}), and their implementations
-(@tech/xiden-reference{revisions}).
+Xiden versions software using @tech/xiden-reference{editions} and
+@tech/xiden-reference{revisions}. Each edition has its own number line
+for revisions. Revisions may have names that each map to exactly one
+number on an edition's number line.
 
-Each edition has its own number line for revisions. A revision's name
-maps to exactly one number on the line. This way, Xiden supports
-queries that capture revision intervals with inclusive and exclusive
-bounds. @litchar{example.com:http-client:draft:beta:production:ie}
+Xiden defines a query syntax that combines version intervals with
+software providers and a specific intellectual
+property. @litchar{example.com:http-client:draft:beta:production:ie}
 means “The @litchar{draft} edition of the @litchar{http-client}
 package made by @litchar{example.com}, from the @litchar{beta}
 revision up to but NOT including the @litchar{production} revision.”
-
-This approach allows you to reason about software in terms of a
-sociotechnical contract between end-users and distributors. Version
-information doubles as discovery information, and contains all data
-for a query that matches at most one entry in Xiden's state. In the
-event names conflict under this model, a user may adapt using the
-model summarized in @secref{names}.
-
-The versioning scheme allows a developer to rewrite code for a new
-audience without affecting brand expectations. Users also benefit
-because they can track an edition defined for their needs.
+The @litchar{i} means “inclusive bound” and applies to @litchar{beta}
+because it is the first of the two flags at the end of the query.  The
+@litchar{e} means “exclusive bound” and applies to
+@litchar{production} because it is the second of the two flags.  For
+another example, @litchar{example.com:calendar:small-business:8:8:ii}
+matches @italic{exactly} the eigth revision of the small business
+edition for a calendar package. This approach allows you to reason
+about software in terms of a sociotechnical contract between end-users
+and distributors.
 
 Versions are subjective, so you can override how they are interpreted
-when prudent (see @secref{names}). For example, if a set of versions
-identify software known to be insecure, you can dynamically replace
-the software used by one version with an acceptable variant.
+when prudent. If a set of versions identify software known to be
+insecure, the you can dynamically replace the software used by one
+version with an acceptable variant. If two names conflict, you can
+decide which is canonical. See @secref{names} for more information.
+
+The scheme allows a developer to rewrite code for a new audience
+without affecting brand expectations. Users benefit because versions
+contain discovery information, making it easier to decide what content
+is relevant for them.
 
 
 @section[#:tag "names"]{On Names}
