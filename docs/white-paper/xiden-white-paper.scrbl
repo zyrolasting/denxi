@@ -32,16 +32,16 @@ have an independent developer @italic{you} trust fix @italic{your}
 package mananger in the same way an independent mechanic would fix
 your bricked car.
 
-Xiden is a serviceable, fully-exposed, and self-hosting model that
+Xiden is a free, open source, and self-hosting model. This means it
 allows easy creation of its own alternatives (See
 @secref{competition}). This empowers users and/or trusted developers
 to handle bad updates, diamond dependencies, security incidents, and
-other forms of human error without depending on middlemen.
+other forms of human error without depending on the same middlemen.
 
 
 @section{Intended Experience}
 
-When you create a symbolic link (or a shortcut on Windows), you
+When you create a symbolic link--or a shortcut on Windows--you
 normally point the link to a target location that already has a file,
 directory, or link. What if you could express the link's target
 subjectively?
@@ -56,9 +56,10 @@ ln -s ~/watch watch
 }|
 
 All of the above targets must exist if we want the links to work, but
-the point of dependency management is reproducing the targets you
-@italic{meant}. Xiden lets you express concrete targets in your own
-words, which behaves something like this.
+the targets could contain anything. The point of dependency management
+is to correctly reproduce the targets you @italic{meant}. Xiden lets
+you express exact targets in your own (possibly inexact) words.  That
+works something like this.
 
 @verbatim|{
 ln -s "$(semver scanner@8.4.x)" scanner
@@ -66,15 +67,15 @@ ln -s "$(github racket/scribble)" scribble
 ln -s "$(urn watch:latest)" watch
 }|
 
-Xiden's actual interface is more involved for reasons covered in
-@other-doc[xiden-guide], but you can extend it to recognize custom
-notations and install dependencies in a single transaction.  The
-end-user experience of creating links remains the same, but Xiden does
-so in a reproducible way.
+These snippets are simplistic illustrations. Xiden's actual interface
+is more involved for reasons covered in @secref{secconv}, but you can
+configure the default CLI to recognize custom notations.  The
+experience of creating links remains the same, but Xiden does so in a
+reproducible way despite generally ambiguous input.
 
 This command shows a subset of Xiden's CLI, in the context of a custom
-launcher named @litchar{my-xiden}. It has the same meaning you'd make
-up for the previous snippet.
+launcher named @litchar{my-xiden}. It may have the same semantics
+you'd make up for the previous snippet.
 
 @verbatim|{
 ./my-xiden do +d scanner scanner@8.4.x \
@@ -96,20 +97,21 @@ in-place.
 
 @section[#:tag "secconv"]{On Security and Convenience}
 
-Xiden includes a zero-trust (think “Deny All”) launcher called
-@litchar{xiden}. Assuming your Xiden instance is not compromised, no
-installations are possible with @litchar{xiden}'s default
-configuration. It takes effort to make it less safe to use, and it can
-in fact become @italic{harder to use} as it evolves. You could argue
-that it is user-hostile in its relentlessly bureaucratic nature. It
-represents security-consciousness in its most extreme form for a
-high-level language.
+Xiden includes a zero-trust (meaning “Deny All by default”) launcher
+called @litchar{xiden}. Assuming your Xiden instance is not
+compromised, no installations are possible with @litchar{xiden}'s
+default configuration. It takes effort to make it less safe to use,
+and it can in fact become @italic{harder to use} as it evolves. You
+could argue that it is user-hostile, but it represents
+security-consciousness in its most extreme form for a high-level
+language.
 
-Xiden does make one exception: It trusts whatever is directly
-controlling it. By that I mean if you tell Xiden to trust integrity
-checks using MD5 digests, then it will. You should restrict the
-OS-level permissions of any process using Xiden, but the zero-trust
-defaults make it harder to accidentally open vulnerabilities.
+Xiden does make one exception in that has no concept of user accounts,
+so it trusts whatever is directly controlling it. If you tell Xiden to
+trust integrity checks that use MD5, then it will. You should restrict
+the OS-level permissions of any process using Xiden, but the
+zero-trust defaults make it harder to accidentally open
+vulnerabilities.
 
 The @racketmodname[xiden/launcher] DSL builds custom launchers that
 represent the line between security and convenience. Custom launchers
@@ -134,38 +136,10 @@ formerly-trusted people.
 
 @section{Handling Dependency Hell}
 
-Like Guix, Xiden uses functional programming principles. Any
-dependency is viewed as an argument to a pure function that builds
-dependent software.
-
-This model helps Xiden detect circular dependencies and limit data
-duplication, even in side-by-side installations of many different
-versions of the same software.
-
-Some examples of dependency hell have no easy answer. Conflicting
-identities, diamond dependencies, availability of vulnerable software,
-and generative bindings from functionally-equivalent programs can
-thwart even the most robust systems. Most developers make judgement
-calls to get past these problems, and then warn users not to do
-certain things. Xiden lets users choose and change their own reaction
-to these challenges, because as I said before, I want to preserve the
-user's ability to choose their own tradeoffs.
-
-For example, Xiden allows users to decide what names are canonical in
-the event of a conflict. If two programmers claim the name
-@litchar{john.doe} and try to distribute software under all the same
-names, an end user may still distinguish the John Does' contributions
-locally. If you get several apps that verify data integrity using
-@racket['sha-256], @racket['Sha256], and @racket['SHA256], you can
-tell Xiden which name is canonical and to treat the rest as aliases.
-
-Most other forms of dependency hell are addressed using privileged
-overriding features like @racket[current-package-editor]. Because an
-entire software package is just an argument to a function, you can
-swap it out or tinker with it before it makes any impact on your
-system.
-
-Overridding can replace
+Xiden detects circular dependencies and limits data duplication, even
+in side-by-side installations of many different versions of the same
+software. Xiden lets users and launchers choose their own reaction to
+more difficult forms of dependency hell. For example, you can replace
 
 @itemlist[
 @item{all modules affected in a diamond dependency pattern}
@@ -173,11 +147,6 @@ Overridding can replace
 @item{many different dependencies with one uniform dependency; and}
 @item{any source code distribution with a pre-built binary}
 ]
-
-In brief, where Xiden cannot outright solve dependency hell, it is
-designed to allow surgical responses such that a user is never
-blocked. If you get tired of solving those problems over and over
-again, just start from a launcher with your favored solutions.
 
 
 @section[#:tag "competition"]{Following Racket's Pro-Competitive Example}
@@ -189,25 +158,23 @@ make you your own programming language, and Xiden can make you your
 own dependency manager.
 
 Xiden does not anticipate your needs because that's a mistake.  If a
-tool fails to anticipate what users want, it can't read your mind and
-reprogram itself. Tools don't get opinions, and I don't think it's
-wise to assume that Xiden will be the final answer on a domain this
-tricky. That's why I designed Xiden to be like Racket in this space:
-To facilitate rapid creation and prototyping of its own alternatives.
+tool fails to anticipate you want, it can't read your mind and
+reprogram itself. That's why I designed Xiden to be like Racket, in
+the sense it helps you create and prototype its own alternatives.
 
 I believe Racket's package managers failed to translate the Racket
-experience to this space. PLaneT and @litchar{raco pkg} made many
-assumptions about how people will work with them, which forces the
-surrounding community to work according to those assumptions. My
-personal motivation to make Xiden came from attempting to reconcile my
-soaring expectations of Racket with the inflexibility of its package
-managers. I cannot critique Racket's package manangers on subjective
-grounds, but I also could not easily use something else without giving
-up a lot of features in Racket's ecosystem. There has to be a middle
-ground where you can change how you get dependencies without isolating
-yourself from any community's content. This will involve separating
-the subjective parts of software distribution from the objective
-parts.
+experience to software distribution as a domain. PLaneT and
+@litchar{raco pkg} made many assumptions about how people will work
+with them, which forces the surrounding community to work according to
+those assumptions. My personal motivation to make Xiden came from
+attempting to reconcile my soaring expectations of Racket with the
+invariants of its package management system. I cannot critique
+Racket's package manangers on subjective grounds, but I also could not
+stop using them without giving up access to most of Racket's
+ecosystem. There has to be a middle ground where you can change how
+you get dependencies without isolating yourself from any community's
+content. This will involve separating the subjective parts of software
+distribution from the objective parts.
 
 Xiden is built on the assumption that tools like it are going to keep
 proliferating, and that we should have more that are completely
@@ -223,20 +190,17 @@ consent.
 
 @section{Localization}
 
-Xiden's output is a @racket[read]able list of
-@tech/xiden-reference{messages} that one can think of as a
-document. @racketmodname[xiden/l10n] translates these documents to
-reports in human language. If you store unlocalized messages in a
-file, @litchar{xiden show log} will present the file in the user's
-chosen language.
+You can't share work effectively without a way to cross language
+barriers. To aid translation, Xiden's output is a @racket[read]able
+list of @tech/xiden-reference{messages} that one can think of as a
+human language-independent document. @racketmodname[xiden/l10n]
+translates these documents to reports in a specific human language. If
+you store unlocalized messages in a file, @litchar{xiden show log}
+will present the file in the user's chosen language.
 
-At the time of this writing, Xiden only includes English as its used
+At the time of this writing, Xiden only includes English as it's used
 in the United States. However, a custom launcher may use your own
 translations via @racket[format-message].
-
-This is a key design point because this space is about sharing work,
-and you can't share work effectively without a way to cross language
-barriets.
 
 
 @section{Versioning}
@@ -244,23 +208,9 @@ barriets.
 Xiden versions software using @tech/xiden-reference{editions} and
 @tech/xiden-reference{revisions}. Each edition has its own number line
 for revisions. Revisions may have names that each map to exactly one
-number on an edition's number line.
-
-Xiden defines a query syntax that combines version intervals with
-software providers and a specific intellectual
-property. @litchar{example.com:http-client:draft:beta:production:ie}
-means “The @litchar{draft} edition of the @litchar{http-client}
-package made by @litchar{example.com}, from the @litchar{beta}
-revision up to but NOT including the @litchar{production} revision.”
-The @litchar{i} means “inclusive bound” and applies to @litchar{beta}
-because it is the first of the two flags at the end of the query.  The
-@litchar{e} means “exclusive bound” and applies to
-@litchar{production} because it is the second of the two flags.  For
-another example, @litchar{example.com:calendar:small-business:8:8:ii}
-matches @italic{exactly} the eigth revision of the small business
-edition for a calendar package. This approach allows you to reason
-about software in terms of a sociotechnical contract between end-users
-and distributors.
+number on an edition's number line. An edition represents work for a
+target audience, and revisions model change with respect to that
+audience.
 
 Versions are subjective, so you can override how they are interpreted
 when prudent. If a set of versions identify software known to be
@@ -320,12 +270,12 @@ If you are interested in trying that for yourself, then read
 
 I've encountered scenarios that have second-, third-, and fourth-
 order effects on my teams and clients. If you don't know what some of
-these items mean, that's fine. This section acts as an indirect
-summary of the kind of problems I consider in Xiden's implementation.
+these items mean, that's fine. This section indirectly summarizes
+problems Xiden can solve, and my background.
 
 @itemlist[
 
-@item{A DiBOL project in a Subversion repository has one branch per
+@item{A DIBOL project in a Subversion repository has one branch per
 customer. When one customer gets a new feature, some other customers
 want the same feature. None of their branches can merge automatically.}
 
@@ -351,7 +301,7 @@ experience the corporate website, but not Puerto Ricans.}
 @item{Programmers servicing unsupervised systems over TeamViewer.}
 
 @item{Managers knowingly undoing a patch by moving files from their
-"backup" thumb drive to hit some numbers for the day.}
+“backup” thumb drive to hit some numbers for the day.}
 
 @item{A catalog that won't store versioned artifacts and won't
 guarentee availability for the one it happens to have.}
@@ -364,7 +314,7 @@ presentations around the world.}
 
 @item{Warehouse crews that @italic{won't} replace their Windows phones.}
 
-@item{Installations that do not say they depend on each other, but
-won't work unless you run them in a certain order.}
+@item{Programs that do not say they depend on each other, but won't
+work unless you load them in a certain order.}
 
 ]
