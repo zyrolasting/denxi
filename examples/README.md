@@ -7,6 +7,11 @@ with `raco docs`. Do so. It will give you experience with the
 reference material.  Once you can work with the reference, you will
 know how to write your own examples. :)
 
+The examples start by asking you to execute toy code in your shell.
+As you progress, the examples will not spend as much time holding your
+hand.  You will eventually encounter exercises that ask you to work
+your way through real-world problems.
+
 
 ## After the Guide
 1. [From Guide](./from-guide): The example from the guide, repeated
