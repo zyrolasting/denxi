@@ -8,6 +8,7 @@ security-critical automations.
 e.g. `./lnx https://www.iana.org/assignments/media-types/media-types.txt`
 
 **Exercise**: Add integrity checking support. Hint: `raco docs current-chfs`
+
 **Exercise**: Add signature checking support.
 
 If you add signature checking, the launcher will only use data you
