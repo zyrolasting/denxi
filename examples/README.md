@@ -61,3 +61,5 @@ your way through real-world problems.
    end for cryptographic operations. (@zyrolasting)
 1. [Racket Installation Manager](./racket-installation-manager):
    Install and manage multiple versions of Racket. (@zyrolasting)
+1. [Extending `ln`](./extend-ln):
+   Create `ln` commands that get to the point of dependency management. (@zyrolasting)
