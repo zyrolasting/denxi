@@ -23,6 +23,19 @@ You can bind @tech{shovels} to filesystem directories.  In observance
 of the @tech{digsite metaphor}, the shovels defined herein always
 follow symbolic links.
 
+@defproc[(make-digest-file-path [path path-string?] [chf symbol?]) path?]{
+Returns @racket[(~a path "." chf)]
+
+Used as a conventional location for unencoded digests for whatever is
+located at @racket[path].
+}
+
+@defproc[(make-signature-file-path [path path-string?]) path?]{
+Returns @racket[(~a path ".sig")]
+
+Use as a conventional location for unencoded signatures.
+}
+
 @defproc[(make-filesystem-shovel [directory-path complete-path?]
                                  [chf symbol?]
                                  [public-key-source source-variant?])

@@ -4,6 +4,10 @@
 
 (provide
  (contract-out
+  [make-digest-file-path
+   (-> path-string? symbol? path?)]
+  [make-signature-file-path
+   (-> path-string? path?)]
   [make-filesystem-shovel
    (->* (complete-path? symbol? source-variant?)
         shovel/c)]
@@ -28,6 +32,11 @@
          "../source.rkt"
          "../version.rkt")
 
+(define (make-digest-file-path path chf)
+  (string->path (~a path "." chf)))
+
+(define (make-signature-file-path path)
+  (string->path (~a path ".sig")))
 
 (define ((make-filesystem-shovel directory-path chf public-key-source) key)
   (if (and (path-string? key)
@@ -60,12 +69,12 @@
 
 
 (define (try-integrity complete-path chf)
-  (let ([s (try-file-source (build-path (~a complete-path "." chf)))])
+  (let ([s (try-file-source (make-digest-file-path complete-path chf))])
     (and s (integrity chf s))))
 
 
 (define (try-signature complete-path chf public-key-source)
-  (let ([s (try-file-source (build-path (~a complete-path "." chf ".sig")))])
+  (let ([s (try-file-source (make-signature-file-path (make-digest-file-path complete-path chf)))])
     (and s (signature public-key-source s))))
 
 
