@@ -9,6 +9,14 @@
   [snake-oil-public-key bytes?]
   [snake-oil-private-key-password bytes?]))
 
+; usage: racket -l xiden/signature/snake-oil
+(module+ main
+  (require racket/port)
+  (define (<< path bstr)
+    (call-with-output-file path (λ (out) (copy-port (open-input-bytes bstr) out))))
+  (<< "LEAKED-private-key-password.txt" snake-oil-private-key-password)
+  (<< "LEAKED-private-key.pem" snake-oil-private-key)
+  (<< "public-key.pem" snake-oil-public-key))
 
 (define snake-oil-private-key-password #"foobar")
 
