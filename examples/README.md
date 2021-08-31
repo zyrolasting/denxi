@@ -63,3 +63,5 @@ your way through real-world problems.
    Install and manage multiple versions of Racket. (@zyrolasting)
 1. [Extending `ln`](./extend-ln):
    Create `ln` commands that get to the point of dependency management. (@zyrolasting)
+1. [Creating Digest and Signature Files](./make-verification-files):
+   Use a cryptographic backend to create digests and signatures (@zyrolasting)

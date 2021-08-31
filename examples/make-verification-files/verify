@@ -1,0 +1,57 @@
+#! /usr/bin/env racket
+#lang xiden/launcher
+
+(module+ main
+  (require racket/cmdline
+           racket/path
+           racket/port
+           xiden/dig/filesystem)
+
+  (define (write-bytes-to-file! path byte-string)
+    (call-with-output-file path
+      (λ (to-file)
+        (copy-port (open-input-bytes byte-string)
+                   to-file))))
+
+  (command-line #:args (user-chf-string public-key-path . user-paths)
+   (for ([user-path (in-list user-paths)])
+     (parameterize ([current-chfs (build-builtin-chf-trust (list (string->symbol user-chf-string)))])
+       (define chf
+         (get-default-chf))
+
+       (define expanded-user-path
+         (expand-user-path user-path))
+
+       (define digest-file-path
+         (make-digest-file-path expanded-user-path chf))
+
+       (define signature-file-path
+         (make-signature-file-path digest-file-path))
+
+       (define integrity-info
+         (integrity chf (file->bytes digest-file-path)))
+
+       (define signature-info
+         (signature (file->bytes public-key-path)
+                    (file->bytes signature-file-path)))
+
+       (define integrity-result
+         (check-integrity
+          #:trust-bad-digest #f
+          (λ _ #t)
+          integrity-info
+          (make-digest expanded-user-path)))
+
+       (define signature-result
+         (check-signature #:trust-bad-digest #f
+                          #:trust-unsigned #f
+                          #:trust-public-key? (λ _ #t)
+                          #:verify-signature (current-verify-signature)
+                          signature-info
+                          integrity-info))
+
+       (printf "digest ~a, signature ~a: ~a~n"
+               (if (integrity-check-passed? integrity-result) "🗸" "x")
+               (if (signature-check-passed? signature-result) "🗸" "x")
+               user-path)))))
+
