@@ -1,9 +1,9 @@
-#lang xiden/launcher
+#lang denxi/launcher
 
 ; This version sets the workspace based on the current directory.  Try
 ; going to different directories to run installatons.
-(module+ main (launch-xiden!))
+(module+ main (launch-denxi!))
 
-(XIDEN_WORKSPACE (build-path (current-directory) "following"))
+(DENXI_WORKSPACE (build-path (current-directory) "following"))
 (current-chfs (list snake-oil-chf))
-(XIDEN_TRUST_BAD_DIGEST #t)
+(DENXI_TRUST_BAD_DIGEST #t)

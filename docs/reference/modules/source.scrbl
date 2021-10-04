@@ -2,27 +2,27 @@
 
 @require[@for-label[racket/base
                     racket/contract
-                    xiden/cmdline
-                    xiden/subprogram
-                    xiden/format
-                    xiden/port
-                    xiden/source
-                    xiden/message
-                    @except-in[xiden/pkgdef #%module-begin url]
-                    xiden/printer
-                    xiden/url]
-        @for-syntax[xiden/source]
-                    xiden/source
+                    denxi/cmdline
+                    denxi/subprogram
+                    denxi/format
+                    denxi/port
+                    denxi/source
+                    denxi/message
+                    @except-in[denxi/pkgdef #%module-begin url]
+                    denxi/printer
+                    denxi/url]
+        @for-syntax[denxi/source]
+                    denxi/source
                     "../../shared.rkt"]
 
 
 @title{Sources}
 
-@defmodule[xiden/source]
+@defmodule[denxi/source]
 
 A @deftech{source} is a value that implements @racket[gen:source].
 When used with @racket[fetch], a source produces an input port and an
-estimate of how many bytes that port can produce. Xiden uses sources
+estimate of how many bytes that port can produce. Denxi uses sources
 to read data with safety limits. To @deftech{tap} a source means
 gaining a reference to the input port and estimate. To
 @deftech{exhaust} a source means gaining a reference to a contextual
@@ -122,27 +122,27 @@ error is raised, it will be returned within an @racket[exhausted-source].
 
 @section{Source and Fetch Settings}
 
-@defsetting*[XIDEN_DOWNLOAD_MAX_REDIRECTS]{
+@defsetting*[DENXI_DOWNLOAD_MAX_REDIRECTS]{
 The maximum number of HTTP redirects to follow when resolving a GET request.
 }
 
-@defsetting*[XIDEN_FETCH_TOTAL_SIZE_MB]{
+@defsetting*[DENXI_FETCH_TOTAL_SIZE_MB]{
 The maximum total size of a single download allowed when fetching an input from
 a source, in mebibytes.
 }
 
-@defsetting*[XIDEN_FETCH_BUFFER_SIZE_MB]{
+@defsetting*[DENXI_FETCH_BUFFER_SIZE_MB]{
 The maximum number of bytes to read at a time from a source, in mebibytes.
 }
 
-@defsetting*[XIDEN_FETCH_PKGDEF_SIZE_MB]{
-Like @racket[XIDEN_FETCH_TOTAL_SIZE_MB], except the quota only applies
+@defsetting*[DENXI_FETCH_PKGDEF_SIZE_MB]{
+Like @racket[DENXI_FETCH_TOTAL_SIZE_MB], except the quota only applies
 to @tech{package definitions} named in a user-defined transaction.
 This quote does not apply to @tech{package definitions} listed
 as inputs in another @tech{package definition}.
 }
 
-@defsetting*[XIDEN_FETCH_TIMEOUT_MS]{
+@defsetting*[DENXI_FETCH_TIMEOUT_MS]{
 The maximum number of seconds to wait for the next available byte from a
 source.
 }
@@ -336,7 +336,7 @@ only the URL path is used from @racket[request-url].
 
 If the source is @tech{exhausted}, it yields a relevant exception.
 
-The behavior of the source is impacted by @racket[XIDEN_DOWNLOAD_MAX_REDIRECTS].
+The behavior of the source is impacted by @racket[DENXI_DOWNLOAD_MAX_REDIRECTS].
 }
 
 

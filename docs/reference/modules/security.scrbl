@@ -3,25 +3,25 @@
 @require[@for-label[racket/base
                     racket/contract
                     racket/string
-                    xiden/cmdline
-                    xiden/integrity
-                    xiden/subprogram
-                    xiden/security]
-         xiden/security
-         @for-syntax[xiden/security]
+                    denxi/cmdline
+                    denxi/integrity
+                    denxi/subprogram
+                    denxi/security]
+         denxi/security
+         @for-syntax[denxi/security]
          "../../shared.rkt"]
 
 @title{Security}
 
-@defmodule[xiden/security]
+@defmodule[denxi/security]
 
-A Xiden process implicitly trusts its system-level dependencies and
+A Denxi process implicitly trusts its system-level dependencies and
 operates under the permissions granted to it by the operating
-system. Xiden offers no extensions or modifications to the security
+system. Denxi offers no extensions or modifications to the security
 model of the operating system.
 
 The attack surface includes the permissions set on any Racket process
-that can use Xiden's bindings, and the @tech/xiden-reference["runtime
+that can use Denxi's bindings, and the @tech/denxi-reference["runtime
 configuration"], which ultimately controls arguments to
 @racket[restrict] in production use.
 
@@ -124,9 +124,9 @@ It can be one of the following:
 ]
 }
 
-@defsetting*[XIDEN_MEMORY_LIMIT_MB]{
+@defsetting*[DENXI_MEMORY_LIMIT_MB]{
 Defines a memory limit for a custodian managing process resources, in
-mebibytes.  If this is too low, then it is possible for Xiden to halt
+mebibytes.  If this is too low, then it is possible for Denxi to halt
 due to a forced custodian shutdown.
 
 Does not count memory charged when parsing the command line and
@@ -136,42 +136,42 @@ Has no effect if the running Racket installation does not support
 per-custodian memory accounting.
 }
 
-@defsetting*[XIDEN_TIME_LIMIT_S]{
-Sets a time limit for a Xiden process, in seconds. Does not count time
+@defsetting*[DENXI_TIME_LIMIT_S]{
+Sets a time limit for a Denxi process, in seconds. Does not count time
 spent parsing the command line and setting up a @tech{runtime
 configuration}.
 }
 
-@defsetting*[XIDEN_TRUST_CERTIFICATES]{
-A list of paths to server certificates that Xiden will trust in
+@defsetting*[DENXI_TRUST_CERTIFICATES]{
+A list of paths to server certificates that Denxi will trust in
 addition to those available in the operating system. This option is
-safer than @racket[XIDEN_TRUST_UNVERIFIED_HOST] so long as the
+safer than @racket[DENXI_TRUST_UNVERIFIED_HOST] so long as the
 certificates are verified by a trusted party.
 }
 
-@defsetting*[XIDEN_TRUST_UNVERIFIED_HOST]{
+@defsetting*[DENXI_TRUST_UNVERIFIED_HOST]{
 @bold{Dangerous}. When true, trust any server that was not authenticated using available certificates.
 }
 
-@defsetting*[XIDEN_TRUST_ANY_EXECUTABLE]{
+@defsetting*[DENXI_TRUST_ANY_EXECUTABLE]{
 @bold{Dangerous}. When true, allow the Racket runtime to start a subprocess with any executable.
 }
 
-@defsetting[XIDEN_TRUST_EXECUTABLES (listof well-formed-integrity?)]{
-Like @racket[XIDEN_TRUST_PUBLIC_KEYS], but used to verify
+@defsetting[DENXI_TRUST_EXECUTABLES (listof well-formed-integrity?)]{
+Like @racket[DENXI_TRUST_PUBLIC_KEYS], but used to verify
 executables a @tech{package} tries to use when creating a subprocess.
 
 Beware: Any executable listed here inherits the OS-level permissions
 of the process, and is not subject to the restrictions of a
-Xiden @tech{runtime configuration}.  If you include a
-Xiden launcher or a sufficiently flexible Racket launcher, a
-@tech{package} can start a new Xiden process with a full-trust
+Denxi @tech{runtime configuration}.  If you include a
+Denxi launcher or a sufficiently flexible Racket launcher, a
+@tech{package} can start a new Denxi process with a full-trust
 configuration.
 }
 
-@defsetting*[XIDEN_TRUST_HOST_EXECUTABLES]{
-Like @racket[XIDEN_TRUST_EXECUTABLES], except this setting is a list
-of names. Xiden will allow execution of a file if its normalized path
+@defsetting*[DENXI_TRUST_HOST_EXECUTABLES]{
+Like @racket[DENXI_TRUST_EXECUTABLES], except this setting is a list
+of names. Denxi will allow execution of a file if its normalized path
 equals the value of @racket[find-executable-path] for an element of
 that list. You may need to add multiple entries to account for
 extension differences across platforms.
@@ -187,14 +187,14 @@ can be a dangerous setting, and should only be used if you trust both
 the package definition and the executables on your system. It's also
 why @tt{PATH} should not include a build directory.
 
-Regardless of the setting's actual value, Xiden implicitly considers
+Regardless of the setting's actual value, Denxi implicitly considers
 @racket{openssl} an element of its list. The user is therefore
 responsible for the integrity of their OpenSSL instance.
 }
 
-@defsetting*[XIDEN_ALLOW_ENV]{
+@defsetting*[DENXI_ALLOW_ENV]{
 Names of environment variables visible to @tech{packages}, and
-Xiden subprocesses.
+Denxi subprocesses.
 
 @racket{PATH} is included regardless of the value of this setting.
 }

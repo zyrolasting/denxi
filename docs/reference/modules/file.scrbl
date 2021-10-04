@@ -4,15 +4,15 @@
                     racket/contract
                     racket/sequence
                     file/glob
-                    xiden/file
-                    xiden/subprogram]
+                    denxi/file
+                    denxi/subprogram]
           "../../shared.rkt"]
 
 @title{Files}
 
-@defmodule[xiden/file]
+@defmodule[denxi/file]
 
-@racketmodname[xiden/file] extends and reprovides
+@racketmodname[denxi/file] extends and reprovides
 @racketmodname[racket/file].
 
 @defproc[(in-paths [pattern (or/c regexp? pregexp? byte-regexp? byte-pregexp? string?)]

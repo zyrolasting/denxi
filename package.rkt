@@ -83,11 +83,11 @@
 (define+provide-message $package:unsupported-os $package (supported))
 (define+provide-message $package:unavailable-output $package (available))
 
-(define+provide-setting XIDEN_INSTALL_ABBREVIATED_SOURCES (listof string?) null)
-(define+provide-setting XIDEN_INSTALL_DEFAULT_SOURCES (listof (list/c string? string?)) null)
-(define+provide-setting XIDEN_INSTALL_SOURCES (listof (list/c string? string? string?)) null)
-(define+provide-setting XIDEN_ALLOW_UNSUPPORTED_RACKET boolean? #f)
-(define+provide-setting XIDEN_INPUT_OVERRIDES
+(define+provide-setting DENXI_INSTALL_ABBREVIATED_SOURCES (listof string?) null)
+(define+provide-setting DENXI_INSTALL_DEFAULT_SOURCES (listof (list/c string? string?)) null)
+(define+provide-setting DENXI_INSTALL_SOURCES (listof (list/c string? string? string?)) null)
+(define+provide-setting DENXI_ALLOW_UNSUPPORTED_RACKET boolean? #f)
+(define+provide-setting DENXI_INPUT_OVERRIDES
   (listof (list/c (or/c symbol? string? regexp? pregexp? byte-regexp? byte-pregexp?) list?))
   null)
 
@@ -148,7 +148,7 @@
   (mdo pkgdef := (load-user-package-definition pkgdef-source)
        pkg := (build-user-package pkgdef)
 
-       (fulfil-package-output #:allow-unsupported-racket? (XIDEN_ALLOW_UNSUPPORTED_RACKET)
+       (fulfil-package-output #:allow-unsupported-racket? (DENXI_ALLOW_UNSUPPORTED_RACKET)
                               (or output-name-or-#f DEFAULT_STRING)
                               (or link-path-or-#f (package-name pkg))
                               pkg)
@@ -177,8 +177,8 @@
 
 
 (define (load-user-package-definition source)
-  (define max-size (mebibytes->bytes (XIDEN_FETCH_PKGDEF_SIZE_MB)))
-  (define override-specs (XIDEN_INPUT_OVERRIDES))
+  (define max-size (mebibytes->bytes (DENXI_FETCH_PKGDEF_SIZE_MB)))
+  (define override-specs (DENXI_INPUT_OVERRIDES))
   (mdo original-package-definition :=
        (find-original-package-definition source max-size)
 
@@ -455,11 +455,11 @@
       (define link-name (package-input-name input))
       (when (link-exists? link-name)
         (declare-link (find-relative-path
-                        (XIDEN_WORKSPACE)
+                        (DENXI_WORKSPACE)
                         (simple-form-path link-name))
                       (find-path-record
                        (find-relative-path
-                        (XIDEN_WORKSPACE)
+                        (DENXI_WORKSPACE)
                         (normalize-path link-name)))))))
   ($use (void)))
 

@@ -5,15 +5,15 @@
                     racket/contract
                     racket/function
                     racket/list
-                    xiden/subprogram
-                    xiden/message
-                    xiden/monad]]
+                    denxi/subprogram
+                    denxi/message
+                    denxi/monad]]
 
 @title{Subprograms}
 
-@defmodule[xiden/subprogram]
+@defmodule[denxi/subprogram]
 
-A @deftech{subprogram} in the context of Xiden is an instance of the
+A @deftech{subprogram} in the context of Denxi is an instance of the
 monadic value type @racket[subprogram]. An instance of
 @racket[subprogram] contains a Racket procedure that returns a value
 and some @tech{messages} representing a @tech{subprogram log}.  When a
@@ -305,7 +305,7 @@ Like @racket[run-subprogram], but returns only the computed value.
 
 @section{Testing Subprograms}
 
-@defmodule[(submod xiden/subprogram test)]
+@defmodule[(submod denxi/subprogram test)]
 
 @defproc[(check-subprogram [#:with initial (listof $message?) null]
                            [subprg subprogram?]

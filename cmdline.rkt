@@ -164,13 +164,13 @@
 
   (test-equal? "Coerce command-line arguments"
                (coerce-command-line-argument-list
-                (vector --XIDEN_TRUST_BAD_DIGEST
+                (vector --DENXI_TRUST_BAD_DIGEST
                         #t
                         ""
                         "hello"
                         123
                         (build-path "x")))
-               (list (make-cli-flag-string --XIDEN_TRUST_BAD_DIGEST)
+               (list (make-cli-flag-string --DENXI_TRUST_BAD_DIGEST)
                      "#t"
                      ""
                      "hello"

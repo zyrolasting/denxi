@@ -2,14 +2,14 @@
 
 @require[@for-label[racket/base
                     racket/contract
-                    xiden/integrity/ffi]
+                    denxi/integrity/ffi]
          "../../../shared.rkt"]
 
 @title{Integrity FFI}
 
-@defmodule[xiden/integrity/ffi]
+@defmodule[denxi/integrity/ffi]
 
-@racketmodname[xiden/integrity/ffi] is a private module that defines
+@racketmodname[denxi/integrity/ffi] is a private module that defines
 FFI bindings for a bundled library dedicated to integrity checking.
 
 @defproc[(integrity-ffi-available?!) boolean?]{

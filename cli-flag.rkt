@@ -212,100 +212,100 @@
 
 
 ; Unary flags
-(flag-out [-M --memory-limit] (cli-flag/unary XIDEN_MEMORY_LIMIT_MB arg->value "mebibytes"))
-(flag-out [-S --time-limit] (cli-flag/unary XIDEN_TIME_LIMIT_S arg->value "seconds"))
-(flag-out [-m --fetch-total-size] (cli-flag/unary XIDEN_FETCH_TOTAL_SIZE_MB arg->value "mebibytes-or-+inf.0"))
-(flag-out [-n --fetch-buffer-size] (cli-flag/unary XIDEN_FETCH_BUFFER_SIZE_MB arg->value "mebibytes"))
-(flag-out [-p --fetch-pkgdef-size] (cli-flag/unary XIDEN_FETCH_PKGDEF_SIZE_MB arg->value "mebibytes"))
-(flag-out [-d --fetch-timeout] (cli-flag/unary XIDEN_FETCH_TIMEOUT_MS arg->value "milliseconds"))
-(flag-out [-o --max-redirects] (cli-flag/unary XIDEN_DOWNLOAD_MAX_REDIRECTS arg->value "exact-nonnegative-integer"))
-(flag-out [-r --subprocess-timeout] (cli-flag/unary XIDEN_SUBPROCESS_TIMEOUT_S arg->value "positive"))
-(flag-out [-w --workspace] (cli-flag/unary XIDEN_WORKSPACE arg->value "path"))
+(flag-out [-M --memory-limit] (cli-flag/unary DENXI_MEMORY_LIMIT_MB arg->value "mebibytes"))
+(flag-out [-S --time-limit] (cli-flag/unary DENXI_TIME_LIMIT_S arg->value "seconds"))
+(flag-out [-m --fetch-total-size] (cli-flag/unary DENXI_FETCH_TOTAL_SIZE_MB arg->value "mebibytes-or-+inf.0"))
+(flag-out [-n --fetch-buffer-size] (cli-flag/unary DENXI_FETCH_BUFFER_SIZE_MB arg->value "mebibytes"))
+(flag-out [-p --fetch-pkgdef-size] (cli-flag/unary DENXI_FETCH_PKGDEF_SIZE_MB arg->value "mebibytes"))
+(flag-out [-d --fetch-timeout] (cli-flag/unary DENXI_FETCH_TIMEOUT_MS arg->value "milliseconds"))
+(flag-out [-o --max-redirects] (cli-flag/unary DENXI_DOWNLOAD_MAX_REDIRECTS arg->value "exact-nonnegative-integer"))
+(flag-out [-r --subprocess-timeout] (cli-flag/unary DENXI_SUBPROCESS_TIMEOUT_S arg->value "positive"))
+(flag-out [-w --workspace] (cli-flag/unary DENXI_WORKSPACE arg->value "path"))
 
 
 ; Unary boolean flags
-(flag-out [-U --trust-unsigned] (cli-flag/boolean XIDEN_TRUST_UNSIGNED))
-(flag-out [-T --trust-bad-signature] (cli-flag/boolean XIDEN_TRUST_BAD_SIGNATURE))
-(flag-out [-H --trust-any-host] (cli-flag/boolean XIDEN_TRUST_UNVERIFIED_HOST))
-(flag-out [-Y --trust-any-digest] (cli-flag/boolean XIDEN_TRUST_BAD_DIGEST))
-(flag-out [-F --fasl-output] (cli-flag/boolean XIDEN_FASL_OUTPUT))
-(flag-out [-R --reader-friendly-output] (cli-flag/boolean XIDEN_READER_FRIENDLY_OUTPUT))
-(flag-out [-v --verbose] (cli-flag/boolean XIDEN_VERBOSE))
-(flag-out [-G --assume-support] (cli-flag/boolean XIDEN_ALLOW_UNSUPPORTED_RACKET))
-(flag-out [--trust-any-pubkey] (cli-flag/boolean XIDEN_TRUST_ANY_PUBLIC_KEY))
-(flag-out [--trust-any-exe] (cli-flag/boolean XIDEN_TRUST_ANY_EXECUTABLE))
+(flag-out [-U --trust-unsigned] (cli-flag/boolean DENXI_TRUST_UNSIGNED))
+(flag-out [-T --trust-bad-signature] (cli-flag/boolean DENXI_TRUST_BAD_SIGNATURE))
+(flag-out [-H --trust-any-host] (cli-flag/boolean DENXI_TRUST_UNVERIFIED_HOST))
+(flag-out [-Y --trust-any-digest] (cli-flag/boolean DENXI_TRUST_BAD_DIGEST))
+(flag-out [-F --fasl-output] (cli-flag/boolean DENXI_FASL_OUTPUT))
+(flag-out [-R --reader-friendly-output] (cli-flag/boolean DENXI_READER_FRIENDLY_OUTPUT))
+(flag-out [-v --verbose] (cli-flag/boolean DENXI_VERBOSE))
+(flag-out [-G --assume-support] (cli-flag/boolean DENXI_ALLOW_UNSUPPORTED_RACKET))
+(flag-out [--trust-any-pubkey] (cli-flag/boolean DENXI_TRUST_ANY_PUBLIC_KEY))
+(flag-out [--trust-any-exe] (cli-flag/boolean DENXI_TRUST_ANY_EXECUTABLE))
 
 
 ; Multi flags
 (flag-out [+c ++trust-chf ++trust-message-digest-algorithm]
-          (cli-flag XIDEN_TRUST_CHFS
+          (cli-flag DENXI_TRUST_CHFS
                     'multi null 1 (λ (flag algo)
                                     (cons (string->symbol algo)
-                                          (XIDEN_TRUST_CHFS)))
+                                          (DENXI_TRUST_CHFS)))
                     '("cryptographic-hash-function")))
 
 (flag-out [++trust-cert]
-          (cli-flag XIDEN_TRUST_CERTIFICATES
+          (cli-flag DENXI_TRUST_CERTIFICATES
                     'multi null 1
                     (λ (flag cert-path)
                       (cons (expand-user-path cert-path)
-                            (XIDEN_TRUST_CERTIFICATES)))
+                            (DENXI_TRUST_CERTIFICATES)))
                     '("path")))
 
 (flag-out [+p ++trust-public-key]
-          (cli-flag XIDEN_TRUST_PUBLIC_KEYS
+          (cli-flag DENXI_TRUST_PUBLIC_KEYS
                     'multi null 1 (λ (flag integrity-expr)
                                     (cons (arg->value/evaluated flag integrity-expr)
-                                          (XIDEN_TRUST_PUBLIC_KEYS)))
+                                          (DENXI_TRUST_PUBLIC_KEYS)))
                     '("integrity-expr")))
 
 (flag-out [+x ++trust-executable ++trust-exe]
-          (cli-flag XIDEN_TRUST_EXECUTABLES
+          (cli-flag DENXI_TRUST_EXECUTABLES
                     'multi null 1 (λ (flag integrity-expr)
                                     (cons (arg->value/evaluated flag integrity-expr)
-                                          (XIDEN_TRUST_EXECUTABLES)))
+                                          (DENXI_TRUST_EXECUTABLES)))
                     '("integrity-expr")))
 
 (flag-out [+t ++trust-host-executable]
-          (cli-flag XIDEN_TRUST_HOST_EXECUTABLES
+          (cli-flag DENXI_TRUST_HOST_EXECUTABLES
                     'multi null 1 (λ (flag name)
-                                    (cons name (XIDEN_TRUST_HOST_EXECUTABLES)))
+                                    (cons name (DENXI_TRUST_HOST_EXECUTABLES)))
                     '("file-name")))
 
 (flag-out [+s ++install-source]
-          (cli-flag XIDEN_INSTALL_SOURCES
+          (cli-flag DENXI_INSTALL_SOURCES
                     'multi null 3 (λ (flag link-name output-name source)
                                     (cons (list link-name output-name source)
-                                          (XIDEN_INSTALL_SOURCES)))
+                                          (DENXI_INSTALL_SOURCES)))
                     '("link-name" "output-name" "source")))
 
 (flag-out [+d ++install-default]
-          (cli-flag XIDEN_INSTALL_DEFAULT_SOURCES
+          (cli-flag DENXI_INSTALL_DEFAULT_SOURCES
                     'multi null 2 (λ (flag link-name source)
                                     (cons (list link-name source)
-                                          (XIDEN_INSTALL_DEFAULT_SOURCES)))
+                                          (DENXI_INSTALL_DEFAULT_SOURCES)))
                     '("link-name" "source")))
 
 (flag-out [+a ++install-abbreviated]
-          (cli-flag XIDEN_INSTALL_ABBREVIATED_SOURCES
+          (cli-flag DENXI_INSTALL_ABBREVIATED_SOURCES
                     'multi null 1 (λ (flag source)
                                     (cons source
-                                          (XIDEN_INSTALL_ABBREVIATED_SOURCES)))
+                                          (DENXI_INSTALL_ABBREVIATED_SOURCES)))
                     '("source")))
 
 (flag-out [+e ++env ++envvar]
-          (cli-flag XIDEN_ALLOW_ENV
+          (cli-flag DENXI_ALLOW_ENV
                     'multi null 1 (λ (flag name)
                                     (cons name
-                                          (XIDEN_ALLOW_ENV)))
+                                          (DENXI_ALLOW_ENV)))
                     '("envvar")))
 
 (flag-out [+o ++input-override]
-          (cli-flag XIDEN_INPUT_OVERRIDES
+          (cli-flag DENXI_INPUT_OVERRIDES
                     'multi null 2 (λ (flag pattern input-expr)
                                     (cons (list (arg->value flag pattern)
                                                 (arg->value flag input-expr))
-                                          (XIDEN_INPUT_OVERRIDES)))
+                                          (DENXI_INPUT_OVERRIDES)))
                     '("pregexp-pattern" "input-expr")))
 
 

@@ -1,5 +1,5 @@
-#lang xiden/launcher
-(module+ main (launch-xiden!))
+#lang denxi/launcher
+(module+ main (launch-denxi!))
 (current-chfs (list snake-oil-chf))
-(XIDEN_WORKSPACE (build-path (current-directory) "workspace"))
-(XIDEN_TRUST_BAD_DIGEST #t)
+(DENXI_WORKSPACE (build-path (current-directory) "workspace"))
+(DENXI_TRUST_BAD_DIGEST #t)

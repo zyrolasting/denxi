@@ -22,13 +22,13 @@
            (->* ($message?) (#:newline? any/c message-formatter/c output-port?) void?)]))
 
 (define+provide-message $verbose (message))
-(define+provide-setting XIDEN_FASL_OUTPUT boolean? #f)
-(define+provide-setting XIDEN_VERBOSE boolean? #f)
-(define+provide-setting XIDEN_READER_FRIENDLY_OUTPUT boolean? #f)
+(define+provide-setting DENXI_FASL_OUTPUT boolean? #f)
+(define+provide-setting DENXI_VERBOSE boolean? #f)
+(define+provide-setting DENXI_READER_FRIENDLY_OUTPUT boolean? #f)
 
 (define (filter-output m)
   (if ($verbose? m)
-      (and (XIDEN_VERBOSE)
+      (and (DENXI_VERBOSE)
            ($verbose-message m))
       m))
 
@@ -52,13 +52,13 @@
   (when maybe-message
     (parameterize ([current-output-port out])
       (define to-send
-        (if (XIDEN_READER_FRIENDLY_OUTPUT)
+        (if (DENXI_READER_FRIENDLY_OUTPUT)
             maybe-message
             (formatter maybe-message)))
 
-      (if (XIDEN_FASL_OUTPUT)
+      (if (DENXI_FASL_OUTPUT)
           (s-exp->fasl (serialize to-send) (current-output-port))
-          (if (XIDEN_READER_FRIENDLY_OUTPUT)
+          (if (DENXI_READER_FRIENDLY_OUTPUT)
               (pretty-write #:newline? newline? to-send)
               ((if newline? displayln display) to-send)))
       (flush-output))))
@@ -95,7 +95,7 @@
                dummy
                #px"Testing: Blah")
 
-  (XIDEN_READER_FRIENDLY_OUTPUT #t
+  (DENXI_READER_FRIENDLY_OUTPUT #t
     (λ ()
       (test-output "Allow reader-friendly output"
                    dummy
@@ -103,7 +103,7 @@
                     (λ (o)
                       (pretty-write #:newline? #t dummy o))))
 
-      (XIDEN_FASL_OUTPUT #t
+      (DENXI_FASL_OUTPUT #t
         (λ ()
           (test-case "Allow FASL output"
             (define in
@@ -115,14 +115,14 @@
                           dummy))))))
 
   (test-case "Control verbose output"
-    (XIDEN_VERBOSE #f
+    (DENXI_VERBOSE #f
       (λ ()
         (test-output "Opt out of verbose output"
                      ($verbose dummy)
                      #"")))
 
-    (XIDEN_VERBOSE #t
-      (λ () (XIDEN_READER_FRIENDLY_OUTPUT #t
+    (DENXI_VERBOSE #t
+      (λ () (DENXI_READER_FRIENDLY_OUTPUT #t
         (λ ()
           (test-output "Opt into verbose output"
                        ($verbose dummy)

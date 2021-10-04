@@ -1,10 +1,10 @@
 #! /usr/bin/env racket
-#lang xiden/launcher
+#lang denxi/launcher
 
 (require racket/match net/url)
 
 (module+ main
-  (void (XIDEN_TRUST_BAD_DIGEST #t
+  (void (DENXI_TRUST_BAD_DIGEST #t
     (λ ()                          
       (parameterize ([current-shovel shovel]
                      [current-chfs (list snake-oil-chf)])

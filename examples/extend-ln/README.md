@@ -1,6 +1,6 @@
 This launcher behaves like `ln -s` in terms of HTTPS URLs.  It
-bypasses Xiden's package management subsystem entirely, and issues
-links to individual data files using `xiden/state`.
+bypasses Denxi's package management subsystem entirely, and issues
+links to individual data files using `denxi/state`.
 
 Useful for data that you intend to verify yourself. Unsafe for
 security-critical automations.

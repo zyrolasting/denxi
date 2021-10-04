@@ -1,4 +1,4 @@
-#lang xiden
+#lang denxi
 
 ; Here's the definition from the guide. Let's dig a little deeper.
 
@@ -12,7 +12,7 @@
 ; Here we only have the content, expressed as inline text. This makes
 ; it easy to trust for a demo.
 ;
-; Run `raco docs xiden/artifact` for more information.
+; Run `raco docs denxi/artifact` for more information.
 
 (input "hello.txt"
   (artifact (text-source "Hello, world!") #f #f))

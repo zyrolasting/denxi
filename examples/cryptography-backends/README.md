@@ -1,4 +1,4 @@
-Xiden comes bundled with an OpenSSL derivative so that everyone who
+Denxi comes bundled with an OpenSSL derivative so that everyone who
 installs it has access to the same CHF and cipher implementations.
 
 In the event the library fails to load, of if you simply do not trust

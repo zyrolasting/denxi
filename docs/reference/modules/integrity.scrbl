@@ -2,22 +2,22 @@
 
 @require[@for-label[racket/base
                     racket/contract
-                    xiden/message
-                    xiden/integrity
-                    xiden/crypto
-                    xiden/source]
+                    denxi/message
+                    denxi/integrity
+                    denxi/crypto
+                    denxi/source]
          racket/format
-         xiden/integrity
+         denxi/integrity
          @for-syntax[racket/base
-                     xiden/integrity]
+                     denxi/integrity]
          "../../shared.rkt"]
 
 @title{Integrity Checking}
 
-@defmodule[xiden/integrity]
+@defmodule[denxi/integrity]
 
-@racketmodname[xiden/integrity] reprovides
-@racketmodname[xiden/integrity/base], and is meant for use as a
+@racketmodname[denxi/integrity] reprovides
+@racketmodname[denxi/integrity/base], and is meant for use as a
 high-level interface to the integrity checking subsystem.
 
 @section{High-level Integrity Operations}
@@ -84,11 +84,11 @@ Duck typing contracts for @racket[integrity] instances.
 
 @section{Integrity Settings}
 
-@defsetting*[XIDEN_TRUST_BAD_DIGEST]{
+@defsetting*[DENXI_TRUST_BAD_DIGEST]{
 @bold{Highly dangerous}. When true, disable integrity checking.
 }
 
-@defsetting*[XIDEN_TRUST_CHFS]{
+@defsetting*[DENXI_TRUST_CHFS]{
 A list of possible canonical names for @racket[chf]s to trust when
 checking data integrity.
 }
@@ -112,7 +112,7 @@ to check if a user trusts a CHF.}
 Returns @racket[(chf-bind-trust configured)], where
 @racket[configured] combines existing values in
 @racket[(current-chfs)] with the built-in implementations found in
-@racket[(XIDEN_TRUST_CHFS)].
+@racket[(DENXI_TRUST_CHFS)].
 }
 
 @defproc[(build-builtin-chf-trust [trust-chfs (listof symbol?)]) (listof chf?)]{

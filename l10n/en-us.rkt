@@ -28,112 +28,112 @@
     [(no-user-facing-sources)
      "no useable sources are defined for the end user"]
 
-    [(XIDEN_TRUST_CERTIFICATES)
+    [(DENXI_TRUST_CERTIFICATES)
      "Certificate file to trust when establishing HTTPS connections"]
 
-    [(XIDEN_DEFAULT_CATALOG_BASE_URL)
+    [(DENXI_DEFAULT_CATALOG_BASE_URL)
      "Base URL used for the default catalog"]
 
-    [(XIDEN_MEMORY_LIMIT_MB)
+    [(DENXI_MEMORY_LIMIT_MB)
      "Memory limit for the process"]
 
-    [(XIDEN_TIME_LIMIT_S)
+    [(DENXI_TIME_LIMIT_S)
      "Time limit for the process"]
 
-    [(XIDEN_INSTALL_SOURCES)
+    [(DENXI_INSTALL_SOURCES)
      "Add installation to transaction"]
 
-    [(XIDEN_INSTALL_ABBREVIATED_SOURCES)
+    [(DENXI_INSTALL_ABBREVIATED_SOURCES)
      "Add installation to transaction, assuming \"default\" output and package name link"]
 
-    [(XIDEN_INSTALL_DEFAULT_SOURCES)
+    [(DENXI_INSTALL_DEFAULT_SOURCES)
      "Add installation to transaction, assuming \"default\" output"]
 
-    [(XIDEN_PLUGIN_MODULE)
-     "A path to a module that extends Xiden."]
+    [(DENXI_PLUGIN_MODULE)
+     "A path to a module that extends Denxi."]
 
-    [(XIDEN_TRUST_UNSIGNED)
+    [(DENXI_TRUST_UNSIGNED)
      "Trust unsigned packages"]
 
-    [(XIDEN_TRUST_BAD_SIGNATURE)
+    [(DENXI_TRUST_BAD_SIGNATURE)
      "Trust signatures that don't match public key"]
 
-    [(XIDEN_TRUST_UNVERIFIED_HOST)
+    [(DENXI_TRUST_UNVERIFIED_HOST)
      "Download from any server without authenticating"]
 
-    [(XIDEN_TRUST_CHFS)
+    [(DENXI_TRUST_CHFS)
      "Trust cryptographic hash function implementations from OpenSSL"]
 
-    [(XIDEN_TRUST_BAD_DIGEST)
+    [(DENXI_TRUST_BAD_DIGEST)
      "(DANGEROUS) Trust any input."]
 
-    [(XIDEN_TRUST_ANY_PUBLIC_KEY)
+    [(DENXI_TRUST_ANY_PUBLIC_KEY)
      "(DANGEROUS) Trust any public key"]
 
-    [(XIDEN_TRUST_ANY_EXECUTABLE)
+    [(DENXI_TRUST_ANY_EXECUTABLE)
      "(DANGEROUS) Trust any executable"]
 
-    [(XIDEN_TRUST_HOST_EXECUTABLES)
+    [(DENXI_TRUST_HOST_EXECUTABLES)
      "Trust executable file with given name if it can be found using find-executable-path"]
 
-    [(XIDEN_TRUST_PUBLIC_KEYS)
+    [(DENXI_TRUST_PUBLIC_KEYS)
      "Trust a given public key using integrity information"]
 
-    [(XIDEN_TRUST_EXECUTABLES)
+    [(DENXI_TRUST_EXECUTABLES)
      "Trust an executable using integrity information"]
 
-    [(XIDEN_FASL_OUTPUT)
+    [(DENXI_FASL_OUTPUT)
      "Use FASL program output"]
 
-    [(XIDEN_FETCH_TOTAL_SIZE_MB)
+    [(DENXI_FETCH_TOTAL_SIZE_MB)
      "Maximum size, in mebibytes, to read from a source. +inf.0 = no limit"]
 
-    [(XIDEN_FETCH_BUFFER_SIZE_MB)
+    [(DENXI_FETCH_BUFFER_SIZE_MB)
      "Buffer size, in mebibytes, used when reading bytes"]
 
-    [(XIDEN_FETCH_PKGDEF_SIZE_MB)
+    [(DENXI_FETCH_PKGDEF_SIZE_MB)
      "The maximum expected size, in mebibytes, of a package definition when scoping out work"]
 
-    [(XIDEN_FETCH_TIMEOUT_MS)
+    [(DENXI_FETCH_TIMEOUT_MS)
      "The maximum time, in milliseconds, to wait for a distinct read of bytes from a source"]
 
-    [(XIDEN_READER_FRIENDLY_OUTPUT)
+    [(DENXI_READER_FRIENDLY_OUTPUT)
      "Use (read)able program output"]
 
-    [(XIDEN_VERBOSE)
+    [(DENXI_VERBOSE)
      "Show more information in program output"]
 
-    [(XIDEN_BYTE_ENCODING)
+    [(DENXI_BYTE_ENCODING)
      "Byte encoding to use"]
 
-    [(XIDEN_GENERATED_INPUT_NAME)
+    [(DENXI_GENERATED_INPUT_NAME)
      "Name to use for generated input expressions"]
 
-    [(XIDEN_USER_FACING_SOURCES)
+    [(DENXI_USER_FACING_SOURCES)
      "Add a source for users to fetch data"]
 
-    [(XIDEN_MESSAGE_DIGEST_ALGORITHM)
+    [(DENXI_MESSAGE_DIGEST_ALGORITHM)
      "Message digest algorithm to use"]
 
-    [(XIDEN_SIGNER)
+    [(DENXI_SIGNER)
      "Information used to sign package inputs"]
 
-    [(XIDEN_CATALOGS)
+    [(DENXI_CATALOGS)
      "Sets default URL templates in from-catalogs"]
 
-    [(XIDEN_DOWNLOAD_MAX_REDIRECTS)
+    [(DENXI_DOWNLOAD_MAX_REDIRECTS)
      "Maximum redirects to follow before downloading data"]
 
-    [(XIDEN_ALLOW_UNSUPPORTED_RACKET)
+    [(DENXI_ALLOW_UNSUPPORTED_RACKET)
      "Install packages even if they declare that they do not support the running version of Racket."]
 
-    [(XIDEN_ALLOW_ENV)
+    [(DENXI_ALLOW_ENV)
      "Names of environment variables to expose to subprocesses"]
 
-    [(XIDEN_SUBPROCESS_TIMEOUT_S)
+    [(DENXI_SUBPROCESS_TIMEOUT_S)
      "Maximum number of seconds a subprocess may run"]
 
-    [(XIDEN_INPUT_OVERRIDES)
+    [(DENXI_INPUT_OVERRIDES)
      "Package input overrides"]))
 
 
@@ -234,7 +234,7 @@
   [($package:abstract-input name)
    (~a "cannot use abstract input " (~s name)
        ". Either override it using "
-       (format-cli-flags --XIDEN_INPUT_OVERRIDES)
+       (format-cli-flags --DENXI_INPUT_OVERRIDES)
        ", or configure your launcher to address this.")]
 
   [($package:output:built)
@@ -312,7 +312,7 @@
                  (~a preamble "\n"
                      "To trust this key, add this to " relevant-setting-id ":\n"
                      "(integrity '" chf " (base64 " (~s encoded) "))"))
-               (setting-id XIDEN_TRUST_PUBLIC_KEYS)
+               (setting-id DENXI_TRUST_PUBLIC_KEYS)
                (encode 'base64 (make-digest public-key)))
               preamble)]))]
 
@@ -332,7 +332,7 @@
          [(blocked-chf)
           (format "not trusting CHF ~a. To bypass, add '~a to ~a"
                   chf
-                  (setting-id XIDEN_TRUST_CHFS))]
+                  (setting-id DENXI_TRUST_CHFS))]
 
          [(skip)
           "trusting implicitly"]
@@ -418,7 +418,7 @@
                    "(integrity 'sha384 (base64 ~s))")
                (restrict-preamble name)
                path
-               (setting-id XIDEN_TRUST_EXECUTABLES)
+               (setting-id DENXI_TRUST_EXECUTABLES)
                (~a (encode 'base64 (make-digest path 'sha384))))
        (~a "Unauthorized attempt to execute non-existant " path))]
 
@@ -466,7 +466,7 @@
                "~a")
            (url->string uri)
            (url-host uri)
-           (setting-id XIDEN_TRUST_CERTIFICATES)
+           (setting-id DENXI_TRUST_CERTIFICATES)
            (exn->string original-exn))]
 
   [($chf-unavailable chf)

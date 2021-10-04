@@ -6,44 +6,44 @@
                     racket/match
                     racket/pretty
                     racket/serialize
-                    xiden/l10n
-                    xiden/subprogram
-                    xiden/format
-                    xiden/message
-                    xiden/port
-                    xiden/printer]
-         @for-syntax[xiden/printer]
-         xiden/printer
+                    denxi/l10n
+                    denxi/subprogram
+                    denxi/format
+                    denxi/message
+                    denxi/port
+                    denxi/printer]
+         @for-syntax[denxi/printer]
+         denxi/printer
          "../../shared.rkt"]
 
 @title{Printer}
 
-@defmodule[xiden/printer]
+@defmodule[denxi/printer]
 
-@racketmodname[xiden/printer] writes @tech{messages} as bytes on
+@racketmodname[denxi/printer] writes @tech{messages} as bytes on
 output ports.
 
 
 @defstruct*[($verbose $message) ([message $message?]) #:prefab]{
 A wrapper for a message that only appears to a user if
-@racket[(XIDEN_VERBOSE)] is @racket[#t].
+@racket[(DENXI_VERBOSE)] is @racket[#t].
 }
 
 
-@defsetting*[XIDEN_FASL_OUTPUT]{
+@defsetting*[DENXI_FASL_OUTPUT]{
 When true, each value @racket[v] printed on STDOUT is first transformed using
 @racket[(s-exp->fasl (serialize v))].
 }
 
-@defsetting*[XIDEN_READER_FRIENDLY_OUTPUT]{
+@defsetting*[DENXI_READER_FRIENDLY_OUTPUT]{
 When true, each program output value @racket[v] is printed on STDOUT using
 @racket[pretty-write] without being translated to a human-readable message.
 
 Use this to produce @racket[(read)]able logs. If it aids read performance,
-combine with @racket[XIDEN_FASL_OUTPUT].
+combine with @racket[DENXI_FASL_OUTPUT].
 }
 
-@defsetting*[XIDEN_VERBOSE]{
+@defsetting*[DENXI_VERBOSE]{
 When true, emit more detailed program output.
 }
 
@@ -55,19 +55,19 @@ Writes every message @racket[m] in @racket[messages] using
 
 @defproc[(write-message [m $message?] [#:newline? newline? any/c #t] [format-message message-formatter/c] [out output-port? (current-output-port)]) void?]{
 Writes a @tech{message} to @racket[out] according to the values of
-@racket[(XIDEN_READER_FRIENDLY_OUTPUT)], @racket[(XIDEN_FASL_OUTPUT)],
-and @racket[(XIDEN_VERBOSE)].
+@racket[(DENXI_READER_FRIENDLY_OUTPUT)], @racket[(DENXI_FASL_OUTPUT)],
+and @racket[(DENXI_VERBOSE)].
 
-Given @racket[(and (not (XIDEN_VERBOSE)) ($verbose? m))],
+Given @racket[(and (not (DENXI_VERBOSE)) ($verbose? m))],
 @racket[write-message] does nothing.
 
 Otherwise, @racket[write-message] does the following:
 
 @racketblock[
-(let ([to-send (if (XIDEN_READER_FRIENDLY_OUTPUT) m (format-message m))])
-  (if (XIDEN_FASL_OUTPUT)
+(let ([to-send (if (DENXI_READER_FRIENDLY_OUTPUT) m (format-message m))])
+  (if (DENXI_FASL_OUTPUT)
       (s-exp->fasl (serialize to-send) out)
-      (if (XIDEN_READER_FRIENDLY_OUTPUT)
+      (if (DENXI_READER_FRIENDLY_OUTPUT)
           (pretty-write #:newline? newline? to-send out)
           ((if newline? displayln display) to-send out))))]
 

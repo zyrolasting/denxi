@@ -37,7 +37,7 @@ crypto.so: crypto.c
 		-Ldist/lib -lpthread -lc -l:libcrypto.a -l:libssl.a -ldl 
 
 a.out: crypto.c
-	gcc -D XIDEN_CRYPTO_MAIN -Idist/include crypto.c \
+	gcc -D DENXI_CRYPTO_MAIN -Idist/include crypto.c \
 		-Ldist/lib -lc -l:libcrypto.a -l:libssl.a -ldl  -lpthread
 
 clean:

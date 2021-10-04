@@ -3,22 +3,22 @@
 @require[@for-label[racket/base
                     racket/contract
                     racket/string
-                    xiden/input
-                    xiden/message
-                    xiden/output
-                    xiden/package
-                    xiden/racket-module
-                    xiden/string
-                    xiden/subprogram
-                    xiden/url
-                    xiden/version]
-         @for-syntax[xiden/package]
-         xiden/package
+                    denxi/input
+                    denxi/message
+                    denxi/output
+                    denxi/package
+                    denxi/racket-module
+                    denxi/string
+                    denxi/subprogram
+                    denxi/url
+                    denxi/version]
+         @for-syntax[denxi/package]
+         denxi/package
          "../../shared.rkt"]
 
 @title{Packages}
 
-@defmodule[xiden/package]
+@defmodule[denxi/package]
 
 @defstruct*[package ([description string?]
                      [tags (listof non-empty-string?)]
@@ -54,7 +54,7 @@ distributor.
 
 @racket[os-support] is a list of possible values from
 @racket[(system-type 'os)].  If @racket[(system-type 'os)] is not an
-element of @racket[os-support], then Xiden will not install the
+element of @racket[os-support], then Denxi will not install the
 package.
 
 @racket[racket-versions] is a list of Racket version ranges that
@@ -72,14 +72,14 @@ fields, prefer the values in the structure fields.
 @racket[outputs] is a list of defined @tech{package outputs}.
 
 A function that maps output names to subprograms in @racket[outputs] is
-surjective, but might not be injective. Xiden does not distinguish the
+surjective, but might not be injective. Denxi does not distinguish the
 two, meaning that non-injective lookups will create redundant data on
-disk (Xiden assumes that different output names imply different file
+disk (Denxi assumes that different output names imply different file
 distributions). When non-surjective, then an output's
 @tech{subprogram} might be inaccessible.  This can happen if a
 @racket[package] instance is manually created with faulty data.
 Bijective lookups do not have these problems, and they are easy to
-make using @racketmodname[xiden/pkgdef].
+make using @racketmodname[denxi/pkgdef].
 }
 
 @defthing[empty-package package?]{
@@ -142,7 +142,7 @@ intends to add to a @tech{subprogram log}.
 
 This procedure is useful for standardizing definitions, or for
 analyzing builds. @bold{Define with care.} This procedure may override
-all package definitions, which can render a Xiden process inoperable
+all package definitions, which can render a Denxi process inoperable
 or unsafe.
 
 Take for example a function that returns the same static package
@@ -159,7 +159,7 @@ definition, which has one dependency.
                            (install #f #f pkgdef-path)))])))
 ]
 
-This creates builds that will not terminate. Even if Xiden downloads a
+This creates builds that will not terminate. Even if Denxi downloads a
 new package definition from @racket{https://example.com/other.rkt}, it
 will only be replaced by another instance of the same data returned
 from @racket[(current-package-definition-editor)].
@@ -185,11 +185,11 @@ and adds a @racket[$show-string] @tech{message} to the
 @tech{subprogram log} that displays as @litchar{sxs: <old name> ~>
 <new name>}.
 
-When used as the @racket[current-package-editor], Xiden is forced into
+When used as the @racket[current-package-editor], Denxi is forced into
 an extreme interpretation of side-by-side (SxS) installations.
 
 In this mode, package conflicts become vanishingly improbable. The
-cost is that Xiden's cycle detection and caching mechanisms are
+cost is that Denxi's cycle detection and caching mechanisms are
 defeated because they will never encounter the same package enough
 times for them to matter.  Installations using @racket[sxs] consume
 more resources, and are vulnerable to non-termination. Stop using
@@ -207,15 +207,15 @@ output directories that would hold links to inputs are not cached.
 
 @section{Package Settings}
 
-@defsetting*[XIDEN_ALLOW_UNSUPPORTED_RACKET]{
+@defsetting*[DENXI_ALLOW_UNSUPPORTED_RACKET]{
 When true, continue installing when a @tech{package definition}
 declares that it does not support the running Racket version.
 }
 
-@defsetting*[XIDEN_INSTALL_SOURCES]{
+@defsetting*[DENXI_INSTALL_SOURCES]{
 Defines installations in a transaction.
 
-Each list in @racket[XIDEN_INSTALL_SOURCES] consists of three strings:
+Each list in @racket[DENXI_INSTALL_SOURCES] consists of three strings:
 
 @itemlist[#:style 'ordered
 @item{The path to a symbolic link to create with respect to @racket[(current-directory)].}
@@ -224,7 +224,7 @@ Each list in @racket[XIDEN_INSTALL_SOURCES] consists of three strings:
 ]
 }
 
-@defsetting*[XIDEN_INPUT_OVERRIDES]{
+@defsetting*[DENXI_INPUT_OVERRIDES]{
 A list of strings used to define package input overrides.
 
 Each element is in the form @racket[(cons pattern input-expr)]. The
@@ -238,16 +238,16 @@ then it is first coerced to a string and then used as an argument to
 @racket[pregexp].
 }
 
-@defsetting*[XIDEN_INSTALL_ABBREVIATED_SOURCES]{
-Like @racket[XIDEN_INSTALL_SOURCES], except each item in the list only needs to
+@defsetting*[DENXI_INSTALL_ABBREVIATED_SOURCES]{
+Like @racket[DENXI_INSTALL_SOURCES], except each item in the list only needs to
 be a URL, file path, or @tech{launcher}-specific string used to find the @tech{package
 definition}. The symbolic link name is assumed to be the string bound to
 @racketfont{package} in the definition, and the output is assumed to be
 @racket{default}.
 }
 
-@defsetting*[XIDEN_INSTALL_DEFAULT_SOURCES]{
-Like @racket[XIDEN_INSTALL_SOURCES], except each list only needs two strings:
+@defsetting*[DENXI_INSTALL_DEFAULT_SOURCES]{
+Like @racket[DENXI_INSTALL_SOURCES], except each list only needs two strings:
 
 
 @itemlist[#:style 'ordered
@@ -276,11 +276,11 @@ A @tech{message} pertaining to a package output.
 }
 
 @defstruct*[($package:output:built $package:output) () #:prefab]{
-Xiden successfully built a package output.
+Denxi successfully built a package output.
 }
 
 @defstruct*[($package:output:reused $package:output) () #:prefab]{
-Xiden reused a previously-built package output.
+Denxi reused a previously-built package output.
 }
 
 @defstruct*[($package:output:undefined $package:output) () #:prefab]{

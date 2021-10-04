@@ -2,18 +2,18 @@
 
 @require["../../../shared.rkt"
          @for-label[racket
-                    xiden/message
-                    xiden/integrity
-                    xiden/signature
-                    xiden/signature/base
-                    xiden/signature/ffi
-                    xiden/source]]
+                    denxi/message
+                    denxi/integrity
+                    denxi/signature
+                    denxi/signature/base
+                    denxi/signature/ffi
+                    denxi/source]]
 
 @title{Signature Checking FFI}
 
-@defmodule[xiden/signature/ffi]
+@defmodule[denxi/signature/ffi]
 
-@racketmodname[xiden/signature/ffi] is a private module that defines
+@racketmodname[denxi/signature/ffi] is a private module that defines
 FFI bindings for a bundled library.
 
 

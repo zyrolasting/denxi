@@ -40,10 +40,10 @@
    flat-contract?]
   [well-formed-signature?
    flat-contract?]
-  [XIDEN_TRUST_ANY_PUBLIC_KEY setting?]
-  [XIDEN_TRUST_BAD_SIGNATURE setting?]
-  [XIDEN_TRUST_PUBLIC_KEYS setting?]
-  [XIDEN_TRUST_UNSIGNED setting?]))
+  [DENXI_TRUST_ANY_PUBLIC_KEY setting?]
+  [DENXI_TRUST_BAD_SIGNATURE setting?]
+  [DENXI_TRUST_PUBLIC_KEYS setting?]
+  [DENXI_TRUST_UNSIGNED setting?]))
 
 
 (define (sourced-signature? v)
@@ -57,10 +57,10 @@
 (define malformed-signature?
   (not/c well-formed-signature?))
 
-(define-setting XIDEN_TRUST_ANY_PUBLIC_KEY boolean? #f)
-(define-setting XIDEN_TRUST_BAD_SIGNATURE boolean? #f)
-(define-setting XIDEN_TRUST_PUBLIC_KEYS (listof well-formed-integrity?) null)
-(define-setting XIDEN_TRUST_UNSIGNED boolean? #f)
+(define-setting DENXI_TRUST_ANY_PUBLIC_KEY boolean? #f)
+(define-setting DENXI_TRUST_BAD_SIGNATURE boolean? #f)
+(define-setting DENXI_TRUST_PUBLIC_KEYS (listof well-formed-integrity?) null)
+(define-setting DENXI_TRUST_UNSIGNED boolean? #f)
 
 (define MAX_EXPECTED_SIGNATURE_PAYLOAD_LENGTH 24000)
 
@@ -76,7 +76,7 @@
 (define (call-with-snake-oil-cipher-trust f)
   (call-with-snake-oil-chf-trust
    (λ ()
-     (XIDEN_TRUST_PUBLIC_KEYS
+     (DENXI_TRUST_PUBLIC_KEYS
       (list (integrity (get-default-chf)
                        (make-digest snake-oil-public-key)))
       f))))

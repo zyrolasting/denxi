@@ -1,4 +1,4 @@
-#lang xiden
+#lang denxi
 
 (name "example03-output")
 

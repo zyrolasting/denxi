@@ -1,14 +1,14 @@
 #lang scribble/manual
 
 @require[@for-label[racket
-                    xiden/query
-                    xiden/string
-                    xiden/version]
+                    denxi/query
+                    denxi/string
+                    denxi/version]
           "../../shared.rkt"]
 
 @title{Package Queries}
 
-@defmodule[xiden/query]
+@defmodule[denxi/query]
 
 A @deftech{package query} is a colon-separated string that matches
 against @tech{package definition} names or installed outputs in a
@@ -110,7 +110,7 @@ provider, and not the package name.
 @subsection{Specifying an Edition}
 
 If you prefer a scientific calculator, the package author can provide
-that design under a different @tech/xiden-reference{edition}. Specify
+that design under a different @tech/denxi-reference{edition}. Specify
 an edition using the next field.
 
 @verbatim|{
@@ -121,7 +121,7 @@ example.com:calculator:scientific
 @subsection{Specifying Accepted Revisions}
 
 The next field is for requesting a specific
-@tech/xiden-reference{revision} of a package.
+@tech/denxi-reference{revision} of a package.
 
 @verbatim|{
 example.com:calculator:scientific:288
@@ -182,7 +182,7 @@ beta, then you would have to know the revision number in advance of
 writing the query. With the interval flags, you do not have to know
 any revision numbers.
 
-When resolving @tech/xiden-reference{revision names}, Xiden will raise
+When resolving @tech/denxi-reference{revision names}, Denxi will raise
 an error for queries like these because they each resolve to a
 backwards interval:
 

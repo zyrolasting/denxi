@@ -1,19 +1,19 @@
 #lang scribble/manual
 
 @require[@for-label[racket
-                    xiden/archive
-                    xiden/input
-                    xiden/subprogram
-                    xiden/monad
-                    @only-in[xiden/pkgdef output]]
+                    denxi/archive
+                    denxi/input
+                    denxi/subprogram
+                    denxi/monad
+                    @only-in[denxi/pkgdef output]]
           "../../shared.rkt"]
 
 
 @title{Monads}
 
-@defmodule[xiden/monad]
+@defmodule[denxi/monad]
 
-@racketmodname[xiden/monad] implements a monomorphic bind operation
+@racketmodname[denxi/monad] implements a monomorphic bind operation
 and a notation for composition.
 
 @defidform[gen:monad]{
@@ -66,7 +66,7 @@ within them.
 
 @section[#:tag "monad-examples"]{Examples and Background}
 
-Some subprograms in Xiden use an alternative notation within a
+Some subprograms in Denxi use an alternative notation within a
 @racket[output] or @racket[mdo] form.
 
 @racketblock[
@@ -90,7 +90,7 @@ an identifier.  It also finds the value it needs to bind in the first
 place from a special context called a @deftech{monad}.  There are many
 tutorials that explain monads poorly, and this is likely one of
 them. I encourage you to search online for programming exercises, but
-I'll give you an abridged introduction to keep you moving in Xiden's
+I'll give you an abridged introduction to keep you moving in Denxi's
 documentation.
 
 Here are two functions.
@@ -132,7 +132,7 @@ want to use from the extra data. therefore, @racket[(extract
 passed the value you want plus extra @italic{stuff} to
 @racket[extract].
 
-If you look at the documentation for a function in Xiden and see that
+If you look at the documentation for a function in Denxi and see that
 it returns an unfamiliar value like @racket[(subprogram/c string?)]
 instead of just @racket[string?], it is probably meant for use as a
 monadic type, where @racket[:=] pulls out the string you want.

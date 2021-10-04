@@ -4,22 +4,22 @@
                     racket/contract
                     racket/format
                     racket/string
-                    xiden/artifact
-                    xiden/dig
-                    xiden/dig/filesystem
-                    xiden/dig/http
-                    xiden/message
-                    xiden/integrity
-                    xiden/crypto
-                    xiden/query
-                    xiden/signature
-                    xiden/source
-                    xiden/string
-                    xiden/url]]
+                    denxi/artifact
+                    denxi/dig
+                    denxi/dig/filesystem
+                    denxi/dig/http
+                    denxi/message
+                    denxi/integrity
+                    denxi/crypto
+                    denxi/query
+                    denxi/signature
+                    denxi/source
+                    denxi/string
+                    denxi/url]]
 
 @title{HTTP Client Shovels}
 
-@defmodule[xiden/dig/http]
+@defmodule[denxi/dig/http]
 
 @defproc[(make-http-shovel [base-url url-variant?]
                            [optional-chf (or/c #f symbol?) #f]
@@ -97,7 +97,7 @@ Given a shovel with all expectations...
 @section[#:tag "http-shovel-caveats"]{Caveats for HTTP Shovels}
 
 Due to the volume of possible network conditions and API definitions
-for servers, @racketmodname[xiden/dig/http] provides no mechanisms for
+for servers, @racketmodname[denxi/dig/http] provides no mechanisms for
 checking @tech{artifact} availability, and no @tech{package query
 canon} for @tech{package queries}. Therefore,
 @racket[make-http-shovel] will return artifacts that may produce no

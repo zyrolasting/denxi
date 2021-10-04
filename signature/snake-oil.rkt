@@ -9,7 +9,7 @@
   [snake-oil-public-key bytes?]
   [snake-oil-private-key-password bytes?]))
 
-; usage: racket -l xiden/signature/snake-oil
+; usage: racket -l denxi/signature/snake-oil
 (module+ main
   (require racket/port)
   (define (<< path bstr)

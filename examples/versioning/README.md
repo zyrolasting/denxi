@@ -1,11 +1,11 @@
 This example has three definitions that each represent a release of
 the same product. The editions indicate the design used for the
 software, and the revisions indicate implementations for that design
-made over time. See `raco docs xiden/version` for definitions.
+made over time. See `raco docs denxi/version` for definitions.
 
 Each package definition includes its own version information, but they
 share the name `greeting`. If we abbreviate our installation request
-using `do +a` or `do ++install-abbreviated`, then Xiden will pick
+using `do +a` or `do ++install-abbreviated`, then Denxi will pick
 `greeting` as the name of each version's link.  We avoid this conflict
 by building a transaction that uses the default output, but allows us
 to specify our own link names.
@@ -17,7 +17,7 @@ racket launch.rkt do \
        +d quiet quiet0.rkt
 ```
 
-Once that's done, run `xiden show installed`.  The output will look
+Once that's done, run `denxi show installed`.  The output will look
 something like this.
 
 ```
@@ -27,7 +27,7 @@ example.com:greeting:quiet:0:0:ii default yja5p81pjtdsqaztrkhh0b1n9sjgb1vj
 ```
 
 The first column is an _exact package query_ that identifies the
-package definition used at the time (`raco docs xiden/query`). The
+package definition used at the time (`raco docs denxi/query`). The
 second column is the name of the output used in that definition. The
 third column is the name of the directory in the workspace's `objects`
 directory representing the installed output.

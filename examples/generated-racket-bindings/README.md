@@ -3,7 +3,7 @@ bindings, because their values are never `eq?` when you expect them to
 be.
 
 `program.rkt` imports modules with the same functionality, but Racket
-sees them as providing different bindings. We can use Xiden to control
+sees them as providing different bindings. We can use Denxi to control
 the bindings Racket sees without changing `program.rkt`.
 
 1. Run `racket launch.rkt do +a defn.rkt` in this directory. You should see a symlink appear.
@@ -27,7 +27,7 @@ will print `same`.
 
 # Method: Duplicate Inputs
 
-Xiden wil not duplicate inputs, so you can leverage its cache such
+Denxi wil not duplicate inputs, so you can leverage its cache such
 that the same files of two different names result in links pointing to
 the same Racket module file.
 

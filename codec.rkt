@@ -18,19 +18,19 @@
            (-> (or/c string? bytes?) string?)]
           [coerce-bytes
            (-> (or/c string? bytes?) bytes?)]
-          [xiden-encodings
+          [denxi-encodings
            (non-empty-listof symbol?)]
-          [xiden-encoding/c
+          [denxi-encoding/c
            flat-contract?]
           [encoded-file-name
            (-> (or/c bytes? string?)
                string?)]
           [encode
-           (-> xiden-encoding/c
+           (-> denxi-encoding/c
                (or/c bytes? string?)
                (or/c bytes? string?))]
           [decode
-           (-> xiden-encoding/c
+           (-> denxi-encoding/c
                (or/c bytes? string?)
                (or/c bytes? string?))]
           [base32 abbreviated-decode-procedure/c]
@@ -50,12 +50,12 @@
       (string->bytes/utf-8 v)))
 
 
-(define xiden-encodings
+(define denxi-encodings
   '(base64 base32 hex colon-separated-hex))
 
 
-(define xiden-encoding/c
-  (apply or/c xiden-encodings))
+(define denxi-encoding/c
+  (apply or/c denxi-encodings))
 
 
 (define (encoded-file-name variant)
@@ -114,7 +114,7 @@
 
 (module+ test
   (require rackunit)
-  (for ([encoding (in-list xiden-encodings)])
+  (for ([encoding (in-list denxi-encodings)])
     (test-case (format "Encode and decode a message using ~a" encoding)
       (define bstr (encode encoding #"abc"))
       (check-equal? (decode encoding bstr) #"abc")

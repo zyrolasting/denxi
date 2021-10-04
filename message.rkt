@@ -36,7 +36,7 @@
 (define+provide-message $regarding   (subject body))
 
 
-(define mark-key (string->uninterned-symbol "xiden:message-scope"))
+(define mark-key (string->uninterned-symbol "denxi:message-scope"))
 
 (define (get-message-scope)
   (or (continuation-mark-set-first

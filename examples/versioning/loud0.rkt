@@ -1,4 +1,4 @@
-#lang xiden
+#lang denxi
 (provider "example.com")
 (name "greeting")
 (edition "loud")

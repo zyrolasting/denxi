@@ -1,4 +1,4 @@
-#lang xiden
+#lang denxi
 
 (os-support unix)
 
@@ -8,7 +8,7 @@
         (run "sh" path "--in-place" "--dest" "racket")
         (release-input inp)
         (run "./racket/bin/racket" "-U" "-A" "./addon"
-             "-l" "raco/main" "--" "pkg" "install" "-i" "--auto" "xiden"))
+             "-l" "raco/main" "--" "pkg" "install" "-i" "--auto" "denxi"))
 
 (input "install-racket.sh"
        (artifact (http-source "https://download.racket-lang.org/releases/8.1/installers/racket-minimal-8.1-x86_64-linux-cs.sh")

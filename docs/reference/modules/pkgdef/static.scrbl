@@ -6,17 +6,17 @@
                     racket/pretty
                     racket/string
                     syntax/modread
-                    xiden/codec
-                    xiden/integrity
-                    xiden/crypto
-                    xiden/pkgdef/static
-                    xiden/racket-module
-                    xiden/string]
+                    denxi/codec
+                    denxi/integrity
+                    denxi/crypto
+                    denxi/pkgdef/static
+                    denxi/racket-module
+                    denxi/string]
          "../../../shared.rkt"]
 
 @title{Static Operations for Package Definitions}
 
-@defmodule[xiden/pkgdef/static]
+@defmodule[denxi/pkgdef/static]
 
 @deftogether[(
 @defthing[PACKAGE_DEFINITION_MODULE_LANG symbol?]

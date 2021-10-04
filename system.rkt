@@ -23,7 +23,7 @@
                     #:rest (listof path-string?)
                     subprogram?)]))
 
-(define+provide-setting XIDEN_SUBPROCESS_TIMEOUT_S (>=/c 0) (* 30 60))
+(define+provide-setting DENXI_SUBPROCESS_TIMEOUT_S (>=/c 0) (* 30 60))
 
 (define ALL_OS_SYMS '(unix windows macosx))
 

@@ -1,11 +1,11 @@
 #lang scribble/manual
 
-@require[@for-label[racket/base racket/contract xiden/version]
+@require[@for-label[racket/base racket/contract denxi/version]
           "../../shared.rkt"]
 
 @title[#:tag "versions"]{Versions}
 
-@defmodule[xiden/version]
+@defmodule[denxi/version]
 
 A @tech{package definition} has a @tech{version}.
 

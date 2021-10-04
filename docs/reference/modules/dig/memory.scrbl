@@ -1,18 +1,18 @@
 #lang scribble/manual
 
 @require[@for-label[racket
-                    xiden/artifact
-                    xiden/subprogram
-                    xiden/dig
-                    xiden/dig/memory
-                    xiden/artifact
-                    xiden/query
-                    xiden/source]]
+                    denxi/artifact
+                    denxi/subprogram
+                    denxi/dig
+                    denxi/dig/memory
+                    denxi/artifact
+                    denxi/query
+                    denxi/source]]
 
 
 @title{Memory Shovels}
 
-@defmodule[xiden/dig/memory]
+@defmodule[denxi/dig/memory]
 
 @defproc[(make-memory-shovel [contents (hash/c any/c artifact?)]) shovel/c]{
 Returns a @tech{shovel} that behaves similarly to @racket[(curry

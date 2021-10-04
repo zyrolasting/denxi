@@ -84,7 +84,7 @@
 
 
 (define subprogram-acyclic
-  (let ([mark-key (string->uninterned-symbol "xiden:cycle-detection")])
+  (let ([mark-key (string->uninterned-symbol "denxi:cycle-detection")])
     (λ (key proc)
       (subprogram
        (λ (messages)

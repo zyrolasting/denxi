@@ -5,15 +5,15 @@
 ; example.
 
 (module+ main
-  (require (only-in xiden/codec
+  (require (only-in denxi/codec
                     hex)
-           (only-in xiden/integrity
+           (only-in denxi/integrity
                     current-chfs
                     chf-canonical-name
                     snake-oil-chf)
-           (only-in xiden/signature
+           (only-in denxi/signature
                     make-signature)
-           (only-in xiden/signature/ffi
+           (only-in denxi/signature/ffi
                     signature-ffi-available?!))
 
   (current-chfs
@@ -31,6 +31,6 @@
                              #f))
            (copy-port (open-input-bytes sig) out)))
        (displayln
-        (~a "Sorry, but this system could not load Xiden's built-in crypto library.\n"
+        (~a "Sorry, but this system could not load Denxi's built-in crypto library.\n"
             "You can still do the bonus for this example using a custom\n"
             "cryptographic backend. See the related example!")))))

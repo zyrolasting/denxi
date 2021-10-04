@@ -114,7 +114,7 @@
                      o)))
 
     ; We don't want to protect against use of this dummy data.
-    (XIDEN_TRUST_BAD_DIGEST #t
+    (DENXI_TRUST_BAD_DIGEST #t
      (λ ()
        (define faux-archive
          (package-input "archive.tgz"

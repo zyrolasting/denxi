@@ -5,21 +5,21 @@
                     racket/contract
                     racket/match
                     racket/string
-                    xiden/artifact
-                    xiden/dig
-                    xiden/input
-                    xiden/subprogram
-                    xiden/message
-                    xiden/package
-                    xiden/query
-                    xiden/source
-                    xiden/string
-                    xiden/url
-                    xiden/version]]
+                    denxi/artifact
+                    denxi/dig
+                    denxi/input
+                    denxi/subprogram
+                    denxi/message
+                    denxi/package
+                    denxi/query
+                    denxi/source
+                    denxi/string
+                    denxi/url
+                    denxi/version]]
 
 @title{Digs}
 
-@defmodule[xiden/dig]
+@defmodule[denxi/dig]
 
 The @deftech{digsite metaphor} says that one uses a @deftech{shovel}
 to @deftech{dig} for @tech{artifacts}. Despite putting the same amount
@@ -32,7 +32,7 @@ underway when such a procedure has program control.
 
 The digsite metaphor implies some level of repeated effort (digging)
 towards uncertain results. For example, the built-in shovels for
-@racketmodname[xiden/dig/filesystem] resolve symbolic links as a way
+@racketmodname[denxi/dig/filesystem] resolve symbolic links as a way
 to “scoop” towards a possibly non-existent file. In a similar
 scenario, a server hosting data may respond differently to the same
 request, or issue redirects a shovel may follow.

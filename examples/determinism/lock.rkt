@@ -2,11 +2,11 @@
 
 ; Read content from STDIN and generate a complete artifact.
 (module+ main
-  (require xiden/artifact
-           xiden/integrity
-           xiden/signature
-           xiden/subprogram
-           xiden/notary)
+  (require denxi/artifact
+           denxi/integrity
+           denxi/signature
+           denxi/subprogram
+           denxi/notary)
 
   (current-chfs (list snake-oil-chf))
 

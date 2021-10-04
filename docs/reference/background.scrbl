@@ -3,14 +3,14 @@
 @title{Prerequisite Knowledge}
 
 @require[@for-label[racket
-                    xiden/integrity]
+                    denxi/integrity]
          "../shared.rkt"]
 
 To understand this reference, you should have a working understanding
 of @deftech{cryptographic hash functions}, or @deftech{CHF}s. A CHF
 turns a variable-length value into a fixed-length value called a
 @deftech{message digest}, a.k.a. @deftech{digest}, @deftech{checksum},
-or @deftech{hash}. All terms refer to the output of a CHF in Xiden's
+or @deftech{hash}. All terms refer to the output of a CHF in Denxi's
 documentation.
 
 Sometimes download links have a “SHA-256” or some such name by a
@@ -39,7 +39,7 @@ integrity using SHA-1. This is why the word “cryptographic” in
 “cryptographic hash function” carries a lot of weight. If a CHF works
 well, it is hard to reproduce a known digest with doctored content.
 
-When CHFs aren't good enough, Xiden uses @deftech{asymmetric
+When CHFs aren't good enough, Denxi uses @deftech{asymmetric
 cryptography} to verify that a file came from a trusted party.
 Assymetric cryptography involves two keys. One key is public, and the
 other is private (that is, known only by you). The public key can
@@ -48,7 +48,7 @@ scramble a message such that only the private key holder can read it.
 Private keys can also sign data, such that only the corresponding
 public key can verify that the holder of the private key created the
 signature. That way, if you trust the private key holder, you can
-trust the signed data. Xiden verifies signatures this way.
+trust the signed data. Denxi verifies signatures this way.
 
 All of this only works if your private key stays secret, and we know
 it was you who shared your public key. There are
@@ -56,4 +56,4 @@ it was you who shared your public key. There are
 for that}, if you are inclined to attend.
 
 As you read this reference, you can assume that any abstractions that
-mention CHFs or signatures are intimately tied to Xiden's trust model.
+mention CHFs or signatures are intimately tied to Denxi's trust model.

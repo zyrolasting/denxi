@@ -2,15 +2,15 @@
 
 @require["../../../shared.rkt"
          @for-label[racket
-                    xiden/message
-                    xiden/integrity
-                    xiden/signature/base
-                    xiden/signature/ffi
-                    xiden/source]]
+                    denxi/message
+                    denxi/integrity
+                    denxi/signature/base
+                    denxi/signature/ffi
+                    denxi/source]]
 
 @title{Signature Checking Primitives}
 
-@defmodule[xiden/signature/base]
+@defmodule[denxi/signature/base]
 
 @defstruct*[signature ([public-key any/c] [body any/c]) #:transparent]{
 Represents a claim that the bytes in @racket[body] are a signature

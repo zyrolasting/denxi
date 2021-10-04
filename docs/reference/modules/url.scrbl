@@ -1,13 +1,13 @@
 #lang scribble/manual
 
-@require[@for-label[racket/base racket/contract xiden/url]
+@require[@for-label[racket/base racket/contract denxi/url]
           "../../shared.rkt"]
 
 @title{URLs}
 
-@defmodule[xiden/url]
+@defmodule[denxi/url]
 
-@racketmodname[xiden/url] reprovides @racketmodname[net/url], along
+@racketmodname[denxi/url] reprovides @racketmodname[net/url], along
 with the following bindings.
 
 @defproc[(url-variant? [s any/c]) boolean?]{

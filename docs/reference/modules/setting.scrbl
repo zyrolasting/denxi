@@ -1,18 +1,18 @@
 #lang scribble/manual
 
-@(require (for-label racket/base racket/contract xiden/setting)
+@(require (for-label racket/base racket/contract denxi/setting)
           (for-syntax "../../shared.rkt"
                       racket
                       syntax/stx
-                      xiden/setting
-                      xiden/cli-flag)
-          xiden/setting
-          xiden/cli-flag
+                      denxi/setting
+                      denxi/cli-flag)
+          denxi/setting
+          denxi/cli-flag
           "../../shared.rkt")
 
 @title[#:tag "settings"]{Settings}
 
-@defmodule[xiden/setting]
+@defmodule[denxi/setting]
 
 A @deftech{setting} is an instance of the @racket[setting]
 @tech/reference{structure} type.  Settings contain
@@ -22,13 +22,13 @@ Settings add canonical names, validation information, and contextual
 help to the parameters. Every setting must be configurable using every
 approach in @secref{setting-methods}.
 
-Xiden dynamically binds values to settings when launched. A
+Denxi dynamically binds values to settings when launched. A
 @deftech{runtime configuration} is a Racket
-@tech/reference{parameterization} in effect after Xiden finishes
+@tech/reference{parameterization} in effect after Denxi finishes
 processing all @secref{setting-methods}. This implies that a runtime
 configuration accounts for @italic{all} Racket parameters
 (e.g. @racket[current-directory]), and not just the ones defined by
-Xiden.
+Denxi.
 
 
 @section[#:tag "setting-methods"]{Methods for Changing Settings}
@@ -38,9 +38,9 @@ method before it.
 
 @itemlist[
 @item{Do nothing. Every setting has a hard-coded default.}
-@item{Set an environment variable, e.g. @litchar{export XIDEN_VERBOSE="#t"}. This changes the default value of the named setting.}
+@item{Set an environment variable, e.g. @litchar{export DENXI_VERBOSE="#t"}. This changes the default value of the named setting.}
 @item{Override the value in a @tech{launcher}}
-@item{Use a command line flag like @litchar{--XIDEN_VERBOSE '#t'}.}
+@item{Use a command line flag like @litchar{--DENXI_VERBOSE '#t'}.}
 ]
 
 

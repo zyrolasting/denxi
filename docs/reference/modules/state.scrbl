@@ -6,27 +6,27 @@
                     racket/format
                     racket/path
                     racket/sequence
-                    xiden/codec
-                    xiden/integrity
-                    xiden/message
-                    xiden/query
-                    xiden/state
-                    xiden/string
-                    xiden/port
-                    xiden/version]
-        xiden/state
-        @for-syntax[xiden/state]]
+                    denxi/codec
+                    denxi/integrity
+                    denxi/message
+                    denxi/query
+                    denxi/state
+                    denxi/string
+                    denxi/port
+                    denxi/version]
+        denxi/state
+        @for-syntax[denxi/state]]
 
 @title{State}
 
-@defmodule[xiden/state]
+@defmodule[denxi/state]
 
-Xiden's @deftech{state} consists of the contents of a filesystem
+Denxi's @deftech{state} consists of the contents of a filesystem
 directory, and a @tech{database} in that
-directory. @racketmodname[xiden/state] encapsulates state I/O.
+directory. @racketmodname[denxi/state] encapsulates state I/O.
 
-Xiden implicitly trusts a state, so @bold{directly tampering with
-state is a bad idea.} Only use @racketmodname[xiden/state] to interact
+Denxi implicitly trusts a state, so @bold{directly tampering with
+state is a bad idea.} Only use @racketmodname[denxi/state] to interact
 with a @tech{state}.
 
 
@@ -36,8 +36,8 @@ A @deftech{workspace} is a directory on the filesystem that holds a
 @tech{database} and all installed software. A workspace's path must
 match the @racket[workspace-directory/c] contract. A @deftech{target
 workspace} is the directory referenced by the value of
-@racket[(XIDEN_WORKSPACE)]. Target workspaces are affected by all
-filesystem writes in a Xiden process.
+@racket[(DENXI_WORKSPACE)]. Target workspaces are affected by all
+filesystem writes in a Denxi process.
 
 @defthing[workspace-directory/c contract?
           #:value (and/c complete-path?
@@ -52,23 +52,23 @@ directory, or a location on the filesystem where nothing exists.
 }
 
 
-@defthing[#:kind "setting" XIDEN_WORKSPACE workspace-directory/c]{
+@defthing[#:kind "setting" DENXI_WORKSPACE workspace-directory/c]{
 CLI Flags: @litchar{--w/--workspace}
 
-The directory in which Xiden reads and writes files. If the directory
-does not exist, then it will be created when Xiden writes a file.
+The directory in which Denxi reads and writes files. If the directory
+does not exist, then it will be created when Denxi writes a file.
 
-Defaults to @racket[(build-path (find-system-path 'home-dir) ".xiden")].
+Defaults to @racket[(build-path (find-system-path 'home-dir) ".denxi")].
 }
 
 @defproc[(build-workspace-path [path-element (and/c path-string? (not/c complete-path?))]) complete-path?]{
 Like @racket[build-path], but the base of the returned path is
-@racket[(XIDEN_WORKSPACE)].
+@racket[(DENXI_WORKSPACE)].
 }
 
 @defproc[(call-with-ephemeral-workspace [proc (-> path? any)]) any]{
 Calls @racket[proc] in a @tech/reference{parameterization} where
-@racket[(XIDEN_WORKSPACE)] is a temporary directory. The same path
+@racket[(DENXI_WORKSPACE)] is a temporary directory. The same path
 is passed as the first argument to @racket[proc]. That directory and
 its contents will be deleted when control leaves @racket[proc], if it
 still exists.
@@ -77,7 +77,7 @@ still exists.
 
 @defproc[(path-in-workspace? [path path-string?]) boolean?]{
 Returns @racket[#t] if @racket[path], when simplified, has
-@racket[(XIDEN_WORKSPACE)] as a prefix.
+@racket[(DENXI_WORKSPACE)] as a prefix.
 }
 
 
@@ -144,7 +144,7 @@ Effect: Creates the directory path before the file name in
 @racket[link-path].  The net operation is performed non-atomically.
 
 The target path must come from a valid @racket[path-record] because
-the links may only point to files and directories created by Xiden.
+the links may only point to files and directories created by Denxi.
 }
 
 
@@ -204,7 +204,7 @@ these invariants:
 
 @itemlist[
 @item{@racket[(build-workspace-path path)] exists.}
-@item{The file, directory, or link referenced by @racket[path] was created by a Xiden process.}
+@item{The file, directory, or link referenced by @racket[path] was created by a Denxi process.}
 @item{The @racket[digest] was computed in terms of the contents of the corresponding file or directory.}
 @item{If @racket[path] refers to a link, then @racket[target-id] matches the @racket[path-record] for the target of the link.}
 ]
@@ -323,7 +323,7 @@ If @racket[variant] is an @racket[exn?], then an error was encountered
 in preparing or executing a SQL query.
 }
 
-@defproc[(in-xiden-objects [query package-query-variant?])
+@defproc[(in-denxi-objects [query package-query-variant?])
                            (sequence/c path-string?
                                        exact-positive-integer?
                                        revision-number?
@@ -344,7 +344,7 @@ system.
 }
 
 
-@defproc[(in-xiden-outputs [query package-query-variant?]
+@defproc[(in-denxi-outputs [query package-query-variant?]
                            [output-name string?])
                            (sequence/c output-record?)]{
 Returns a sequence of @racket[output-record] for outputs of the given
@@ -386,7 +386,7 @@ Like @racket[build-object-path], but the file name is
 Returns a sequence of two values.
 
 The first is a @tech{workspace}-relative path to a symbolic link
-created by Xiden.
+created by Denxi.
 
 The second is a @tech{workspace}-relative path to the file referenced
 by the link.
@@ -397,10 +397,10 @@ by the link.
 
 @defstruct*[($finished-collecting-garbage $message) ([bytes-recovered exact-nonnegative-integer?]) #:prefab]{
 A @tech{message} for reporting the number of bytes freed from disk
-using @racket[xiden-collect-garbage].
+using @racket[denxi-collect-garbage].
 }
 
-@defproc[(xiden-collect-garbage) exact-nonnegative-integer?]{
+@defproc[(denxi-collect-garbage) exact-nonnegative-integer?]{
 Deletes all records of links that do not actually exist on disk, then
 deletes any installed files or directories in the @tech{target
 workspace} with no known links.
@@ -412,7 +412,7 @@ directories and links are assumed to have no size.
 
 @section{Content Addressing}
 
-Xiden addresses arbitrary data using digests. One may override how
+Denxi addresses arbitrary data using digests. One may override how
 data appears when computing new addresses.
 
 @defproc[(make-content-address [path (or/c directory-exists? file-exists? link-exists?)]) bytes?]{

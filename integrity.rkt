@@ -45,8 +45,8 @@
    flat-contract?]
   [well-formed-integrity?
    flat-contract?]
-  [XIDEN_TRUST_BAD_DIGEST setting?]
-  [XIDEN_TRUST_CHFS setting?]))
+  [DENXI_TRUST_BAD_DIGEST setting?]
+  [DENXI_TRUST_CHFS setting?]))
 
 
 ;--------------------------------------------------------------------------------
@@ -62,8 +62,8 @@
          "source.rkt"
          "state.rkt")
 
-(define-setting XIDEN_TRUST_BAD_DIGEST boolean? #f)
-(define-setting XIDEN_TRUST_CHFS (listof symbol?) null)
+(define-setting DENXI_TRUST_BAD_DIGEST boolean? #f)
+(define-setting DENXI_TRUST_CHFS (listof symbol?) null)
 
 
 (define sourced-integrity?
@@ -76,7 +76,7 @@
   (not/c well-formed-integrity?))
 
 
-(define (build-builtin-chf-trust [trust-chfs (XIDEN_TRUST_CHFS)])
+(define (build-builtin-chf-trust [trust-chfs (DENXI_TRUST_CHFS)])
   (chf-fold-trust
    load-builtin-chf
    (remove-duplicates trust-chfs)))
@@ -85,13 +85,13 @@
 (define (make-user-chf-trust-predicate)
   (chf-bind-trust
    (append (current-chfs)
-           (build-builtin-chf-trust (XIDEN_TRUST_CHFS)))))
+           (build-builtin-chf-trust (DENXI_TRUST_CHFS)))))
 
 
-(define (load-builtin-chf xiden-sym [fail-thunk (λ () (raise ($chf-unavailable xiden-sym)))])
+(define (load-builtin-chf denxi-sym [fail-thunk (λ () (raise ($chf-unavailable denxi-sym)))])
   (or (and (integrity-ffi-available?!)
-           (integrity-ffi-chf-available?! xiden-sym)
-           (λ (in) (integrity-ffi-make-digest! in xiden-sym)))
+           (integrity-ffi-chf-available?! denxi-sym)
+           (λ (in) (integrity-ffi-make-digest! in denxi-sym)))
       (fail-thunk)))
 
 
@@ -106,7 +106,7 @@
                  #:cache-key (make-source-key source)
                  #:max-size MAX_EXPECTED_DIGEST_LENGTH
                  #:buffer-size MAX_EXPECTED_DIGEST_LENGTH
-                 #:timeout-ms (XIDEN_FETCH_TIMEOUT_MS)
+                 #:timeout-ms (DENXI_FETCH_TIMEOUT_MS)
                  #:on-status void
                  "_"
                  in

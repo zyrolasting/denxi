@@ -1,6 +1,6 @@
-#lang xiden/launcher
+#lang denxi/launcher
 
-(module+ main (launch-xiden!))
+(module+ main (launch-denxi!))
 
 ; This launcher checks integrity and signatures,
 ; but uses an untrustworthy CHF and public key.
@@ -13,8 +13,8 @@
 (current-chfs
  (list snake-oil-chf))
 
-(XIDEN_TRUST_PUBLIC_KEYS
+(DENXI_TRUST_PUBLIC_KEYS
  (list (make-trusted-integrity public-key)))
 
-(XIDEN_WORKSPACE
+(DENXI_WORKSPACE
  (build-path (current-directory) "workspace"))

@@ -3,27 +3,27 @@
 @require[@for-label[racket/base
                     racket/contract
                     racket/string
-                    xiden/artifact
-                    xiden/dig
-                    xiden/file
-                    xiden/input
-                    xiden/subprogram
-                    xiden/output
-                    xiden/package
-                    xiden/pkgdef/static
-                    xiden/query
-                    xiden/version
-                    @only-in[xiden/url url-string?]
-                    @except-in[xiden/pkgdef artifact #%module-begin]]
+                    denxi/artifact
+                    denxi/dig
+                    denxi/file
+                    denxi/input
+                    denxi/subprogram
+                    denxi/output
+                    denxi/package
+                    denxi/pkgdef/static
+                    denxi/query
+                    denxi/version
+                    @only-in[denxi/url url-string?]
+                    @except-in[denxi/pkgdef artifact #%module-begin]]
          @for-syntax[racket/base
                      racket/list
                      racket/match
-                     @except-in[xiden/pkgdef artifact #%module-begin]]
+                     @except-in[denxi/pkgdef artifact #%module-begin]]
          "../../shared.rkt"]
 
 @title{Package Definitions}
 
-@defmodule[xiden/pkgdef]
+@defmodule[denxi/pkgdef]
 
 A @deftech{package definition} is a
 @racket[PACKAGE_DEFINITION_MODULE_LANG] module as a syntax object or a
@@ -34,7 +34,7 @@ package definition is a list, it matches
 a Racket module that combines discovery information with build
 instructions for @tech{packages}.
 
-@racketmodname[xiden/pkgdef] is a functional module language for
+@racketmodname[denxi/pkgdef] is a functional module language for
 writing @tech{package definitions}. It expands using a
 @deftech{collection pass} for the terms defined in
 @secref{pkgdef-terms}. Those terms apply to an instance of
@@ -139,7 +139,7 @@ Sets @racket[package-url].
 
 @section{Reprovided Binding Index}
 
-@racketmodname[xiden/pkgdef] reprovides bindings from several other
+@racketmodname[denxi/pkgdef] reprovides bindings from several other
 modules in the collection. They are indexed here for reference.
 
 @(define-for-syntax (fold-ids ids)
@@ -155,7 +155,7 @@ modules in the collection. They are indexed here for reference.
          symbol<?))
 
 @(define-syntax (reprovided stx)
-   (define-values (v s) (module->exports 'xiden/pkgdef))
+   (define-values (v s) (module->exports 'denxi/pkgdef))
    (define exported-ids (match (append v s) [`((,o (,i ,_ ...) ...) ...) (flatten i)]))
    (define useable-ids (remove '#%module-begin exported-ids))
    (define grouped-ids (unfold-ids (fold-ids useable-ids)))

@@ -26,10 +26,10 @@ typedef unsigned char byte;
 typedef unsigned int uint;
 typedef byte* (*port_read_t)(int*, uint);
 
-const uint XIDEN_AVAILABLE_CHF_COUNT = SUPPORTED_CHF_COUNT;
-const uint XIDEN_DEFAULT_CHF_INDEX = 8; // SHA3-384
+const uint DENXI_AVAILABLE_CHF_COUNT = SUPPORTED_CHF_COUNT;
+const uint DENXI_DEFAULT_CHF_INDEX = 8; // SHA3-384
 
-char* XIDEN_SUPPORTED_CHFS[SUPPORTED_CHF_COUNT] = {
+char* DENXI_SUPPORTED_CHFS[SUPPORTED_CHF_COUNT] = {
   "MD5",
   "SHA1",
   "SHA2-224",
@@ -44,8 +44,8 @@ char* XIDEN_SUPPORTED_CHFS[SUPPORTED_CHF_COUNT] = {
 
 
 EVP_MD* xiden_load_chf(uint chf_index) {
-  return (chf_index < XIDEN_AVAILABLE_CHF_COUNT)
-    ? EVP_MD_fetch(NULL, XIDEN_SUPPORTED_CHFS[chf_index], NULL)
+  return (chf_index < DENXI_AVAILABLE_CHF_COUNT)
+    ? EVP_MD_fetch(NULL, DENXI_SUPPORTED_CHFS[chf_index], NULL)
     : NULL;
 }
 
@@ -147,14 +147,14 @@ int xiden_verify_signature(EVP_MD* p_md,
   if (p_ctx) EVP_MD_CTX_destroy(p_ctx);
 }
 
-#ifdef XIDEN_CRYPTO_MAIN
+#ifdef DENXI_CRYPTO_MAIN
 byte* read_dummy(int*, uint);
 
 int main() {
-  for (int chf_index = 0; chf_index < XIDEN_AVAILABLE_CHF_COUNT; ++chf_index) {
+  for (int chf_index = 0; chf_index < DENXI_AVAILABLE_CHF_COUNT; ++chf_index) {
     printf("%d: %s\n",
            chf_index,
-           XIDEN_SUPPORTED_CHFS[chf_index]);
+           DENXI_SUPPORTED_CHFS[chf_index]);
 
     EVP_MD* p_md = xiden_load_chf(chf_index);
     if (p_md == NULL) {

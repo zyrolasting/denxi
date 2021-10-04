@@ -8,27 +8,27 @@
          (for-syntax racket
                      syntax/stx
                      syntax/strip-context
-                     xiden/setting
-                     xiden/cli-flag
-                     xiden/package)
-         xiden/setting
-         xiden/cli-flag)
+                     denxi/setting
+                     denxi/cli-flag
+                     denxi/package)
+         denxi/setting
+         denxi/cli-flag)
 
 
 (define (visible-hyperlink s)
   (hyperlink s s))
 
-(define xiden-index
-  '(lib "xiden/docs/index/xiden-index.scrbl"))
+(define denxi-index
+  '(lib "denxi/docs/index/denxi-index.scrbl"))
 
-(define xiden-reference
-  '(lib "xiden/docs/reference/xiden-reference.scrbl"))
+(define denxi-reference
+  '(lib "denxi/docs/reference/denxi-reference.scrbl"))
 
-(define xiden-guide
-  '(lib "xiden/docs/guide/xiden-guide.scrbl"))
+(define denxi-guide
+  '(lib "denxi/docs/guide/denxi-guide.scrbl"))
 
-(define xiden-white-paper
-  '(lib "xiden/docs/white-paper/xiden-white-paper.scrbl"))
+(define denxi-white-paper
+  '(lib "denxi/docs/white-paper/denxi-white-paper.scrbl"))
 
 (define foreign
   '(lib "scribblings/foreign/foreign.scrbl"))
@@ -40,11 +40,11 @@
 (define (tech/reference tag)
   (tech #:doc '(lib "scribblings/reference/reference.scrbl") tag))
 
-(define (tech/xiden-guide tag)
-  (tech #:doc xiden-guide tag))
+(define (tech/denxi-guide tag)
+  (tech #:doc denxi-guide tag))
 
-(define (tech/xiden-reference tag)
-  (tech #:doc xiden-reference tag))
+(define (tech/denxi-reference tag)
+  (tech #:doc denxi-reference tag))
 
 (define (tech/foreign tag)
   (tech #:doc foreign tag))

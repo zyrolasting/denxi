@@ -7,17 +7,17 @@
            file/untgz
            file/unzip
            racket/contract
-           xiden/archive
-           xiden/input
-           xiden/file
-           xiden/subprogram]
+           denxi/archive
+           denxi/input
+           denxi/file
+           denxi/subprogram]
            "../../shared.rkt"]
 
 @title{Archives}
 
-@defmodule[xiden/archive]
+@defmodule[denxi/archive]
 
-@racketmodname[xiden/archive] extracts files from a single archive file.
+@racketmodname[denxi/archive] extracts files from a single archive file.
 
 
 @defthing[current-find-extract-procedure

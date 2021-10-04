@@ -1,4 +1,4 @@
-#lang xiden
+#lang denxi
 
 ; "Abstract inputs" are inputs without names. They depend on a
 ; launcher for elaboration.

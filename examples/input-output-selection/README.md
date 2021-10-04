@@ -13,5 +13,5 @@ despite using one reference to the same HTML file.
    appears white.
 
 When I say _exact same_, I mean that the page is a symbolic link to
-the same `index.html` file in Xiden's state, because that's the only
+the same `index.html` file in Denxi's state, because that's the only
 HTML file we defined. This is how inputs are cached.

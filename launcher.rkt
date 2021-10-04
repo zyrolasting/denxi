@@ -42,4 +42,4 @@
    "url.rkt"
    "version.rkt")
 
-(module reader syntax/module-reader xiden/launcher)
+(module reader syntax/module-reader denxi/launcher)

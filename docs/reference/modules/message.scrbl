@@ -3,21 +3,21 @@
 @require[@for-label[racket/base
                     racket/contract
                     racket/match
-                    xiden/subprogram
-                    xiden/format
-                    xiden/message
-                    xiden/port]
+                    denxi/subprogram
+                    denxi/format
+                    denxi/message
+                    denxi/port]
          "../../shared.rkt"]
 
 @title{Messages}
 
-@defmodule[xiden/message]
+@defmodule[denxi/message]
 
 A @deftech{message} is an instance of the @racket[$message]
 @tech/reference{prefab} @tech/reference{structure} used to share
-information in the Xiden runtime, in logs, and between
+information in the Denxi runtime, in logs, and between
 processes.  When the term “@tech{message}” is ambiguous, then
-@deftech{Xiden message} applies the context of this section.
+@deftech{Denxi message} applies the context of this section.
 
 @tech{Message} types may form a heirarchy using colon-separated
 identifiers that start with @racket[$]. The @racket[$message] type
@@ -37,7 +37,7 @@ heirarchy is unhelpful for this purpose, since
 @racket[$transfer:budget:exceeded] could apply to a download in the
 context of a build process or a verification process. It is difficult
 to define a single type to capture this kind of variation, so
-Xiden instead composes messages into machine-readable
+Denxi instead composes messages into machine-readable
 documents.
 
 

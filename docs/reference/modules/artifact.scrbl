@@ -3,18 +3,18 @@
 @require[@for-label[racket/base
                     racket/contract
                     racket/path
-                    xiden/subprogram
-                    xiden/artifact
-                    xiden/integrity
-                    xiden/monad
-                    xiden/signature
-                    xiden/source
-                    xiden/string]
+                    denxi/subprogram
+                    denxi/artifact
+                    denxi/integrity
+                    denxi/monad
+                    denxi/signature
+                    denxi/source
+                    denxi/string]
          "../../shared.rkt"]
 
 @title{Artifacts}
 
-@defmodule[xiden/artifact]
+@defmodule[denxi/artifact]
 
 
 @defstruct*[($artifact $message) () #:prefab]{

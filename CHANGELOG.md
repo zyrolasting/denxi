@@ -28,7 +28,7 @@ This project follows [these versioning rules](https://sagegerard.com/edition-rev
 - Can now extract from both `.tar.gz` and `.tgz`, not just the latter.
 - Rewrite project to support transactions and content addressable package outputs
 - Add `tags`, `home-page`, `racket-versions`, and `description` fields to package definition
-- Switch to `xiden/pkgdef` and `#lang xiden` as canonical languages.
+- Switch to `denxi/pkgdef` and `#lang denxi` as canonical languages.
 - Add `mkint` command
 - Help authors make input expressions
 - Redirected downloads with no limit now work properly
@@ -52,7 +52,7 @@ This project follows [these versioning rules](https://sagegerard.com/edition-rev
 - Define a namespace-specific string format for packages
 - Use SHA-384 for subresource integrity checking
 - Verify digital signatures (No restrictions on asymmetric crypto yet. Just bring your own keys).
-- Capture digests, installed packages, and `xiden` configuration for collaborators.
+- Capture digests, installed packages, and `denxi` configuration for collaborators.
 - Create a new package from a template
 - Start a sandboxed REPL inside of a package
 - Show a diff between a capture and a workspace
@@ -73,6 +73,6 @@ This project follows [these versioning rules](https://sagegerard.com/edition-rev
     - GET file from URN's NSS
 
 
-[Unreleased]: https://github.com/zyrolasting/xiden/compare/beta...HEAD
-[draft:alpha]: https://github.com/zyrolasting/xiden/releases/tag/alpha
-[draft:beta]: https://github.com/zyrolasting/xiden/releases/tag/beta
+[Unreleased]: https://github.com/zyrolasting/denxi/compare/beta...HEAD
+[draft:alpha]: https://github.com/zyrolasting/denxi/releases/tag/alpha
+[draft:beta]: https://github.com/zyrolasting/denxi/releases/tag/beta

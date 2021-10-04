@@ -6,7 +6,7 @@
          scribble/html-properties
          "../shared.rkt"]
 
-@title[#:style '(toc)]{Xiden Documentation}
+@title[#:style '(toc)]{Denxi Documentation}
 @author[(author+email "Sage L. Gerard" "sage@sagegerard.com" #:obfuscate? #t)]
 
 @(define logo-element
@@ -14,13 +14,13 @@
     (style #f
            (list (alt-tag "img")
                  (attributes
-                  `((src . "https://github.com/zyrolasting/xiden/raw/master/docs/index/doc-logo.png")
+                  `((src . "https://github.com/zyrolasting/denxi/raw/master/docs/index/doc-logo.png")
                     (style . "max-width: 100%")))))))
 
 @logo-element
 
 @centered{
-Xiden distributes software, and this is its documentation.
+Denxi distributes software, and this is its documentation.
 
-@other-doc[xiden-guide] - @other-doc[xiden-reference] - @other-doc[xiden-white-paper]
+@other-doc[denxi-guide] - @other-doc[denxi-reference] - @other-doc[denxi-white-paper]
 }

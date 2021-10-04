@@ -2,7 +2,7 @@
 
 ; Define primary entry point for the program.
 
-(provide launch-xiden!)
+(provide launch-denxi!)
 
 (require racket/match
          racket/path
@@ -34,9 +34,9 @@
          "transaction.rkt")
 
 
-(module+ main (launch-xiden!))
+(module+ main (launch-denxi!))
 
-(define (launch-xiden! #:arguments [args (current-command-line-arguments)]
+(define (launch-denxi! #:arguments [args (current-command-line-arguments)]
                        #:format-message [format-message (get-message-formatter)]
                        #:handle-exit [handle-exit exit])
   (run-entry-point! args
@@ -46,7 +46,7 @@
 
 
 (define (top-level-cli args)
-  (cli #:program "xiden"
+  (cli #:program "denxi"
        #:arg-help-strings '("action" "args")
        #:help-suffix-string-key 'top-level-cli-help
        #:args args
@@ -82,15 +82,15 @@
                    (if restrict?
                        (restrict halt
                                  planned
-                                 #:memory-limit (XIDEN_MEMORY_LIMIT_MB)
-                                 #:time-limit (XIDEN_TIME_LIMIT_S)
-                                 #:trusted-executables (XIDEN_TRUST_EXECUTABLES)
-                                 #:allowed-envvars (XIDEN_ALLOW_ENV)
-                                 #:trust-unverified-host? (XIDEN_TRUST_UNVERIFIED_HOST)
-                                 #:trust-any-executable? (XIDEN_TRUST_ANY_EXECUTABLE)
-                                 #:trust-certificates (XIDEN_TRUST_CERTIFICATES)
-                                 #:implicitly-trusted-host-executables (XIDEN_TRUST_HOST_EXECUTABLES)
-                                 #:workspace (XIDEN_WORKSPACE)
+                                 #:memory-limit (DENXI_MEMORY_LIMIT_MB)
+                                 #:time-limit (DENXI_TIME_LIMIT_S)
+                                 #:trusted-executables (DENXI_TRUST_EXECUTABLES)
+                                 #:allowed-envvars (DENXI_ALLOW_ENV)
+                                 #:trust-unverified-host? (DENXI_TRUST_UNVERIFIED_HOST)
+                                 #:trust-any-executable? (DENXI_TRUST_ANY_EXECUTABLE)
+                                 #:trust-certificates (DENXI_TRUST_CERTIFICATES)
+                                 #:implicitly-trusted-host-executables (DENXI_TRUST_HOST_EXECUTABLES)
+                                 #:workspace (DENXI_WORKSPACE)
                                  #:gc-period 30
                                  #:name name)
                        (planned halt)))))))
@@ -122,13 +122,13 @@
                    (define actions
                      (fold-transaction-actions
                       flags
-                      (hasheq XIDEN_INSTALL_ABBREVIATED_SOURCES
+                      (hasheq DENXI_INSTALL_ABBREVIATED_SOURCES
                               (match-lambda [source
                                              (install #f #f source)])
-                              XIDEN_INSTALL_DEFAULT_SOURCES
+                              DENXI_INSTALL_DEFAULT_SOURCES
                               (match-lambda [(list link-path source)
                                              (install link-path #f source)])
-                              XIDEN_INSTALL_SOURCES
+                              DENXI_INSTALL_SOURCES
                               (match-lambda [(list link-path output-name source)
                                              (install link-path output-name source)]))))
                    (if (null? actions)
@@ -146,7 +146,7 @@
        (λ (flags)
          (values flags
                  (λ (halt)
-                   (halt 0 ($finished-collecting-garbage (xiden-collect-garbage))))))))
+                   (halt 0 ($finished-collecting-garbage (denxi-collect-garbage))))))))
 
 
 (define (show-command args)
@@ -251,9 +251,9 @@
                                       (current-message-formatter)
                                       (current-error-port)))
                      #:transfer-name display-name
-                     #:max-size (mebibytes->bytes (XIDEN_FETCH_TOTAL_SIZE_MB))
-                     #:buffer-size (mebibytes->bytes (XIDEN_FETCH_BUFFER_SIZE_MB))
-                     #:timeout-ms (XIDEN_FETCH_TIMEOUT_MS)
+                     #:max-size (mebibytes->bytes (DENXI_FETCH_TOTAL_SIZE_MB))
+                     #:buffer-size (mebibytes->bytes (DENXI_FETCH_BUFFER_SIZE_MB))
+                     #:timeout-ms (DENXI_FETCH_TIMEOUT_MS)
                      #:est-size est-size))
 
          (values flags
@@ -348,7 +348,7 @@
         (λ ()
           (parameterize ([current-output-port stdout]
                          [current-error-port stderr])
-            (launch-xiden! #:arguments (coerce-command-line-argument-list args)
+            (launch-denxi! #:arguments (coerce-command-line-argument-list args)
                            #:format-message
                            (λ (m)
                              (set! messages (cons m messages))
@@ -421,7 +421,7 @@
         (parameterize ([current-string->source
                         (λ (_) (text-source (~s (syntax->datum definition))))])
           (check-cli (list "do"
-                           --XIDEN_INSTALL_SOURCES
+                           --DENXI_INSTALL_SOURCES
                            expected-link-name
                            output-name
                            "_")
@@ -454,7 +454,7 @@
       (define currently-issued-links (check-no-garbage-collected))
       (delete-file expected-link-name)
       (check-equal? (get-checked-links) currently-issued-links)
-      (xiden-collect-garbage)
+      (denxi-collect-garbage)
       (check-true (hash-empty? (get-checked-links)))))
 
 

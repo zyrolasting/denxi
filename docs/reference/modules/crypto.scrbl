@@ -6,14 +6,14 @@
                     racket/contract
                     racket/pretty
                     @rename-in[ffi/unsafe (-> -->)]
-                    xiden/crypto]
+                    denxi/crypto]
          racket/pretty
-         xiden/crypto
+         denxi/crypto
          "../../shared.rkt"]
 
-@defmodule[xiden/crypto]
+@defmodule[denxi/crypto]
 
-@racketmodname[xiden/crypto] interacts with a bundled derivative of an
+@racketmodname[denxi/crypto] interacts with a bundled derivative of an
 OpenSSL library. This module has no side-effects on instantiation, but
 will mutate either a FFI object in the Racket runtime, or an error
 code cache in the C runtime. To reset the Racket runtime cache, call
@@ -64,9 +64,9 @@ underlying C library, or @racket[#f] if the cryptography library is
 currently cached as an exception.
 
 This function operates independently from
-@racketmodname[xiden/l10n]. If the output string does not respect the
+@racketmodname[denxi/l10n]. If the output string does not respect the
 user's locale, then supply translations to the correct
-@racketmodname[xiden/l10n] extention and use that extension instead.
+@racketmodname[denxi/l10n] extention and use that extension instead.
 }
 
 @defproc[(crypto-raise!) any]{

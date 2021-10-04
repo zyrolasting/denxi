@@ -2,25 +2,25 @@
 
 @require["../shared.rkt"
          @for-label[racket/base
-                    xiden/cli
-                    xiden/integrity]]
+                    denxi/cli
+                    denxi/integrity]]
 
 @title[#:tag "launchers"]{Launchers}
 
-This @deftech{launcher} program starts and controls Xiden.
+This @deftech{launcher} program starts and controls Denxi.
 
-@racketmod[#:file "my-xiden.rkt"
-xiden/launcher
-(module+ main (launch-xiden!))
+@racketmod[#:file "my-denxi.rkt"
+denxi/launcher
+(module+ main (launch-denxi!))
 ]
 
-Xiden built-in launcher is called @litchar{xiden}, and it actually has
+Denxi built-in launcher is called @litchar{denxi}, and it actually has
 the same implementation! The difference is that we control our
-launchers. Save the above code into @litchar{my-xiden.rkt} and give it
+launchers. Save the above code into @litchar{my-denxi.rkt} and give it
 the definition from the previous section.
 
 @verbatim[#:indent 2]|{
-$ racket my-xiden.rkt do ++install-abbreviated definition.rkt
+$ racket my-denxi.rkt do ++install-abbreviated definition.rkt
 }|
 
 This command will give you first of many reasons for why it won't
@@ -29,12 +29,12 @@ explicitly allow @italic{all relevant details} for security. We won't
 neglect security, but we'll use this production-unsafe launcher until
 you can work with zero-trust.
 
-@racketmod[#:file "my-xiden.rkt"
-xiden/launcher
+@racketmod[#:file "my-denxi.rkt"
+denxi/launcher
 
 (current-chfs (list snake-oil-chf))
-(XIDEN_TRUST_BAD_DIGEST #t)
-(module+ main (launch-xiden!))
+(DENXI_TRUST_BAD_DIGEST #t)
+(module+ main (launch-denxi!))
 ]
 
 This launcher has a low bar, so run the same @litchar{do} command. A
@@ -43,7 +43,7 @@ connecting some dots.  To uninstall the output, delete the link and
 run the garbage collection command.
 
 @verbatim[#:indent 2]|{
-$ rm my-first-package && racket my-xiden.rkt gc
+$ rm my-first-package && racket my-denxi.rkt gc
 Recovered 13 bytes
 }|
 

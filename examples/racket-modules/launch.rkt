@@ -1,5 +1,5 @@
-#lang xiden/launcher
+#lang denxi/launcher
 
-(XIDEN_TRUST_BAD_DIGEST #t)
+(DENXI_TRUST_BAD_DIGEST #t)
 
-(module+ main (call-with-snake-oil-chf-trust launch-xiden!))
+(module+ main (call-with-snake-oil-chf-trust launch-denxi!))

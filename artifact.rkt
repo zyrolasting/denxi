@@ -73,9 +73,9 @@
                     (λ (in est-size)
                       (make-addressable-file
                        #:cache-key (make-source-key (coerce-source (artifact-source arti)))
-                       #:max-size (mebibytes->bytes (XIDEN_FETCH_TOTAL_SIZE_MB))
-                       #:buffer-size (mebibytes->bytes (XIDEN_FETCH_BUFFER_SIZE_MB))
-                       #:timeout-ms (XIDEN_FETCH_TIMEOUT_MS)
+                       #:max-size (mebibytes->bytes (DENXI_FETCH_TOTAL_SIZE_MB))
+                       #:buffer-size (mebibytes->bytes (DENXI_FETCH_BUFFER_SIZE_MB))
+                       #:timeout-ms (DENXI_FETCH_TIMEOUT_MS)
                        #:on-status (make-on-status (current-message-formatter))
                        name
                        in est-size))))
@@ -134,7 +134,7 @@
         (values #f #f)))
   (define status
     (check-integrity
-     #:trust-bad-digest (XIDEN_TRUST_BAD_DIGEST)
+     #:trust-bad-digest (DENXI_TRUST_BAD_DIGEST)
      (make-user-chf-trust-predicate)
      int/use
      (and chf
@@ -154,12 +154,12 @@
     (and (well-formed-integrity? int)
          (lock-integrity int)))
   (define trust-public-key?
-    (if (XIDEN_TRUST_ANY_PUBLIC_KEY)
+    (if (DENXI_TRUST_ANY_PUBLIC_KEY)
         (λ (p) #t)
-        (bind-trust-list (XIDEN_TRUST_PUBLIC_KEYS))))
+        (bind-trust-list (DENXI_TRUST_PUBLIC_KEYS))))
   (define status
-    (check-signature #:trust-unsigned (XIDEN_TRUST_UNSIGNED)
-                     #:trust-bad-digest (XIDEN_TRUST_BAD_DIGEST)
+    (check-signature #:trust-unsigned (DENXI_TRUST_UNSIGNED)
+                     #:trust-bad-digest (DENXI_TRUST_BAD_DIGEST)
                      #:trust-public-key? trust-public-key?
                      #:verify-signature (current-verify-signature)
                      sig/use

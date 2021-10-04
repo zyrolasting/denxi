@@ -1,12 +1,12 @@
 #lang scribble/manual
 
-@require[@for-label[xiden/string racket/base racket/contract]]
+@require[@for-label[denxi/string racket/base racket/contract]]
 
 @title{Strings}
 
-@defmodule[xiden/string]
+@defmodule[denxi/string]
 
-@racketmodname[xiden/string] extends and reprovides
+@racketmodname[denxi/string] extends and reprovides
 @racketmodname[racket/string].
 
 This module defines useful regular expressions and string operations

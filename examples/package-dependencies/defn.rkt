@@ -1,4 +1,4 @@
-#lang xiden
+#lang denxi
 
 (output "default"
         inp := (input-ref "pkgdef.rkt")

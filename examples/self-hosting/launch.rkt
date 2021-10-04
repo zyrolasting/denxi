@@ -1,8 +1,8 @@
-#lang xiden/launcher
+#lang denxi/launcher
 
 ; Trust any `sh' executable that can be found in the host's PATH.
-(XIDEN_TRUST_HOST_EXECUTABLES '("sh"))
+(DENXI_TRUST_HOST_EXECUTABLES '("sh"))
 
-(XIDEN_TRUST_UNSIGNED #t)
+(DENXI_TRUST_UNSIGNED #t)
 
-(module+ main (launch-xiden!))
+(module+ main (launch-denxi!))

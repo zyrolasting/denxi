@@ -2,19 +2,19 @@
 
 @require[@for-label[racket/base
                     racket/contract
-                    xiden/message
-                    xiden/integrity
-                    xiden/integrity/base
-                    xiden/crypto
-                    xiden/source]
+                    denxi/message
+                    denxi/integrity
+                    denxi/integrity/base
+                    denxi/crypto
+                    denxi/source]
          "../../../shared.rkt"]
 
 @title{Integrity Checking Primitives}
 
-@defmodule[xiden/integrity/base]
+@defmodule[denxi/integrity/base]
 
-Unlike @racketmodname[xiden/integrity],
-@racketmodname[xiden/integrity/base] provides fundamental definitions
+Unlike @racketmodname[denxi/integrity],
+@racketmodname[denxi/integrity/base] provides fundamental definitions
 for integrity checking.
 
 

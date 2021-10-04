@@ -6,15 +6,15 @@
                     racket/path
                     racket/pretty
                     syntax/modread
-                    xiden/input
-                    xiden/subprogram
-                    xiden/racket-module
-                    xiden/system]
+                    denxi/input
+                    denxi/subprogram
+                    denxi/racket-module
+                    denxi/system]
          "../../shared.rkt"]
 
 @title[#:tag "rktmod"]{Racket Module Operations}
 
-@defmodule[xiden/racket-module]
+@defmodule[denxi/racket-module]
 
 
 @defthing[racket-module-input-variant/c flat-contract? #:value (or/c path? list? string? bytes? input-port?)]{
@@ -96,10 +96,10 @@ convert it to a @tech{bare} module. To @deftech{dress} the module is
 to do the reverse. Stripping and dressing are not inverse operations,
 because stripping does not preserve lexical and location information.
 
-In the context of Xiden, programs are restricted to a small, fixed
+In the context of Denxi, programs are restricted to a small, fixed
 grammar and are subject to meaningful module-level overrides. This
 makes source location information meaningless in some cases, but
-lexical information remains constant. Xiden uses @tech{bare modules}
+lexical information remains constant. Denxi uses @tech{bare modules}
 when only the content matters for code transformations.
 
 @defstruct*[bare-racket-module ([name symbol?] [lang symbol?] [code list?]) #:transparent]{

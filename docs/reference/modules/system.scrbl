@@ -2,22 +2,22 @@
 
 @require[@for-label[racket/base
                     racket/contract
-                    xiden/subprogram
-                    xiden/message
-                    xiden/system]
-         @for-syntax[xiden/system]
-         xiden/system
+                    denxi/subprogram
+                    denxi/message
+                    denxi/system]
+         @for-syntax[denxi/system]
+         denxi/system
          "../../shared.rkt"]
 
 @title{System}
 
-@defmodule[xiden/system]
+@defmodule[denxi/system]
 
-@racketmodname[xiden/system] extends and reprovides
+@racketmodname[denxi/system] extends and reprovides
 @racketmodname[racket/system]. It specializes process management in
 the context of packages.
 
-@defsetting*[XIDEN_SUBPROCESS_TIMEOUT_S]{
+@defsetting*[DENXI_SUBPROCESS_TIMEOUT_S]{
 The maximum number of seconds a subprocess spawned by @racket[run]
 may live, according to the user.
 }
@@ -46,7 +46,7 @@ Returns a @tech{subprogram} @racketid[P] called for its effect.
 @racketid[P] will ensure the subprocess finishes before returning
 control.
 
-@margin-note{Xiden prohibits execution of any file that the user does not trust.}
+@margin-note{Denxi prohibits execution of any file that the user does not trust.}
 @racketid[P] will search for an executable with the name bound to
 @racket[command]. It starts by checking @racket[(file-exists?
 command)]. If a file does not exist, then @racketid[P] will use

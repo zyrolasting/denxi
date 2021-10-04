@@ -1,4 +1,4 @@
-#lang xiden
+#lang denxi
 
 ; Here we include signature information.  If you trust the public key,
 ; then you can perform a signature verification.

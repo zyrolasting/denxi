@@ -1,4 +1,4 @@
-#lang xiden
+#lang denxi
 
 (input "light.css"
        (artifact (text-source "body { background: white }\n")

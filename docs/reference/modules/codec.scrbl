@@ -2,43 +2,43 @@
 
 @require[@for-label[racket/base
                     racket/contract
-                    xiden/codec
-                    xiden/string
-                    @except-in[xiden/pkgdef #%module-begin]]
-         xiden/codec
+                    denxi/codec
+                    denxi/string
+                    @except-in[denxi/pkgdef #%module-begin]]
+         denxi/codec
          racket/pretty
          "../../shared.rkt"]
 
 @title{Codec}
 
-@defmodule[xiden/codec]
+@defmodule[denxi/codec]
 
-The @racketmodname[xiden/codec] module encodes and decodes byte
+The @racketmodname[denxi/codec] module encodes and decodes byte
 strings. Note that @tech/reference{ports} are not used, so all data
 sits entirely in memory.
 
 @section{High-Level Interface}
 
-@defproc[(encode [encoding xiden-encoding/c] [variant (or/c bytes? string?)]) (or/c bytes? string?)]{
+@defproc[(encode [encoding denxi-encoding/c] [variant (or/c bytes? string?)]) (or/c bytes? string?)]{
 Encodes a byte string or UTF-8 encoded string according to
 @racket[encoding]. The return value type matches the type of
 @racket[variant].
 }
 
-@defproc[(decode [encoding xiden-encoding/c] [encoded (or/c bytes? string?)]) (or/c bytes? string?)]{
+@defproc[(decode [encoding denxi-encoding/c] [encoded (or/c bytes? string?)]) (or/c bytes? string?)]{
 Decodes a byte string or UTF-8 encoded string according to
 @racket[encoding]. The return value type matches the type of
 @racket[encoded].
 }
 
-@defthing[xiden-encodings (listof symbol?)]{
+@defthing[denxi-encodings (listof symbol?)]{
 A list of supported encodings of byte strings.
 
-Bound to @typeset-code[(pretty-format #:mode 'print xiden-encodings)]
+Bound to @typeset-code[(pretty-format #:mode 'print denxi-encodings)]
 }
 
-@defthing[xiden-encoding/c flat-contract? #:value (apply or/c xiden-encodings)]{
-A contract that accepts a value in @racket[xiden-encodings].
+@defthing[denxi-encoding/c flat-contract? #:value (apply or/c denxi-encodings)]{
+A contract that accepts a value in @racket[denxi-encodings].
 }
 
 @defproc[(encoded-file-name [variant (or/c bytes? string?)]) path-string?]{

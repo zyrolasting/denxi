@@ -26,14 +26,14 @@
 (define+provide-message $restrict:operation $restrict (reporting-guard summary args))
 (define+provide-message $restrict:budget $restrict (kind amount))
 
-(define+provide-setting XIDEN_ALLOW_ENV (listof (or/c bytes-environment-variable-name? string?)) null)
-(define+provide-setting XIDEN_TRUST_EXECUTABLES (listof well-formed-integrity?) null)
-(define+provide-setting XIDEN_TRUST_ANY_EXECUTABLE boolean? #f)
-(define+provide-setting XIDEN_TRUST_CERTIFICATES (listof path-string?) null)
-(define+provide-setting XIDEN_TRUST_HOST_EXECUTABLES (listof string?) null)
-(define+provide-setting XIDEN_TRUST_UNVERIFIED_HOST boolean? #f)
-(define+provide-setting XIDEN_MEMORY_LIMIT_MB (>=/c 0) 200)
-(define+provide-setting XIDEN_TIME_LIMIT_S (>=/c 0) (* 5 60))
+(define+provide-setting DENXI_ALLOW_ENV (listof (or/c bytes-environment-variable-name? string?)) null)
+(define+provide-setting DENXI_TRUST_EXECUTABLES (listof well-formed-integrity?) null)
+(define+provide-setting DENXI_TRUST_ANY_EXECUTABLE boolean? #f)
+(define+provide-setting DENXI_TRUST_CERTIFICATES (listof path-string?) null)
+(define+provide-setting DENXI_TRUST_HOST_EXECUTABLES (listof string?) null)
+(define+provide-setting DENXI_TRUST_UNVERIFIED_HOST boolean? #f)
+(define+provide-setting DENXI_MEMORY_LIMIT_MB (>=/c 0) 200)
+(define+provide-setting DENXI_TIME_LIMIT_S (>=/c 0) (* 5 60))
 
 
 (define (restrict halt
@@ -181,7 +181,7 @@
                                     #:trust-any-executable? trust-any-executable?
                                     #:trust-executables trust-executables
                                     #:trust-host-executables trust-host-executables
-                                    #:workspace [ws (XIDEN_WORKSPACE)])
+                                    #:workspace [ws (DENXI_WORKSPACE)])
   (make-security-guard
    (current-security-guard)
    (make-file-guard #:trust-any-executable? trust-any-executable?
@@ -249,7 +249,7 @@
                                   (list op link-path target-path))))))
 
 
-(define (get-writeable-workspace-directories [wd (XIDEN_WORKSPACE)])
+(define (get-writeable-workspace-directories [wd (DENXI_WORKSPACE)])
   (list (current-directory)
         wd))
 
@@ -280,7 +280,7 @@
   (test-case "Prescribe write directories per-workspace"
     (define writeables (get-writeable-workspace-directories))
     (check-pred (non-empty-listof complete-path?) writeables)
-    (check-equal? (get-writeable-workspace-directories (XIDEN_WORKSPACE))
+    (check-equal? (get-writeable-workspace-directories (DENXI_WORKSPACE))
                   writeables))
 
   (test-case "Terminate thread at end of procedure"

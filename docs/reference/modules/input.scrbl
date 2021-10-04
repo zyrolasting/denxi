@@ -3,21 +3,21 @@
 @require[@for-label[racket/base
                     racket/contract
                     racket/path
-                    xiden/artifact
-                    xiden/dig
-                    xiden/subprogram
-                    xiden/message
-                    xiden/integrity
-                    xiden/input
-                    xiden/monad
-                    xiden/signature
-                    xiden/source
-                    xiden/string]
+                    denxi/artifact
+                    denxi/dig
+                    denxi/subprogram
+                    denxi/message
+                    denxi/integrity
+                    denxi/input
+                    denxi/monad
+                    denxi/signature
+                    denxi/source
+                    denxi/string]
          "../../shared.rkt"]
 
 @title{Package Inputs}
 
-@defmodule[xiden/input]
+@defmodule[denxi/input]
 
 @defstruct*[package-input ([name string?] [plinth (or/c any/c artifact?)])]{
 A @deftech{package input} is an instance of @racket[package-input].

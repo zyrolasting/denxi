@@ -1,10 +1,10 @@
 #lang scribble/manual
 
-@require[@for-label[racket/base xiden/signature/snake-oil]]
+@require[@for-label[racket/base denxi/signature/snake-oil]]
 
 @title{Signature Prototyping}
 
-@defmodule[xiden/signature/snake-oil]
+@defmodule[denxi/signature/snake-oil]
 
 @deftogether[(
 @defthing[snake-oil-public-key bytes?]

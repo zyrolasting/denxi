@@ -4,20 +4,20 @@
                     racket/contract
                     racket/format
                     racket/string
-                    xiden/artifact
-                    xiden/dig
-                    xiden/dig/filesystem
-                    xiden/message
-                    xiden/integrity
-                    xiden/crypto
-                    xiden/query
-                    xiden/signature
-                    xiden/source
-                    xiden/string]]
+                    denxi/artifact
+                    denxi/dig
+                    denxi/dig/filesystem
+                    denxi/message
+                    denxi/integrity
+                    denxi/crypto
+                    denxi/query
+                    denxi/signature
+                    denxi/source
+                    denxi/string]]
 
 @title{Filesystem Shovels}
 
-@defmodule[xiden/dig/filesystem]
+@defmodule[denxi/dig/filesystem]
 
 You can bind @tech{shovels} to filesystem directories.  In observance
 of the @tech{digsite metaphor}, the shovels defined herein always
@@ -53,7 +53,7 @@ relative-path)].
 ]
 
 For example, assume @litchar{/tmp/example} exists as a file in a
-Unix-like system for a Xiden process to read. From here you can bind a
+Unix-like system for a Denxi process to read. From here you can bind a
 dig procedure to @litchar{/tmp} like so.
 
 @racketblock[
@@ -172,7 +172,7 @@ In terms of the above, here is a valid directory structure for a
 catalog.
 
 @verbatim{
-~/xiden-catalog
+~/denxi-catalog
 ├── alice
 │   ├── default -> renderer
 │   ├── public-key

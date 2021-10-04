@@ -1,11 +1,11 @@
 #! /usr/bin/env racket
-#lang xiden/launcher
+#lang denxi/launcher
 
 (module+ main
   (require racket/cmdline
            racket/path
            racket/port
-           xiden/dig/filesystem)
+           denxi/dig/filesystem)
 
   (define (write-bytes-to-file! path byte-string)
     (call-with-output-file path

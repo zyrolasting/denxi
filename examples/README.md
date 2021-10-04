@@ -1,4 +1,4 @@
-# Xiden Examples
+# Denxi Examples
 
 If you've finished the guide, then you've been sent here to
 practice. You'll see what launchers and package definitions can
@@ -17,7 +17,7 @@ your way through real-world problems.
 1. [From Guide](./from-guide): The example from the guide, repeated
    for convenience and for comparison to later
    examples. (@zyrolasting)
-1. [Workspaces](./workspaces): How Xiden stores state. (@zyrolasting)
+1. [Workspaces](./workspaces): How Denxi stores state. (@zyrolasting)
 1. [Input and Output Selection](./input-output-selection): Package
    definitions can have any number of inputs, but outputs decide what
    make it to disk. (@zyrolasting)
@@ -42,21 +42,21 @@ your way through real-world problems.
    that only have names.  (@zyrolasting)
 1. [Artifact Deterministim](./determinism): How to guarentee that an
    artifact is always useable.  (@zyrolasting)
-1. [Allow Racket Versions](./allow-racket-versions): Ask Xiden to
+1. [Allow Racket Versions](./allow-racket-versions): Ask Denxi to
    process a definition depending on the current Racket
    version. (@zyrolasting)
 1. [Generated Racket Bindings](./generated-racket-bindings): Fix a
    problem with non-`eq?` generated bindings that plagues Racket
    programs distributed on PLaneT, and sometimes `raco pkg`. (@zyrolasting)
-1. [Self-hosted Xiden](./self-hosting): Install Racket with it's own
-   copy of Xiden. (@zyrolasting)
+1. [Self-hosted Denxi](./self-hosting): Install Racket with it's own
+   copy of Denxi. (@zyrolasting)
 
 
 ## Launchers
 1. [The `fetch` Command](./fetch-command): Using the default `fetch`
    command. (@zyrolasting)
 1. [Maximum Trust](./maximum-trust): What's the _worst_ way to use
-   Xiden? (@zyrolasting)
+   Denxi? (@zyrolasting)
 1. [Cryptography Backends](./cryptography-backends): Selecting a back
    end for cryptographic operations. (@zyrolasting)
 1. [Racket Installation Manager](./racket-installation-manager):

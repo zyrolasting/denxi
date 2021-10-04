@@ -52,7 +52,7 @@
          (contract-out
           [workspace-directory/c
            flat-contract?]
-          [xiden-collect-garbage
+          [denxi-collect-garbage
            (-> exact-nonnegative-integer?)]
           [in-all-installed
            (-> sequence?)]
@@ -81,7 +81,7 @@
                      directory-exists?
                      link-exists?)
                bytes?)]
-          [in-xiden-outputs
+          [in-denxi-outputs
            (-> package-query-variant?
                string?
                (sequence/c output-record?))]
@@ -93,7 +93,7 @@
            (-> bytes? complete-path?)]
           [in-issued-links
            (-> (sequence/c path-string? path-string?))]
-          [in-xiden-objects
+          [in-denxi-objects
            (-> package-query-variant?
                (sequence/c path-string?
                            exact-positive-integer?
@@ -124,16 +124,16 @@
 (define+provide-message $finished-collecting-garbage (bytes-recovered))
 (define+provide-message $no-content-to-address (path))
 
-(define+provide-setting XIDEN_WORKSPACE workspace-directory/c
+(define+provide-setting DENXI_WORKSPACE workspace-directory/c
   (build-path (find-system-path 'home-dir)
-              ".xiden"))
+              ".denxi"))
 
 ;----------------------------------------------------------------------------------
 ; Relevant Paths
 
 (define (build-workspace-path . path-elements)
   (apply build-path
-         (XIDEN_WORKSPACE)
+         (DENXI_WORKSPACE)
          path-elements))
 
 
@@ -158,7 +158,7 @@
 (define (call-with-ephemeral-workspace proc)
   (let ([t (make-temporary-file "~a" 'directory)])
     (dynamic-wind void
-                  (λ () (XIDEN_WORKSPACE t (λ () (proc t))))
+                  (λ () (DENXI_WORKSPACE t (λ () (proc t))))
                   (λ () (delete-directory/files #:must-exist? #f t)))))
 
 
@@ -171,7 +171,7 @@
       (call-with-temporary-directory
        #:cd? #t
        (λ (tmp-dir)
-         (XIDEN_WORKSPACE tmp-dir
+         (DENXI_WORKSPACE tmp-dir
                           (λ () body ...))))))
 
   (define (tmp p)
@@ -182,7 +182,7 @@
 
   (test-exn "Guard against existing file paths"
             exn:fail:contract?
-            (λ () (tmp XIDEN_WORKSPACE)))
+            (λ () (tmp DENXI_WORKSPACE)))
 
   (test-exn "Guard against links"
             exn:fail:contract?
@@ -192,7 +192,7 @@
                       (λ (l)
                         (delete-file l)
                         (make-file-or-directory-link p l)
-                        (XIDEN_WORKSPACE l))))))))
+                        (DENXI_WORKSPACE l))))))))
 
 
 (define current-get-state-path ; Is a parameter for testing reasons.
@@ -453,8 +453,8 @@
 ; pass. The second pass always gets it. Use `extra?' to run it twice
 ; until the root cause gets fixed.
 
-(define (xiden-collect-garbage)
-  (parameterize ([current-directory (XIDEN_WORKSPACE)]
+(define (denxi-collect-garbage)
+  (parameterize ([current-directory (DENXI_WORKSPACE)]
                  [current-security-guard (make-gc-security-guard)])
     (if (directory-exists? (current-directory))
         (let loop ([bytes-recovered 0] [extra? #t])
@@ -522,7 +522,7 @@
 ; Not atomic, but can be used again unless the database itself is corrupted.
 (define (delete-unreferenced-objects! [dir (build-object-path)])
   (for/sum ([path (in-list (directory-list dir #:build? #t))])
-    (if (find-path-record (find-relative-path (XIDEN_WORKSPACE) path))
+    (if (find-path-record (find-relative-path (DENXI_WORKSPACE) path))
         0
         (cond [(directory-exists? path)
                (define recovered (delete-unreferenced-objects! path))
@@ -703,7 +703,7 @@
             (make-directory* (path-only path))
             (rename-file-or-directory tmp path #t)
             (define path-record
-              (declare-path (find-relative-path (XIDEN_WORKSPACE) path)
+              (declare-path (find-relative-path (DENXI_WORKSPACE) path)
                             digest))
             (when cache-key
               (gen-save (path-key-record #f cache-key (record-id path-record))))
@@ -715,7 +715,7 @@
   (define digest (make-content-address directory))
   (define path (build-addressable-path digest))
   (rename-file-or-directory directory path)
-  (declare-path (find-relative-path (XIDEN_WORKSPACE) path)
+  (declare-path (find-relative-path (DENXI_WORKSPACE) path)
                 digest))
 
 
@@ -768,7 +768,7 @@
 (define (make-link-path #:link-in-workspace? link-in-workspace? link-path)
   (let ([simple (simple-form-path link-path)])
     (if link-in-workspace?
-        (find-relative-path (XIDEN_WORKSPACE) simple)
+        (find-relative-path (DENXI_WORKSPACE) simple)
         simple)))
 
 
@@ -909,7 +909,7 @@
 
 
 
-(define (in-xiden-objects query-variant)
+(define (in-denxi-objects query-variant)
   (define query (coerce-parsed-package-query query-variant))
   (match-define
     (parsed-package-query
@@ -965,9 +965,9 @@
      (apply in-query+ sql params))))
 
 
-(define (in-xiden-outputs query-variant output-name)
+(define (in-denxi-outputs query-variant output-name)
   (sequence-map (λ (output-name revid revno pathid path) (find-exactly-one (output-record #f revid #f #f)))
-                (in-xiden-objects query-variant)))
+                (in-denxi-objects query-variant)))
 
 
 
@@ -983,7 +983,7 @@
                                 #f
                                 e)))])
         (define-values (_ rev-id rev-no path-id path)
-          (sequence-ref (in-xiden-objects query) 0))
+          (sequence-ref (in-denxi-objects query) 0))
         (find-exactly-one (output-record #f rev-id #f output-name)))))))
 
 
@@ -1084,7 +1084,7 @@
            (define actual-results
              (sequence->list
               (in-values-sequence
-               (in-xiden-objects "a.example.com:widget:default:rev-3:7:ei"))))
+               (in-denxi-objects "a.example.com:widget:default:rev-3:7:ei"))))
 
            (check-equal? (map (match-lambda [(list o _ rev-n _ path) (list rev-n o path)]) actual-results)
                          (build-list 4

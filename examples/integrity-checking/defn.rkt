@@ -1,4 +1,4 @@
-#lang xiden
+#lang denxi
 
 ; Integrity information makes sure that an artifact's content is
 ; correct. This is especially important if the data comes from the

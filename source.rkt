@@ -26,7 +26,7 @@
 
 
 ; This procedure acts as an interface between a specific method (HTTP,
-; File read, etc.) and the part of Xiden that reads an estimated number
+; File read, etc.) and the part of Denxi that reads an estimated number
 ; of bytes from a port.
 
 (define budget/c
@@ -43,11 +43,11 @@
 (define+provide-message $bad-source-eval (reason datum context))
 (define+provide-message $untrusted-cert (url original-exn))
 
-(define+provide-setting XIDEN_DOWNLOAD_MAX_REDIRECTS exact-nonnegative-integer? 2)
-(define+provide-setting XIDEN_FETCH_BUFFER_SIZE_MB (real-in 0.1 20) 10)
-(define+provide-setting XIDEN_FETCH_PKGDEF_SIZE_MB (real-in 0.1 20) 0.1)
-(define+provide-setting XIDEN_FETCH_TIMEOUT_MS (or/c +inf.0 (real-in 100 (* 1000 10))) 3000)
-(define+provide-setting XIDEN_FETCH_TOTAL_SIZE_MB (or/c +inf.0 real?) 100)
+(define+provide-setting DENXI_DOWNLOAD_MAX_REDIRECTS exact-nonnegative-integer? 2)
+(define+provide-setting DENXI_FETCH_BUFFER_SIZE_MB (real-in 0.1 20) 10)
+(define+provide-setting DENXI_FETCH_PKGDEF_SIZE_MB (real-in 0.1 20) 0.1)
+(define+provide-setting DENXI_FETCH_TIMEOUT_MS (or/c +inf.0 (real-in 100 (* 1000 10))) 3000)
+(define+provide-setting DENXI_FETCH_TOTAL_SIZE_MB (or/c +inf.0 real?) 100)
 
 (provide define-source
          empty-source
@@ -249,7 +249,7 @@
   (define (handle-http-url)
     (define-values (in headers-string)
       (get-pure-port/headers
-       #:redirections (XIDEN_DOWNLOAD_MAX_REDIRECTS)
+       #:redirections (DENXI_DOWNLOAD_MAX_REDIRECTS)
        #:method #"GET"
        #:status? #t
        coerced-url))

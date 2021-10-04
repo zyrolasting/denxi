@@ -2,27 +2,27 @@
 
 @require[@for-label[racket/base
                     racket/contract
-                    xiden/cmdline
-                    xiden/cli
-                    xiden/cli-flag
-                    xiden/format
-                    xiden/l10n
-                    xiden/state
-                    xiden/subprogram
-                    xiden/message
-                    xiden/source]
+                    denxi/cmdline
+                    denxi/cli
+                    denxi/cli-flag
+                    denxi/format
+                    denxi/l10n
+                    denxi/state
+                    denxi/subprogram
+                    denxi/message
+                    denxi/source]
           "../../shared.rkt"]
 
 @title{Command Line Argument Parsers}
 
-@defmodule[xiden/cli]
+@defmodule[denxi/cli]
 
-@racketmodname[xiden/cli] implements the command line parsers for
-Xiden in terms of @racketmodname[xiden/cmdline]. Each parser
+@racketmodname[denxi/cli] implements the command line parsers for
+Denxi in terms of @racketmodname[denxi/cmdline]. Each parser
 prepares a program that uses continuation passing style to return
 output and an exit code.
 
-@defproc[(launch-xiden! [#:arguments arguments (or/c list? vector?) (current-command-line-arguments)]
+@defproc[(launch-denxi! [#:arguments arguments (or/c list? vector?) (current-command-line-arguments)]
                         [#:format-message format-message message-formatter/c (get-message-formatter)]
                         [#:handle-exit handle-exit (-> any/c any) exit])
                         any]{
@@ -59,7 +59,7 @@ Returns a @racket[bound-program/c] that collects garbage in a
 @tech{target workspace}.
 
 Assuming no exceptional behavior, the bound program halts with exit code 0
-with output @racket[($finished-collecting-garbage (xiden-collect-garbage))].
+with output @racket[($finished-collecting-garbage (denxi-collect-garbage))].
 }
 
 
@@ -78,7 +78,7 @@ installed outputs in the @tech{target workspace}.
 If @racketid[A] is @racket{log}, the program halts with exit code 0
 and an empty program log. As a side-effect, the program prints all
 data read from standard input using
-@racket[(current-message-formatter)].  This is useful when one Xiden
+@racket[(current-message-formatter)].  This is useful when one Denxi
 user dumps a log to a file, and another wants to read the messages in
 a different human language or notation.
 
@@ -86,7 +86,7 @@ If @racket{links}, the program halts with exit code 0 and output
 @racket[(list ($show-datum (list L T)) ...)], where @racketid[L] is a
 path to a symbolic link, and @racketid[T] is a path to another
 filesystem entry referenced by that link. These symbolic links are
-tracked by Xiden for garbage collection purposes, and therefore all
+tracked by Denxi for garbage collection purposes, and therefore all
 @racketid[T] are deleted by @racket[gc-command] when all relevant
 values of @racketid[L] do not exist.
 
@@ -100,19 +100,19 @@ Returns a @racket[bound-program/c] based on the first argument
 
 @racketid[A] is treated as a string representation of a datum to
 evaluate using @racket[eval-untrusted-source-expression]. If the
-result is a @tech/xiden-reference{source} and the evaluation produced
+result is a @tech/denxi-reference{source} and the evaluation produced
 no I/O (for security), then the command sents bytes produced from the
 source to @racket[(current-output-port)]. Information about the
 process is sent to @racket[(current-error-port)].
 
 This all happens under a @tech{runtime configuration}, so transfers
-can be halted by settings like @racket[XIDEN_FETCH_TOTAL_SIZE_MB].
+can be halted by settings like @racket[DENXI_FETCH_TOTAL_SIZE_MB].
 }
 
 
 @section{CLI Functional Testing}
 
-@defmodule[(submod xiden/cli test)]
+@defmodule[(submod denxi/cli test)]
 
 Reprovides @racketmodname[racket],
 @racketmodname[racket/runtime-path], and @tt{rackunit}.
@@ -147,7 +147,7 @@ in the definition.
                                   bytes?
                                   any)])
                                   any]{
-Sends command line to Xiden to processing.
+Sends command line to Denxi to processing.
 
 Applies @racket[continue] in tail position to the following arguments:
 
@@ -179,7 +179,7 @@ assertioins on the data, then returns a hash table.  The keys of the
 hash tables are paths to links. The values are the targets of the
 links.
 
-Relative paths are made in regards to @racket[(XIDEN_WORKSPACE)].
+Relative paths are made in regards to @racket[(DENXI_WORKSPACE)].
 }
 
 @defproc[(get-checked-installed-outputs) (listof (list/c exact-package-query? string? path-string?))]{

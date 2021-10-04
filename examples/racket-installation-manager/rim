@@ -1,10 +1,10 @@
 #! /usr/bin/env racket
-#lang xiden/launcher
+#lang denxi/launcher
 (require racket net/url version/utils)
 
-(XIDEN_TRUST_HOST_EXECUTABLES '("sh"))
-(XIDEN_TRUST_UNSIGNED #t)
-(XIDEN_FETCH_TOTAL_SIZE_MB +inf.0)
+(DENXI_TRUST_HOST_EXECUTABLES '("sh"))
+(DENXI_TRUST_UNSIGNED #t)
+(DENXI_FETCH_TOTAL_SIZE_MB +inf.0)
 
 (current-chfs
  (build-builtin-chf-trust '(sha1 sha256)))
@@ -70,7 +70,7 @@
 
 (define (make-racket-installer-package racket-version os patterns)
   (define input (make-input racket-version os patterns))
-  `(module anon xiden/pkgdef
+  `(module anon denxi/pkgdef
      (provider "download.racket-lang.org")
      (revision-number ,(version->integer racket-version))
      (os-support ,os)

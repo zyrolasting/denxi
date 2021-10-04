@@ -9,7 +9,7 @@ starting from a zero trust configuration.
 6. Run `racket launch.rkt do +a defn.rkt`. It will now work.
 
 We didn't do all this in earlier examples because those examples shut
-off Xiden's safeguards. Harmless demos are one thing, but you should
+off Denxi's safeguards. Harmless demos are one thing, but you should
 not turn off the safeguards without good reason.
 
 You'll only repeat one of these steps whenever you encounter a new,

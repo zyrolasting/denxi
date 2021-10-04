@@ -4,16 +4,16 @@
                     racket/contract
                     racket/match
                     racket/string
-                    xiden/format
-                    xiden/message]
+                    denxi/format
+                    denxi/message]
                     "../../shared.rkt"]
 
 
 @title{Formatting}
 
-@defmodule[xiden/format]
+@defmodule[denxi/format]
 
-@racketmodname[xiden/format] provides all bindings from
+@racketmodname[denxi/format] provides all bindings from
 @racketmodname[racket/format], including the below bindings.
 
 @section{Conventional Formatting Procedures}

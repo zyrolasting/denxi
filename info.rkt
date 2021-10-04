@@ -1,6 +1,6 @@
 #lang info
 
-(define collection "xiden")
+(define collection "denxi")
 
 (define version "0.0") ; Don't use. This project defines its own scheme.
 
@@ -24,11 +24,11 @@
     "crypto/openssl"
     "crypto/dist"))
 
-(define racket-launcher-names '("xiden"))
+(define racket-launcher-names '("denxi"))
 (define racket-launcher-libraries '("cli.rkt"))
 
 (define scribblings
-  '(("docs/index/xiden-index.scrbl" () (tool))
-    ("docs/reference/xiden-reference.scrbl" (multi-page) (tool-library))
-    ("docs/guide/xiden-guide.scrbl" () (tool))
-    ("docs/white-paper/xiden-white-paper.scrbl" () (other))))
+  '(("docs/index/denxi-index.scrbl" () (tool))
+    ("docs/reference/denxi-reference.scrbl" (multi-page) (tool-library))
+    ("docs/guide/denxi-guide.scrbl" () (tool))
+    ("docs/white-paper/denxi-white-paper.scrbl" () (other))))

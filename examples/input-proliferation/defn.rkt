@@ -1,6 +1,6 @@
-#lang xiden
+#lang denxi
 
-; Xiden assumes that outputs with different names necessarily produce
+; Denxi assumes that outputs with different names necessarily produce
 ; different content. This definition will therefore create duplicate
 ; data despite starting from the same input. This will install without
 ; issue, but you should not create equivalent outputs.

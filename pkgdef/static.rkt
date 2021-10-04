@@ -50,8 +50,8 @@
                list?
                bare-pkgdef?)]))
 
-(define PACKAGE_DEFINITION_MODULE_LANG 'xiden/pkgdef)
-(define PACKAGE_DEFINITION_READER_LANG 'xiden)
+(define PACKAGE_DEFINITION_MODULE_LANG 'denxi/pkgdef)
+(define PACKAGE_DEFINITION_READER_LANG 'denxi)
 
 (define (package-definition-datum? v)
   (racket-module-code? PACKAGE_DEFINITION_MODULE_LANG v))
@@ -235,7 +235,7 @@
     (check-match
      (replace-input-expression
       (strip
-       '(module a xiden/pkgdef
+       '(module a denxi/pkgdef
           (input "a" (artifact #""))
           (input "b")
           (input "c")))
@@ -243,7 +243,7 @@
       '(input "x"))
      (bare-racket-module
       'a
-      'xiden/pkgdef
+      'denxi/pkgdef
       (list _ ... (list 'input "x") _ ...))))
 
   (test-case "Extract input name"

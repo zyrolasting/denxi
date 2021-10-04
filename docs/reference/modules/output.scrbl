@@ -2,16 +2,16 @@
 
 @require[@for-label[racket/base
                     racket/contract
-                    xiden/output
-                    xiden/monad
-                    xiden/subprogram
-                    xiden/string
-                    @except-in[xiden/pkgdef #%module-begin]]
+                    denxi/output
+                    denxi/monad
+                    denxi/subprogram
+                    denxi/string
+                    @except-in[denxi/pkgdef #%module-begin]]
          "../../shared.rkt"]
 
 @title{Package Outputs}
 
-@defmodule[xiden/output]
+@defmodule[denxi/output]
 
 @defstruct*[package-output ([name string?] [steps list?] [make-subprogram (-> subprogram?)])]{
 A @deftech{package output} is an instance of @racket[package-output].
@@ -35,7 +35,7 @@ Like @racket[findf], except the input list must consist of
 
 @defproc[(encode-package-output [to-encode package-output?]) list?]{
 @margin-note{Any output created using @racket[output] in the
-@racketmodname[xiden] or @racketmodname[xiden/pkgdef] languages are
+@racketmodname[denxi] or @racketmodname[denxi/pkgdef] languages are
 suitable for use with @racket[encode-package-output].}
 Returns a quoted @racket[output] term suitable for use in a
 @tech{package definition}. The term will use the elements of

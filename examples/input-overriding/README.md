@@ -7,7 +7,7 @@ racket launcher.rkt \
   +o '#px""' '(input "data" (artifact (byte-source #"override") #f #f))'
 ```
 
-This command line adds overrides to `XIDEN_INPUT_OVERRIDES`, which
+This command line adds overrides to `DENXI_INPUT_OVERRIDES`, which
 applies to all packages in the scope of a transaction.  Each override
 takes two arguments. The first is a readable regular expression that
 matches against a package query. The second is the code for an input

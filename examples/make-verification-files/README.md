@@ -1,8 +1,8 @@
-`certify` creates digest and signature files in terms of Xiden's
+`certify` creates digest and signature files in terms of Denxi's
 cryptographic backend. `verify` checks those files against content.
 
-You can use Xiden's intentionally-leaked RSA keypair to practice.  Run
-`racket -l xiden/signature/snake-oil` in this directory to create a
+You can use Denxi's intentionally-leaked RSA keypair to practice.  Run
+`racket -l denxi/signature/snake-oil` in this directory to create a
 copy of the leaked private key, leaked password, and public key.
 
 Now let's create arbitrary files.

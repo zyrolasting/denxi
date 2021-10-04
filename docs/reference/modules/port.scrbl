@@ -1,20 +1,20 @@
 #lang scribble/manual
 
 @require[@for-label[racket
-                    xiden/subprogram
-                    xiden/format
-                    xiden/port
-                    xiden/message
-                    xiden/printer
-                    xiden/source
-                    xiden/url]
+                    denxi/subprogram
+                    denxi/format
+                    denxi/port
+                    denxi/message
+                    denxi/printer
+                    denxi/source
+                    denxi/url]
          "../../shared.rkt"]
 
 @title{Ports}
 
-@defmodule[xiden/port]
+@defmodule[denxi/port]
 
-@racketmodname[xiden/port] reprovides all bindings from
+@racketmodname[denxi/port] reprovides all bindings from
 @racketmodname[racket/port], in addition to the bindings defined in
 this section.
 
@@ -88,7 +88,7 @@ A message pertaining to a transfer space budget.
 A request to transfer bytes was halted because the transfer read
 @racket[overrun-size] bytes more than @racket[allowed-max-size] bytes.
 
-See @racket[XIDEN_FETCH_TOTAL_SIZE_MB] and @racket[XIDEN_FETCH_PKGDEF_SIZE_MB].
+See @racket[DENXI_FETCH_TOTAL_SIZE_MB] and @racket[DENXI_FETCH_PKGDEF_SIZE_MB].
 }
 
 
@@ -97,7 +97,7 @@ See @racket[XIDEN_FETCH_TOTAL_SIZE_MB] and @racket[XIDEN_FETCH_PKGDEF_SIZE_MB].
 A request to transfer bytes never started because the transfer estimated
 @racket[proposed-max-size] bytes, which exceeds the user's maximum of @racket[allowed-max-size].
 
-See @racket[XIDEN_FETCH_TOTAL_SIZE_MB] and @racket[XIDEN_FETCH_PKGDEF_SIZE_MB].
+See @racket[DENXI_FETCH_TOTAL_SIZE_MB] and @racket[DENXI_FETCH_PKGDEF_SIZE_MB].
 }
 
 
@@ -107,5 +107,5 @@ A request to transfer bytes was halted after @racket[bytes-read] bytes
 because no more bytes were available after @racket[wait-time]
 milliseconds.
 
-See @racket[XIDEN_FETCH_TIMEOUT_MS].
+See @racket[DENXI_FETCH_TIMEOUT_MS].
 }

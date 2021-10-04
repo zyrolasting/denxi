@@ -1,4 +1,4 @@
-#lang xiden
+#lang denxi
 
 ; `racket-versions` defines accepted Racket runtime versions when
 ; using this definition.
@@ -6,7 +6,7 @@
 ; To be clear: The restriction applies to the processing of the
 ; package definition, not what it creates. You can try to have the
 ; former mean the latter if you are shipping Racket programs, but
-; values lower than what Xiden supports will not even make it to the
+; values lower than what Denxi supports will not even make it to the
 ; check. :)
 
 

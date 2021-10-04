@@ -3,19 +3,19 @@
 @require["../../shared.rkt"
          @for-label[racket/base
                     racket/contract
-                    xiden/message
-                    xiden/integrity
-                    xiden/signature
-                    xiden/signature/base
-                    xiden/source]
-         @for-syntax[xiden/signature]
-         xiden/signature]
+                    denxi/message
+                    denxi/integrity
+                    denxi/signature
+                    denxi/signature/base
+                    denxi/source]
+         @for-syntax[denxi/signature]
+         denxi/signature]
 
 @title{Signature Checking}
 
-@defmodule[xiden/signature]
+@defmodule[denxi/signature]
 
-@racketmodname[xiden/signature] uses asymmetric cryptography to verify
+@racketmodname[denxi/signature] uses asymmetric cryptography to verify
 if a digest was signed by a private key. The quality of signature
 verification is therefore dependent on the quality of the CHF used to
 create the digest.
@@ -77,26 +77,26 @@ key or signature.
 
 @defproc[(call-with-snake-oil-cipher-trust [thunk (-> any)]) any]{
 Calls @racket[thunk] in tail position.  While control is in the
-@racket[thunk], @racket[(XIDEN_TRUST_PUBLIC_KEYS)] is @racket[(list
+@racket[thunk], @racket[(DENXI_TRUST_PUBLIC_KEYS)] is @racket[(list
 snake-oil-public-key)].
 
 Implies @racket[call-with-snake-oil-chf-trust].
 }
 
-@defsetting*[XIDEN_TRUST_ANY_PUBLIC_KEY]{
+@defsetting*[DENXI_TRUST_ANY_PUBLIC_KEY]{
 @bold{Dangerous}. When true, trust any public key used to verify a signature.
 }
 
-@defsetting*[XIDEN_TRUST_UNSIGNED]{
+@defsetting*[DENXI_TRUST_UNSIGNED]{
 @bold{Dangerous}. When true, trust any input that lacks a valid signature.
 }
 
-@defsetting*[XIDEN_TRUST_BAD_SIGNATURE]{
+@defsetting*[DENXI_TRUST_BAD_SIGNATURE]{
 @bold{Dangerous}. When true, trust any input that has a signature that
 does not match the input's integrity information.
 }
 
-@defsetting[XIDEN_TRUST_PUBLIC_KEYS (listof well-formed-integrity?)]{
+@defsetting[DENXI_TRUST_PUBLIC_KEYS (listof well-formed-integrity?)]{
 A list of integrity information for public keys. Trusts public keys
 that can be used to reproduce an element of this list.
 }

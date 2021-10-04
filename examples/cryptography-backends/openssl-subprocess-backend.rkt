@@ -1,13 +1,13 @@
-#lang xiden/launcher
+#lang denxi/launcher
 
-(module+ main (launch-xiden!))
+(module+ main (launch-denxi!))
 
 (require racket/file
          racket/function
          racket/random)
 #|
-This launcher sets Xiden's cryptographic operations to use the host's
-OpenSSL binary. This affects EVERYTHING down to how Xiden stores state.
+This launcher sets Denxi's cryptographic operations to use the host's
+OpenSSL binary. This affects EVERYTHING down to how Denxi stores state.
 
 If you launch a REPL in this module, try these expressions.
 
@@ -125,7 +125,7 @@ If you launch a REPL in this module, try these expressions.
 
 (define temp-dir
   (build-path (find-system-path 'temp-dir)
-              ".xiden-openssl"))
+              ".denxi-openssl"))
 
 (define (call-with-openssl-input-file #:scramble? scramble? name byte-string f)
   (define path (build-path temp-dir name))

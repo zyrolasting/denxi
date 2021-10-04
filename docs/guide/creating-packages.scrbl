@@ -1,9 +1,9 @@
 #lang scribble/manual
 
 @require["../shared.rkt"
-         @for-label[@except-in[xiden/pkgdef #%module-begin]
-                    xiden/integrity
-                    xiden/signature
+         @for-label[@except-in[denxi/pkgdef #%module-begin]
+                    denxi/integrity
+                    denxi/signature
                     racket/base]]
 
 @title[#:tag "new-pkg"]{Package Definitions}
@@ -12,7 +12,7 @@ A @deftech{package definition} is a program, and this one creates a
 familiar greeting in a text file.
 
 @racketmod[#:file "definition.rkt"
-xiden
+denxi
 
 (input "hello.txt"
   (artifact (text-source "Hello, world!") #f #f))

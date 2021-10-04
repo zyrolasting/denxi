@@ -4,31 +4,31 @@
          @for-label[racket/base
                     racket/contract
                     racket/cmdline
-                    xiden/cli
-                    xiden/cli-flag
-                    xiden/cmdline
-                    xiden/format
-                    xiden/l10n
-                    xiden/subprogram
-                    xiden/message
-                    xiden/printer]]
+                    denxi/cli
+                    denxi/cli-flag
+                    denxi/cmdline
+                    denxi/format
+                    denxi/l10n
+                    denxi/subprogram
+                    denxi/message
+                    denxi/printer]]
 
 @title{Command Line Utilities}
 
-@defmodule[xiden/cmdline]
+@defmodule[denxi/cmdline]
 
-@racketmodname[xiden/cmdline] provides all bindings from
+@racketmodname[denxi/cmdline] provides all bindings from
 @racketmodname[racket/cmdline], as well as the bindings documented in
-this section. Unlike @racketmodname[xiden/cli],
-@racketmodname[xiden/cmdline] does not actually define a command line
-interface. It only helps @racketmodname[xiden/cli] do so.
+this section. Unlike @racketmodname[denxi/cli],
+@racketmodname[denxi/cmdline] does not actually define a command line
+interface. It only helps @racketmodname[denxi/cli] do so.
 
 @section{CLI Value Types}
 
 @defthing[exit-code/c flat-contract? #:value (integer-in 0 255)]{
 An exit code for use in an @tech/reference{exit handler}.
 
-Xiden does not currently lean on the exit code to convey much
+Denxi does not currently lean on the exit code to convey much
 meaning, so expect to see @racket[1] (@tt{E_FAIL}) to represent an
 error state. Lean on the @tech{program log} for specifics.
 }
