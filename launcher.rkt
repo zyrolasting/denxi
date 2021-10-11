@@ -13,6 +13,8 @@
    "codec.rkt"
    "crypto.rkt"
    "dig.rkt"
+   "dig/filesystem.rkt"
+   "dig/http.rkt"
    "file.rkt"
    "format.rkt"
    "input.rkt"
