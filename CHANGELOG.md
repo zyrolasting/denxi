@@ -8,6 +8,8 @@ This project follows [these versioning rules](https://sagegerard.com/edition-rev
 
 ## Unreleased
 
+- Rename to Denxi
+- Change default branch from `master` to `default`
 - Allow use of custom cryptographic backends to unblock users when the
   bundled library doesn't load.
 - Merge non-guide and non-reference documentation into examples that
