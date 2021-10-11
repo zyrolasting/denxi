@@ -1,12 +1,11 @@
 *~
 \#*
 .\#*
+.denxi
 .DS_Store
 compiled
 coverage
 html
 *.log
-xiden
 doc
-xiden-workspace
 workspace
