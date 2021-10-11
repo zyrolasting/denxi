@@ -25,6 +25,7 @@
 
 
 (provide cli
+         (all-from-out racket/cmdline)
          (contract-out
           [exit-code/c flat-contract?]
           [exit-handler/c contract?]
