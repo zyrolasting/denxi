@@ -14,7 +14,7 @@
     (style #f
            (list (alt-tag "img")
                  (attributes
-                  `((src . "https://github.com/zyrolasting/denxi/raw/master/docs/index/doc-logo.png")
+                  `((src . "https://github.com/zyrolasting/denxi/raw/default/docs/index/doc-logo.png")
                     (style . "max-width: 100%")))))))
 
 @logo-element
