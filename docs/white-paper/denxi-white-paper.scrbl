@@ -29,8 +29,8 @@ distribution can go wrong, so you need a way to download the latest
 software while isolating the parts that don't work for you.  When you
 aren't sure how to do that, you still want to know there's a way to
 have an independent developer @italic{you} trust fix @italic{your}
-package mananger in the same way an independent mechanic would fix
-your bricked car.
+package manager in the same way an independent mechanic would fix your
+bricked car.
 
 Denxi is a free, open source, and self-hosting model. This means it
 allows easy creation of its own alternatives (See
@@ -41,7 +41,7 @@ other forms of human error without depending on the same middlemen.
 
 @section{Intended Experience}
 
-When you create a symbolic link--or a shortcut on Windows--you
+When you create a symbolic link---or a shortcut on Windows---you
 normally point the link to a target location that already has a file,
 directory, or link. What if you could express the link's target
 subjectively?
@@ -106,20 +106,20 @@ could argue that it is user-hostile, but it represents
 security-consciousness in its most extreme form for a high-level
 language.
 
-Denxi does make one exception in that has no concept of user accounts,
-so it trusts whatever is directly controlling it. If you tell Denxi to
-trust integrity checks that use MD5, then it will. You should restrict
-the OS-level permissions of any process using Denxi, but the
-zero-trust defaults make it harder to accidentally open
+Denxi does make one exception in that it has no concept of user
+accounts, so it trusts whatever is directly controlling it. If you
+tell Denxi to trust integrity checks that use MD5, then it will. You
+should restrict the OS-level permissions of any process using Denxi,
+but the zero-trust defaults make it harder to accidentally open
 vulnerabilities.
 
 The @racketmodname[denxi/launcher] DSL builds custom launchers that
 represent the line between security and convenience. Custom launchers
-are easier to use because they bake in all of the little annoying--yet
-important!--decisions that a zero-trust launcher requires. You don't
-have to expose Denxi's full interface for the 10% of functionality you
-and your users need, but users can be confident that the 10% is
-carefully considered.
+are easier to use because they bake in all of the little
+annoying---yet important!---decisions that a zero-trust launcher
+requires. You don't have to expose Denxi's full interface for the 10%
+of functionality you and your users need, but users can be confident
+that the 10% is carefully considered.
 
 You can create confidence and organize communities by sharing custom
 launchers @italic{using} @litchar{denxi}. The custom launcher bakes in
@@ -127,11 +127,11 @@ surgical decisions and presents a convenient interface, and
 @litchar{denxi} provides an unambiguous channel through which others
 can audit how that launcher is distributed.
 
-Since a Denxi launcher is just text, an end-user can edit it
+Since a Denxi launcher is just text, an end user can edit it
 themselves and repeat the whole process. Since every launcher can
 represent a communual consensus or an individual preference, each user
-can control their level of interaction with untrusted and
-formerly-trusted people.
+can control their level of interaction with untrusted and formerly
+trusted people.
 
 
 @section{Handling Dependency Hell}
@@ -157,10 +157,11 @@ interesting ways because they are what they easily create. Racket can
 make you your own programming language, and Denxi can make you your
 own dependency manager.
 
-Denxi does not anticipate your needs because that's a mistake.  If a
-tool fails to anticipate you want, it can't read your mind and
-reprogram itself. That's why I designed Denxi to be like Racket, in
-the sense it helps you create and prototype its own alternatives.
+Denxi does not anticipate your needs because that would be a mistake.
+If a tool fails to anticipate what you want, it can't read your mind
+and reprogram itself. That's why I designed Denxi to be like Racket,
+in the sense it helps you create and prototype alternatives to Denxi
+itself.
 
 I believe Racket's package managers failed to translate the Racket
 experience to software distribution as a domain. PLaneT and

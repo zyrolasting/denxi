@@ -31,5 +31,6 @@ and appreciate a few benefits.
 @item{(@litchar{raco pkg} users) You won't mutate your Racket installation when installing software.}
 @item{(PLaneT users) You can install multiple versions of a project without generating non-@racket[eq?] bindings.}
 @item{(Guix/Nix users) You get the benefits you expect on Windows, macOS, and GNU/Linux distributions out of the box.}
-@item{(End users on Steam, Play Store, etc.) Someone can use Denxi to help transition you a new platform.}
+@item{(End users on Steam, Play Store, etc.) A programmer you trust
+can use Denxi to transition you a better platform.}
 ]
