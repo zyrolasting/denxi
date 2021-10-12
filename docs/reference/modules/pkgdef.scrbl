@@ -25,21 +25,16 @@
 
 @defmodule[denxi/pkgdef]
 
-A @deftech{package definition} is a
-@racket[PACKAGE_DEFINITION_MODULE_LANG] module as a syntax object or a
-list. When context makes it clear, the term “package definition” can
-also refer to the source code used to produce such a datum. When a
-package definition is a list, it matches
-@racket[package-definition-datum?]. Each package definition is used as
-a Racket module that combines discovery information with build
-instructions for @tech{packages}.
+A @deftech{package definition} is Racket code using the
+@racket[PACKAGE_DEFINITION_MODULE_LANG] module language, namely
+@racketmodname[denxi/pkgdef]. Since Racket source code may be viewed
+as data, package definitions may appear in memory as syntax objects or
+lists.
 
-@racketmodname[denxi/pkgdef] is a functional module language for
-writing @tech{package definitions}. It expands using a
-@deftech{collection pass} for the terms defined in
-@secref{pkgdef-terms}. Those terms apply to an instance of
-@racket[package], starting from @racket[empty-package].  The result is
-provided from the module as @racket[pkg].
+When evaluated, the module performs a @deftech{collection pass} that
+applies all terms found in @secref{pkgdef-terms} to
+@racket[empty-package]. The result is a new @tech{package}, provided
+using @racket[(provide pkg)].
 
 
 @section[#:tag "pkgdef-terms"]{Package Definition Terms}
