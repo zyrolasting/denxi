@@ -5,8 +5,6 @@
 [![Link to Youtube Presentation](https://img.shields.io/badge/youtube-RacketCon%202020-red)](https://youtu.be/bIi-tUzOwdw?t=2330)
 [![Link to support page for the author](https://img.shields.io/badge/%24-donate-success)](https://sagegerard.com/show-support.html)
 
-Denxi distributes software.
-
-Use Denxi as a dependency manager for your projects, as a back-end to
-your own App Store, as a back-end for a continuous integration system,
-or as part of an operating system.
+Denxi is a programming model for distributing data. It reduces the
+cost of producing package managers, storefronts, operating systems,
+and CI/CD systems.
