@@ -34,12 +34,12 @@ cohesive libraries.
 
 I wrote Denxi initially as a reaction to limitations of @tt{raco pkg},
 but it grew more aspirational. Denxi is now a reaction to any program
-that acts like a middleman to deliver content to you. Pipenv and
-YouTube are dramatically different platforms, but they are both
-middlemen that ship and recieve data.  You have limited control over
-how these platforms behave on your devices, because you are on the
-outside of the entire supply chain. My goal is to give you control by
-making these middlemen easier to replace.
+that acts like a middleman to deliver content to you, especially
+itself. Pipenv and YouTube are dramatically different platforms, but
+they are both middlemen that ship and recieve data.  You have limited
+control over how these platforms behave on your devices, because you
+are on the outside of the entire supply chain. My goal is to give you
+control by making these middlemen easier to replace.
 
 My hope is that end-users will make their own middleman programs (like
 package managers) with Denxi. To avoid becoming a middleman myself, I
@@ -161,7 +161,7 @@ Denxi is written in Racket. Racket is a programming language, and
 Denxi is a software distribution tool. Both are able to adapt in
 interesting ways because they are what they easily create. Racket can
 make you your own programming language, and Denxi can make you your
-own dependency manager.
+own middlemen.
 
 Denxi does not anticipate your needs because that would be a mistake.
 If a tool fails to anticipate what you want, it can't read your mind
@@ -233,8 +233,8 @@ is relevant for them.
 
 @section[#:tag "names"]{Handling Names}
 
-Names are subjective, so Denxi recognizes no central authority on what
-they mean. Any launcher can decide what names are canonical, and what
+Names are given for subjective reasons, so Denxi recognizes no naming
+authority. Any launcher can decide what names are canonical, and what
 canonical names mean in a context-sensitive way.
 
 For example, the SHA-1 cryptographic hash function has many
