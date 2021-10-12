@@ -25,29 +25,37 @@ themselves unable to @hyperlink[tesla-link]{start their cars} after a
 bad update.
 
 @secref{scenarios} shows that there are so many ways software
-distribution can go wrong, so you need a way to download the latest
-software while isolating the parts that don't work for you.  When you
-aren't sure how to do that, you still want to know there's a way to
-have an independent developer @italic{you} trust fix @italic{your}
-package manager in the same way an independent mechanic would fix your
-bricked car.
+distribution can go wrong. I believe that a better approach is a free,
+open source, self-hosting model.  The model must adapt to the
+subjective and contextual expectations of how it should install,
+update, or upgrade any program. The only way to do that is to let
+users replace its entry point, and invest heavily in flexible,
+cohesive libraries.
 
-Denxi is a free, open source, and self-hosting model. This means it
-allows easy creation of its own alternatives (See
-@secref{competition}). This empowers users and/or trusted developers
-to handle bad updates, diamond dependencies, security incidents, and
-other forms of human error without depending on the same middlemen.
+I wrote Denxi initially as a reaction to limitations of @tt{raco pkg},
+but it grew more aspirational. Denxi is now a reaction to any program
+that acts like a middleman to deliver content to you. Pipenv and
+YouTube are dramatically different platforms, but they are both
+middlemen that ship and recieve data.  You have limited control over
+how these platforms behave on your devices, because you are on the
+outside of the entire supply chain. My goal is to give you control by
+making these middlemen easier to replace.
+
+My hope is that end-users will make their own middleman programs (like
+package managers) with Denxi. To avoid becoming a middleman myself, I
+designed Denxi to help create its own alternatives (See
+@secref{competition}).
+
+It's no longer enough to handle bad updates, diamond dependencies,
+security incidents, and other forms of human error. Read on to see
+what else matters.
 
 
 @section{Intended Experience}
 
 When you create a symbolic link---or a shortcut on Windows---you
 normally point the link to a target location that already has a file,
-directory, or link. What if you could express the link's target
-subjectively?
-
-It's easier to see what I mean using hypothetical commands.  Here are
-some commands to create symbolic links.
+directory, or link.
 
 @verbatim|{
 ln -s ~/scanner scanner
@@ -57,33 +65,31 @@ ln -s ~/watch watch
 
 All of the above targets must exist if we want the links to work, but
 the targets could contain anything. The point of dependency management
-is to correctly reproduce the targets you @italic{meant}. Denxi lets
-you express exact targets in your own (possibly inexact) words.  That
-works something like this.
+is to correctly reproduce the targets you @italic{meant}.
+
+This code block shows @litchar{my-denxi}, a hypothetical launcher.
+The behavior of the command is roughly equivalent to the @tt{ln}
+commands in the commented lines. The key difference is that Denxi
+transactions is atomic, deterministic, and full of safety checks.  The
+similarity is that they defer the decision of what to link. This is
+necessary because a user installing software has functional
+expectations, but we don't know how they would be met at the time the
+user types the command. We still need to discuss network conditions,
+security threats, data integrity, naming conflicts, dependency hell,
+and many other details that thwart simple plans.
 
 @verbatim|{
-ln -s "$(semver scanner@8.4.x)" scanner
-ln -s "$(github racket/scribble)" scribble
-ln -s "$(urn watch:latest)" watch
-}|
+# ln -s "$(semver scanner@8.4.x)" scanner
+# ln -s "$(github racket/scribble)" scribble
+# ln -s "$(urn watch:latest)" watch
 
-These snippets are simplistic illustrations. Denxi's actual interface
-is more involved for reasons covered in @secref{secconv}, but you can
-configure the default CLI to recognize custom notations.  The
-experience of creating links remains the same, but Denxi does so in a
-reproducible way despite generally ambiguous input.
 
-This command shows a subset of Denxi's CLI, in the context of a custom
-launcher named @litchar{my-denxi}. It may have the same semantics
-you'd make up for the previous snippet.
-
-@verbatim|{
 ./my-denxi do +d scanner scanner@8.4.x \
               +d github racket/scribble \
               +d watch watch:latest
 }|
 
-Installation, updates, and rollbacks are come down to making new
+Installation, updates, and rollbacks come down to making more
 links. Reproducing dependencies means running the same
 transaction. Once you finish using Denxi, you can write code as if
 resolved dependencies are normal local files. To uninstall software,
@@ -98,28 +104,28 @@ in-place.
 @section[#:tag "secconv"]{On Security and Convenience}
 
 Denxi includes a zero-trust (meaning “Deny All by default”) launcher
-called @litchar{denxi}. Assuming your Denxi instance is not
-compromised, no installations are possible with @litchar{denxi}'s
-default configuration. It takes effort to make it less safe to use,
-and it can in fact become @italic{harder to use} as it evolves. You
-could argue that it is user-hostile, but it represents
-security-consciousness in its most extreme form for a high-level
-language.
+called @litchar{denxi}. No installations are possible with
+@litchar{denxi}'s default configuration. It takes a complicated
+command line to allow exact conditions for a transaction. In fact,
+@litchar{denxi} will become @italic{harder to use} over time. It is
+user-hostile because it represents security-consciousness in its most
+extreme form for a high-level language. This is useful for generating
+more convenient interfaces later, because most concepts in Denxi can
+be reified as values in memory.
 
-Denxi does make one exception in that it has no concept of user
-accounts, so it trusts whatever is directly controlling it. If you
-tell Denxi to trust integrity checks that use MD5, then it will. You
-should restrict the OS-level permissions of any process using Denxi,
-but the zero-trust defaults make it harder to accidentally open
-vulnerabilities.
+If you tell Denxi to trust integrity checks that use MD5, then it
+will. You should restrict the OS-level permissions of any process
+using Denxi, but the zero-trust defaults make it harder to
+accidentally open vulnerabilities.
 
 The @racketmodname[denxi/launcher] DSL builds custom launchers that
 represent the line between security and convenience. Custom launchers
 are easier to use because they bake in all of the little
 annoying---yet important!---decisions that a zero-trust launcher
-requires. You don't have to expose Denxi's full interface for the 10%
-of functionality you and your users need, but users can be confident
-that the 10% is carefully considered.
+requires. This protects users from many confirmation prompts while
+protecting their boundaries. You don't have to expose Denxi's full
+interface for the 10% of functionality you and your users need, but
+users can be confident that the 10% is carefully considered.
 
 You can create confidence and organize communities by sharing custom
 launchers @italic{using} @litchar{denxi}. The custom launcher bakes in

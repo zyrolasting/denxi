@@ -6,8 +6,6 @@
 @title[#:style '(toc)]{Denxi Reference}
 @author[(author+email "Sage L. Gerard" "sage@sagegerard.com" #:obfuscate? #t)]
 
-Denxi distributes software, and this is its reference material.
-
 For all documentation, see @other-doc[denxi-index].
 
 @table-of-contents[]

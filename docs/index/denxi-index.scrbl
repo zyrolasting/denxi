@@ -20,7 +20,5 @@
 @logo-element
 
 @centered{
-Denxi distributes software, and this is its documentation.
-
 @other-doc[denxi-guide] - @other-doc[denxi-reference] - @other-doc[denxi-white-paper]
 }
