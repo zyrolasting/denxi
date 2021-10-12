@@ -12,15 +12,12 @@ cost of producing package managers, storefronts, operating systems,
 and CI/CD systems. Denxi can work as a library, as a framework, or as
 a standalone application.
 
-@other-doc[denxi-reference] covers hundreds of functions, many of
-which is best learned by example. This guide, on the other hand,
-focuses only on two core concepts. You'll learn what a package
-definition is, and what a launcher is. From there you will be directed
-to concrete examples to study.
+@other-doc[denxi-reference] covers hundreds of functions. This guide
+briefly introduces core concepts and directs you to example
+programs. Use them to understand @other-doc[denxi-reference].
 
-By reading the examples and writing your own package definitions and
-launchers, you will come to understand @other-doc[denxi-reference] and
-gain a few benefits.
+By doing this you'll gain a few benefits.
+
 
 @itemlist[
 @item{Denxi practices zero-trust principles to avoid
@@ -34,6 +31,4 @@ your explicit, informed consent.}
 @item{(@litchar{raco pkg} users) You won't mutate your Racket installation when installing software.}
 @item{(PLaneT users) You can install multiple versions of a project without generating non-@racket[eq?] bindings.}
 @item{(Guix/Nix users) You get the benefits you expect on Windows, macOS, and GNU/Linux distributions out of the box.}
-@item{(End users on Steam, Play Store, etc.) A programmer you trust
-can use Denxi to transition you a better platform.}
 ]

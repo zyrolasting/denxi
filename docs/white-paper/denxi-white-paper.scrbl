@@ -35,20 +35,13 @@ cohesive libraries.
 I wrote Denxi initially as a reaction to limitations of @tt{raco pkg},
 but it grew more aspirational. Denxi is now a reaction to any program
 that acts like a middleman to deliver content to you, especially
-itself. Pipenv and YouTube are dramatically different platforms, but
-they are both middlemen that ship and recieve data.  You have limited
-control over how these platforms behave on your devices, because you
-are on the outside of the entire supply chain. My goal is to give you
-control by making these middlemen easier to replace.
-
-My hope is that end-users will make their own middleman programs (like
-package managers) with Denxi. To avoid becoming a middleman myself, I
-designed Denxi to help create its own alternatives (See
-@secref{competition}).
-
-It's no longer enough to handle bad updates, diamond dependencies,
-security incidents, and other forms of human error. Read on to see
-what else matters.
+itself (@secref{competition}). Take Steam and YouTube. These are
+dramatically different platforms, but they are both middlemen that
+ship and recieve data in a way that protects their owner's interests
+while gratifying your appetite.  You have limited control over how
+these platforms behave on your devices, because you aren't in the
+supply chain. My goal is to give you control by making these middlemen
+easier to replace.
 
 
 @section{Intended Experience}
