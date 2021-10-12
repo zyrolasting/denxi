@@ -10,9 +10,8 @@
 
 @defmodule[denxi/query]
 
-A @deftech{package query} is a colon-separated string that matches
-against @tech{package definition} names or installed outputs in a
-@tech{state}.
+A @deftech{package query} is a colon-separated string used to find
+@tech{package definitions}.
 
 
 @section{Package Query Syntax}
