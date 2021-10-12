@@ -31,8 +31,8 @@ A @deftech{package definition} is Racket code using the
 as data, package definitions may appear in memory as syntax objects or
 lists.
 
-When evaluated, the module performs a @deftech{collection pass} that
-applies all terms found in @secref{pkgdef-terms} to
+When evaluated, a package definition performs a @deftech{collection
+pass} that applies all terms found in @secref{pkgdef-terms} to
 @racket[empty-package]. The result is a new @tech{package}, provided
 using @racket[(provide pkg)].
 
