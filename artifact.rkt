@@ -67,6 +67,7 @@
 
 (define (install-artifact arti link-path)
   (mdo file-record := (fetch-artifact (format "~a" link-path) arti)
+       (verify-artifact arti file-record) ; Security critical
        (subprogram-unit (cons (make-addressable-link file-record link-path)
                               file-record))))
 
