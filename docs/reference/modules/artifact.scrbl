@@ -61,10 +61,12 @@ A constructor for @racket[artifact].
 
 
 @defproc[(install-artifact [arti artifact?] [link-path path-string?])
-         (subprogram/c path-record?)]{
+         (subprogram/c (cons/c path-record? path-record?))]{
 Returns a @tech{subprogram} used to add an @tech{artifact} to the
-current @tech{state}. The result of the subprogram is the record
-of the path used by the artifact in the file system.
+current @tech{state}. The result of the subprogram is a
+@racketid[pair], such that @racket[(car pair)] is the record of the
+created link in the file system. @racket[(cdr pair)] is the record of
+the path used by the computed target in the file system.
 }
 
 

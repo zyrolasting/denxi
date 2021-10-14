@@ -11,7 +11,7 @@
    (->* (any/c
          path-string?)
         (shovel/c)
-        (subprogram/c path-record?))]
+        (subprogram/c (cons/c path-record? path-record?)))]
   [find-artifact
    (->* (any/c)
         (shovel/c)
@@ -76,9 +76,10 @@
   (make-parameter broken-shovel))
 
 
-(define-subprogram (install-found-artifact plinth link-path [dig (current-shovel)])
+(define (install-found-artifact plinth link-path [dig (current-shovel)])
   (mdo arti := (find-artifact plinth dig)
-       (install-artifact arti link-path)))
+       records := (install-artifact arti link-path)
+       (subprogram-unit records)))
 
 
 (define-subprogram (find-artifact plinth [dig (current-shovel)])

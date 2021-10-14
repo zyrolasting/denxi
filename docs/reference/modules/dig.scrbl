@@ -61,8 +61,8 @@ possible @tech{messages} for failure conditions.
 
 
 @defproc[(install-found-artifact [hint any/c] [link-path path-string?] [shovel shovel/c (current-shovel)])
-         (subprogram/c path-record?)]{
-Returns a @tech{subprogram} that computes @racket[(install-artifact A
+         (subprogram/c (cons/c path-record? path-record?))]{
+Returns a @tech{subprogram} equivalent to @racket[(install-artifact A
 link-path)], where @racketid[A] is @racket[(find-artifact hint
 shovel)].
 }

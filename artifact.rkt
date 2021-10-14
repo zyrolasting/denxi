@@ -13,7 +13,7 @@
   [install-artifact
    (-> artifact?
        path-string?
-       (subprogram/c path-record?))]
+       (subprogram/c (cons/c path-record? path-record?)))]
   [verify-artifact
    (-> artifact?
        path-record?
@@ -66,8 +66,9 @@
 
 
 (define (install-artifact arti link-path)
-  (mdo rec := (fetch-artifact (format "~a" link-path) arti)
-       (make-addressable-link rec link-path)))
+  (mdo file-record := (fetch-artifact (format "~a" link-path) arti)
+       (subprogram-unit (cons (make-addressable-link file-record link-path)
+                              file-record))))
 
 
 (define (verify-artifact arti record)
