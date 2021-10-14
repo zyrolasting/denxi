@@ -10,6 +10,10 @@
  (struct-out $artifact:signature)
  (struct-out $artifact:integrity)
  (contract-out
+  [install-artifact
+   (-> artifact?
+       path-string?
+       (subprogram/c path-record?))]
   [verify-artifact
    (-> artifact?
        path-record?
@@ -59,6 +63,11 @@
 
 (define (make-artifact source [integrity #f] [signature #f])
   (artifact source integrity signature))
+
+
+(define (install-artifact arti link-path)
+  (mdo rec := (fetch-artifact (format "~a" link-path) arti)
+       (make-addressable-link rec link-path)))
 
 
 (define (verify-artifact arti record)

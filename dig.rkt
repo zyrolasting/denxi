@@ -7,6 +7,11 @@
 
 (provide
  (contract-out
+  [install-found-artifact
+   (->* (any/c
+         path-string?)
+        (shovel/c)
+        (subprogram/c path-record?))]
   [find-artifact
    (->* (any/c)
         (shovel/c)
@@ -28,6 +33,9 @@
 
 
 (require "artifact.rkt"
+         "monad.rkt"
+         "setting.rkt"
+         "state.rkt"
          "subprogram.rkt"
          "message.rkt"
          "query.rkt")
@@ -35,6 +43,9 @@
 
 (define+provide-message $dig ())
 (define+provide-message $dig:no-artifact $dig (shovel-name hint))
+
+(define+provide-setting DENXI_INSTALL_ARTIFACTS
+  (listof (list/c string? string?)) null)
 
 
 (define (dig-failure name hint)
@@ -63,6 +74,11 @@
 
 (define current-shovel
   (make-parameter broken-shovel))
+
+
+(define-subprogram (install-found-artifact plinth link-path [dig (current-shovel)])
+  (mdo arti := (find-artifact plinth dig)
+       (install-artifact arti link-path)))
 
 
 (define-subprogram (find-artifact plinth [dig (current-shovel)])

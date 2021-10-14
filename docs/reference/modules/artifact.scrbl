@@ -60,6 +60,14 @@ A constructor for @racket[artifact].
 }
 
 
+@defproc[(install-artifact [arti artifact?] [link-path path-string?])
+         (subprogram/c path-record?)]{
+Returns a @tech{subprogram} used to add an @tech{artifact} to the
+current @tech{state}. The result of the subprogram is the record
+of the path used by the artifact in the file system.
+}
+
+
 @defproc[(verify-artifact [arti artifact?] [pathrec path-record?])
          (subprogram/c void?)]{
 Returns a @tech{subprogram} that fails in the event an @tech{artifact}

@@ -1,6 +1,8 @@
 #lang scribble/manual
 
 @require["../../shared.rkt"
+         denxi/dig
+         @for-syntax[denxi/dig]
          @for-label[racket/base
                     racket/contract
                     racket/match
@@ -55,6 +57,24 @@ argument used for the shovel.
 A @tech/reference{chaperone contract} for procedures that carry out
 @tech{digs}. They must return @tech{subprograms} to capture
 possible @tech{messages} for failure conditions.
+}
+
+
+@defproc[(install-found-artifact [hint any/c] [link-path path-string?] [shovel shovel/c (current-shovel)])
+         (subprogram/c path-record?)]{
+Returns a @tech{subprogram} that computes @racket[(install-artifact A
+link-path)], where @racketid[A] is @racket[(find-artifact hint
+shovel)].
+}
+
+
+@defsetting*[DENXI_INSTALL_ARTIFACTS]{
+Like @racket[DENXI_INSTALL_SOURCES], except each list only needs two strings:
+
+@itemlist[#:style 'ordered
+@item{The path of a symbolic link to create with respect to @racket[(current-directory)].}
+@item{A string @racketid[S], such that @racket[(current-shovel S)] returns an artifact.}
+]
 }
 
 

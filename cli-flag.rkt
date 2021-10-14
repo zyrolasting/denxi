@@ -25,6 +25,7 @@
          "archive.rkt"
          "codec.rkt"
          "crypto.rkt"
+         "dig.rkt"
          "file.rkt"
          "format.rkt"
          "input.rkt"
@@ -292,6 +293,13 @@
                                     (cons source
                                           (DENXI_INSTALL_ABBREVIATED_SOURCES)))
                     '("source")))
+
+(flag-out [+l ++install-link]
+          (cli-flag DENXI_INSTALL_ARTIFACTS
+                    'multi null 2 (λ (flag link-name hint)
+                                    (cons (list link-name hint)
+                                          (DENXI_INSTALL_ARTIFACTS)))
+                    '("link-name" "hint")))
 
 (flag-out [+e ++env ++envvar]
           (cli-flag DENXI_ALLOW_ENV

@@ -11,6 +11,7 @@
          "cmdline.rkt"
          "codec.rkt"
          "crypto.rkt"
+         "dig.rkt"
          "format.rkt"
          "input.rkt"
          "integrity.rkt"
@@ -104,6 +105,7 @@
        (make-cli-flag-table ++install-source
                             ++install-abbreviated
                             ++install-default
+                            ++install-link
                             ++trust-public-key
                             ++trust-chf
                             ++input-override
@@ -130,7 +132,10 @@
                                              (install link-path #f source)])
                               DENXI_INSTALL_SOURCES
                               (match-lambda [(list link-path output-name source)
-                                             (install link-path output-name source)]))))
+                                             (install link-path output-name source)])
+                              DENXI_INSTALL_ARTIFACTS
+                              (match-lambda [(list link-path plinth)
+                                             (install-found-artifact plinth link-path)]))))
                    (if (null? actions)
                        (halt 0 null)
                        (let-values ([(commit rollback) (start-transaction!)])
