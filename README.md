@@ -1,5 +1,5 @@
 ![](./logo.png)
-[![Link to GPLv3 License](https://img.shields.io/badge/license-GPLv3-yellowgreen)](./COPYING)
+[![Link to AGPLv3 License](https://img.shields.io/badge/license-AGPLv3-yellowgreen)](./COPYING)
 [![Link to Denxi white paper](https://img.shields.io/badge/doc-white%20paper-lightgrey)](https://docs.racket-lang.org/denxi-white-paper/index.html)
 [![Link to Documentation](https://img.shields.io/badge/doc-index-blue.svg)](https://docs.racket-lang.org/denxi-index/index.html)
 [![Link to Youtube Presentation](https://img.shields.io/badge/youtube-RacketCon%202020-red)](https://youtu.be/bIi-tUzOwdw?t=2330)
