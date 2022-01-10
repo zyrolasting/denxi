@@ -37,6 +37,12 @@
   (replace-context stx
     (read-syntax #f (open-input-string (with-output-to-string (λ () (pretty-write v)))))))
 
+(define-syntax (by-slg stx)
+  (syntax-case stx ()
+    [_
+     #'(para "Sage L. Gerard"
+             (tt " (base64-decode #\"c2FnZUBzYWdlZ2VyYXJkLmNvbQ\")"))]))
+
 (define (tech/reference tag)
   (tech #:doc '(lib "scribblings/reference/reference.scrbl") tag))
 
