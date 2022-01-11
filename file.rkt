@@ -2,7 +2,21 @@
 
 ; Extend file system operations
 
-(provide (all-defined-out)
+(require racket/contract)
+(provide (except-out (all-defined-out)
+                     make-content-address
+                     scan-all-filesystem-content
+                     current-content-scanner)
+         (contract-out
+          [make-content-address
+           (-> (or/c file-exists?
+                     directory-exists?
+                     link-exists?)
+               bytes?)]
+          [scan-all-filesystem-content
+           (-> path-string? input-port?)]
+          [current-content-scanner
+           (parameter/c (-> path-string? input-port?))])
          (all-from-out racket/file))
 
 (require file/glob
@@ -13,6 +27,7 @@
          racket/port
          racket/sequence
          "codec.rkt"
+         "integrity/base.rkt"
          "message.rkt"
          "path.rkt"
          "subprogram.rkt"
@@ -121,3 +136,32 @@
 (define-syntax-rule (with-temporary-directory body ...)
   (call-with-temporary-directory
    (λ (tmp-dir) body ...)))
+
+(define+provide-message $no-content-to-address (path))
+
+
+;-------------------------------------------------------------------------------
+; Content addressing
+
+(define (make-content-address path)
+  (make-digest ((current-content-scanner) path)
+               (get-default-chf)))
+
+(define (scan-all-filesystem-content path)
+  (define (open-permissions)
+    (open-input-string (~a (file-or-directory-permissions path 'bits))))
+  (apply input-port-append #t
+         (open-input-string (~a (file-name-from-path path)))
+         (cond [(link-exists? path)
+                null]
+               [(file-exists? path)
+                (list (open-permissions)
+                      (open-input-file path))]
+               [(directory-exists? path)
+                (cons (open-permissions)
+                      (map scan-all-filesystem-content
+                           (directory-list path #:build? #t)))]
+               [else (raise ($no-content-to-address path))])))
+
+(define current-content-scanner
+  (make-parameter scan-all-filesystem-content))

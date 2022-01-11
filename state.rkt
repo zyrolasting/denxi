@@ -67,11 +67,6 @@
                string?
                (-> (or/c #f exn? output-record?) any)
                any)]
-          [make-content-address
-           (-> (or/c file-exists?
-                     directory-exists?
-                     link-exists?)
-               bytes?)]
           [in-denxi-outputs
            (-> package-query-variant?
                string?
@@ -105,15 +100,9 @@
            (-> directory-exists?
                path-record?)]
           [make-addressable-link
-           (-> path-record? path-string? path-record?)]
-          [scan-all-filesystem-content
-           (-> path-string? input-port?)]
-          [current-content-scanner
-           (parameter/c (-> path-string? input-port?))]))
-
+           (-> path-record? path-string? path-record?)]))
 
 (define+provide-message $finished-collecting-garbage (bytes-recovered))
-(define+provide-message $no-content-to-address (path))
 
 ;----------------------------------------------------------------------------------
 ; Relevant Paths
@@ -175,32 +164,6 @@
 (define (build-addressable-path digest)
   (build-object-path (encoded-file-name digest)))
 
-
-;-------------------------------------------------------------------------------
-; Content addressing
-
-(define (make-content-address path)
-  (make-digest ((current-content-scanner) path)
-               (get-default-chf)))
-
-(define (scan-all-filesystem-content path)
-  (define (open-permissions)
-    (open-input-string (~a (file-or-directory-permissions path 'bits))))
-  (apply input-port-append #t
-         (open-input-string (~a (file-name-from-path path)))
-         (cond [(link-exists? path)
-                null]
-               [(file-exists? path)
-                (list (open-permissions)
-                      (open-input-file path))]
-               [(directory-exists? path)
-                (cons (open-permissions)
-                      (map scan-all-filesystem-content
-                           (directory-list path #:build? #t)))]
-               [else (raise ($no-content-to-address path))])))
-
-(define current-content-scanner
-  (make-parameter scan-all-filesystem-content))
 
 
 ;------------------------------------------------------------------------------
