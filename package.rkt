@@ -455,11 +455,11 @@
       (define link-name (package-input-name input))
       (when (link-exists? link-name)
         (declare-link (find-relative-path
-                        (DENXI_WORKSPACE)
+                        (build-workspace-path)
                         (simple-form-path link-name))
                       (find-path-record
                        (find-relative-path
-                        (DENXI_WORKSPACE)
+                        (build-workspace-path)
                         (normalize-path link-name)))))))
   ($use (void)))
 

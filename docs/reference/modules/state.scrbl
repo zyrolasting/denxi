@@ -35,36 +35,24 @@ with a @tech{state}.
 A @deftech{workspace} is a directory on the filesystem that holds a
 @tech{database} and all installed software. A workspace's path be a
 directory. A @deftech{target workspace} is the directory referenced by
-the value of @racket[(DENXI_WORKSPACE)]. Target workspaces are
+the value of @racket[(build-workspace-path)]. Target workspaces are
 affected by all filesystem writes in a Denxi process.
 
 
-@defthing[#:kind "setting" DENXI_WORKSPACE directory-exists?]{
-CLI Flags: @litchar{--w/--workspace}
-
-The directory in which Denxi reads and writes files. If the directory
-does not exist, then it will be created when Denxi writes a file.
-
-Defaults to @racket[(build-path (find-system-path 'home-dir) ".denxi")].
-}
-
 @defproc[(build-workspace-path [path-element (and/c path-string? (not/c complete-path?))]) complete-path?]{
-Like @racket[build-path], but the base of the returned path is
-@racket[(DENXI_WORKSPACE)].
+Like @racket[build-path], but the base of the returned path is @litchar{~/.denxi}.
 }
 
 @defproc[(call-with-ephemeral-workspace [proc (-> path? any)]) any]{
-Calls @racket[proc] in a @tech/reference{parameterization} where
-@racket[(DENXI_WORKSPACE)] is a temporary directory. The same path
-is passed as the first argument to @racket[proc]. That directory and
-its contents will be deleted when control leaves @racket[proc], if it
-still exists.
+Call @racket[proc].
+
+Effect: Delete @racket[(build-workspace-path)] when control leaves @racket[proc].
 }
 
 
 @defproc[(path-in-workspace? [path path-string?]) boolean?]{
 Returns @racket[#t] if @racket[path], when simplified, has
-@racket[(DENXI_WORKSPACE)] as a prefix.
+@racket[(build-workspace-path)] as a prefix.
 }
 
 

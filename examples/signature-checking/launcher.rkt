@@ -15,6 +15,3 @@
 
 (DENXI_TRUST_PUBLIC_KEYS
  (list (make-trusted-integrity public-key)))
-
-(DENXI_WORKSPACE
- (build-path (current-directory) "workspace"))

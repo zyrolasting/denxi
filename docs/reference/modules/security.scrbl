@@ -32,7 +32,6 @@ configuration"], which ultimately controls arguments to
                    [#:implicitly-trusted-host-executables implicitly-trusted-host-executables (listof string?)]
                    [#:trust-any-executable? trust-any-executable? any/c]
                    [#:trust-unverified-host? trust-unverified-host? any/c]
-                   [#:workspace workspace path-string?]
                    [#:gc-period gc-period (>=/c 0)]
                    [#:name name (or/c string? symbol?) (or (object-name proc) "")]
                    [halt (-> exit-code/c subprogram-log/c any)]
@@ -47,12 +46,12 @@ The parameterization includes
 @itemlist[
 
 @item{a new @tech/reference{security guard} that prohibits listening
-for connections, and any filesystem activity irrelevant to updating a
-@racket[workspace]. Only the executables whose digests match the
-integrity information in @racket[trusted-executables] may be used to
-create subprocesses, unless @racket[trust-any-executable?] is true, or
-if the executable's path matches @racket[(find-executable-path E)] for
-some @racket[E] in @racket[implicitly-trusted-host-executables].
+for connections, and any filesystem activity irrelevant to state
+management. Only the executables whose digests match the integrity
+information in @racket[trusted-executables] may be used to create
+subprocesses, unless @racket[trust-any-executable?] is true, or if the
+executable's path matches @racket[(find-executable-path E)] for some
+@racket[E] in @racket[implicitly-trusted-host-executables].
 
 Any violation caught by the security guard will halt evaluation
 of @racket[proc] and create a @racket[$restrict:operation] @tech{message}

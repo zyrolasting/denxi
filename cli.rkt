@@ -57,7 +57,6 @@
         ++trust-executable
         ++trust-host-executable
         ++trust-cert
-        --workspace
         --fasl-output
         --memory-limit
         --reader-friendly-output
@@ -91,7 +90,7 @@
                                  #:trust-any-executable? (DENXI_TRUST_ANY_EXECUTABLE)
                                  #:trust-certificates (DENXI_TRUST_CERTIFICATES)
                                  #:implicitly-trusted-host-executables (DENXI_TRUST_HOST_EXECUTABLES)
-                                 #:workspace (DENXI_WORKSPACE)
+                                 #:workspace (build-workspace-path)
                                  #:gc-period 30
                                  #:name name)
                        (planned halt)))))))

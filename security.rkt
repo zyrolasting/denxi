@@ -181,7 +181,7 @@
                                     #:trust-any-executable? trust-any-executable?
                                     #:trust-executables trust-executables
                                     #:trust-host-executables trust-host-executables
-                                    #:workspace [ws (DENXI_WORKSPACE)])
+                                    #:workspace [ws (build-workspace-path)])
   (make-security-guard
    (current-security-guard)
    (make-file-guard #:trust-any-executable? trust-any-executable?
@@ -249,7 +249,7 @@
                                   (list op link-path target-path))))))
 
 
-(define (get-writeable-workspace-directories [wd (DENXI_WORKSPACE)])
+(define (get-writeable-workspace-directories [wd (build-workspace-path)])
   (list (current-directory)
         wd))
 
@@ -280,7 +280,7 @@
   (test-case "Prescribe write directories per-workspace"
     (define writeables (get-writeable-workspace-directories))
     (check-pred (non-empty-listof complete-path?) writeables)
-    (check-equal? (get-writeable-workspace-directories (DENXI_WORKSPACE))
+    (check-equal? (get-writeable-workspace-directories (build-workspace-path))
                   writeables))
 
   (test-case "Terminate thread at end of procedure"

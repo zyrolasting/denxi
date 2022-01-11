@@ -115,16 +115,12 @@
 (define+provide-message $finished-collecting-garbage (bytes-recovered))
 (define+provide-message $no-content-to-address (path))
 
-(define+provide-setting DENXI_WORKSPACE directory-exists?
-  (build-path (find-system-path 'home-dir)
-              ".denxi"))
-
 ;----------------------------------------------------------------------------------
 ; Relevant Paths
 
 (define (build-workspace-path . path-elements)
   (apply build-path
-         (DENXI_WORKSPACE)
+         (build-path (find-system-path 'home-dir) ".denxi")
          path-elements))
 
 
@@ -147,10 +143,9 @@
 
 
 (define (call-with-ephemeral-workspace proc)
-  (let ([t (make-temporary-file "~a" 'directory)])
-    (dynamic-wind void
-                  (λ () (DENXI_WORKSPACE t (λ () (proc t))))
-                  (λ () (delete-directory/files #:must-exist? #f t)))))
+  (dynamic-wind void
+                (λ () (proc (build-workspace-path)))
+                (λ () (delete-directory/files #:must-exist? #f (build-workspace-path)))))
 
 
 (module+ test
@@ -162,28 +157,13 @@
       (call-with-temporary-directory
        #:cd? #t
        (λ (tmp-dir)
-         (DENXI_WORKSPACE tmp-dir
-                          (λ () body ...))))))
+         (λ () body ...)))))
 
   (define (tmp p)
     (define tmpfile (make-temporary-file "~a"))
     (dynamic-wind void
                   (λ () (p tmpfile))
-                  (λ () (delete-file tmpfile))))
-
-  (test-exn "Guard against existing file paths"
-            exn:fail:contract?
-            (λ () (tmp DENXI_WORKSPACE)))
-
-  (test-exn "Guard against links"
-            exn:fail:contract?
-            (λ () (tmp
-                   (λ (p)
-                     (tmp
-                      (λ (l)
-                        (delete-file l)
-                        (make-file-or-directory-link p l)
-                        (DENXI_WORKSPACE l))))))))
+                  (λ () (delete-file tmpfile)))))
 
 
 (define current-get-state-path ; Is a parameter for testing reasons.
@@ -445,8 +425,7 @@
 ; until the root cause gets fixed.
 
 (define (denxi-collect-garbage)
-  (parameterize ([current-directory (DENXI_WORKSPACE)]
-                 [current-security-guard (make-gc-security-guard)])
+  (parameterize ([current-security-guard (make-gc-security-guard)])
     (if (directory-exists? (current-directory))
         (let loop ([bytes-recovered 0] [extra? #t])
           (forget-missing-links!)
@@ -513,7 +492,7 @@
 ; Not atomic, but can be used again unless the database itself is corrupted.
 (define (delete-unreferenced-objects! [dir (build-object-path)])
   (for/sum ([path (in-list (directory-list dir #:build? #t))])
-    (if (find-path-record (find-relative-path (DENXI_WORKSPACE) path))
+    (if (find-path-record (find-relative-path (build-workspace-path) path))
         0
         (cond [(directory-exists? path)
                (define recovered (delete-unreferenced-objects! path))
@@ -694,7 +673,7 @@
             (make-directory* (path-only path))
             (rename-file-or-directory tmp path #t)
             (define path-record
-              (declare-path (find-relative-path (DENXI_WORKSPACE) path)
+              (declare-path (find-relative-path (build-workspace-path) path)
                             digest))
             (when cache-key
               (gen-save (path-key-record #f cache-key (record-id path-record))))
@@ -706,7 +685,7 @@
   (define digest (make-content-address directory))
   (define path (build-addressable-path digest))
   (rename-file-or-directory directory path)
-  (declare-path (find-relative-path (DENXI_WORKSPACE) path)
+  (declare-path (find-relative-path (build-workspace-path) path)
                 digest))
 
 
@@ -759,7 +738,7 @@
 (define (make-link-path #:link-in-workspace? link-in-workspace? link-path)
   (let ([simple (simple-form-path link-path)])
     (if link-in-workspace?
-        (find-relative-path (DENXI_WORKSPACE) simple)
+        (find-relative-path (build-workspace-path) simple)
         simple)))
 
 

@@ -221,7 +221,6 @@
 (flag-out [-d --fetch-timeout] (cli-flag/unary DENXI_FETCH_TIMEOUT_MS arg->value "milliseconds"))
 (flag-out [-o --max-redirects] (cli-flag/unary DENXI_DOWNLOAD_MAX_REDIRECTS arg->value "exact-nonnegative-integer"))
 (flag-out [-r --subprocess-timeout] (cli-flag/unary DENXI_SUBPROCESS_TIMEOUT_S arg->value "positive"))
-(flag-out [-w --workspace] (cli-flag/unary DENXI_WORKSPACE arg->value "path"))
 
 
 ; Unary boolean flags

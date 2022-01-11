@@ -2,8 +2,6 @@
 
 (module+ main (launch-denxi!))
 
-(DENXI_WORKSPACE (build-path (current-directory) "workspace"))
-
 ; Here we give a SHA-1 implementation to Denxi with a pattern to
 ; recognize variations in names (sha1, SHA-1, ...). `sha1-bytes` is
 ; not a good implementation for production, but it is compatible with

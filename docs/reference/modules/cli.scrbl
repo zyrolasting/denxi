@@ -179,7 +179,7 @@ assertioins on the data, then returns a hash table.  The keys of the
 hash tables are paths to links. The values are the targets of the
 links.
 
-Relative paths are made in regards to @racket[(DENXI_WORKSPACE)].
+Relative paths are made in regards to @racket[(build-workspace-path)].
 }
 
 @defproc[(get-checked-installed-outputs) (listof (list/c exact-package-query? string? path-string?))]{
