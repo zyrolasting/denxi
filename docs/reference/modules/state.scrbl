@@ -33,26 +33,13 @@ with a @tech{state}.
 @section{Workspaces}
 
 A @deftech{workspace} is a directory on the filesystem that holds a
-@tech{database} and all installed software. A workspace's path must
-match the @racket[workspace-directory/c] contract. A @deftech{target
-workspace} is the directory referenced by the value of
-@racket[(DENXI_WORKSPACE)]. Target workspaces are affected by all
-filesystem writes in a Denxi process.
-
-@defthing[workspace-directory/c contract?
-          #:value (and/c complete-path?
-                         (or/c directory-exists?
-                               (and/c (not/c file-exists?)
-                                      (not/c directory-exists?)
-                                      (not/c link-exists?))))]{
-A contract for a valid workspace directory path.
-
-That is, a complete path that either refers to an existing
-directory, or a location on the filesystem where nothing exists.
-}
+@tech{database} and all installed software. A workspace's path be a
+directory. A @deftech{target workspace} is the directory referenced by
+the value of @racket[(DENXI_WORKSPACE)]. Target workspaces are
+affected by all filesystem writes in a Denxi process.
 
 
-@defthing[#:kind "setting" DENXI_WORKSPACE workspace-directory/c]{
+@defthing[#:kind "setting" DENXI_WORKSPACE directory-exists?]{
 CLI Flags: @litchar{--w/--workspace}
 
 The directory in which Denxi reads and writes files. If the directory

@@ -37,21 +37,12 @@
          "string.rkt"
          "version.rkt")
 
-(define workspace-directory/c
-  (and/c complete-path?
-         (or/c directory-exists?
-               (and/c (not/c file-exists?)
-                      (not/c directory-exists?)
-                      (not/c link-exists?)))))
-
 ; Provided ids include relation structs. See use of define-relation.
 (provide (struct-out record)
          build-workspace-path
          path-in-workspace?
          call-with-ephemeral-workspace
          (contract-out
-          [workspace-directory/c
-           flat-contract?]
           [denxi-collect-garbage
            (-> exact-nonnegative-integer?)]
           [in-all-installed
@@ -124,7 +115,7 @@
 (define+provide-message $finished-collecting-garbage (bytes-recovered))
 (define+provide-message $no-content-to-address (path))
 
-(define+provide-setting DENXI_WORKSPACE workspace-directory/c
+(define+provide-setting DENXI_WORKSPACE directory-exists?
   (build-path (find-system-path 'home-dir)
               ".denxi"))
 
