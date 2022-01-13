@@ -5,6 +5,7 @@
 (require scribble/manual
          syntax/strip-context
          racket/format
+         net/uri-codec
          (for-syntax racket
                      syntax/stx
                      syntax/strip-context
@@ -14,6 +15,9 @@
          denxi/setting
          denxi/cli-flag)
 
+(define (search-term s)
+  (hyperlink (format "https://duckduckgo.com/?q=~a" (uri-encode s))
+             s))
 
 (define (visible-hyperlink s)
   (hyperlink s s))
