@@ -38,7 +38,6 @@
          "pkgdef/static.rkt"
          "printer.rkt"
          "port.rkt"
-         "query.rkt"
          "racket-module.rkt"
          "racket-version.rkt"
          "security.rkt"

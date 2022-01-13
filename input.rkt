@@ -43,7 +43,6 @@
          "monad.rkt"
          "port.rkt"
          "printer.rkt"
-         "query.rkt"
          "signature.rkt"
          "source.rkt"
          "string.rkt"

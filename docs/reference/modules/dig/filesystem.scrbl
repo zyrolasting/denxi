@@ -10,7 +10,6 @@
                     denxi/message
                     denxi/integrity
                     denxi/crypto
-                    denxi/query
                     denxi/signature
                     denxi/source
                     denxi/string]]

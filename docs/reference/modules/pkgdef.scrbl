@@ -11,7 +11,6 @@
                     denxi/output
                     denxi/package
                     denxi/pkgdef/static
-                    denxi/query
                     denxi/version
                     @only-in[denxi/url url-string?]
                     @except-in[denxi/pkgdef artifact #%module-begin]]

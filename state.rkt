@@ -32,7 +32,6 @@
          "message.rkt"
          "path.rkt"
          "port.rkt"
-         "query.rkt"
          "setting.rkt"
          "string.rkt"
          "version.rkt")

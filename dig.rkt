@@ -37,8 +37,7 @@
          "setting.rkt"
          "state.rkt"
          "subprogram.rkt"
-         "message.rkt"
-         "query.rkt")
+         "message.rkt")
 
 
 (define+provide-message $dig ())

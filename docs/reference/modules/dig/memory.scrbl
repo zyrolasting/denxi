@@ -6,7 +6,6 @@
                     denxi/dig
                     denxi/dig/memory
                     denxi/artifact
-                    denxi/query
                     denxi/source]]
 
 

@@ -27,7 +27,6 @@
          "../integrity.rkt"
          "../subprogram.rkt"
          "../monad.rkt"
-         "../query.rkt"
          "../signature.rkt"
          "../source.rkt"
          "../version.rkt")

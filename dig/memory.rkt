@@ -19,7 +19,6 @@
          "../integrity.rkt"
          "../subprogram.rkt"
          "../monad.rkt"
-         "../query.rkt"
          "../signature.rkt"
          "../version.rkt")
 

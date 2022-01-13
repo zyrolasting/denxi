@@ -6,7 +6,6 @@
          "../codec.rkt"
          "../crypto.rkt"
          "../path.rkt"
-         "../query.rkt"
          "../racket-module.rkt"
          "../signature.rkt"
          "../string.rkt"

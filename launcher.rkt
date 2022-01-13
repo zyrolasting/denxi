@@ -28,7 +28,6 @@
    "path.rkt"
    "port.rkt"
    "printer.rkt"
-   "query.rkt"
    "racket-module.rkt"
    "racket-version.rkt"
    "rfc4648.rkt"

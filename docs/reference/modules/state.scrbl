@@ -9,7 +9,6 @@
                     denxi/codec
                     denxi/integrity
                     denxi/message
-                    denxi/query
                     denxi/state
                     denxi/string
                     denxi/port

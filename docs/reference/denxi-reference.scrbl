@@ -11,12 +11,12 @@ For all documentation, see @other-doc[denxi-index].
 @table-of-contents[]
 
 @include-section{background.scrbl}
+@include-section{modules/canon.scrbl}
 @include-section{modules/cli.scrbl}
 @include-section{modules/cmdline.scrbl}
 @include-section{modules/cli-flag.scrbl}
 @include-section{modules/package.scrbl}
 @include-section{modules/pkgdef.scrbl}
-@include-section{modules/query.scrbl}
 @include-section{modules/launcher.scrbl}
 @include-section{modules/subprogram.scrbl}
 @include-section{modules/artifact.scrbl}

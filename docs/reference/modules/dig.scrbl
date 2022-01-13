@@ -13,7 +13,6 @@
                     denxi/subprogram
                     denxi/message
                     denxi/package
-                    denxi/query
                     denxi/source
                     denxi/string
                     denxi/url

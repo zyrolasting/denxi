@@ -53,7 +53,6 @@
          "output.rkt"
          "pkgdef/static.rkt"
          "port.rkt"
-         "query.rkt"
          "racket-module.rkt"
          "racket-version.rkt"
          "setting.rkt"
