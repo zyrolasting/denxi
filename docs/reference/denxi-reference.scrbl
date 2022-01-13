@@ -46,3 +46,4 @@ For all documentation, see @other-doc[denxi-index].
 @include-section{modules/racket-module.scrbl}
 @include-section{modules/codec.scrbl}
 @include-section{modules/notary.scrbl}
+@include-section{modules/stream.scrbl}
