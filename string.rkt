@@ -2,12 +2,36 @@
 
 ; Extend racket/string
 
-(provide (all-defined-out)
-         (all-from-out racket/string))
+(require racket/contract)
+(provide (all-from-out racket/string)
+         non-empty-string
+         (contract-out
+          [DEFAULT_STRING "default"]
+          [coerce-character (-> any/c (or/c #f char?))]
+          [file-name-string? predicate/c]
+          [get-shortest-string (-> (non-empty-listof string?) string?)]
+          [group/pattstr (-> string? string?)]
+          [in-character-range (-> coerce-character coerce-character (sequence/c char?))]
+          [make-extension-pattern-string (->* () #:rest (listof string?) string?)]
+          [make-rx-matcher (->* (string?) (#:whole? any/c) (-> any/c any/c))]
+          [make-rx-predicate (->* (string?) (#:whole? any/c) predicate/c)]
+          [maybe-spaces-pattern-string string?]
+          [non-empty-bytes? predicate/c]
+          [or/pattstr (-> string? string?)]
+          [string->value (-> string? any/c)]
+          [string-hash-code (-> string? exact-nonnegative-integer?)]
+          [string-secondary-hash-code (-> string? exact-nonnegative-integer?)]
+          [unix-reserved-character-pattern-string string?]
+          [whole/pattstr (-> string? string?)]
+          [windows-reserved-character-pattern-string string?]
+          [windows-reserved-name-pattern-string string?]))
+
 
 (require racket/function
          racket/string
-         syntax/parse)
+         syntax/parse
+         "sequence.rkt"
+         (for-syntax racket/base))
 
 (define DEFAULT_STRING "default")
 
@@ -91,9 +115,60 @@
      (read (open-input-string s)))))
 
 
+(define (in-character-range start end)
+  (define s (char->integer (coerce-character start)))
+  (define e (char->integer (coerce-character end)))
+  (sequence-map integer->char
+                (cond [(< s e)
+                       (in-range s (add1 e))]
+                      [(> s e)
+                       (in-range s (sub1 e) -1)]
+                      [else
+                       (in-value s)])))
+
+
+(define (coerce-character variant)
+  (cond [(char? variant)
+         variant]
+        [(and (string? variant)
+              (= 1 (string-length variant)))
+         (string-ref variant 0)]
+        [(symbol? variant)
+         (coerce-character (symbol->string variant))]
+        [(integer? variant)
+         (with-handlers ([(negate exn:break?) (const #f)])
+           (integer->char variant))]
+        [else #f]))
+
+
 (module+ test
   (require rackunit)
 
+  (test-case "Coerce characters"
+    (check-eq? (coerce-character "a") #\a)
+    (check-eq? (coerce-character  'a) #\a)
+    (check-eq? (coerce-character #\a) #\a)
+    (check-false (coerce-character "aa"))
+    (check-false (coerce-character #t)))
+  
+  (test-case "Capture character range pattern"    
+    (define-syntax-rule (range-case x y)
+      (check-range-pattern (in-character-range x y)
+                           (in-character-range y x)))
+    (define (check-range-pattern actual-forward actual-backward)
+      (check-equal? (sequence->list actual-forward) forward)
+      (check-equal? (sequence->list actual-backward) backward))
+    (define forward (sequence->list "abc"))
+    (define backward (reverse forward))
+    (range-case 'a 'c)
+    (range-case "a" "c")
+    (range-case #\a #\c))
+  
+  (test-case "Check for single-character strings"
+    (check-false (coerce-character ""))
+    (check-not-false (coerce-character "a"))
+    (check-false (coerce-character "aa")))
+  
   (check-equal? (string->value "+inf.0") +inf.0)
 
   (check-equal? (get-shortest-string '("alvin" "bob" "v" "superduper"))

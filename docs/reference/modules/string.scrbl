@@ -12,8 +12,33 @@
 This module defines useful regular expressions and string operations
 needed by other modules.
 
+
+@defproc[(coerce-character [variant any/c] (or/c #f char?))]{
+Return @racket[#f], or the character representation of @racket[variant].
+
+Characters are returned as-is. Integers are coerced using
+@racket[integer->char].  Strings and symbols are coerced only if they
+contain exactly one character.
+}
+
+@defproc[(in-character-range [start coerce-character] [end coerce-character]) (sequence/c char?)]{
+Return a sequence of characters containing @racket[start],
+@racket[end], and any characters in between.
+
+Each argument must be suitable for use with @racket[coerce-character].
+
+If @racket[end] precedes @racket[start], then the output sequence
+appears in reverse order.
+
+@racketblock[
+(in-character-range "a" 'z)
+(in-character-range 120 100)
+(in-character-range #\0 #\9)
+]
+}
+
 @defthing[DEFAULT_STRING non-empty-string? #:value "default"]{
-The conventional default of the non empty strings.
+The conventional default of the non-empty strings.
 }
 
 @defproc[(whole/pattstr [s string?]) string?]{
