@@ -8,6 +8,8 @@
    (-> bytes? granny)]
   [granny-stitching?
    (-> granny boolean?)]
+  [granny-quilt-ready?
+   (-> granny predicate/c)]
   [take-quilt
    (-> granny (and/c bytes? immutable?))]
   [give-patch
@@ -58,6 +60,7 @@
     (define final (take-quilt g))
     (check-equal? final 3rd)
     (check-pred immutable? final)
+    (check-pred granny-quilt-ready? g)
     (check-false (granny-stitching? g))))
 
 
@@ -66,23 +69,46 @@
 
 (struct granny
   (patch-size
+   [patches-given #:mutable]
+   [patches-added #:mutable]
    design-in
    quilts-out
    [spool #:mutable]
    [quilt #:mutable])
-  #:property prop:evt 2)
+  #:property prop:evt 4)
+
 
 (define (make-granny initial-square)
-  (let ([design-in  (make-async-channel)]
-        [quilts-out (make-async-channel)])
+  (define design-in  (make-async-channel))
+  (define quilts-out (make-async-channel))
+  (define granny-out
     (granny (bytes-length initial-square)
+            0
+            0
             design-in
             quilts-out
-            (thread (lambda () (let stitch () ((sync design-in)) (stitch))))
+            #f
             ((if (immutable? initial-square)
                  bytes-copy
                  values)
-             initial-square))))
+             initial-square)))
+
+  (define (add-patches)
+    (let stitch ()
+      ((sync design-in))
+      (set-granny-patches-added! granny-out
+                                 (add1 (granny-patches-added granny-out)))
+      (stitch)))
+
+  (set-granny-spool! granny-out (thread add-patches))
+
+  granny-out)
+
+
+(define (granny-quilt-ready? g)
+  (equal? (granny-patches-given g)
+          (granny-patches-added g)))
+
 
 (define (granny-stitching? g)
   (let ([spool (granny-spool g)])
@@ -92,6 +118,7 @@
 
 (define (take-quilt g)
   (when (granny-stitching? g)
+    (let loop () (and (sync/timeout #f g) (loop)))
     (kill-thread (granny-spool g))
     (set-granny-quilt! g (unsafe-bytes->immutable-bytes! (granny-quilt g))))
   (granny-quilt g))
@@ -107,6 +134,7 @@
                     src
                     (granny-patch-size g)))
      (set-granny-quilt! g new-quilt)
+     (set-granny-patches-given! g (add1 (granny-patches-given g)))
      (async-channel-put (granny-quilts-out g) new-quilt)))
   g)
 
