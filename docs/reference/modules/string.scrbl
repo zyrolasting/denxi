@@ -1,6 +1,6 @@
 #lang scribble/manual
 
-@require[@for-label[denxi/string racket/base racket/contract]]
+@require[@for-label[denxi/string denxi/sequence racket/base racket/contract]]
 
 @title{Strings}
 
@@ -21,19 +21,26 @@ Characters are returned as-is. Integers are coerced using
 contain exactly one character.
 }
 
-@defproc[(in-character-range [start coerce-character] [end coerce-character]) (sequence/c char?)]{
+
+@defproc[(in-cartesian-strings [strings (sequence/c (sequence/c (or/c string? char?)))])
+         (sequence/c string?)]{
+Like @racket[(in-cartesian-map string-append strings)], but any
+@racket[char?] sequence is coerced to a string sequence.
+}
+
+
+@defproc[(in-character-range [start char?] [end char?]) (sequence/c char?)]{
 Return a sequence of characters containing @racket[start],
 @racket[end], and any characters in between.
-
-Each argument must be suitable for use with @racket[coerce-character].
 
 If @racket[end] precedes @racket[start], then the output sequence
 appears in reverse order.
 
 @racketblock[
-(in-character-range "a" 'z)
-(in-character-range 120 100)
-(in-character-range #\0 #\9)
+(define (string-with-range start end)
+  (apply string (sequence->list (in-character-range start end))))
+(equal? (string-with-range #\9 #\0) "9876543210")
+(equal? (string-with-range #\0 #\9) "0123456789")
 ]
 }
 

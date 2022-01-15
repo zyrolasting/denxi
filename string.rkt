@@ -12,6 +12,8 @@
           [get-shortest-string (-> (non-empty-listof string?) string?)]
           [group/pattstr (-> string? string?)]
           [in-character-range (-> coerce-character coerce-character (sequence/c char?))]
+          [in-cartesian-strings (-> (sequence/c (sequence/c (or/c char? string?)))
+                                    (sequence/c string?))]
           [make-extension-pattern-string (->* () #:rest (listof string?) string?)]
           [make-rx-matcher (->* (string?) (#:whole? any/c) (-> any/c any/c))]
           [make-rx-predicate (->* (string?) (#:whole? any/c) predicate/c)]
@@ -115,9 +117,17 @@
      (read (open-input-string s)))))
 
 
+(define (in-cartesian-strings data)
+  (in-cartesian-map string-append
+    (sequence-map (λ (gear)
+                    (sequence-map (λ (v) (if (char? v) (string v) v))
+                                  gear))
+                                  data)))
+
+
 (define (in-character-range start end)
-  (define s (char->integer (coerce-character start)))
-  (define e (char->integer (coerce-character end)))
+  (define s (char->integer start))
+  (define e (char->integer end))
   (sequence-map integer->char
                 (cond [(< s e)
                        (in-range s (add1 e))]
@@ -150,25 +160,18 @@
     (check-eq? (coerce-character #\a) #\a)
     (check-false (coerce-character "aa"))
     (check-false (coerce-character #t)))
-  
-  (test-case "Capture character range pattern"    
-    (define-syntax-rule (range-case x y)
-      (check-range-pattern (in-character-range x y)
-                           (in-character-range y x)))
-    (define (check-range-pattern actual-forward actual-backward)
-      (check-equal? (sequence->list actual-forward) forward)
-      (check-equal? (sequence->list actual-backward) backward))
+
+  (test-case "Capture character range pattern"
     (define forward (sequence->list "abc"))
     (define backward (reverse forward))
-    (range-case 'a 'c)
-    (range-case "a" "c")
-    (range-case #\a #\c))
-  
+    (check-equal? (sequence->list (in-character-range #\a #\c)) forward)
+    (check-equal? (sequence->list (in-character-range #\c #\a)) backward))
+
   (test-case "Check for single-character strings"
     (check-false (coerce-character ""))
     (check-not-false (coerce-character "a"))
     (check-false (coerce-character "aa")))
-  
+
   (check-equal? (string->value "+inf.0") +inf.0)
 
   (check-equal? (get-shortest-string '("alvin" "bob" "v" "superduper"))
