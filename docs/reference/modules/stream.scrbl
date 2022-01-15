@@ -26,3 +26,9 @@ Returns (fail-thunk)], if @racket[s] is empty. Returns
 @racket[(stream-first s)] otherwise.
 ]
 }
+
+@defproc[(stream-consume [s stream?] [consequent (-> any/c stream? any)] [alternate (-> any)]) any]{
+Returns @racket[(consequent (stream-first s) (stream-rest s))], or
+@racket[(alternate)] if the stream is empty.
+]
+}
