@@ -1,6 +1,4 @@
-#lang racket/base
-
-(require racket/contract)
+#lang s-exp "base.rkt"
 
 (provide (contract-out
           [canon/c contract?]
@@ -20,6 +18,7 @@
 
 (define (default-canon domain value canon)
   value)
+
 
 (define current-canon
   (make-parameter default-canon))
