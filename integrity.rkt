@@ -96,22 +96,12 @@
 
 
 (define (fetch-digest intinfo exhaust)
-  (let ([source (coerce-source (integrity-digest intinfo))])
-    (fetch source
-           (λ (in est-size)
-             (file->bytes
-              (build-workspace-path
-               (path-record-path
-                (make-addressable-file
-                 #:cache-key (make-source-key source)
-                 #:max-size MAX_EXPECTED_DIGEST_LENGTH
-                 #:buffer-size MAX_EXPECTED_DIGEST_LENGTH
-                 #:timeout-ms (DENXI_FETCH_TIMEOUT_MS)
-                 #:on-status void
-                 "_"
-                 in
-                 est-size)))))
-           exhaust)))
+  (state-add (coerce-source (integrity-digest intinfo))
+             (struct-copy transfer-policy zero-trust-transfer-policy
+                          [max-size MAX_EXPECTED_DIGEST_LENGTH]
+                          [buffer-size MAX_EXPECTED_DIGEST_LENGTH]
+                          [timeout-ms (DENXI_FETCH_TIMEOUT_MS)]
+                          [telemeter void])))
 
 
 (define (make-sourced-digest variant algorithm [exhaust raise])
