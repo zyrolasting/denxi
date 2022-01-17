@@ -65,10 +65,25 @@ then @racket[transfer] will not terminate if @|i| does not
 end.
 }
 
-@defthing[zero-trust-transfer-policy transfer-policy/c]{
-@racket[(transfer in out zero-trust-transfer-policy)] has no effect,
-for all values of @|i| and @|o|.
+@deftogether[(
+@defthing[zero-trust-transfer-policy transfer-policy/c]
+@defthing[full-trust-transfer-policy transfer-policy/c]
+)]{
+For all values of @racket[in] and @racket[out]
+
+@itemlist[
+@item{@racket[(transfer in out zero-trust-transfer-policy)] allows no effects}
+@item{@racket[(transfer in out full-trust-transfer-policy)] allows all effects}
+]
+
+For each policy @racketid[P]
+
+@racketblock[
+(and (eq? void (transfer-policy-telemeter P))
+     (string=? "" (transfer-policy-name P)))
+]
 }
+
 
 @defstruct*[($transfer $message) () #:prefab]{
 A @tech{message} pertaining to a @racket[transfer] status.

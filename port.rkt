@@ -4,6 +4,8 @@
 
 (provide (struct-out transfer-policy)
          (contract-out
+          [full-trust-transfer-policy
+           transfer-policy/c]
           [mebibytes->bytes
            (-> real? (or/c +inf.0 exact-nonnegative-integer?))]
           [transfer
@@ -36,16 +38,18 @@
     telemeter))
 
 (define zero-trust-transfer-policy
-  (transfer-policy 1 +inf.0 0 0 "" void))
+  (transfer-policy 1 +inf.0 0 "" 0 void))
 
+(define full-trust-transfer-policy
+  (transfer-policy 8192 +inf.0 +inf.0 "" +inf.0 void))
 
 (define transfer-policy/c
   (struct/c transfer-policy
             exact-positive-integer?
             (or/c +inf.0 real?)
             (or/c +inf.0 exact-nonnegative-integer?)
-            (>=/c 0)
             string?
+            (>=/c 0)
             (-> $transfer? void?)))
 
 
