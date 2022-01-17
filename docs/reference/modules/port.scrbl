@@ -12,6 +12,9 @@
 
 @title{Ports}
 
+@(define i (racket in))
+@(define o (racket out))
+
 @defmodule[denxi/port]
 
 @racketmodname[denxi/port] reprovides all bindings from
@@ -22,60 +25,80 @@ this section.
 Converts mebibytes to bytes, rounded up to the nearest exact integer.
 }
 
-@defproc[(transfer [bytes-source input-port?]
-                   [bytes-sink output-port?]
-                   [#:on-status on-status (-> $transfer? any)]
-                   [#:max-size max-size (or/c +inf.0 exact-positive-integer?)]
-                   [#:buffer-size buffer-size exact-positive-integer?]
-                   [#:transfer-name transfer-name non-empty-string?]
-                   [#:est-size est-size (or/c +inf.0 real?)]
-                   [#:timeout-ms timeout-ms (>=/c 0)])
-                   void?]{
-Like @racket[copy-port], except bytes are copied from
-@racket[bytes-source] to @racket[bytes-sink], with at most
-@racket[buffer-size] bytes at a time.
+@deftogether[(
+@defproc[(transfer [in input-port?]
+                   [out output-port?]
+		   [policy transfer-policy?]
+                   void?)]
+@defstruct*[transfer-policy ([buffer-size exact-positive-integer?]
+                       	     [est-size (or/c +inf.0 real?)]
+		       	     [max-size (or/c +inf.0 exact-nonnegative-integer?)]
+		       	     [timeout-ms (>=/c 0)]
+		       	     [transfer-name string?]
+		       	     [telemeter (-> $transfer? void?)])]
+)]{
+Like @racket[(copy-port in out)], with safety limits defined by an
+instance of @racket[transfer-policy]. All behavior is synchronous.
 
-@racket[transfer] applies @racket[on-status] repeatedly and
-synchronously with @racket[$transfer] @tech{messages}.
+@racket[buffer-size] controls the maximum number of bytes that may
+drawn from @i at a time, in addition to Racket's internal buffering.
 
-@racket[transfer] reads no more than @racketid[N] bytes from
-@racket[bytes-source], and will wait no longer than
-@racket[timeout-ms] for the next available byte.
+@racket[timeout-ms] is the number of milliseconds to wait for the next
+available byte from @|i|.
 
-The value of @racketid[N] is computed using @racket[est-size] and
-@racket[max-size]. @racket[max-size] is the prescribed upper limit for
-total bytes to copy. @racket[est-size] is an estimated for the number
-of bytes that @racket[bytes-source] will actually produce (this is
-typically not decided by the user). If @racket[(> est-size max-size)],
-then the transfer will not start.  Otherwise @racketid[N] is bound to
-@racket[est-size] to hold @racket[bytes-source] accountable for the
-estimate.
+@racket[telemeter] is an effectual procedure for capturing the status
+of a transfer.
 
-If @racket[est-size] and @racket[max-size] are both @racket[+inf.0],
-then @racket[transfer] will not terminate if @racket[bytes-source]
-does not produce @racket[eof].
+@racket[est-size] and @racket[max-size] control the maximum number of
+bytes to read from @|i|. @racket[est-size] is an untrusted estimate of
+the number of bytes @|i| will produce. @racket[max-size] is a trusted
+statement of the maximum tolerable number of bytes.
+
+When @racket[(> est-size max-size)] @racket[transfer] reports
+@racket[$transfer:budget:rejected] and ends.
+
+When @racket[(<= est-size max-size)], @racket[transfer] will read no
+more than @racket[est-size] bytes.
+
+If both @racket[est-size] and @racket[max-size] are @racket[+inf.0],
+then @racket[transfer] will not terminate if @|i| does not
+end.
 }
 
+@defthing[zero-trust-transfer-policy transfer-policy/c]{
+@racket[(transfer in out zero-trust-transfer-policy)] has no effect,
+for all values of @|i| and @|o|.
+}
 
 @defstruct*[($transfer $message) () #:prefab]{
 A @tech{message} pertaining to a @racket[transfer] status.
 }
 
-@defstruct*[($transfer:scope $transfer) ([name string?] [message (and/c $transfer? (not/c $transfer:scope?))]) #:prefab]{
+@defthing[transfer-policy/c contract?]{
+A @tech/reference{contract} for @racket[transfer-policy] instances.
+}
+
+@defstruct*[($transfer:scope $transfer) ([name string?]
+                                         [timestamp-s exact-positive-integer?]
+                                         [message (and/c $transfer? (not/c $transfer:scope?))]) #:prefab]{
 Contains a @racket[$transfer] message from a call to @racket[transfer]
 where the @racketid[transfer-name] argument was bound to
-@racket[name].
+@racket[name]. @racket[timestamp-s] is a value in the range of
+@racket[current-seconds].
+}
+
+@defstruct*[($transfer:broken $transfer) ([value any/c]) #:prefab]{
+Represents an unexpected synchronization result from
+@racket[read-bytes-avail!-evt]. Encountering this value is a sign that
+invariants are failing in the Racket runtime.
 }
 
 @defstruct*[($transfer:progress $transfer) ([bytes-read exact-nonnegative-integer?]
-                                            [max-size (or/c +inf.0 exact-positive-integer?)]
-                                            [timestamp exact-positive-integer?]) #:prefab]{
+                                            [max-size (or/c +inf.0 exact-positive-integer?)]) #:prefab]{
 Represents progress transferring bytes to a local source.
 
 Unless @racket[max-size] is @racket[+inf.0], @racket[(/ bytes-read
-max-size)] approaches @racket[1].  You can use this along with the
-@racket[timestamp] (in seconds) to reactively compute an estimated
-time to complete.
+max-size)] approaches @racket[1].
 }
 
 

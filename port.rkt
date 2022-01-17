@@ -1,104 +1,126 @@
-#lang racket/base
+#lang s-exp "base.rkt"
 
-; Extend racket/port to support byte transfers with safety limits.
+(reprovide racket/port)
 
-(require racket/contract
-         racket/port
-         "message.rkt"
-         "string.rkt")
-
-(provide (all-from-out racket/port)
+(provide (struct-out transfer-policy)
          (contract-out
           [mebibytes->bytes
            (-> real? (or/c +inf.0 exact-nonnegative-integer?))]
           [transfer
            (-> input-port?
                output-port?
-               #:on-status (-> $transfer? any)
-               #:max-size (or/c +inf.0 exact-positive-integer?)
-               #:buffer-size exact-positive-integer?
-               #:transfer-name non-empty-string?
-               #:est-size (or/c +inf.0 real?)
-               #:timeout-ms (>=/c 0)
-               void?)]))
+               transfer-policy?
+               void?)]
+          [transfer-policy/c
+           contract?]
+          [zero-trust-transfer-policy
+           transfer-policy/c]))
 
 (define+provide-message $transfer ())
-(define+provide-message $transfer:scope $transfer (name message))
-(define+provide-message $transfer:progress $transfer (bytes-read max-size timestamp))
+(define+provide-message $transfer:scope $transfer (name timestamp-s message))
+(define+provide-message $transfer:broken $transfer (value))
+(define+provide-message $transfer:progress $transfer (bytes-read max-size))
 (define+provide-message $transfer:timeout $transfer (bytes-read wait-time))
 (define+provide-message $transfer:budget $transfer (allowed-max-size))
 (define+provide-message $transfer:budget:exceeded $transfer:budget (overrun-size))
 (define+provide-message $transfer:budget:rejected $transfer:budget (proposed-max-size))
+
+(require racket/match "string.rkt")
+
+(struct transfer-policy
+   (buffer-size
+    est-size
+    max-size
+    name
+    timeout-ms
+    telemeter))
+
+(define zero-trust-transfer-policy
+  (transfer-policy 1 +inf.0 0 0 "" void))
+
+
+(define transfer-policy/c
+  (struct/c transfer-policy
+            exact-positive-integer?
+            (or/c +inf.0 real?)
+            (or/c +inf.0 exact-nonnegative-integer?)
+            (>=/c 0)
+            string?
+            (-> $transfer? void?)))
+
+
+
+(define (transfer from to policy)
+  (match-let* ([(transfer-policy buffer-size est-size max-size name timeout-ms telemeter)
+               policy]
+               [telemeter*
+                (λ (message)
+                  (telemeter ($transfer:scope name (current-seconds) message)))])
+    (if (<= est-size max-size)
+        (copy-port/incremental from
+                               to
+                               0
+                               (make-bytes buffer-size 0)
+                               buffer-size
+                               (min est-size max-size)
+                               name
+                               timeout-ms
+                               telemeter*)
+        (telemeter* ($transfer:budget:rejected max-size est-size)))))
+
+
+(define (copy-port/incremental
+         from
+         to
+         bytes-read
+         buffer
+         buffer-size
+         max-size
+         name
+         timeout-ms
+         telemeter)
+  (sync (handle-evt
+         (alarm-evt (+ (current-inexact-milliseconds)
+                       timeout-ms))
+         (λ (e)
+           (telemeter ($transfer:timeout bytes-read timeout-ms))))
+        (handle-evt
+         (read-bytes-avail!-evt buffer from)
+         (λ (variant)
+           (cond [(eof-object? variant)
+                  (telemeter ($transfer:progress max-size max-size))]
+                 [((>/c 0) variant)
+                  (define bytes-read* (+ bytes-read variant))
+                  (write-bytes buffer to 0 variant)
+                  ; 100% is always reported at the end. Don't double report it here.
+                  (unless (equal? bytes-read* max-size)
+                    (telemeter ($transfer:progress bytes-read* max-size)))
+                  (if (> bytes-read* max-size)
+                      (telemeter ($transfer:budget:exceeded max-size (- bytes-read* max-size)))
+                      (copy-port/incremental
+                       from
+                       to
+                       bytes-read*
+                       buffer
+                       buffer-size
+                       max-size
+                       name
+                       timeout-ms
+                       telemeter))]
+                 [else
+                  (telemeter ($transfer:broken variant))])))))
+
 
 (define (mebibytes->bytes mib)
   (if (equal? mib +inf.0)
       mib
       (inexact->exact (ceiling (* mib 1024 1024)))))
 
-(define (transfer from to
-                  #:on-status on-status
-                  #:max-size max-size
-                  #:buffer-size buffer-size
-                  #:transfer-name transfer-name
-                  #:est-size est-size
-                  #:timeout-ms timeout-ms)
-  (define (on-status/void m)
-    (on-status ($transfer:scope transfer-name m))
-    (void))
-
-  (if (<= est-size max-size)
-      (copy-port/incremental from to
-                             #:on-status on-status/void
-                             #:bytes-read 0
-                             #:max-size (min est-size max-size)
-                             #:buffer-size buffer-size
-                             #:buffer (make-bytes buffer-size 0)
-                             #:timeout timeout-ms)
-      (on-status/void ($transfer:budget:rejected max-size est-size))))
-
-
-(define (copy-port/incremental
-         from to
-         #:bytes-read bytes-read
-         #:on-status on-status
-         #:max-size max-size
-         #:buffer-size buffer-size
-         #:buffer buffer
-         #:timeout timeout)
-  (sync (handle-evt
-         (alarm-evt (+ (current-inexact-milliseconds)
-                       timeout))
-         (λ (e)
-           (on-status ($transfer:timeout bytes-read timeout))))
-        (handle-evt
-         (read-bytes-avail!-evt buffer from)
-         (λ (variant)
-           (cond [(eof-object? variant)
-                  (on-status ($transfer:progress max-size max-size (current-seconds)))
-                  (void)]
-                 [(and (number? variant) (> variant 0))
-                  (define bytes-read* (+ bytes-read variant))
-                  (write-bytes buffer to 0 variant)
-                  ; 100% is always reported at the end. Don't double report it here.
-                  (unless (equal? bytes-read* max-size)
-                    (on-status ($transfer:progress bytes-read* max-size (current-seconds))))
-                  (if (> bytes-read* max-size)
-                      (on-status ($transfer:budget:exceeded max-size  (- bytes-read* max-size)))
-                      (copy-port/incremental from to
-                                             #:bytes-read bytes-read*
-                                             #:on-status on-status
-                                             #:max-size max-size
-                                             #:buffer-size buffer-size
-                                             #:buffer buffer
-                                             #:timeout timeout))])))))
-
-
-
 
 (module+ test
-  (require racket/match
+  (require racket/function
            rackunit)
-
+    
   (test-case "Convert mebibytes to bytes"
     (check-equal? (mebibytes->bytes +inf.0) +inf.0)
     (check-eq? (mebibytes->bytes 0) 0)
@@ -108,61 +130,74 @@
                  (mebibytes->bytes (/ 1 2))
                  (/ 1048576 2)))
 
-  (test-case "Transfer bytes transparently"
+
+
+  (define-syntax-rule (overturn instance . assignments)
+    (struct-copy transfer-policy instance . assignments))
+
+
+  (define-syntax-rule (draft-transfer-policy . xs)
+    (overturn zero-trust-transfer-policy . xs))
+  
+  (define test-policy
+    (draft-transfer-policy
+     [name "anon"]
+     [buffer-size 1]
+     [timeout-ms 1]
+     [max-size 1]     
+     [est-size 1]))
+
+  (define-syntax-rule (P . x)
+    (overturn test-policy . x))
+
+  (define ((expect-message m) telemeasure)
+    (check-equal? telemeasure
+                  ($transfer:scope (transfer-policy-name test-policy)
+                                   ($transfer:scope-timestamp-s telemeasure)
+                                   m)))
+  
+  (test-case "Transfer bytes with telemetry"
     (define bstr #"ABCDEFG")
     (define bytes/source (open-input-bytes bstr))
     (define bytes/sink (open-output-bytes))
     (define size (bytes-length bstr))
-    (define expected-progress-val 0)
 
-    (define (on-status m)
+    (define (telemeter m)
       (check-match m
-                   ($transfer:scope "anon"
+                   ($transfer:scope (? (curry equal? (transfer-policy-name test-policy)) _)
+                                    (? exact-positive-integer? _)
                                     ($transfer:progress
                                      (? (integer-in 0 size) i)
-                                     size
-                                     (? exact-integer? _)))))
+                                     size))))
 
     (check-pred void?
                 (transfer bytes/source bytes/sink
-                          #:on-status on-status
-                          #:transfer-name "anon"
-                          #:buffer-size 1
-                          #:timeout-ms 1
-                          #:max-size size
-                          #:est-size size))
+                          (P [buffer-size size]
+                             [est-size size]
+                             [max-size size]
+                             [telemeter telemeter])))
 
     (check-equal? (get-output-bytes bytes/sink #t) bstr))
+
 
   (test-case "Prohibit unlimited transfers unless max-size agrees"
     (transfer (open-input-string "")
               (open-output-nowhere)
-              #:transfer-name "anon"
-              #:buffer-size 1
-              #:timeout-ms 1
-              #:max-size 100
-              #:est-size +inf.0
-              #:on-status (λ (m)
-                            (check-equal? m
-                                          ($transfer:scope "anon"
-                                                           ($transfer:budget:rejected 100 +inf.0))))))
+              (P [max-size 100]
+                 [est-size +inf.0]
+                 [telemeter
+                  (expect-message ($transfer:budget:rejected 100 +inf.0))])))
 
   (test-case "Time out on reads that block for too long"
     ; Reading from a pipe in this way will block indefinitely.
     (let-values ([(i o) (make-pipe)])
       (transfer i o
-                #:transfer-name "anon"
-                #:buffer-size 1
-                #:timeout-ms 1
-                #:max-size 100
-                #:est-size 10
-                #:on-status
-                (λ (m) (check-equal?
-                        m
-                        ($transfer:scope "anon"
-                                         ($transfer:timeout 0 1)))))))
-
-  (test-case "Reject reading too many bytes"
+                (overturn test-policy
+                          [max-size 2]
+                          [telemeter
+                           (expect-message ($transfer:timeout 0 1))]))))
+  
+  (test-case "Reject jobs that exceed the budget"
     (define bstr #"ABCDEFG")
     (define bytes/source (open-input-bytes bstr))
     (define bytes/sink (open-output-bytes))
@@ -171,15 +206,10 @@
      (call/cc
       (λ (return)
         (transfer bytes/source bytes/sink
-                  #:transfer-name "anon"
-                  #:buffer-size 5
-                  #:timeout-ms 1
-                  #:max-size 1
-                  #:est-size 1
-                  #:on-status
-                  (λ (m)
-                    (match m
-                      [($transfer:scope "anon"
-                                        ($transfer:budget:exceeded 1 4))
-                       (return #t)]
-                      [_ (void)]))))))))
+                  (P [buffer-size 5]
+                     [telemeter
+                      (λ (message)
+                        (match ($transfer:scope-message message)
+                          [($transfer:budget:exceeded 1 4)
+                           #t]
+                          [_ (void)]))])))))))
