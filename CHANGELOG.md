@@ -22,7 +22,7 @@ This project follows [these versioning rules](https://sagegerard.com/edition-rev
 - Make catalogs more useful: Request packages using a base URL and/or
   highly-abbreviated queries
 - Add setting for trusting server certificates outside of the OS trust store.
-- Refactor to allow dynamically-computed inputs
+- Refactor to allow dynamically-computed inputs, and user-defined discovery information
 
 
 ## [draft:beta] - 2021-03-17
