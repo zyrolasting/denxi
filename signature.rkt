@@ -110,7 +110,6 @@
 
 (module+ test
   (require rackunit
-           (submod "state.rkt" test)
            (submod "integrity.rkt" test))
 
   (define pubkey-bytes #"pubkey")
