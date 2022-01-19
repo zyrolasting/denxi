@@ -51,3 +51,4 @@ For all documentation, see @other-doc[denxi-index].
 @include-section{modules/sequence.scrbl}
 @include-section{modules/known.scrbl}
 @include-section{modules/base.scrbl}
+@include-section{modules/exn.scrbl}
