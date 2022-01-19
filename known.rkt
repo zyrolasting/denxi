@@ -9,6 +9,8 @@
            (-> known? boolean?)]
           [known-add-name
            (-> known? string? (-> any) any)]
+          [known-forget-names
+           (-> known? void?)]
           [known-by
            (-> known? (-> any) any)]
           [known-open-output
@@ -18,7 +20,10 @@
           [known-open-input
            (-> known? (subprogram/c
                        (case-> (-> output-port? transfer-policy? void?)
-                               (-> void?))))]))
+                               (-> void?))))]
+          [replace-known-bytes
+           (-> known? (-> output-port? void?) (subprogram/c void?))]))
+
 
 
 (require racket/generic
@@ -49,7 +54,6 @@
     (check-true (known-elsewhere? k))
     (check-equal? (added) (list canonical-name alias))
 
-    
     (check-subprogram (mdo f := (known-open-input k)
                            (let-values ([(i o) (make-pipe)])
                              (f o full-trust-transfer-policy)
@@ -57,8 +61,7 @@
                              (subprogram-unit (port->bytes i))))
                       (λ (bstr)
                         (check-equal? bstr #"initial")))
-    
-    
+
     (check-subprogram (mdo f := (known-open-output k)
                            (begin0 (subprogram-unit (f (open-input-string alias)
                                                        full-trust-transfer-policy))
@@ -70,6 +73,7 @@
 
 (define-generics known
   [known-add-name known name fail]
+  [known-forget-names known]
   [known-by known fail]
   [known-open-output known]
   [known-open-input known])
@@ -104,6 +108,10 @@
          (set-memory-known-aliases! k (cons name (memory-known-aliases k)))
          (set-memory-known-name! k name)))
 
+   (define (known-forget-names k)
+     (set-memory-known-name! k #f)
+     (set-memory-known-aliases! k null))
+
    (define (known-open-output k)
      (subprogram
       (λ (value messages)
@@ -112,7 +120,7 @@
         (define-values (i o) (make-pipe))
         (values (case-lambda [()
                               (flush-output o)
-                              (close-output-port o)                              
+                              (close-output-port o)
                               (set-memory-known-data! k (port->bytes i))
                               (semaphore-post semaphore)]
                              [(in policy)
