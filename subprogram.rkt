@@ -104,7 +104,7 @@
      (values FAILURE
              (cons (if ($message? e)
                        e
-                       ($show-string (exn->string e)))
+                       ($show-string (format-value e)))
                    m)))))
 
 (define (subprogram-branch #:discard? [discard? #f] test other)
