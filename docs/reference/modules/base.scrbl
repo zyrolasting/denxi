@@ -5,8 +5,8 @@
 @title{Base}
 
 @defmodule[denxi/base] reprovides @racketmodname[racket/base] and
-@racketmodname[racket/contract]. It is used internally as an
-@racket[s-exp] language to help abbreviate Denxi modules.
+@racketmodname[racket/contract]. It is used internally to extend
+various modules in the @tt{racket} collection.
 
 @defform[(reprovide module-path ...)]{
 @racket[require] and @racket[provide] all bindings in each

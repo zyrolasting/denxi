@@ -6,6 +6,6 @@
          ...))
 
 (provide reprovide)
+
 (reprovide racket/base
-           racket/contract
-           "message.rkt")
+           racket/contract)
