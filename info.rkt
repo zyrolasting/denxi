@@ -31,5 +31,5 @@
   '(("docs/index/denxi-index.scrbl" () (tool))
     ("docs/reference/denxi-reference.scrbl" (multi-page) (tool-library))
     ("docs/guide/denxi-guide.scrbl" () (tool))
-    ("docs/journal/denxi-journal.scrbl" (multi-page) (other))
-    ("docs/white-paper/denxi-white-paper.scrbl" () (other))))
+    ("docs/journal/denxi-journal.scrbl" (multi-page) (omit))
+    ("docs/white-paper/denxi-white-paper.scrbl" () (omit))))
