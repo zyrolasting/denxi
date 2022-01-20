@@ -1,5 +1,6 @@
-#lang s-exp "base.rkt"
+#lang racket/base
 
+(require racket/contract)
 (provide state?
          (contract-out
           [state-contents

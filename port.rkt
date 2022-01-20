@@ -1,8 +1,11 @@
-#lang s-exp "base.rkt"
+#lang racket/base
 
-(reprovide racket/port)
+(require racket/contract
+         racket/port
+         "message.rkt")
 
-(provide (struct-out transfer-policy)
+(provide (all-from-out racket/port)
+         (struct-out transfer-policy)
          (contract-out
           [full-trust-transfer-policy
            transfer-policy/c]
@@ -27,7 +30,8 @@
 (define+provide-message $transfer:budget:exceeded $transfer:budget (overrun-size))
 (define+provide-message $transfer:budget:rejected $transfer:budget (proposed-max-size))
 
-(require racket/match "string.rkt")
+(require racket/match
+         "string.rkt")
 
 (struct transfer-policy
    (buffer-size

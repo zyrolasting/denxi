@@ -65,7 +65,6 @@
 (module+ test
   (require racket/function
            rackunit
-           (submod "state.rkt" test)
            (submod "subprogram.rkt" test)
            "file.rkt"
            "setting.rkt"))

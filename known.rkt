@@ -1,5 +1,6 @@
-#lang s-exp "base.rkt"
+#lang racket/base
 
+(require racket/contract)
 (provide gen:known
          (contract-out
           [known? predicate/c]

@@ -1,5 +1,6 @@
-#lang s-exp "base.rkt"
+#lang racket/base
 
+(require racket/contract)
 (provide (contract-out
           [canon/c contract?]
           [default-canon canon/c]
