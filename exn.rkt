@@ -1,8 +1,12 @@
-#lang s-exp "base.rkt"
+#lang racket/base
 
-(reprovide racket/exn)
+(require racket/contract
+         racket/exn
+         racket/function
+         (for-syntax racket/base))
 
-(provide pitch
+(provide (all-from-out racket/exn)
+         pitch
          (contract-out
           [dynamic-pitch
            (->* (#:catcher
@@ -15,9 +19,6 @@
                 (#:umpire procedure?)
                 any)]))
                 
-
-(require racket/function
-         (for-syntax racket/base))
 
 (module+ test
   (require rackunit)

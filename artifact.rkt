@@ -4,6 +4,9 @@
          "integrity.rkt"
          "signature.rkt")
 
+(define (reimplement/c v)
+  (error "Reimplement (contract)"))
+
 (provide
  (struct-out artifact)
  (struct-out $artifact)
@@ -12,16 +15,17 @@
  (contract-out
   [install-artifact
    (-> artifact?
-       path-string?
-       (subprogram/c (cons/c path-record? path-record?)))]
+       reimplement/c
+       reimplement/c
+       (subprogram/c reimplement/c))]
   [verify-artifact
    (-> artifact?
-       path-record?
+       reimplement/c
        (subprogram/c void?))]
   [fetch-artifact
    (-> string?
        artifact?
-       (subprogram/c path-record?))]
+       (subprogram/c reimplement/c))]
   [make-artifact
    (->* (source-variant?)
         ((or/c #f integrity?)
@@ -65,31 +69,28 @@
   (artifact source integrity signature))
 
 
-(define (install-artifact arti link-path)
-  (mdo file-record := (fetch-artifact (format "~a" link-path) arti)
-       (verify-artifact arti file-record) ; Security critical
-       (subprogram-unit (cons (make-addressable-link file-record link-path)
-                              file-record))))
+(define (install-artifact arti state-key reference-key)
+  (mdo known := (fetch-artifact state-key arti)
+       (verify-artifact arti known)
+       (void)
+       (subprogram-unit (cons reference-key known))))
 
 
-(define (verify-artifact arti record)
-  (mdo (check-artifact-integrity arti (path-record-path record))
-       (check-artifact-signature arti (path-record-path record))
+(define (verify-artifact arti known)
+  (mdo (check-artifact-integrity arti known)
+       (check-artifact-signature arti known)
        (subprogram-unit (void))))
 
 
 (define (fetch-artifact name arti)
-  (subprogram-fetch name
-                    (coerce-source (artifact-source arti))
-                    (λ (in est-size)
-                      (make-addressable-file
-                       #:cache-key (make-source-key (coerce-source (artifact-source arti)))
-                       #:max-size (mebibytes->bytes (DENXI_FETCH_TOTAL_SIZE_MB))
-                       #:buffer-size (mebibytes->bytes (DENXI_FETCH_BUFFER_SIZE_MB))
-                       #:timeout-ms (DENXI_FETCH_TIMEOUT_MS)
-                       #:on-status (make-on-status (current-message-formatter))
-                       name
-                       in est-size))))
+  (error "Reimplement.")
+  #;(state-allot (current-state)
+               (coerce-source (artifact-source arti))
+               (struct-copy transfer-policy zero-trust-transfer-policy
+                            [max-size (mebibytes->bytes (DENXI_FETCH_TOTAL_SIZE_MB))]
+                            [buffer-size (mebibytes->bytes (DENXI_FETCH_BUFFER_SIZE_MB))]
+                            [timeout-ms (DENXI_FETCH_TIMEOUT_MS)]
+                            [telemeter (make-on-status (current-message-formatter))])))
 
 
 (define (lock-artifact #:content? [content? #t]
@@ -136,7 +137,7 @@
       (write-message #:newline? #f m formatter)))
 
 
-(define-subprogram (check-artifact-integrity arti workspace-relative-path)
+(define-subprogram (check-artifact-integrity arti reference)
   (match-define (artifact content int sig) arti)
   (define-values (int/use chf)
     (if (well-formed-integrity? int)
@@ -149,7 +150,9 @@
      (make-user-chf-trust-predicate)
      int/use
      (and chf
-          (make-digest (build-workspace-path workspace-relative-path)
+          (make-digest (state-ref (current-state)
+                                  reference
+                                  (λ () ($fail #f)))
                        (integrity-chf-symbol (artifact-integrity arti))))))
   ($attach (or (integrity-check-passed? status) FAILURE)
            ($artifact:integrity status chf)))
@@ -187,33 +190,33 @@
            (submod "state.rkt" test)
            (submod "subprogram.rkt" test))
 
-  (test-workspace "Fetch artifacts"
-                  (define data #"abc")
-                  (parameterize ([current-output-port (open-output-nowhere)])
-                    (call-with-snake-oil-chf-trust
-                     (λ ()
-                       (check-subprogram
-                        (fetch-artifact "anon" (make-artifact (byte-source data)))
-                        (λ (record messages)
-                          (check-pred path-record? record)
-                          (check-equal? (file->bytes (path-record-path record)) data)
-                          (test-case "Verify artifacts"
-                            (define intinfo
-                              (make-trusted-integrity data))
-                            (define siginfo
-                              (make-snake-oil-signature
-                               (integrity-digest intinfo)
-                               (integrity-chf-symbol intinfo)))
-                            (define arti
-                              (artifact (byte-source data) intinfo siginfo))
-                            (check-subprogram (verify-artifact arti record)
-                                              (λ (result messages)
-                                                (check-equal? result FAILURE)))
-                            (call-with-snake-oil-cipher-trust
-                             (λ ()
-                               (check-subprogram (verify-artifact arti record)
-                                                 (λ (result messages)
-                                                   (check-pred void? result))))))))))))
+  (test-state "Fetch artifacts"
+              (define data #"abc")
+              (parameterize ([current-output-port (open-output-nowhere)])
+                (call-with-snake-oil-chf-trust
+                 (λ ()
+                   (check-subprogram
+                    (fetch-artifact "anon" (make-artifact (byte-source data)))
+                    (λ (record messages)
+                      (check-pred input-port? record)
+                      (check-equal? (file->bytes record) data)
+                      (test-case "Verify artifacts"
+                        (define intinfo
+                          (make-trusted-integrity data))
+                        (define siginfo
+                          (make-snake-oil-signature
+                           (integrity-digest intinfo)
+                           (integrity-chf-symbol intinfo)))
+                        (define arti
+                          (artifact (byte-source data) intinfo siginfo))
+                        (check-subprogram (verify-artifact arti record)
+                                          (λ (result messages)
+                                            (check-equal? result FAILURE)))
+                        (call-with-snake-oil-cipher-trust
+                         (λ ()
+                           (check-subprogram (verify-artifact arti record)
+                                             (λ (result messages)
+                                               (check-pred void? result))))))))))))
 
   (test-case "Lock artifacts"
     (define with-content
