@@ -3,35 +3,17 @@
 ; Extend file system operations
 
 (require racket/contract)
-(provide (except-out (all-defined-out)
-                     make-content-address
-                     scan-all-filesystem-content
-                     current-content-scanner)
-         (contract-out
-          [make-content-address
-           (-> (or/c file-exists?
-                     directory-exists?
-                     link-exists?)
-               bytes?)]
-          [scan-all-filesystem-content
-           (-> path-string? input-port?)]
-          [current-content-scanner
-           (parameter/c (-> path-string? input-port?))])
+(provide (all-defined-out)
          (all-from-out racket/file))
 
 (require file/glob
          racket/file
-         racket/format
          racket/function
          racket/generator
-         racket/port
          racket/sequence
-         "codec.rkt"
-         "integrity/base.rkt"
          "message.rkt"
          "path.rkt"
-         "subprogram.rkt"
-         "url.rkt")
+         "subprogram.rkt")
 
 (define+provide-message $path-not-found (pattern wrt))
 
@@ -49,6 +31,7 @@
   (with-handlers ([exn? (λ (e) ($fail ($path-not-found variant wrt)))])
     (sequence-ref (in-paths variant wrt) 0)))
 
+
 (define (in-paths variant [wrt (current-directory)])
   (sequence-filter (cond [(or (regexp? variant)
                               (pregexp? variant)
@@ -60,6 +43,7 @@
                             (parameterize ([current-directory wrt])
                               (glob-match? variant p)))])
                    (in-directory wrt)))
+
 
 (define (delete-file* path)
   (when (or (file-exists? path) (link-exists? path))
@@ -117,51 +101,27 @@
 
 
 (define (call-with-temporary-directory f #:cd? [cd? #t] #:base [base #f])
-  (when base (make-directory* base))
-  (define tmp-dir (make-temporary-file "rktdir~a" 'directory base))
-  (dynamic-wind void
-                (λ () (parameterize ([current-directory (if cd? tmp-dir (current-directory))])
-                        (f tmp-dir)))
-                (λ ()
-                  (when (directory-exists? tmp-dir)
-                    (delete-directory/files tmp-dir)))))
+  (let ([path #f])
+    (dynamic-wind (λ ()
+                    (when base (make-directory* base))
+                    (set! path (make-temporary-file "rktdir~a" 'directory base)))
+                  (λ ()
+                    (parameterize ([current-directory (if cd? path (current-directory))])
+                      (f path)))
+                  (λ ()
+                    (when (and path (directory-exists? path))
+                      (delete-directory/files path))))))
+
 
 (define (call-with-temporary-file proc)
-  (define tmp (make-temporary-file "~a"))
-  (dynamic-wind void
-                (λ () (proc tmp))
-                (λ () (delete-file tmp))))
+  (let ([path #f])
+    (dynamic-wind (λ ()
+                    (set! path (make-temporary-file "~a")))
+                  (λ ()
+                    (proc path))
+                  (λ ()
+                    (delete-file path)))))
 
 
 (define-syntax-rule (with-temporary-directory body ...)
-  (call-with-temporary-directory
-   (λ (tmp-dir) body ...)))
-
-(define+provide-message $no-content-to-address (path))
-
-
-;-------------------------------------------------------------------------------
-; Content addressing
-
-(define (make-content-address path)
-  (make-digest ((current-content-scanner) path)
-               (get-default-chf)))
-
-(define (scan-all-filesystem-content path)
-  (define (open-permissions)
-    (open-input-string (~a (file-or-directory-permissions path 'bits))))
-  (apply input-port-append #t
-         (open-input-string (~a (file-name-from-path path)))
-         (cond [(link-exists? path)
-                null]
-               [(file-exists? path)
-                (list (open-permissions)
-                      (open-input-file path))]
-               [(directory-exists? path)
-                (cons (open-permissions)
-                      (map scan-all-filesystem-content
-                           (directory-list path #:build? #t)))]
-               [else (raise ($no-content-to-address path))])))
-
-(define current-content-scanner
-  (make-parameter scan-all-filesystem-content))
+  (call-with-temporary-directory (λ _ body ...)))
