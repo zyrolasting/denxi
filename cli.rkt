@@ -89,7 +89,7 @@
                                  #:trust-any-executable? (DENXI_TRUST_ANY_EXECUTABLE)
                                  #:trust-certificates (DENXI_TRUST_CERTIFICATES)
                                  #:implicitly-trusted-host-executables (DENXI_TRUST_HOST_EXECUTABLES)
-                                 #:workspace (build-workspace-path)
+                                 #:writeable-directories null
                                  #:gc-period 30
                                  #:name name)
                        (planned halt)))))))
