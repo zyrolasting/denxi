@@ -97,13 +97,7 @@
 
 (struct package
   (description
-   tags
    url
-   provider
-   name
-   edition
-   revision-number
-   revision-names
    os-support
    racket-versions
    metadata

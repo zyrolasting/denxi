@@ -13,7 +13,6 @@
          coerce-source
          define
          description
-         edition
          extract
          extract-input
          file-source
@@ -33,22 +32,17 @@
          lines-source
          mdo
          metadatum
-         name
          os-support
          output
          path-matching
-         provider
          quote
          racket-versions
          release-input
          resolve-input
-         revision-names
-         revision-number
          run
          signature
          sources
          string-append
-         tags
          text-source
          url
          (rename-out [#%module-begin* #%module-begin]))
@@ -167,9 +161,6 @@
 
 (define-modifier (description desc:non-empty-string ...+)
   (set-field* description (string-join '(desc ...) "")))
-
-(define-modifier (edition name:non-empty-string)
-  (set-field* edition name))
 
 (define-modifier (input name:non-empty-string . means)
   (λ (st)

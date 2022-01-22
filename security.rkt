@@ -46,7 +46,7 @@
                   #:trust-any-executable? trust-any-executable?
                   #:implicitly-trusted-host-executables implicitly-trusted-host-executables
                   #:trust-certificates trust-certificates
-                  #:workspace workspace
+                  #:writeable-directories writeable-directories
                   #:gc-period gc-period
                   #:name [name (or (object-name proc) "")])
   (call-with-managed-thread (make-gc-thread gc-period)
@@ -62,8 +62,8 @@
                                  #:name name
                                  #:trust-any-executable? trust-any-executable?
                                  #:trust-executables trusted-executables
-                                 #:trust-host-executables implicitly-trusted-host-executables
-                                 #:workspace workspace))
+                                 #:writeable-directories writeable-directories
+                                 #:trust-host-executables implicitly-trusted-host-executables))
 
                               (call-with-managed-thread
                                (make-worker-thread name
@@ -180,24 +180,24 @@
 (define (make-custom-security-guard #:name name
                                     #:trust-any-executable? trust-any-executable?
                                     #:trust-executables trust-executables
-                                    #:trust-host-executables trust-host-executables
-                                    #:workspace [ws (build-workspace-path)])
+                                    #:writeable-directories writeable-directories
+                                    #:trust-host-executables trust-host-executables)
   (make-security-guard
    (current-security-guard)
    (make-file-guard #:trust-any-executable? trust-any-executable?
                     #:trust-host-executables trust-host-executables
                     #:trust-executables trust-executables
-                    #:writeable-directories (get-writeable-workspace-directories ws)
+                    #:writeable-directories writeable-directories
                     name)
    (make-network-guard name)
-   (make-link-guard name ws)))
+   (make-link-guard name writeable-directories)))
 
 
 
 (define (make-file-guard #:trust-any-executable? trust-any-executable?
                          #:trust-host-executables trust-host-executables
                          #:trust-executables trust-executables
-                         #:writeable-directories write-dirs
+                         #:writeable-directories writeable-directories
                          name)
   (let ([trust-executable? (make-executable-trust-predicate trust-any-executable?
                                                             trust-executables
@@ -205,7 +205,7 @@
     (λ (sym path-or-#f ops)
       (define (check-destructive-op op path)
         (define test (curry path-prefix? (normalize-path path)))
-        (unless (ormap test write-dirs)
+        (unless (ormap test writeable-directories)
           (raise ($restrict:operation name 'file op (list sym path-or-#f ops)))))
 
       (when path-or-#f
@@ -249,11 +249,6 @@
                                   (list op link-path target-path))))))
 
 
-(define (get-writeable-workspace-directories [wd (build-workspace-path)])
-  (list (current-directory)
-        wd))
-
-
 
 (module+ test
   (require racket/match
@@ -276,12 +271,6 @@
 
   (define (station-link-guard l p)
     (station-security-guard void void l p))
-
-  (test-case "Prescribe write directories per-workspace"
-    (define writeables (get-writeable-workspace-directories))
-    (check-pred (non-empty-listof complete-path?) writeables)
-    (check-equal? (get-writeable-workspace-directories (build-workspace-path))
-                  writeables))
 
   (test-case "Terminate thread at end of procedure"
     (define useless (thread (λ () (sync never-evt))))

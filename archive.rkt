@@ -65,9 +65,9 @@
   (require rackunit
            racket/port
            "artifact.rkt"
+           "file.rkt"
            "integrity.rkt"
            "source.rkt"
-           (submod "state.rkt" test)
            (submod "subprogram.rkt" test))
 
   (define (make-file path-string)
@@ -100,7 +100,7 @@
       (check-pred eof-object? (read-byte i))))
 
 
-  (test-workspace "Can pack and unpack an archive"
+  (with-temporary-directory "Can pack and unpack an archive"
     (define dir/ (build-path "input-dir"))
     (make-directory dir/)
     (define input-a (make-file "input-dir/a"))

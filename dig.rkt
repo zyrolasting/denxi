@@ -5,13 +5,16 @@
 (define shovel/c
   (-> any/c (subprogram/c artifact?)))
 
+(define (reimplement/c v)
+  (error "Reimplement (contract)"))
+
 (provide
  (contract-out
   [install-found-artifact
    (->* (any/c
          path-string?)
         (shovel/c)
-        (subprogram/c (cons/c path-record? path-record?)))]
+        (subprogram/c (cons/c reimplement/c reimplement/c)))]
   [find-artifact
    (->* (any/c)
         (shovel/c)

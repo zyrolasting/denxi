@@ -11,7 +11,6 @@ For all documentation, see @other-doc[denxi-index].
 @table-of-contents[]
 
 @include-section{background.scrbl}
-@include-section{modules/canon.scrbl}
 @include-section{modules/cli.scrbl}
 @include-section{modules/cmdline.scrbl}
 @include-section{modules/cli-flag.scrbl}

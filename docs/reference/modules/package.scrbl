@@ -21,32 +21,20 @@
 @defmodule[denxi/package]
 
 @defstruct*[package ([description string?]
-                     [tags (listof non-empty-string?)]
                      [url url-string?]
-                     [provider non-empty-string?]
-                     [name non-empty-string?]
-                     [edition non-empty-string?]
-                     [revision-number revision-number?]
-                     [revision-names (listof non-empty-string?)]
                      [os-support (listof symbol?)]
                      [racket-versions (listof (list/c non-empty-string?))]
                      [metadata (hash/c symbol? string?)]
                      [inputs (listof package-input?)]
-                     [outputs (listof package-output?)])]{
+                     [outputs (listof package-output?)]
+                     [logomorphisms (listof symbol?)])]{
 A @deftech{package} is an instance of @racket[package].
 
 @racket[description] is a human-readable summary of the package's purpose.
 
-@racket[tags] is a list of human-readable topics used for discovery.
-
 @racketid[url] is the primary, or canonical URL used to guide a user
 towards more information (as opposed to secondary URLs that may appear
 in @racket[metadata]).
-
-@racket[provider] is the name of the allegedly responsible
-distributor.
-
-@racket[name] is the name of the package.
 
 @racket[edition], @racket[revision-number], and
 @racket[revision-names] are the package's @tech{edition},
@@ -57,29 +45,32 @@ distributor.
 element of @racket[os-support], then Denxi will not install the
 package.
 
-@racket[racket-versions] is a list of Racket version ranges that
-should be interpreted as a set of supported Racket versions. If
-@racket[(version)] is not an element of any version interval, then
-assume that the software created with @racket[build] will not
-function with the running version of Racket.
+@racket[racket-versions] is a list of Racket version ranges.
+@racket[(version)] must be an element of at least one range for the
+runtime to build any element of @racket[outputs].
 
 @racket[metadata] is a hash table of user-defined metadata.  In the
 event entries of this table appear redundant with other structure
 fields, prefer the values in the structure fields.
 
-@racket[inputs] is a list of @tech{package inputs}.
+@racket[inputs] and @racket[outputs] are @tech{package inputs} and
+@tech{package outputs}.
 
-@racket[outputs] is a list of defined @tech{package outputs}.
+@racket[logomorphisms] holds keys used in @racket[metadata]. For some
+key @racketid[K] and package @racketid[P], @racket[(hash-ref
+(package-metadata P) K)] is a text that contributes to the logical
+identity of the package, in the package author's own words. Use
+@racketmodname[denxi/canon] to construct a logical identity in a
+dependent's own words.
 
-A function that maps output names to subprograms in @racket[outputs] is
-surjective, but might not be injective. Denxi does not distinguish the
-two, meaning that non-injective lookups will create redundant data on
-disk (Denxi assumes that different output names imply different file
-distributions). When non-surjective, then an output's
+A function that maps output names to subprograms in @racket[outputs]
+is surjective, but might not be injective. Denxi assumes that
+different output names imply different identities, even for duplicate
+data. A non-surjective lookup means, then an output's
 @tech{subprogram} might be inaccessible.  This can happen if a
-@racket[package] instance is manually created with faulty data.
-Bijective lookups do not have these problems, and they are easy to
-make using @racketmodname[denxi/pkgdef].
+@racket[package] instance is manually created with faulty data. Use
+@racketmodname[denxi/pkgdef] to easily create bijective lookups that
+do not have these problems.
 }
 
 @defthing[empty-package package?]{

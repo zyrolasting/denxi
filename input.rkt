@@ -96,23 +96,20 @@
            messages))))
 
 (define (resolve-input input)
-  (mdo file-record  := (fetch-input input)
-       link-name    := (subprogram-unit (package-input-name input))
+  (mdo file-record    := (fetch-input input)
+       reference-name := (subprogram-unit (package-input-name input))
        (subprogram
         (λ (messages)
-          (make-file-or-directory-link
-           (find-relative-path
-            (current-directory)
-            (build-workspace-path (path-record-path file-record)))
-           link-name)
-          (values link-name
+          (error "Add reference-name as an alias")
+          (values reference-name
                   messages)))))
 
 (define-source #:key get-untrusted-source-key (untrusted-source [input package-input?])
+  (error "Replace with an implementation that taps into a known blob.")
   (define subprogram
     (mdo record := (fetch-input input)
          (subprogram-unit
-          (%fetch (file-source (build-workspace-path (path-record-path record)))))))
+          (%fetch null))))
   (define-values (result messages) (run-subprogram subprogram null))
   (when (eq? result FAILURE)
     (%fail messages)))

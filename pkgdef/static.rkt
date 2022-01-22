@@ -23,8 +23,6 @@
            (->* (racket-module-input-variant/c)
                 (subprogram/c syntax?))]
           [bare-pkgdef? flat-contract?]
-          [get-static-abbreviated-query
-           (-> bare-pkgdef? package-query?)]
           [get-static-inputs
            (-> bare-pkgdef? list?)]
           [get-static-outputs
@@ -35,10 +33,6 @@
            (-> bare-pkgdef? symbol? any/c any/c)]
           [get-static-simple-string
            (-> bare-pkgdef? symbol? any/c)]
-          [get-static-exact-package-query
-           (->* (bare-pkgdef?)
-                (package-query-defaults-implementation/c)
-                exact-package-query?)]
           [replace-input-expression
            (-> bare-pkgdef?
                non-empty-string?
@@ -73,19 +67,6 @@
 
 ;-------------------------------------------------------------------------------
 ; Static analysis
-
-(define (get-static-exact-package-query stripped [defaults default-package-query-defaults])
-  (let* ([get (λ (id [default ""]) (get-static-simple-value stripped id default))]
-         [revision-number (format "~a" (get 'revision-number 0))])
-    (autocomplete-parsed-package-query
-     default-package-query-defaults
-     (parsed-package-query
-      (get 'provider)
-      (get 'package)
-      (get 'edition)
-      revision-number
-      revision-number
-      "ii"))))
 
 (define (get-static-input-name stx)
   (syntax-case stx (input) [(input name . xs) (syntax-e #'name)] [_ #f]))
@@ -179,49 +160,6 @@
                   (if (equal? (get-static-input-name form) input-name)
                       input-expr
                       form))]))
-
-
-(define-subprogram (read-package-query stripped defaults)
-  (define (parse v) (get-static-simple-value stripped v))
-  (define provider
-    (parse 'provider (get-default-provider defaults)))
-  (define package
-    (parse 'package (get-default-package defaults provider)))
-  (define edition
-    (parse 'edition (get-default-edition defaults provider package)))
-  (define revision-min
-    (number->string
-     (parse 'revision-number
-            (get-default-min-revision
-             defaults
-             provider
-             package
-             edition))))
-  (define revision-max
-    (number->string
-     (parse 'revision-number
-            (get-default-max-revision
-             defaults
-             provider
-             package
-             edition
-             revision-min))))
-  ($use (parsed-package-query provider
-                              package
-                              edition
-                              revision-min
-                              revision-max
-                              "ii")))
-
-
-(define (get-package-definition-revision-names stx)
-  (syntax-case stx (revision-names)
-    [((revision-names . names) . xs)
-     (syntax->datum #'names)]
-    [(x . xs)
-     (get-package-definition-revision-names #'xs)]
-    [_
-     null]))
 
 
 

@@ -136,8 +136,7 @@
 
 
 (module+ test
-  (require rackunit
-           "file.rkt")
+  (require rackunit)
 
   (define from-nothing (open-input-bytes #""))
   (define to-nowhere (open-output-nowhere))
