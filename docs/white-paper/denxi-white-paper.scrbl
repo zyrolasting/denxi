@@ -15,177 +15,168 @@ handles them.
 For all documentation, see @other-doc[denxi-index].
 
 
-@section{Why You Should Care About Software Distribution}
+@section{Why Care About Denxi?}
 
 @(define tesla-link "https://teslamotorsclub.com/tmc/threads/car-wont-start-after-software-update.220433/")
 
-Software distribution is a nasty problem domain that affects every
-user regardless of technical skill. Even laypersons will find
-themselves unable to @hyperlink[tesla-link]{start their cars} after a
-bad update.
+I wrote Denxi to change what I believe is a dysfunctional social
+arrangement. Today, tech companies and departments connect directly to
+your devices to service them. This is far better than sending out
+fleets of CDs, floppy disks, or cartridges. Unfortunately, this level
+of access to our homes brought privacy and stability problems.  If we
+were still buying software on CDs today, would you let the people who
+made those CDs come to your house to watch what you do with your copy?
+Would you let them sneak into your home to replace your copy of a CD
+with another, with changes you do not understand?  If not, then I have
+bad news about all of the applications you are using.
 
-@secref{scenarios} shows that there are so many ways software
-distribution can go wrong. I believe that a better approach is a free,
-open source, self-hosting model.  The model must adapt to the
-subjective and contextual expectations of how it should install,
-update, or upgrade any program. The only way to do that is to let
-users replace its entry point, and invest heavily in flexible,
-cohesive libraries.
+Tech companies will never go back to the old ways of distribution.
+There's too much data to sell and corrolate. Meanwhile, Tesla drivers
+can't @hyperlink[tesla-link]{start their cars} after a bad
+update. That and many other @secref{scenarios} show a toxic pattern,
+to which Denxi is a response.
 
-I wrote Denxi initially as a reaction to limitations of @tt{raco pkg},
-but it grew more aspirational. Denxi is now a reaction to any program
-that acts like a middleman to deliver content to you, especially
-itself (@secref{competition}). Take Steam and YouTube. These are
-dramatically different platforms, but they are both middlemen that
-ship and recieve data in a way that protects their owner's interests
-while gratifying your appetite.  You have limited control over how
-these platforms behave on your devices, because you aren't in the
-supply chain. My goal is to give you control by making these middlemen
-easier to replace.
+I wrote Denxi because I am tired of businesses and communities
+enforcing their legitimate interests at the cost of the people they
+claim to serve.
 
+Take YouTube. YouTuve uses ads, marketing research, and other forms of
+torture to monetize what would otherwise be freeloading. Even if you
+pay to remove ads, you are still constantly monitored. Your experience
+and enjoyment of life is not private, and the people who watch you act
+as if your transparency is owed to them. Ask them where your data appears
+in their infrastructure, and you'll learn that's a secret.
 
-@section{Intended Experience}
+This unbalanced relationship remains the same, whether you use YouTube
+or even a free (as in "speech") software offering. I wrote Denxi more
+as an immediate reaction to @litchar{raco pkg}, a front end for a
+package management system I am actively trying to leave.
 
-When you create a symbolic link---or a shortcut on Windows---you
-normally point the link to a target location that already has a file,
-directory, or link.
+But in writing Denxi I learned that YouTube, Netflix, Spotify, Steam,
+Roku channels, package managers, launchers, etc. are all economic
+middlemen that each grant limited access to some portfolio of
+copyrighted content. That would be find if the clients were not
+written exclusively by the shippers. To the surprise of those who fail
+to read terms, users end up locked out of the supply chain connected
+directly to their own devices, and sacrifice control according to the
+whims of unknown third parties.
 
-@verbatim|{
-ln -s ~/scanner scanner
-ln -s ~/scribble scribble
-ln -s ~/watch watch
-}|
+Denxi grew from a specific reaction to @litchar{raco pkg} into an
+attempt to abstract over the anthropological act of distributing
+content (See @secref{competition}). Denxi sits in the same “spot” as
+your copy of Steam, Spotify, or Netflix, but does nothing by
+default. It is entirely subservient to your explicit, affirmative
+consent regarding its own behavior. With Denxi, you completely control
+the receiving side of a shipment on your device, regardless of how the
+shipment is done.
 
-All of the above targets must exist if we want the links to work, but
-the targets could contain anything. The point of dependency management
-is to correctly reproduce the targets you @italic{meant}.
+The act of getting data from a server to a client is not something the
+owner of a server has to do, and it's probably better if they
+don't. That means we need a way to rapidly update client-side code, in
+a process a non-technical user initiates. Denxi is meant to serve this
+use case, such that businesses may no longer use the server-client
+model as a way to gain leverage over their own customers.
 
-This code block shows @litchar{my-denxi}, a hypothetical launcher.
-The behavior of the command is roughly equivalent to the @tt{ln}
-commands in the commented lines. The key difference is that Denxi
-transactions is atomic, deterministic, and full of safety checks.  The
-similarity is that they defer the decision of what to link. This is
-necessary because a user installing software has functional
-expectations, but we don't know how they would be met at the time the
-user types the command. We still need to discuss network conditions,
-security threats, data integrity, naming conflicts, dependency hell,
-and many other details that thwart simple plans.
+I designed Denxi such that non-technical users may hire independent
+developers to hook up a service to a client in the same way one might
+ask an electrician to run a wire behind a wall.  I hope to see more
+independent developers make money with Denxi in this way, so that
+customer-facing developers are rewarded for serving customers
+directly.
 
-@verbatim|{
-# ln -s "$(semver scanner@8.4.x)" scanner
-# ln -s "$(github racket/scribble)" scribble
-# ln -s "$(urn watch:latest)" watch
+Under Denxi, anyone can provide a client that reflects what the
+client's owner personally allows for any device that supports
+Racket. The client's source code would be small and easy to audit,
+because it primarily contains trust information. This decouples the
+shipping side from the receiving side, and places responsibility for
+receiving directly on the user. Any client written with Denxi can be
+freely and easily swapped with another. If you need to use a custom
+protocol, the implementation of that protocol can be shipped to your
+device using Denxi as well.
 
+Denxi is not a package manager, but it can easily create package
+managers. This is because Denxi doesn't favor any one idiom, protocol,
+or server. It does, however, understand dependency management and all
+of the nastiness that comes up when trying to ship software from one
+place to another. It also understands subjectivity, in that a
+dependent's expectations of a dependency are not the same as a
+dependency's expectations of a dependent. Servers and clients can
+behave as they normally do, but the end-user has irrevocable control
+over all aspects of how data arrives on their system. The shipper is
+assumed to have no right, obligation, or excuse to comment on the
+user's boundaries.
 
-./my-denxi do +d scanner scanner@8.4.x \
-              +d github racket/scribble \
-              +d watch watch:latest
-}|
-
-Installation, updates, and rollbacks come down to making more
-links. Reproducing dependencies means running the same
-transaction. Once you finish using Denxi, you can write code as if
-resolved dependencies are normal local files. To uninstall software,
-delete the links you don't want and tell Denxi to delete everything
-without any incoming links.
-
-Denxi can manage dependencies for projects written in any language
-that follows symbolic links when resolving modules or including files
-in-place.
+This is non-negotiable.
 
 
 @section[#:tag "secconv"]{On Security and Convenience}
 
-Denxi includes a zero-trust (meaning “Deny All by default”) launcher
-called @litchar{denxi}. No installations are possible with
-@litchar{denxi}'s default configuration. It takes a complicated
-command line to allow exact conditions for a transaction. In fact,
-@litchar{denxi} will become @italic{harder to use} over time. It is
-user-hostile because it represents security-consciousness in its most
-extreme form for a high-level language. This is useful for generating
-more convenient interfaces later, because most concepts in Denxi can
-be reified as values in memory.
+Denxi includes a zero-trust launcher called @litchar{denxi}. No
+installations are possible with @litchar{denxi}'s default
+configuration. It takes a complicated command line to use. In fact,
+@litchar{denxi} becomes @italic{harder to use} over time because it is
+defined as the worst user experience.
 
-If you tell Denxi to trust integrity checks that use MD5, then it
-will. You should restrict the OS-level permissions of any process
-using Denxi, but the zero-trust defaults make it harder to
-accidentally open vulnerabilities.
+I did this so that the most security-conscious use of Denxi has a
+formal identity. That makes it possible to generate a simpler CLI in
+terms of details the user does not want to consider.
+
+Denxi's attack surface consists of a single process and its runtime
+configuration. The zero-trust defaults make it harder to accidentally
+open vulnerabilities and create liabilities as a provider. The user
+must open their own security holes.
 
 The @racketmodname[denxi/launcher] DSL builds custom launchers that
-represent the line between security and convenience. Custom launchers
-are easier to use because they bake in all of the little
-annoying---yet important!---decisions that a zero-trust launcher
-requires. This protects users from many confirmation prompts while
-protecting their boundaries. You don't have to expose Denxi's full
-interface for the 10% of functionality you and your users need, but
-users can be confident that the 10% is carefully considered.
+represent a specific, subjective line between security and
+convenience. Custom launchers are easier to use because they bake in
+all of the little annoying---yet important!---decisions that a
+zero-trust launcher requires. This protects users from answering a
+long line of annoying confirmation prompts, like Windows Vista did in
+their early rollout of UAC. But launchers encode more exact boundaries
+about what you trust. You don't have to expose Denxi's full interface
+for the 10% of functionality you need, but you can be confident that
+the 10% is defined in terms of your interests.
 
-You can create confidence and organize communities by sharing custom
-launchers @italic{using} @litchar{denxi}. The custom launcher bakes in
-surgical decisions and presents a convenient interface, and
-@litchar{denxi} provides an unambiguous channel through which others
-can audit how that launcher is distributed.
+You organize communities by sharing custom launchers @italic{using}
+@litchar{denxi}. A custom launcher bakes in surgical decisions and
+presents a convenient interface, and @litchar{denxi} provides an
+unambiguous channel through which others can audit how that launcher
+is distributed.
 
 Since a Denxi launcher is just text, an end user can edit it
-themselves and repeat the whole process. Since every launcher can
-represent a communual consensus or an individual preference, each user
-can control their level of interaction with untrusted and formerly
-trusted people.
+themselves to repeat the whole process.  You don't need to wait for a
+package manager's developer to stop using SHA-1 if you can revoke
+trust in SHA-1 yourself. Since every launcher can represent a
+communual consensus or an individual preference, each user can respond
+to security incidents independently.
 
 
-@section{Handling Dependency Hell}
+@section[#:tag "competition"]{Ecosystem-Oriented Ecosystem}
 
-Denxi detects circular dependencies and limits data duplication, even
-in side-by-side installations of many different versions of the same
-software. Denxi lets users and launchers choose their own reaction to
-more difficult forms of dependency hell. For example, you can replace
+Denxi is written in Racket. Racket is a language-oriented programming
+language, which means that the surface syntax and compiler are both
+extensible using the same language they compile. I can switch between
+a logic language and a markup language and keep the same package
+manager (@litchar{raco pkg}), documentation generator (@litchar{raco
+scribble}), and so on.
 
-@itemlist[
-@item{all modules affected in a diamond dependency pattern}
-@item{insecure payloads with patched equivalents}
-@item{many different dependencies with one uniform dependency; and}
-@item{any source code distribution with a pre-built binary}
-]
-
-
-@section[#:tag "competition"]{Following Racket's Pro-Competitive Example}
-
-Denxi is written in Racket. Racket is a programming language, and
-Denxi is a software distribution tool. Both are able to adapt in
-interesting ways because they are what they easily create. Racket can
-make you your own programming language, and Denxi can make you your
-own middlemen.
-
-Denxi does not anticipate your needs because that would be a mistake.
-If a tool fails to anticipate what you want, it can't read your mind
-and reprogram itself. That's why I designed Denxi to be like Racket,
-in the sense it helps you create and prototype alternatives to Denxi
-itself.
-
-I believe Racket's package managers failed to translate the Racket
-experience to software distribution as a domain. PLaneT and
-@litchar{raco pkg} made many assumptions about how people will work
-with them, which forces the surrounding community to work according to
-those assumptions. My personal motivation to make Denxi came from
-attempting to reconcile my soaring expectations of Racket with the
-invariants of its package management system. I cannot critique
-Racket's package manangers on subjective grounds, but I also could not
-stop using them without giving up access to most of Racket's
-ecosystem. There has to be a middle ground where you can change how
-you get dependencies without isolating yourself from any community's
-content. This will involve separating the subjective parts of software
-distribution from the objective parts.
+The opposite is not true. Racket is a language-oriented langauge, but
+it does not have an ecosystem-oriented ecosystem. The result is that
+you cannot switch to a different toolchain without in some way
+isolating yourself from the Racket community. Denxi, like Racket helps
+you create and prototype alternatives to itself. Racket makes you your
+own programming languages, and Denxi makes you your own middlemen. A
+Racket+Denxi stack is capable of capturing both the technical and
+social context required to build software, because the way
+contributors share content is part of the source code.
 
 Denxi is built on the assumption that tools like it are going to keep
 proliferating, and that we should have more that are completely
-beholden to what a user expects from it. Denxi is free software, so
-that when Denxi launchers proliferate on your system, you have say
-over how they @italic{all} work, even in the strange and wonderful
-situations I itemized in @secref{scenarios}.
+beholden to what a user expects from it.
 
-Supporting experimentation and competition in this way is good for end
-users, and as @secref{secconv} explains, it's a victory for informed
-consent.
+Denxi is free software. When Denxi launchers proliferate on your
+system, you have say over how they @italic{all} work across various
+@secref{scenarios}.
 
 
 @section{Localization}
@@ -199,38 +190,27 @@ you store unlocalized messages in a file, @litchar{denxi show log}
 will present the file in the user's chosen language.
 
 At the time of this writing, Denxi only includes English as it's used
-in the United States. However, a custom launcher may use your own
-translations via @racket[format-message].
+in the United States. Go figure. However, a custom launcher may use
+your own translations.
 
 
 @section{Versioning}
 
-Denxi versions software using @tech/denxi-reference{editions} and
-@tech/denxi-reference{revisions}. Each edition has its own number line
-for revisions. Revisions may have names that each map to exactly one
-number on an edition's number line. An edition represents work for a
-target audience, and revisions model change with respect to that
-audience.
-
-Versions are subjective, so you can override how they are interpreted
-when prudent. If a set of versions identify software known to be
-insecure, the you can dynamically replace the software used by one
-version with an acceptable variant. If two names conflict, you can
-decide which is canonical. See @secref{names} for more information.
-
-The scheme allows a developer to rewrite code for a new audience
-without affecting brand expectations. Users benefit because versions
-contain discovery information, making it easier to decide what content
-is relevant for them.
-
-
-@section[#:tag "names"]{Handling Names}
-
 Names are given for subjective reasons, so Denxi recognizes no naming
-authority. Any launcher can decide what names are canonical, and what
-canonical names mean in a context-sensitive way.
+authority outside of the end-user. Canonicalization favors the
+language of the user.
 
-For example, the SHA-1 cryptographic hash function has many
+Denxi has no canonical versioning scheme, because versions impose a
+way of identifying software that they user could consider irrelevant.
+Instead, Denxi gives all installed or downloaded data a user-defined
+identity in terms of a developer's untrusted claims about the data.
+
+If you tell me you are sending me version @litchar{9.4.1} of
+@litchar{better-css}, and experience it as the latest tested version
+of a CSS library for my project, then your software is simply
+@litchar{css-lib} according to me.
+
+Additionally, the SHA-1 cryptographic hash function has many
 implementations and aliases. One may refer to SHA-1 using strings like
 @racket{sha1}, @racket{SHA-1}, @racket{SHA1}, or
 @racket{SHA_1}. Additionally, not all implementatons are created equal
@@ -241,13 +221,10 @@ canonical name.
 
 The same applies to the names of parties and packages. If you
 encounter two packages called @litchar{uri}, you may designate one as
-canonical or install them side-by-side. This is powerful because it
-means naming conflicts only happen when a user allows them to happen.
+canonical or install them side-by-side.
 
-For another example, if you find a CSS package called @litchar{css}
-that is incomplete and unmaintained, and another CSS package called
-@litchar{better-css} that is more deserving of the plain @litchar{css}
-name, you can assign the shorter name to the better implementation.
+This design is powerful because it means naming conflicts only happen
+when a user allows them to happen.
 
 
 @section{Conclusion}
@@ -316,5 +293,8 @@ presentations around the world.}
 
 @item{Programs that do not say they depend on each other, but won't
 work unless you load them in a certain order.}
+
+@item{Synology's DS220j started notifying users of a software update that
+requires more memory than the unit can possibly hold.}
 
 ]
