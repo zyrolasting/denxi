@@ -230,7 +230,6 @@
 (flag-out [-F --fasl-output] (cli-flag/boolean DENXI_FASL_OUTPUT))
 (flag-out [-R --reader-friendly-output] (cli-flag/boolean DENXI_READER_FRIENDLY_OUTPUT))
 (flag-out [-v --verbose] (cli-flag/boolean DENXI_VERBOSE))
-(flag-out [-G --assume-support] (cli-flag/boolean DENXI_ALLOW_UNSUPPORTED_RACKET))
 (flag-out [--trust-any-pubkey] (cli-flag/boolean DENXI_TRUST_ANY_PUBLIC_KEY))
 (flag-out [--trust-any-exe] (cli-flag/boolean DENXI_TRUST_ANY_EXECUTABLE))
 
@@ -305,14 +304,6 @@
                                     (cons name
                                           (DENXI_ALLOW_ENV)))
                     '("envvar")))
-
-(flag-out [+o ++input-override]
-          (cli-flag DENXI_INPUT_OVERRIDES
-                    'multi null 2 (λ (flag pattern input-expr)
-                                    (cons (list (arg->value flag pattern)
-                                                (arg->value flag input-expr))
-                                          (DENXI_INPUT_OVERRIDES)))
-                    '("pregexp-pattern" "input-expr")))
 
 
 ; For use in REPL and tests. Provides a quick way to preview the effect of command
