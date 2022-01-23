@@ -27,6 +27,23 @@ Collection paths for a module language and reader extension used to
 write package definitions.
 }
 
+@defthing[current-package-definition-editor
+          (parameter/c (-> bare-pkgdef? (subprogram/c bare-pkgdef?)))]{
+A parameter for a procedure that overrides @tech{package definition}s
+before use. Defaults to @racket[subprogram-unit].
+}
+
+@defproc[(load-package-definition [source source?]
+				  [max-size budget/c]
+                                  [editor
+				   (-> bare-pkgdef? (subprogram/c bare-pkgdef?))
+                                   (current-package-definition-editor)])
+				  (subprogram/c bare-pkgdef?)]{
+Returns a @tech{subprogram} that loads a package definition into
+memory from a @tech{source}. The package definition's actual content
+depends on @racket[editor].
+}
+
 
 @defproc[(make-package-definition-datum [#:id id symbol? 'pkgdef] [body list?]) package-definition-datum?]{
 Equivalent to @racket[(make-racket-module-datum #:id id PACKAGE_DEFINITION_MODULE_LANG body)]

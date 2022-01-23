@@ -5,13 +5,19 @@
 (require racket/contract
          "../codec.rkt"
          "../crypto.rkt"
+         "../monad.rkt"
          "../path.rkt"
          "../racket-module.rkt"
          "../signature.rkt"
+         "../source.rkt"
          "../string.rkt"
          "../subprogram.rkt")
 
 (provide (contract-out
+          [current-package-definition-editor
+           (parameter/c
+            (-> bare-pkgdef?
+                (subprogram/c bare-pkgdef?)))]
           [PACKAGE_DEFINITION_MODULE_LANG symbol?]
           [PACKAGE_DEFINITION_READER_LANG symbol?]
           [package-definition-datum? predicate/c]
@@ -23,6 +29,10 @@
            (->* (racket-module-input-variant/c)
                 (subprogram/c syntax?))]
           [bare-pkgdef? flat-contract?]
+          [load-package-definition
+           (->* (source? budget/c)
+                ((-> bare-pkgdef? (subprogram/c bare-pkgdef?)))
+                (subprogram/c bare-pkgdef?))]
           [get-static-inputs
            (-> bare-pkgdef? list?)]
           [get-static-outputs
@@ -45,6 +55,18 @@
 
 (define PACKAGE_DEFINITION_MODULE_LANG 'denxi/pkgdef)
 (define PACKAGE_DEFINITION_READER_LANG 'denxi)
+
+(define current-package-definition-editor
+  (make-parameter subprogram-unit))
+
+
+(define (load-package-definition source
+                                 max-size
+                                 [editor (current-package-definition-editor)])
+  (mdo variant := (subprogram-fetch source (make-limited-tap max-size))
+       original := (read-package-definition variant)
+       (editor original)))
+
 
 (define (package-definition-datum? v)
   (racket-module-code? PACKAGE_DEFINITION_MODULE_LANG v))
