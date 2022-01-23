@@ -69,6 +69,7 @@
           [fetch (-> source? tap/c exhaust/c any/c)]
           [identify (-> source? (or/c #f input-port?))]
           [subprogram-fetch (-> any/c source? tap/c subprogram?)]
+          [make-limited-tap (-> exact-nonnegative-integer? tap/c)]
           [make-source-key (-> source? (or/c bytes? #f))]
           [source? predicate/c]
           [source-variant? flat-contract?]
@@ -179,6 +180,12 @@
              (define (identify %src)
                (and cache-fn
                     (coerce-key-port (cache-fn %src))))])))]))
+
+
+(define ((make-limited-tap max-size) from-source est-size)
+  (make-limited-input-port from-source
+                           (inexact->exact (min max-size est-size))
+                           #t))
 
 
 ;-----------------------------------------------------------------------

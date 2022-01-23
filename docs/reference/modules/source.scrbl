@@ -120,6 +120,14 @@ The default value will infer if the string is suitable for use with
 error is raised, it will be returned within an @racket[exhausted-source].
 }
 
+
+@defproc[(make-limited-tap [max-size exact-nonnegative-integer?]) tap/c]{
+Returns a procedure suitable for use in @racket[fetch], such that the
+input port produced from tapping a source will never exceed
+@racket[max-size].
+}
+
+
 @section{Source and Fetch Settings}
 
 @defsetting*[DENXI_DOWNLOAD_MAX_REDIRECTS]{
