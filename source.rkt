@@ -157,8 +157,10 @@
         [(source? variant) (identify variant)]
         [(list? variant) (apply input-port-append #t (map coerce-key-port variant))]))
 
+
 (define (bind-recursive-fetch %tap %fail)
   (λ (s [f %fail]) (fetch s %tap f)))
+
 
 (define-syntax (define-source stx)
   (syntax-case stx ()
