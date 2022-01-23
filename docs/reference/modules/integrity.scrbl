@@ -31,22 +31,6 @@ Returns a built-in @racket[chf-impl/c] procedure, or
 The output of this function may change across systems.
 }
 
-@defproc[(fetch-digest [intinfo well-formed-integrity?] [exhaust exhaust/c]) any/c]{
-Returns the unencoded bytes of a message digest from
-@racket[(integrity-digest intinfo)], or a value created by applying
-@racket[exhaust] when a @tech{source} is exhausted.
-
-No more than @racket[MAX_EXPECTED_DIGEST_LENGTH] will be copied from
-the source.
-}
-
-
-@defproc[(make-sourced-digest [variant source-variant?]
-                              [chf-name symbol?]
-                              [exhaust exhaust/c raise]) bytes?]{
-Like @racket[make-digest], except the digest is produced using bytes
-@tech{tapped} from @racket[variant] using @racket[fetch].
-}
 
 @defproc[(lock-integrity [#:digest-budget digest-budget budget/c MAX_EXPECTED_DIGEST_LENGTH]
                          [to-lock well-formed-integrity?]

@@ -19,18 +19,12 @@
        (listof chf?))]
   [call-with-snake-oil-chf-trust
    (-> (-> any) any)]
-  [fetch-digest
-   (-> well-formed-integrity?
-       exhaust/c
-       any/c)]
   [load-builtin-chf
    (-> symbol? (-> any) any)]
   [lock-integrity
    (->* (well-formed-integrity?)
         (#:digest-budget budget/c exhaust/c)
         well-formed-integrity?)]
-  [make-sourced-digest
-   (->* (source-variant? symbol?) (exhaust/c) bytes?)]
   [make-trusted-integrity
    (->* (source-variant?)
         (symbol?)
@@ -95,23 +89,6 @@
       (fail-thunk)))
 
 
-(define (fetch-digest intinfo exhaust)
-  (state-add (coerce-source (integrity-digest intinfo))
-             (struct-copy transfer-policy zero-trust-transfer-policy
-                          [max-size MAX_EXPECTED_DIGEST_LENGTH]
-                          [buffer-size MAX_EXPECTED_DIGEST_LENGTH]
-                          [timeout-ms (DENXI_FETCH_TIMEOUT_MS)]
-                          [telemeter void])))
-
-
-(define (make-sourced-digest variant algorithm [exhaust raise])
-  (if (input-port? variant)
-      (make-digest variant algorithm)
-      (fetch (coerce-source variant)
-             (λ (in est-size) (port->bytes in))
-             exhaust)))
-
-
 (define (make-trusted-integrity source [chf (get-default-chf)])
   (fetch (coerce-source source)
          (λ (in est-size) (integrity chf (make-digest in chf)))
@@ -125,7 +102,6 @@
     (lock-source (integrity-digest intinfo)
                  digest-budget
                  exhaust))
-
   (if (eq? locked (integrity-digest intinfo))
       intinfo
       (integrity
