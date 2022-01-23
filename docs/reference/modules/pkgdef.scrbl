@@ -42,27 +42,8 @@ using @racket[(provide pkg)].
            (define (id formals ...) body ...))]{
 @racket[define] is allowed in module context to bind procedures and
 common values. All @racket[define]s are hoisted above all other terms
-before evaluation.
-}
-
-@defform[(description string-fragment ...) #:contracts ([string-fragment non-empty-string?])]{
-Sets @racket[package-description].
-
-This form will gather all string fragments into a single string, so
-that you can divide up the message in source code.
-
-Note that the string fragments are concatenated as-is, so take care
-with whitespace placement.
-
-@racketblock[
-(description "This is a "
-             "string that will"
-             " appear as one line.")
-]
-}
-
-@defform[(edition str) #:contracts ([str non-empty-string?])]{
-Sets @racket[package-edition].
+in the module body before evaluation, and are never provided from the
+module.
 }
 
 @defform*[((input name) (input name plinth))]{
@@ -74,60 +55,8 @@ corresponds exactly to an application of @racket[make-package-input].
 Adds a string with @racket['id] to @racket[package-metadata].
 }
 
-@defform[(name str)
-         #:contracts ([str non-empty-string?])]{
-Sets @racket[package-name].
-}
-
-@defform[(os-support os ...)]{
-Sets @racket[package-os-support].
-
-Each @racket[os] must be a possible value of @racket[(system-type
-'os)].
-}
-
-@defform[(output name body ...)
-         #:contracts ([name non-empty-string?])]{
+@defform[(output name . body) #:contracts ([name non-empty-string?])]{
 Adds a @tech{package output} to @racket[package-outputs].
-
-Blank outputs like @racket[(output "name")] are acceptable, but are
-only useful when expecting cached outputs.
-}
-
-@defform[(provider str)
-         #:contracts ([str non-empty-string?])]{
-Sets @racket[package-provider].
-}
-
-@defform[(racket-versions supported ...)
-          #:grammar [(supported (min-version max-version)
-                                exact-version)]]{
-Sets @racket[package-racket-versions].
-
-Each @racket[supported] subform may be an inclusive Racket version
-range or an exact Racket version, e.g. @racket[(racket-versions ("6.0"
-"7.7.0.5") "5.4")].
-
-You may replace any version string with @racket{*} to remove a bound.
-This way, @racket[(racket-versions ("6.0" "*"))] represents all
-versions above and including 6.0. If the version string is not
-@racket{*}, it must be a @racket[valid-version?].
-}
-
-@defform[(revision-names str ...) #:contracts ([str non-empty-string?])]{
-Sets @racket[package-revision-names].
-}
-
-@defform[(revision-number num) #:contracts ([num revision-number?])]{
-Sets @racket[package-revision-number].
-}
-
-@defform[(tags t ...) #:contracts ([t non-empty-string?])]{
-Sets @racket[package-tags].
-}
-
-@defform[(url location) #:contracts ([location url-string?])]{
-Sets @racket[package-url].
 }
 
 
