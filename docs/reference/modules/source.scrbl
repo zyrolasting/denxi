@@ -61,12 +61,12 @@ The sole argument to the procedure depends on the source type.
 @defidform[gen:source]
 @defthing[source? predicate/c]
 @defproc[(fetch [source source?] [tap tap/c] [exhaust exhaust/c]) any/c]
-@defproc[(identify [source source?]) (or/c input-port? #f)]
+@defproc[(identify [source source?]) input-port?]
 )]{
 @racket[gen:source] is a @tech/reference{generic interface} that
 requires an implementation of @racket[fetch] and
 @racket[identify]. @racket[source?] returns @racket[#t] for values
-that do so.
+that at least partially implement @racket[gen:source].
 
 @racket[fetch] attempts to @tech{tap} @racket[source]. If successful,
 @racket[fetch] calls @racket[tap] in tail position, passing the input
@@ -74,13 +74,9 @@ port and the estimated maximum number of bytes that port is expected
 to produce. Otherwise, @racket[fetch] calls @racket[exhaust] in tail
 position using a source-dependent argument.
 
-@racket[identify] attempts to return an input port that produces bytes
-used to identify a @racket[source?] value. The input port does not
-produce bytes for expected content, and cannot use any information
-outside of what's available in the value itself. This allows other
-other systems to compute cache keys and avoid unnecessary calls to
-@racket[fetch]. If @racket[identify] returns @racket[#f] for a source,
-then that source cannot be identified.
+@racket[identify] returns an input port. The bytes read from the port
+identify a particular instance of some value that implements
+@racket[gen:source].
 }
 
 @defthing[source-variant? predicate/c]{
@@ -88,8 +84,8 @@ Returns @racket[#t] if the sole argument is suitable for use in @racket[coerce-s
 }
 
 @deftogether[(
-@defproc[(subprogram-fetch [id any/c] [source source?] [tap tap/c]) subprogram?]
-@defstruct*[($fetch $message) ([id any/c] [errors (listof $message?)])]
+@defproc[(subprogram-fetch [source source?] [tap tap/c]) subprogram?]
+@defstruct*[($fetch $message) ([id bytes?] [errors (listof $message?)])]
 )]{
 Returns a @tech{subprogram} that applies @racket[fetch] to
 @racket[source] and @racket[tap].
@@ -99,16 +95,14 @@ source is @tech{exhausted}. Otherwise, the value is what's returned
 from @racket[tap].
 
 The log will gain a @racket[($fetch id errors)] message, where
+@racket[id] is @racket[(make-source-key source)], and
 @racketid[errors] is empty if the fetch is successful.
 }
 
-@defproc[(make-source-key [src source?]) (or/c #f bytes?)]{
-Returns bytes to uniquely identify @racket[src], or @racket[#f]
-if the source is not meant to be identified.
-
-This is a front-end to @racket[identify] that will always produce a
-fixed-length byte string. Prefer using this over using
-@racket[identify] directly.
+@defproc[(make-source-key [src source?]) bytes?]{
+Returns a message digest computed in terms of @racket[(identify src)].
+If the source is not meant to be identifiable, then the byte string
+does not have to be unique.
 }
 
 @defthing[current-string->source (parameter/c (-> string? source?))]{
@@ -278,6 +272,9 @@ provided @racket[exhaust] procedure.
 @defstruct*[exhausted-source ([value any/c])]{
 A source that is always @tech{exhausted}, meaning that
 @racket[(fetch (exhausted-source v) void values)] returns @racket[v].
+
+@racket[(identify exhausted-source)] is an input port that produces
+only @racket[eof].
 }
 
 

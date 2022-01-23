@@ -68,7 +68,7 @@
           [exhaust/c contract?]
           [fetch (-> source? tap/c exhaust/c any/c)]
           [identify (-> source? (or/c #f input-port?))]
-          [subprogram-fetch (-> any/c source? tap/c subprogram?)]
+          [subprogram-fetch (-> source? tap/c subprogram?)]
           [make-limited-tap (-> exact-nonnegative-integer? tap/c)]
           [make-source-key (-> source? (or/c bytes? #f))]
           [source? predicate/c]
@@ -89,9 +89,10 @@
 ;-----------------------------------------------------------------------
 ; Implementation
 
-(define (subprogram-fetch id source p)
+(define (subprogram-fetch source p)
   (subprogram
    (λ (messages)
+     (define id (make-source-key source))
      (fetch source
             (λ a
               (values (apply p a)
@@ -178,8 +179,7 @@
                (define %fetch (bind-recursive-fetch %tap %fail))
                . body)
              (define (identify %src)
-               (and cache-fn
-                    (coerce-key-port (cache-fn %src))))])))]))
+               (coerce-key-port (cache-fn %src)))])))]))
 
 
 (define ((make-limited-tap max-size) from-source est-size)
@@ -191,7 +191,7 @@
 ;-----------------------------------------------------------------------
 ; Source types
 
-(define-source #:key #f (exhausted-source [value any/c])
+(define-source #:key #"" (exhausted-source [value any/c])
   (%fail value))
 
 
