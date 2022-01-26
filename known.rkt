@@ -1,150 +1,80 @@
 #lang racket/base
 
 (require racket/contract)
-(provide gen:known
+(provide gen:known         
          (contract-out
+          [know
+           (->* () ((listof string?) bytes?) known?)]
           [known? predicate/c]
-          [known-elsewhere?
-           (-> known? boolean?)]
-          [known-here?
-           (-> known? boolean?)]
-          [known-add-name
-           (-> known? string? (-> any) any)]
-          [known-forget-names
-           (-> known? void?)]
-          [known-by
-           (-> known? (-> any) any)]
-          [known-open-output
-           (-> known? (subprogram/c
-                       (case-> (-> input-port? transfer-policy? void?)
-                               (-> void?))))]
-          [known-open-input
-           (-> known? (subprogram/c
-                       (case-> (-> output-port? transfer-policy? void?)
-                               (-> void?))))]
-          [replace-known-bytes
-           (-> known? (-> output-port? void?) (subprogram/c void?))]))
-
+          [known-put-names
+           (-> known? (listof string?) (subprogram/c void?))]
+          [known-get-names
+           (-> known? (subprogram/c (listof string?)))]
+          [known-put-bytes
+           (-> known? input-port? (subprogram/c void?))]
+          [known-open-bytes
+           (-> known? (subprogram/c input-port?))]))
 
 
 (require racket/generic
+         racket/port
          racket/stream
          "monad.rkt"
-         "port.rkt"
          "subprogram.rkt")
+
+
+(define-generics known
+  [known-put-names known name]
+  [known-get-names known]
+  [known-put-bytes known in]
+  [known-open-bytes known])
+
+
+(define (know [aliases null] [data #""])
+  (memory-known aliases data))
+
+
+(struct memory-known (aliases data)
+  #:mutable
+  #:methods gen:known
+  [(define (known-get-names k)
+     (subprogram-unit (memory-known-aliases k)))
+
+   (define (known-put-names k names)
+     (subprogram-unit (set-memory-known-aliases! k names)))
+
+   (define (known-put-bytes k external)
+     (subprogram
+      (λ (messages)
+        (define to-bytes (open-output-bytes))
+        (copy-port external to-bytes)
+        (flush-output to-bytes)
+        (set-memory-known-data! k (get-output-bytes to-bytes #t))
+        (close-output-port to-bytes)
+        (values (void) messages))))
+   
+   (define (known-open-bytes k)
+     (subprogram-unit (open-input-bytes (memory-known-data k))))])
+
+
+(define (known-get-bytes known)
+  (mdo i := (known-open-bytes known)
+       (subprogram-unit (port->bytes i))))
 
 
 (module+ test
   (require rackunit
            (submod "subprogram.rkt" test))
-
+  
   (test-case "In-memory known"
-    (define k (make-memory-known #f null #"initial"))
-    (define canonical-name "_")
+    (define k (know null #"initial"))
     (define alias "A")
-    (define (added)
-      (stream->list (known-by k fail)))
-
-    (check-false (known-elsewhere? k))
-
-    (known-add-name k canonical-name fail)
-    (check-false (known-elsewhere? k))
-    (check-equal? (added) (list canonical-name))
-
-    (known-add-name k alias fail)
-    (check-true (known-elsewhere? k))
-    (check-equal? (added) (list canonical-name alias))
-
-    (check-subprogram (mdo f := (known-open-input k)
-                           (let-values ([(i o) (make-pipe)])
-                             (f o full-trust-transfer-policy)
-                             (f)
-                             (subprogram-unit (port->bytes i))))
-                      (λ (bstr)
-                        (check-equal? bstr #"initial")))
-
-    (check-subprogram (mdo f := (known-open-output k)
-                           (begin0 (subprogram-unit (f (open-input-string alias)
-                                                       full-trust-transfer-policy))
-                             (f)))
-                      (λ (v)
-                        (check-equal? v alias)))))
-
-
-
-(define-generics known
-  [known-add-name known name fail]
-  [known-forget-names known]
-  [known-by known fail]
-  [known-open-output known]
-  [known-open-input known])
-
-
-(define (known-elsewhere? known)
-  (define s (known-by known (λ () empty-stream)))
-  (and (not (stream-empty? s))
-       (not (stream-empty? (stream-rest s)))))
-
-
-(define (known-here? known)
-  (define s (known-by known (λ () empty-stream)))
-  (not (stream-empty? s)))
-
-
-(define (make-memory-known canonical-name [aliases null] [data #""])
-  (memory-known canonical-name aliases data (make-semaphore 1)))
-
-
-(struct memory-known (name aliases data semaphore)
-  #:mutable
-  #:methods gen:known
-  [(define (known-by k fail)
-     (if (memory-known-name k)
-         (in-list (cons (memory-known-name k)
-                        (memory-known-aliases k)))
-         (fail)))
-
-   (define (known-add-name k name fail)
-     (if (memory-known-name k)
-         (set-memory-known-aliases! k (cons name (memory-known-aliases k)))
-         (set-memory-known-name! k name)))
-
-   (define (known-forget-names k)
-     (set-memory-known-name! k #f)
-     (set-memory-known-aliases! k null))
-
-   (define (known-open-output k)
-     (subprogram
-      (λ (value messages)
-        (define semaphore (memory-known-semaphore k))
-        (semaphore-wait semaphore)
-        (define-values (i o) (make-pipe))
-        (values (case-lambda [()
-                              (flush-output o)
-                              (close-output-port o)
-                              (set-memory-known-data! k (port->bytes i))
-                              (semaphore-post semaphore)]
-                             [(in policy)
-                              (transfer in o policy)])
-                messages))))
-
-   (define (known-open-input k)
-     (subprogram
-      (λ (value messages)
-        (define semaphore (memory-known-semaphore k))
-        (semaphore-wait semaphore)
-        (define i (open-input-bytes (memory-known-data k)))
-        (values (case-lambda [()
-                              (close-input-port i)
-                              (semaphore-post semaphore)]
-                             [(o policy)
-                              (transfer i o policy)])
-                messages))))])
-
-
-
-(define-subprogram (replace-known-bytes k continue)
-  (mdo << := (known-open-output k)
-       (dynamic-wind void
-                     (λ () (continue <<))
-                     <<)))
+    (define run get-subprogram-value)
+    
+    (check-pred void? (run (known-put-names k (list alias))))
+    (check-equal? (run (known-get-names k))
+                  (list alias))
+    
+    (check-equal? (run (known-get-bytes k)) #"initial")
+    (check-pred void? (run (known-put-bytes k (open-input-string alias))))
+    (check-equal? (get-subprogram-value (known-get-bytes k)) #"A")))
