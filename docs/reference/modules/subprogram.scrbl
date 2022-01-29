@@ -119,26 +119,6 @@ Returns @racket[(subprogram (λ (m) (values v (cons next m))))].
 }
 
 
-@defproc[(subprogram-map [f (-> $message? $message?)] [to-map subprogram?]) subprogram?]{
-Returns a new @racket[subprogram] instance such that each message produced
-by @racket[to-map] is included in the combined log using @racket[(map
-f (run-subprogram to-map null))].
-
-Use this to “scope” messages.
-
-@racketblock[
-(define-message $build-subprogram-entry (name message))
-
-(code:comment "hypothetical")
-(define (create-build) (subprogram (lambda (messages) ...)))
-
-(define build
-  (subprogram-map (curry $build-subprogram-entry "my-build")
-              (create-build)))
-]
-}
-
-
 @defproc[(coerce-subprogram [v any/c]) subprogram?]{
 Equivalent to @racket[(if (subprogram? v) v (subprogram-unit v))]
 }

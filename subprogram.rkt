@@ -52,10 +52,6 @@
           [subprogram-fold
            (-> subprogram?
                (listof (-> any/c subprogram?))
-               subprogram?)]
-          [subprogram-map
-           (-> subprogram?
-               (-> $message? $message?)
                subprogram?)]))
 
 (define FAILURE (string->uninterned-symbol "FAILURE"))
@@ -258,31 +254,6 @@
     (check (try 'use-2arg) 'use-2arg 'use-2arg)
     (check (try 'fail) FAILURE '(fail))
     (check (try 'run) #:with '(1) 'run '(run 1)))
-
-  (test-case "Wrap a selection of subprogram messages"
-    (define-message $wrapper     (v))
-    (define-message $wrappable   (v))
-    (define-message $unwrappable (v))
-
-    (define will-wrap
-      (subprogram-map (subprogram (λ (messages)
-                                    (values #t
-                                            (append (build-list 3 $wrappable)
-                                                    messages))))
-                      (λ (m)
-                        (check-pred $wrappable? m)
-                        ($wrapper m))))
-
-    (call-with-values (λ () (run-subprogram will-wrap (build-list 3 $unwrappable)))
-                      (λ (v messages)
-                        (check-true v)
-                        (check-equal? messages
-                                      (list ($wrapper ($wrappable 0))
-                                            ($wrapper ($wrappable 1))
-                                            ($wrapper ($wrappable 2))
-                                            ($unwrappable 0)
-                                            ($unwrappable 1)
-                                            ($unwrappable 2))))))
 
   (test-case "Accumulate messages via do notation"
     (define-message $foo (v))
