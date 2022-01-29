@@ -11,6 +11,7 @@
          racket/list
          racket/sequence
          racket/set
+         racket/stream
          "format.rkt"
          "message.rkt"
          "monad.rkt")
@@ -51,7 +52,7 @@
                 subprogram?)]
           [subprogram-fold
            (-> subprogram?
-               (listof (-> any/c subprogram?))
+               (stream/c (-> any/c subprogram?))
                subprogram?)]))
 
 (define FAILURE (string->uninterned-symbol "FAILURE"))
@@ -111,11 +112,12 @@
          (run-subprogram other (if discard? messages messages*))
          (values result messages*)))))
 
+
 (define (subprogram-fold initial fs)
-  (if (null? fs)
+  (if (stream-empty? fs)
       initial
-      (subprogram-bind (subprogram-fold initial (cdr fs))
-                       (λ (v) ((car fs) v)))))
+      (subprogram-bind (subprogram-fold initial (stream-rest fs))
+                       (λ (v) ((stream-first fs) v)))))
 
 (define (dump-subprogram #:dump-message [dump-message writeln] #:force-value [v (void)] . preamble)
   (subprogram

@@ -202,7 +202,7 @@ If @racket[discard?] is a true value, the messages accumulated in the
 }
 
 @defproc[(subprogram-fold [initial subprogram?]
-                          [fns (listof (-> any/c subprogram?))])
+                          [fns (stream/c (-> any/c subprogram?))])
                           subprogram?]{
 Returns a @tech{subprogram}.
 
