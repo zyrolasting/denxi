@@ -1,7 +1,7 @@
 #lang racket/base
 
 (require racket/contract)
-(provide gen:known         
+(provide gen:known
          (contract-out
           [know
            (->* () ((listof string?) bytes?) known?)]
@@ -13,7 +13,9 @@
           [known-put-bytes
            (-> known? input-port? (subprogram/c void?))]
           [known-open-bytes
-           (-> known? (subprogram/c input-port?))]))
+           (-> known? (subprogram/c input-port?))]
+          [known-size
+           (-> known? (subprogram/c exact-nonnegative-integer?))]))
 
 
 (require racket/generic
@@ -27,7 +29,8 @@
   [known-put-names known name]
   [known-get-names known]
   [known-put-bytes known in]
-  [known-open-bytes known])
+  [known-open-bytes known]
+  [known-size known])
 
 
 (define (know [aliases null] [data #""])
@@ -52,9 +55,12 @@
         (set-memory-known-data! k (get-output-bytes to-bytes #t))
         (close-output-port to-bytes)
         (values (void) messages))))
-   
+
    (define (known-open-bytes k)
-     (subprogram-unit (open-input-bytes (memory-known-data k))))])
+     (subprogram-unit (open-input-bytes (memory-known-data k))))
+
+   (define (known-size k)
+     (subprogram-unit (bytes-length (memory-known-data k))))])
 
 
 (define (known-get-bytes known)
@@ -65,16 +71,18 @@
 (module+ test
   (require rackunit
            (submod "subprogram.rkt" test))
-  
+
   (test-case "In-memory known"
     (define k (know null #"initial"))
     (define alias "A")
     (define run get-subprogram-value)
-    
+
     (check-pred void? (run (known-put-names k (list alias))))
     (check-equal? (run (known-get-names k))
                   (list alias))
-    
+
     (check-equal? (run (known-get-bytes k)) #"initial")
     (check-pred void? (run (known-put-bytes k (open-input-string alias))))
-    (check-equal? (get-subprogram-value (known-get-bytes k)) #"A")))
+    (check-equal? (get-subprogram-value (known-get-bytes k)) #"A")
+
+    (check-equal? (get-subprogram-value (known-size k)) 1)))

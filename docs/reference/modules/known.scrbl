@@ -57,6 +57,10 @@ Returns @racket[#t] when given a partial or full implementation of
 @racket[gen:known].
 }
 
+@defproc[(known-size [k known?]) (subprogram/c exact-nonnegative-integer?)]{
+Returns the length, in bytes, of the known's underlying byte content.
+}
+
 @defproc[(known-get-names [k known?]) (subprogram/c (listof string?))]{
 Returns a @tech{subprogram} for producing a list of names.
 
