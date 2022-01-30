@@ -10,10 +10,6 @@
    (-> path-string? path?)]
   [make-filesystem-shovel
    (->* (complete-path? symbol? source-variant?)
-        shovel/c)]
-  [make-filesystem-shovel/pkgdef
-   (->* (complete-path? symbol?)
-        (package-query-defaults-implementation/c)
         shovel/c)]))
 
 
@@ -28,8 +24,7 @@
          "../subprogram.rkt"
          "../monad.rkt"
          "../signature.rkt"
-         "../source.rkt"
-         "../version.rkt")
+         "../source.rkt")
 
 (define (make-digest-file-path path chf)
   (string->path (~a path "." chf)))
@@ -50,23 +45,6 @@
       (dig-failure 'filesystem-shovel key)))
 
 
-(define (make-filesystem-shovel/pkgdef directory-path
-                                       chf
-                                       [defaults default-package-query-defaults])
-  (let ([canon (filesystem-canon directory-path)])
-    (λ (key)
-      (if (package-query-variant? key)
-          (mdo exact-query := (make-canonical-package-query canon defaults key)
-               (match-let ([(parsed-package-query P K E N _ _) exact-query])
-                 ((make-filesystem-shovel (build-path directory-path P K E)
-                                          chf
-                                          (file-source
-                                           (build-path directory-path
-                                                       P "public-key")))
-                  N)))
-          (dig-failure 'filesystem-shovel key)))))
-
-
 (define (try-integrity complete-path chf)
   (let ([s (try-file-source (make-digest-file-path complete-path chf))])
     (and s (integrity chf s))))
@@ -81,27 +59,6 @@
 (define (try-file-source path)
   (and (file-exists? path)
        (file-source (normalize-path path))))
-
-
-(struct filesystem-canon (directory-path)
-  #:methods gen:package-query-canon
-  [(define (find-revision-number cat . xs)
-     (apply try-revision-number-from-path
-            (filesystem-canon-directory-path cat)
-            xs))
-
-   (define (select-revision-number canon provider package edition lo hi)
-     (find-latest-available-revision-number
-      (λ (index)
-        (file-exists?
-         (build-path
-          (filesystem-canon-directory-path canon)
-          provider
-          package
-          edition
-          (~a index))))
-      lo
-      hi))])
 
 
 ; Lower-level path building procedures
@@ -199,48 +156,4 @@
          (define linked (get-subprogram-value (dig "link")))
          (check-source content-path (artifact-source linked))
          (check-false (artifact-integrity linked))
-         (check-false (artifact-signature linked))))))
-
-  (test-case "Bind directory trees with package definition files"
-    (call-with-temporary-directory
-     #:cd? #t
-     (λ (directory-path)
-       (define provider "jon")
-       (define package "car")
-       (define edition "sports")
-       (define provider-path (build-path directory-path provider))
-       (define package-path (build-path provider-path package))
-       (define edition-path (build-path package-path edition))
-       (make-directory* edition-path)
-
-       (define-values (revision-0-path revision-0-digest-path revision-0-signature-path)
-         (make-artifact-paths (build-path edition-path "0")))
-       (define-values (revision-8-path revision-8-digest-path revision-8-signature-path)
-         (make-artifact-paths (build-path edition-path "8")))
-
-       (make-file-or-directory-link "8" (build-path edition-path "cool"))
-       (touch (build-path provider-path "public-key"))
-
-       (define dig (make-filesystem-shovel/pkgdef directory-path chf))
-
-       ; Add links for all default revision name resolution
-       (make-file-or-directory-link "8" (build-path edition-path DEFAULT_STRING))
-       (make-file-or-directory-link edition (build-path package-path DEFAULT_STRING))
-       (make-file-or-directory-link package (build-path provider-path DEFAULT_STRING))
-       (make-file-or-directory-link provider (build-path directory-path DEFAULT_STRING))
-       
-       (define default-artifact (get-subprogram-value (dig ":::0:cool")))
-       (check-pred artifact? default-artifact)
-
-       (match-define (artifact content-source
-                               (integrity actual-chf digest-source)
-                               (signature public-key-source
-                                          signature-source))
-         default-artifact)
-
-       (check-eq? actual-chf chf)
-       (check-source revision-8-path content-source)
-       (check-source revision-8-digest-path digest-source)
-       (check-source revision-8-signature-path signature-source)
-       (check-source (build-path provider-path "public-key")
-                     public-key-source)))))
+         (check-false (artifact-signature linked)))))))
