@@ -127,10 +127,12 @@
                                          (in-subprogram-messages messages)))
      (values v messages))))
 
+
 (define (coerce-subprogram v)
   (if (subprogram? v)
       v
       (subprogram-unit v)))
+
 
 (define (in-subprogram-messages messages)
   (in-generator
@@ -174,27 +176,20 @@
                    (λ (e) (run-subprogram (subprogram-failure e) messages))])
     ((subprogram-thnk m) messages)))
 
+
 (define (subprogram-attachment v next)
   (subprogram (λ (m) (values v (cons next m)))))
+
 
 (define (get-subprogram-value l)
   (define-values (v _) (run-subprogram l))
   v)
 
+
 (define (get-subprogram-log m)
   (define-values (_ messages) (run-subprogram m))
-  (reverse (flatten messages)))
+  messages)
 
-; Use to "scope" a selection of messages.
-;
-; (define pkg-build
-;   (subprogram-map $package
-;     (build-package ...)))
-;
-(define (subprogram-map l f)
-  (subprogram-combine l (λ (to-map messages)
-                          (append (map f to-map)
-                                  messages))))
 
 (define (subprogram-combine l f)
   (subprogram (λ (messages)
@@ -203,8 +198,10 @@
                           (f to-wrap
                              messages))))))
 
+
 (define-syntax-rule (subprogram/c cnt)
   (struct/c subprogram (-> list? (values (or/c FAILURE cnt) list?))))
+
 
 (module+ test
   (require rackunit)
@@ -286,9 +283,9 @@
            (subprogram-unit final)))
 
     (check-equal? (get-subprogram-log action)
-                  (list ($foo 1)
-                        ($bar 2)
-                        ($zap 3)))
+                  (list (list ($zap 3)
+                              ($bar 2))
+                        ($foo 1)))
 
     (test-equal? "Stop evaluation on request"
                  (get-subprogram-log (mdo x := (second-step 2)
