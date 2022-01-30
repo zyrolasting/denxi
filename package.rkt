@@ -8,7 +8,7 @@
           [empty-package
            package?]
           [install-package
-           (-> state?
+           (-> mind-implementation/c
                source?
                string?
                string?
@@ -21,6 +21,7 @@
          racket/function
          "input.rkt"
          "known.rkt"
+         "mind.rkt"
          "message.rkt"
          "monad.rkt"
          "output.rkt"
@@ -29,7 +30,6 @@
          "racket-module.rkt"
          "setting.rkt"
          "source.rkt"
-         "state.rkt"
          "subprogram.rkt")
 
 
@@ -48,10 +48,6 @@
 (define+provide-message $package:input $package (name))
 (define+provide-message $package:input:abstract $package:input ())
 
-(define+provide-setting DENXI_INSTALL_ABBREVIATED_SOURCES (listof string?) null)
-(define+provide-setting DENXI_INSTALL_DEFAULT_SOURCES (listof (list/c string? string?)) null)
-(define+provide-setting DENXI_INSTALL_SOURCES (listof (list/c string? string? string?)) null)
-
 
 (define current-package-editor
   (make-parameter subprogram-unit))
@@ -67,12 +63,12 @@
   (struct-copy package empty-package . fields))
 
 
-(define (install-package state source key rkey)
+(define (install-package mind source key rkey)
   (mdo d := (load-package-definition source rkey)
        p := (load-package d)
        i := (load-package-inputs p)
        o := (load-package-output p key)
-       (bind-output state i o rkey)))
+       (bind-output mind i o rkey)))
 
 
 (define (load-package-definition source name [max-size (mebibytes->bytes (DENXI_FETCH_PKGDEF_SIZE_MB))])
@@ -108,19 +104,17 @@
       ($use all-inputs)))
 
 
-(define-subprogram (bind-output state inputs output key rkey)
+(define-subprogram (bind-output mind inputs output key rkey)
   (define (may-cycle messages)
     (parameterize ([current-inputs inputs])
       (run-subprogram (if output
                           ((package-output-make-subprogram output))
                           (subprogram-failure ($package:output:undefined key)))
                       messages)))
-
-  (define (build-output)
-    (subprogram-acyclic key may-cycle))
-
-  (mdo known := (state-ref state key build-output)
-       (known-add-name known rkey)))
+  (mdo known := (mind-recall mind key)
+       names := (known-get-names known)
+       (subprogram-acyclic key may-cycle)
+       (known-put-names known (cons rkey names))))
 
 
 (module+ test
