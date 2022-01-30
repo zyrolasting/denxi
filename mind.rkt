@@ -33,7 +33,7 @@
 
 (define mind-implementation/c
   (mind/c [mind-recall (-> mind? bytes? known?)]
-          [mind-forget (-> mind? bytes? (subprogram/c void?))]
+          [mind-knowns (-> mind? bytes? (subprogram/c sequence?))]
           [mind-forget (-> mind? bytes? (subprogram/c exact-nonnegative-integer?))]))
 
 
