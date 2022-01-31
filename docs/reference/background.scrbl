@@ -7,11 +7,34 @@
          "../shared.rkt"]
 
 To understand this reference, you should have a working understanding
-of @deftech{cryptographic hash functions}, or @deftech{CHF}s. A CHF
-turns a variable-length value into a fixed-length value called a
+of Denxi's model.
+
+
+@section{Model}
+
+Denxi is an attempt to model information sharing in a single
+process. Assuming end-user consent holds, an @tech{interpreter}
+executes imperative instructions to reconstruct potentially
+unavailable information.
+
+Denxi prioritizes configuration over convention at every
+oppurtunity. All defaults for the configuration assume that the user
+trusts nothing. The result is a wall of settings that make Denxi
+intimidating to non-developers. In fact, the default launcher is the
+most user-hostile interface.
+
+Denxi's entry point is cold-swappable using the
+@racketmodname[denxi/launcher] language.  Use launchers to define a
+user-selected interface in terms of the default launcher.
+
+
+@section{Cryptographic Hash Functions}
+
+@deftech{Cryptographic hash functions}, or @deftech{CHF}s, are a
+specialization of hash functions. Like a hash function, a CHF turns a
+variable-length value into a fixed-length value called a
 @deftech{message digest}, a.k.a. @deftech{digest}, @deftech{checksum},
-or @deftech{hash}. All terms refer to the output of a CHF in Denxi's
-documentation.
+or @deftech{hash}.
 
 Sometimes download links have a “SHA-256” or some such name by a
 digest. Before version 8.2, Racket installers come with with SHA-1
@@ -38,6 +61,9 @@ trick you into thinking that a harmful file is safe when you check
 integrity using SHA-1. This is why the word “cryptographic” in
 “cryptographic hash function” carries a lot of weight. If a CHF works
 well, it is hard to reproduce a known digest with doctored content.
+
+
+@section{Asymmetric Cryptography}
 
 When CHFs aren't good enough, Denxi uses @deftech{asymmetric
 cryptography} to verify that a file came from a trusted party.
