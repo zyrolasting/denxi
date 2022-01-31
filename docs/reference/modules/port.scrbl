@@ -28,10 +28,10 @@ Converts mebibytes to bytes, rounded up to the nearest exact integer.
 @deftogether[(
 @defproc[(transfer [in input-port?]
                    [out output-port?]
-		   [policy transfer-policy?]
+                   [est-size (or/c +inf.0 exact-positive-integer?)]
+                   [policy transfer-policy?]
                    void?)]
 @defstruct*[transfer-policy ([buffer-size exact-positive-integer?]
-                       	     [est-size (or/c +inf.0 real?)]
 		       	     [max-size (or/c +inf.0 exact-nonnegative-integer?)]
 		       	     [timeout-ms (>=/c 0)]
 		       	     [transfer-name string?]
@@ -61,8 +61,15 @@ When @racket[(<= est-size max-size)], @racket[transfer] will read no
 more than @racket[est-size] bytes.
 
 If both @racket[est-size] and @racket[max-size] are @racket[+inf.0],
-then @racket[transfer] will not terminate if @|i| does not
-end.
+then @racket[transfer] will not terminate until @|i| produces
+@racket[eof].
+
+If @|i| produces more bytes than @racket[est-size], then the transfer
+will halt.
+}
+
+@defthing[transfer-policy/c contract?]{
+A @tech/reference{contract} for @racket[transfer-policy] instances.
 }
 
 @deftogether[(
@@ -72,8 +79,8 @@ end.
 For all values of @racket[in] and @racket[out]
 
 @itemlist[
-@item{@racket[(transfer in out zero-trust-transfer-policy)] allows no effects}
-@item{@racket[(transfer in out full-trust-transfer-policy)] allows all effects}
+@item{@racket[(transfer in out 0 zero-trust-transfer-policy)] allows no effects}
+@item{@racket[(transfer in out +inf.0 full-trust-transfer-policy)] allows all effects}
 ]
 
 For each policy @racketid[P]
@@ -85,12 +92,13 @@ For each policy @racketid[P]
 }
 
 
+@section[#:tag "xferm"]{Transfer Messages}
+
+The @racketid[telemeter] field may be called with @tech{messages}
+pertaining to the status of a transfer.
+
 @defstruct*[($transfer $message) () #:prefab]{
 A @tech{message} pertaining to a @racket[transfer] status.
-}
-
-@defthing[transfer-policy/c contract?]{
-A @tech/reference{contract} for @racket[transfer-policy] instances.
 }
 
 @defstruct*[($transfer:scope $transfer) ([name string?]
@@ -125,8 +133,6 @@ A message pertaining to a transfer space budget.
 @defstruct*[($transfer:budget:exceeded $message) ([size exact-positive-integer?]) #:prefab]{
 A request to transfer bytes was halted because the transfer read
 @racket[overrun-size] bytes more than @racket[allowed-max-size] bytes.
-
-See @racket[DENXI_FETCH_TOTAL_SIZE_MB] and @racket[DENXI_FETCH_PKGDEF_SIZE_MB].
 }
 
 
@@ -134,8 +140,6 @@ See @racket[DENXI_FETCH_TOTAL_SIZE_MB] and @racket[DENXI_FETCH_PKGDEF_SIZE_MB].
                                                   [allowed-max-size exact-positive-integer?]) #:prefab]{
 A request to transfer bytes never started because the transfer estimated
 @racket[proposed-max-size] bytes, which exceeds the user's maximum of @racket[allowed-max-size].
-
-See @racket[DENXI_FETCH_TOTAL_SIZE_MB] and @racket[DENXI_FETCH_PKGDEF_SIZE_MB].
 }
 
 
@@ -144,6 +148,4 @@ See @racket[DENXI_FETCH_TOTAL_SIZE_MB] and @racket[DENXI_FETCH_PKGDEF_SIZE_MB].
 A request to transfer bytes was halted after @racket[bytes-read] bytes
 because no more bytes were available after @racket[wait-time]
 milliseconds.
-
-See @racket[DENXI_FETCH_TIMEOUT_MS].
 }
