@@ -13,19 +13,10 @@
  (struct-out $artifact:signature)
  (struct-out $artifact:integrity)
  (contract-out
-  [install-artifact
-   (-> artifact?
-       reimplement/c
-       reimplement/c
-       (subprogram/c reimplement/c))]
   [verify-artifact
    (-> artifact?
        reimplement/c
        (subprogram/c void?))]
-  [fetch-artifact
-   (-> string?
-       artifact?
-       (subprogram/c reimplement/c))]
   [make-artifact
    (->* (source-variant?)
         ((or/c #f integrity?)
@@ -47,13 +38,14 @@
 (require racket/match
          "crypto.rkt"
          "format.rkt"
-         "state.rkt"
-         "subprogram.rkt"
+         "known.rkt"
          "message.rkt"
          "monad.rkt"
          "port.rkt"
          "printer.rkt"
-         "source.rkt")
+         "source.rkt"
+         "subprogram.rkt")
+
 
 (define-message $artifact ())
 (define-message $artifact:integrity (status chf-symbol))
@@ -69,28 +61,10 @@
   (artifact source integrity signature))
 
 
-(define (install-artifact arti state-key reference-key)
-  (mdo known := (fetch-artifact state-key arti)
-       (verify-artifact arti known)
-       (void)
-       (subprogram-unit (cons reference-key known))))
-
-
 (define (verify-artifact arti known)
   (mdo (check-artifact-integrity arti known)
        (check-artifact-signature arti known)
        (subprogram-unit (void))))
-
-
-(define (fetch-artifact name arti)
-  (error "Reimplement.")
-  #;(state-allot (current-state)
-               (coerce-source (artifact-source arti))
-               (struct-copy transfer-policy zero-trust-transfer-policy
-                            [max-size (mebibytes->bytes (DENXI_FETCH_TOTAL_SIZE_MB))]
-                            [buffer-size (mebibytes->bytes (DENXI_FETCH_BUFFER_SIZE_MB))]
-                            [timeout-ms (DENXI_FETCH_TIMEOUT_MS)]
-                            [telemeter (make-on-status (current-message-formatter))])))
 
 
 (define (lock-artifact #:content? [content? #t]
@@ -137,86 +111,101 @@
       (write-message #:newline? #f m formatter)))
 
 
-(define-subprogram (check-artifact-integrity arti reference)
-  (match-define (artifact content int sig) arti)
-  (define-values (int/use chf)
-    (if (well-formed-integrity? int)
-        (values (lock-integrity int)
-                (integrity-chf-symbol int))
-        (values #f #f)))
-  (define status
-    (check-integrity
-     #:trust-bad-digest (DENXI_TRUST_BAD_DIGEST)
-     (make-user-chf-trust-predicate)
-     int/use
-     (and chf
-          (make-digest (state-ref (current-state)
-                                  reference
-                                  (λ () ($fail #f)))
-                       (integrity-chf-symbol (artifact-integrity arti))))))
-  ($attach (or (integrity-check-passed? status) FAILURE)
-           ($artifact:integrity status chf)))
+(define (check-artifact-integrity arti known)
+  (subprogram
+   (λ (messages)
+     (match-define (artifact content int sig) arti)
+
+     (define-values (int/use chf)
+       (if (well-formed-integrity? int)
+           (values (lock-integrity int)
+                   (integrity-chf-symbol int))
+           (values #f #f)))
+
+     (define-values (from-bytes messages*)
+       (run-subprogram (known-open-bytes known) messages))
+
+     (define status
+       (check-integrity
+        #:trust-bad-digest (DENXI_TRUST_BAD_DIGEST)
+        (make-user-chf-trust-predicate)
+        int/use
+        (and chf
+             (make-digest from-bytes (integrity-chf-symbol (artifact-integrity arti))))))
+
+     (values (if (integrity-check-passed? status)
+                 (void)
+                 FAILURE)
+             (cons ($artifact:integrity status chf)
+                   messages*)))))
 
 
 
-(define-subprogram (check-artifact-signature arti path)
-  (match-define (artifact content int sig) arti)
-  (define sig/use
-    (and (well-formed-signature? sig)
-         (lock-signature sig)))
-  (define int/use
-    (and (well-formed-integrity? int)
-         (lock-integrity int)))
-  (define trust-public-key?
-    (if (DENXI_TRUST_ANY_PUBLIC_KEY)
-        (λ (p) #t)
-        (bind-trust-list (DENXI_TRUST_PUBLIC_KEYS))))
-  (define status
-    (check-signature #:trust-unsigned (DENXI_TRUST_UNSIGNED)
-                     #:trust-bad-digest (DENXI_TRUST_BAD_DIGEST)
-                     #:trust-public-key? trust-public-key?
-                     #:verify-signature (current-verify-signature)
-                     sig/use
-                     int/use))
-  ($attach (or (signature-check-passed? status) FAILURE)
-           ($artifact:signature status
-                                (and (signature? sig/use)
-                                     (signature-public-key sig/use)))))
+   (define-subprogram (check-artifact-signature arti path)
+     (match-define (artifact content int sig) arti)
+     (define sig/use
+       (and (well-formed-signature? sig)
+            (lock-signature sig)))
+     (define int/use
+       (and (well-formed-integrity? int)
+            (lock-integrity int)))
+     (define trust-public-key?
+       (if (DENXI_TRUST_ANY_PUBLIC_KEY)
+           (λ (p) #t)
+           (bind-trust-list (DENXI_TRUST_PUBLIC_KEYS))))
+     (define status
+       (check-signature #:trust-unsigned (DENXI_TRUST_UNSIGNED)
+                        #:trust-bad-digest (DENXI_TRUST_BAD_DIGEST)
+                        #:trust-public-key? trust-public-key?
+                        #:verify-signature (current-verify-signature)
+                        sig/use
+                        int/use))
+     ($attach (or (signature-check-passed? status) FAILURE)
+              ($artifact:signature status
+                                   (and (signature? sig/use)
+                                        (signature-public-key sig/use)))))
 
 
 (module+ test
   (require rackunit
            racket/file
-           (submod "state.rkt" test)
            (submod "subprogram.rkt" test))
 
-  (test-state "Fetch artifacts"
-              (define data #"abc")
-              (parameterize ([current-output-port (open-output-nowhere)])
-                (call-with-snake-oil-chf-trust
-                 (λ ()
-                   (check-subprogram
-                    (fetch-artifact "anon" (make-artifact (byte-source data)))
-                    (λ (record messages)
-                      (check-pred input-port? record)
-                      (check-equal? (file->bytes record) data)
-                      (test-case "Verify artifacts"
-                        (define intinfo
-                          (make-trusted-integrity data))
-                        (define siginfo
-                          (make-snake-oil-signature
-                           (integrity-digest intinfo)
-                           (integrity-chf-symbol intinfo)))
-                        (define arti
-                          (artifact (byte-source data) intinfo siginfo))
-                        (check-subprogram (verify-artifact arti record)
-                                          (λ (result messages)
-                                            (check-equal? result FAILURE)))
-                        (call-with-snake-oil-cipher-trust
-                         (λ ()
-                           (check-subprogram (verify-artifact arti record)
-                                             (λ (result messages)
-                                               (check-pred void? result))))))))))))
+
+  (define-syntax-rule (trust-chf . x)
+    (call-with-snake-oil-chf-trust (λ () . x)))
+
+  (define-syntax-rule (trust-cipher . x)
+    (call-with-snake-oil-cipher-trust (λ () . x)))
+
+  (test-case "Verify artifacts"
+    (trust-chf
+     (define data
+       #"abc")
+
+     (define known
+       (know))
+
+     (run-subprogram (known-put-bytes known (open-input-bytes data)))
+
+     (define intinfo
+       (make-trusted-integrity data))
+
+     (define siginfo
+       (make-snake-oil-signature
+        (integrity-digest intinfo)
+        (integrity-chf-symbol intinfo)))
+
+     (define arti
+       (artifact (byte-source data) intinfo siginfo))
+
+     (check-subprogram (verify-artifact arti known)
+                       (λ (result messages)
+                         (check-equal? result FAILURE)))
+
+     (trust-cipher (check-subprogram (verify-artifact arti known)
+                                     (λ (result messages)
+                                       (check-pred void? result))))))
 
   (test-case "Lock artifacts"
     (define with-content

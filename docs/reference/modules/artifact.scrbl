@@ -16,57 +16,20 @@
 
 @defmodule[denxi/artifact]
 
-
-@defstruct*[($artifact $message) () #:prefab]{
-A @tech{message} pertaining to an artifact.
-}
-
-@defstruct*[($artifact:integrity $artifact)
-            ([status symbol?]
-             [chf-symbol (or/c #f symbol?)]) #:prefab]{
-Shows the status of an integrity check performed on an artifact.
-
-@racket[status] is a value returned from @racket[check-integrity].
-
-@racket[chf-symbol] is the symbolic name of the CHF used in the
-integrity check, or @racket[#f] if the CHF was missing.
-}
-
-@defstruct*[($artifact:signature $artifact)
-            ([status symbol?]
-             [public-key (or/c #f bytes?)]) #:prefab]{
-Shows the status of a signature verification performed on an artifact.
-
-@racket[status] is a value returned from @racket[check-signature].
-
-@racket[public-key] is the unencoded bytes of the public key used to
-verify the signature, or @racket[#f] if the public key was missing.
-}
-
-
 @defstruct*[artifact ([source source-variant?]
                       [integrity (or/c #f well-formed-integrity?)]
                       [signature (or/c #f well-formed-signature?)])]{
 An @deftech{artifact} is an instance of @racket[artifact].  Each
-instance provides a @tech{source} and the means to verify the bytes
-produced when the source is @tech{tapped}.
+instance provides a @tech{source} and the means to verify the
+integrity and sender of the bytes produced when the source is
+@tech{tapped}.
 }
 
 @defproc[(make-artifact [source source-variant?]
                         [int (or/c #f well-formed-integrity?) #f]
                         [sig (or/c #f well-formed-signature?) #f])
                         artifact?]{
-A constructor for @racket[artifact].
-}
-
-
-@defproc[(install-artifact [arti artifact?] [link-path path-string?])
-         (subprogram/c (cons/c path-record? path-record?))]{
-Returns a @tech{subprogram} used to add an @tech{artifact} to the
-current @tech{state}. The result of the subprogram is a
-@racketid[pair], such that @racket[(car pair)] is the record of the
-created link in the file system. @racket[(cdr pair)] is the record of
-the path used by the computed target in the file system.
+A constructor for @racket[artifact] with optional arguments.
 }
 
 
@@ -81,12 +44,6 @@ The computed value of the subprogram is @racket[(void)] because the
 value is not important. @racket[verify-artifact] is used for its
 ability to halt @tech{subprograms} when an artifact fails
 verification.
-}
-
-@defproc[(fetch-artifact [name string?] [arti artifact?])
-         (subprogram/c path-record?)]{
-Like @racket[subprogram-fetch], but the content is expected to be an
-@tech{artifact}.
 }
 
 
@@ -125,4 +82,31 @@ field @racketid[S] is replaced by
                 #:signature-budget signature-budget
                 S exhaust)
 ]
+}
+
+
+@defstruct*[($artifact $message) () #:prefab]{
+A @tech{message} pertaining to an artifact.
+}
+
+@defstruct*[($artifact:integrity $artifact)
+            ([status symbol?]
+             [chf-symbol (or/c #f symbol?)]) #:prefab]{
+Shows the status of an integrity check performed on an artifact.
+
+@racket[status] is a value returned from @racket[check-integrity].
+
+@racket[chf-symbol] is the symbolic name of the CHF used in the
+integrity check, or @racket[#f] if the CHF was missing.
+}
+
+@defstruct*[($artifact:signature $artifact)
+            ([status symbol?]
+             [public-key (or/c #f bytes?)]) #:prefab]{
+Shows the status of a signature verification performed on an artifact.
+
+@racket[status] is a value returned from @racket[check-signature].
+
+@racket[public-key] is the unencoded bytes of the public key used to
+verify the signature, or @racket[#f] if the public key was missing.
 }
