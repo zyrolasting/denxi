@@ -7,7 +7,6 @@
          "file.rkt"
          "integrity.rkt"
          "integrity/ffi.rkt"
-         "state.rkt"
          "message.rkt"
          "setting.rkt"
          "signature/base.rkt"
