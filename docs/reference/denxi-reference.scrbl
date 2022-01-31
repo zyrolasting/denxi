@@ -13,6 +13,7 @@ For all documentation, see @other-doc[denxi-index].
 @include-section{background.scrbl}
 @include-section{modules/cli.scrbl}
 @include-section{modules/cmdline.scrbl}
+@include-section{modules/function.scrbl}
 @include-section{modules/cli-flag.scrbl}
 @include-section{modules/package.scrbl}
 @include-section{modules/pkgdef.scrbl}
