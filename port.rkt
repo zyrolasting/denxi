@@ -14,6 +14,7 @@
           [transfer
            (-> input-port?
                output-port?
+               (or/c +inf.0 exact-nonnegative-integer?)
                transfer-policy?
                void?)]
           [transfer-policy/c
@@ -35,22 +36,20 @@
 
 (struct transfer-policy
    (buffer-size
-    est-size
     max-size
     name
     timeout-ms
     telemeter))
 
 (define zero-trust-transfer-policy
-  (transfer-policy 1 +inf.0 0 "" 0 void))
+  (transfer-policy 1 0 "" 0 void))
 
 (define full-trust-transfer-policy
-  (transfer-policy 8192 +inf.0 +inf.0 "" +inf.0 void))
+  (transfer-policy 8192 +inf.0 "" +inf.0 void))
 
 (define transfer-policy/c
   (struct/c transfer-policy
             exact-positive-integer?
-            (or/c +inf.0 real?)
             (or/c +inf.0 exact-nonnegative-integer?)
             string?
             (>=/c 0)
@@ -58,8 +57,8 @@
 
 
 
-(define (transfer from to policy)
-  (match-let* ([(transfer-policy buffer-size est-size max-size name timeout-ms telemeter)
+(define (transfer from to est-size policy)
+  (match-let* ([(transfer-policy buffer-size max-size name timeout-ms telemeter)
                policy]
                [telemeter*
                 (λ (message)
@@ -151,9 +150,7 @@
     (draft-transfer-policy
      [name "anon"]
      [buffer-size 1]
-     [timeout-ms 1]
-     [max-size 1]     
-     [est-size 1]))
+     [timeout-ms 1]))
 
   (define-syntax-rule (P . x)
     (overturn test-policy . x))
@@ -179,9 +176,10 @@
                                      size))))
 
     (check-pred void?
-                (transfer bytes/source bytes/sink
+                (transfer bytes/source
+                          bytes/sink
+                          size
                           (P [buffer-size size]
-                             [est-size size]
                              [max-size size]
                              [telemeter telemeter])))
 
@@ -191,15 +189,15 @@
   (test-case "Prohibit unlimited transfers unless max-size agrees"
     (transfer (open-input-string "")
               (open-output-nowhere)
+              +inf.0
               (P [max-size 100]
-                 [est-size +inf.0]
                  [telemeter
                   (expect-message ($transfer:budget:rejected 100 +inf.0))])))
 
   (test-case "Time out on reads that block for too long"
     ; Reading from a pipe in this way will block indefinitely.
     (let-values ([(i o) (make-pipe)])
-      (transfer i o
+      (transfer i o 2
                 (overturn test-policy
                           [max-size 2]
                           [telemeter
@@ -211,13 +209,13 @@
     (define bytes/sink (open-output-bytes))
     (define size (bytes-length bstr))
     (check-true
-     (call/cc
-      (λ (return)
-        (transfer bytes/source bytes/sink
+     (let/cc return
+        (transfer bytes/source bytes/sink 1
                   (P [buffer-size 5]
+                     [max-size 7]
                      [telemeter
                       (λ (message)
                         (match ($transfer:scope-message message)
                           [($transfer:budget:exceeded 1 4)
-                           #t]
-                          [_ (void)]))])))))))
+                           (return #t)]
+                          [_ (void)]))]))))))
