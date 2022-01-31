@@ -53,8 +53,7 @@
          "integrity/ffi.rkt"
          "port.rkt"
          "setting.rkt"
-         "source.rkt"
-         "state.rkt")
+         "source.rkt")
 
 (define-setting DENXI_TRUST_BAD_DIGEST boolean? #f)
 (define-setting DENXI_TRUST_CHFS (listof symbol?) null)
