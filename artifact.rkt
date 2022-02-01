@@ -4,9 +4,6 @@
          "integrity.rkt"
          "signature.rkt")
 
-(define (reimplement/c v)
-  (error "Reimplement (contract)"))
-
 (provide
  (struct-out artifact)
  (struct-out $artifact)
@@ -15,7 +12,7 @@
  (contract-out
   [verify-artifact
    (-> artifact?
-       reimplement/c
+       known-implementation/c
        (subprogram/c void?))]
   [make-artifact
    (->* (source-variant?)
