@@ -43,11 +43,10 @@
 (define+provide-message $bad-source-eval (reason datum context))
 (define+provide-message $untrusted-cert (url original-exn))
 
-(define+provide-setting DENXI_DOWNLOAD_MAX_REDIRECTS exact-nonnegative-integer? 2)
-(define+provide-setting DENXI_FETCH_BUFFER_SIZE_MB (real-in 0.1 20) 10)
-(define+provide-setting DENXI_FETCH_PKGDEF_SIZE_MB (real-in 0.1 20) 0.1)
-(define+provide-setting DENXI_FETCH_TIMEOUT_MS (or/c +inf.0 (real-in 100 (* 1000 10))) 3000)
-(define+provide-setting DENXI_FETCH_TOTAL_SIZE_MB (or/c +inf.0 real?) 100)
+(define+provide-setting DENXI_HTTP_MAX_REDIRECTS exact-nonnegative-integer? 0)
+(define+provide-setting DENXI_FETCH_BUFFER_SIZE_MB (real-in 0.1 20) 0)
+(define+provide-setting DENXI_FETCH_TIMEOUT_MS (>/c 0) 0)
+(define+provide-setting DENXI_FETCH_TOTAL_SIZE_MB (or/c +inf.0 real?) 0)
 
 (provide define-source
          empty-source
