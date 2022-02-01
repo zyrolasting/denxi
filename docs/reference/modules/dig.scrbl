@@ -59,24 +59,6 @@ possible @tech{messages} for failure conditions.
 }
 
 
-@defproc[(install-found-artifact [hint any/c] [link-path path-string?] [shovel shovel/c (current-shovel)])
-         (subprogram/c (cons/c path-record? path-record?))]{
-Returns a @tech{subprogram} equivalent to @racket[(install-artifact A
-link-path)], where @racketid[A] is @racket[(find-artifact hint
-shovel)].
-}
-
-
-@defsetting*[DENXI_INSTALL_ARTIFACTS]{
-Like @racket[DENXI_INSTALL_SOURCES], except each list only needs two strings:
-
-@itemlist[#:style 'ordered
-@item{The path of a symbolic link to create with respect to @racket[(current-directory)].}
-@item{A string @racketid[S], such that @racket[(current-shovel S)] returns an artifact.}
-]
-}
-
-
 @defproc[(find-artifact [hint any/c]
                         [shovel shovel/c (current-shovel)])
                         (subprogram/c artifact?)]{

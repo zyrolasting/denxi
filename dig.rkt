@@ -5,16 +5,8 @@
 (define shovel/c
   (-> any/c (subprogram/c artifact?)))
 
-(define (reimplement/c v)
-  (error "Reimplement (contract)"))
-
 (provide
  (contract-out
-  [install-found-artifact
-   (->* (any/c
-         path-string?)
-        (shovel/c)
-        (subprogram/c (cons/c reimplement/c reimplement/c)))]
   [find-artifact
    (->* (any/c)
         (shovel/c)
@@ -38,7 +30,6 @@
 (require "artifact.rkt"
          "monad.rkt"
          "setting.rkt"
-         "state.rkt"
          "subprogram.rkt"
          "message.rkt")
 
@@ -46,12 +37,10 @@
 (define+provide-message $dig ())
 (define+provide-message $dig:no-artifact $dig (shovel-name hint))
 
-(define+provide-setting DENXI_INSTALL_ARTIFACTS
-  (listof (list/c string? string?)) null)
-
 
 (define (dig-failure name hint)
   (subprogram-failure ($dig:no-artifact name hint)))
+
 
 (define (broken-shovel v)
   (dig-failure (object-name broken-shovel) v))
@@ -76,12 +65,6 @@
 
 (define current-shovel
   (make-parameter broken-shovel))
-
-
-(define (install-found-artifact plinth link-path [dig (current-shovel)])
-  (mdo arti := (find-artifact plinth dig)
-       records := (install-artifact arti link-path)
-       (subprogram-unit records)))
 
 
 (define-subprogram (find-artifact plinth [dig (current-shovel)])
