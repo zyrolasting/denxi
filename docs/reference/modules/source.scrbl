@@ -137,13 +137,6 @@ a source, in mebibytes.
 The maximum number of bytes to read at a time from a source, in mebibytes.
 }
 
-@defsetting*[DENXI_FETCH_PKGDEF_SIZE_MB]{
-Like @racket[DENXI_FETCH_TOTAL_SIZE_MB], except the quota only applies
-to @tech{package definitions} named in a user-defined transaction.
-This quote does not apply to @tech{package definitions} listed
-as inputs in another @tech{package definition}.
-}
-
 @defsetting*[DENXI_FETCH_TIMEOUT_MS]{
 The maximum number of seconds to wait for the next available byte from a
 source.
