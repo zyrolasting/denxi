@@ -124,7 +124,7 @@ input port produced from tapping a source will never exceed
 
 @section{Source and Fetch Settings}
 
-@defsetting*[DENXI_DOWNLOAD_MAX_REDIRECTS]{
+@defsetting*[DENXI_HTTP_MAX_REDIRECTS]{
 The maximum number of HTTP redirects to follow when resolving a GET request.
 }
 
@@ -328,20 +328,19 @@ If the source is @tech{exhausted}, it yields a relevant
 }
 
 
-@defstruct[http-source ([request-url (or/c url? url-string?)])]{
+@defstruct[http-source ([request-url (or/c url? url-string?)] [max-redirects exact-nonnegative-integer?])]{
 A @tech{source} that, when @tech{tapped}, yields bytes from an HTTP
 response body. The response comes from a GET request to
 @racket[request-url], and the body is only used for a 2xx response.  A
 non-2xx status will @tech{exhaust} the source with an
-@racket[$http-failure] message.
+@racket[$http-failure] message. The internal HTTP client will follow
+up to @racket[max-redirects] redirections.
 
 If @racket[request-url] has the @racket{file} scheme, then
 @racket[http-source] behaves like @racket[file-source]. In this case,
 only the URL path is used from @racket[request-url].
 
 If the source is @tech{exhausted}, it yields a relevant exception.
-
-The behavior of the source is impacted by @racket[DENXI_DOWNLOAD_MAX_REDIRECTS].
 }
 
 

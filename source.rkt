@@ -234,7 +234,7 @@
 
 
 (define-source #:key http-source-request-url
-  (http-source [request-url (or/c url? url-string?)])
+  (http-source [request-url (or/c url? url-string?)] [max-redirects exact-nonnegative-integer?])
   (define coerced-url
     (if (url? request-url)
         request-url
@@ -257,7 +257,7 @@
   (define (handle-http-url)
     (define-values (in headers-string)
       (get-pure-port/headers
-       #:redirections (DENXI_DOWNLOAD_MAX_REDIRECTS)
+       #:redirections max-redirects
        #:method #"GET"
        #:status? #t
        coerced-url))
