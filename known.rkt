@@ -3,6 +3,8 @@
 (require racket/contract)
 (provide gen:known
          (contract-out
+          [known-implementation/c
+           contract?]
           [know
            (->* () ((listof string?) bytes?) known?)]
           [known? predicate/c]
@@ -31,6 +33,19 @@
   [known-put-bytes known in]
   [known-open-bytes known]
   [known-size known])
+
+
+(define known-implementation/c
+  (known/c [known-put-names
+            (-> known? (listof string?) (subprogram/c void?))]
+           [known-get-names
+            (-> known? (subprogram/c (listof string?)))]
+           [known-put-bytes
+            (-> known? input-port? (subprogram/c void?))]
+           [known-open-bytes
+            (-> known? (subprogram/c input-port?))]
+           [known-size
+            (-> known? (subprogram/c exact-nonnegative-integer?))]))
 
 
 (define (know [aliases null] [data #""])

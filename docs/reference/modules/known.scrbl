@@ -52,6 +52,10 @@ concrete data.
 Defines a @tech/reference{generic interface} for @tech{knowns}.
 }
 
+@defthing[known-implementation/c contract?]{
+A contract for a full implementation of @racket[gen:known].
+}
+
 @defthing[known? predicate/c]{
 Returns @racket[#t] when given a partial or full implementation of
 @racket[gen:known].
