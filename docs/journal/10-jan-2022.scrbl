@@ -1,7 +1,7 @@
 #lang scribble/report
 
 @require["../shared.rkt" scribble/manual]
-@title{10 January 2021}
+@title{10 January 2022}
 @by-slg
 
 I've started this development journal to track activity that does not

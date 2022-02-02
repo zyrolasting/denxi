@@ -2,7 +2,7 @@
 
 @require["../shared.rkt" scribble/manual
          @for-label[racket/base racket/exn]]
-@title{18 January 2021}
+@title{18 January 2022}
 @by-slg
 
 I'm still refactoring Denxi to allow user-defined discovery
