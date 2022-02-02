@@ -45,11 +45,6 @@
            (->* (subprogram?)
                 (list?)
                 (values any/c list?))]
-          [subprogram-branch
-           (->* (subprogram?
-                 subprogram?)
-                (#:discard? any/c)
-                subprogram?)]
           [subprogram-fold
            (-> subprogram?
                (stream/c (-> any/c subprogram?))
@@ -103,14 +98,6 @@
                        e
                        ($show-string (format-value e)))
                    m)))))
-
-(define (subprogram-branch #:discard? [discard? #f] test other)
-  (subprogram
-   (λ (messages)
-     (define-values (result messages*) (run-subprogram test messages))
-     (if (eq? result FAILURE)
-         (run-subprogram other (if discard? messages messages*))
-         (values result messages*)))))
 
 
 (define (subprogram-fold initial fs)
@@ -319,28 +306,6 @@
                      (λ (v msg)
                        (check-eq? v FAILURE)
                        (check-equal? msg (list ($cycle 1))))))
-
-  (test-subprogram "Branch subprograms"
-                   (subprogram-branch (subprogram-unit 2)
-                                      (subprogram-failure ($show-datum 1)))
-                   (λ (v msg)
-                     (check-equal? v 2)
-                     (check-pred null? msg)))
-
-  (test-subprogram "Branch subprograms (else case)"
-                   (subprogram-branch (subprogram-failure ($show-datum 1))
-                                      (subprogram-unit 2))
-                   (λ (v msg)
-                     (check-equal? v 2)
-                     (check-equal? msg (list ($show-datum 1)))))
-
-  (test-subprogram "Branch subprograms (discard log)"
-                   (subprogram-branch #:discard? #t
-                                      (subprogram-failure ($show-datum 1))
-                                      (subprogram-unit 2))
-                   (λ (v msg)
-                     (check-equal? v 2)
-                     (check-pred null? msg)))
 
   (test-subprogram "Fold subprograms"
                    (let ([add

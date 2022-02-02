@@ -190,17 +190,6 @@ as the result.
 }
 
 
-@defproc[(subprogram-branch [#:discard? discard? any/c #f]
-                            [test subprogram?]
-                            [on-failure subprogram?])
-                            subprogram?]{
-Returns a @tech{subprogram}. If the @racket[test] program fails, then
-the result of the returned program depends on @racket[on-failure].
-
-If @racket[discard?] is a true value, the messages accumulated in the
-@tech{subprogram log} by @racket[test] are discarded.
-}
-
 @defproc[(subprogram-fold [initial subprogram?]
                           [fns (stream/c (-> any/c subprogram?))])
                           subprogram?]{
