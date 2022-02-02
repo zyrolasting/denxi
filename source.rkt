@@ -55,7 +55,6 @@
          (struct-out exhausted-source)
          (struct-out file-source)
          (struct-out first-available-source)
-         (struct-out http-mirrors-source)
          (struct-out http-source)
          (struct-out lines-source)
          (struct-out text-source)
@@ -291,11 +290,6 @@
         (handle-http-url))))
 
 
-(define-source #:key http-mirrors-source-request-urls
-  (http-mirrors-source [request-urls (listof (or/c url? url-string?))])
-  (%fetch (apply sources (map http-source request-urls))))
-
-
 
 ;-----------------------------------------------------------------------
 ; Source expressions
@@ -307,7 +301,7 @@
   (if (file-exists? s)
       (file-source s)
       (with-handlers ([values exhausted-source])
-        (http-source s))))
+        (http-source s 0))))
 
 
 (define current-string->source
@@ -473,7 +467,7 @@
 
        (check-true (fetch (file-source tmp-path) tap values))
        (test-true "Fetch file via http-source"
-                  (fetch (http-source (~a "file://" tmp-path))
+                  (fetch (http-source (~a "file://" tmp-path) 0)
                          tap
                          values)))))
 
@@ -507,8 +501,9 @@
 
     (dynamic-wind void
                   (λ ()
-                    (check (http-source "http://127.0.0.1:8018"))
-                    (check (http-mirrors-source (list "http://127.0.0.1:1" "http://127.0.0.1:8018"))))
+                    (check (http-source "http://127.0.0.1:8018" 0))
+                    (check (sources (http-source "http://127.0.0.1:1" 0)
+                                    (http-source "http://127.0.0.1:8018" 0))))
                   (λ ()
                     (kill-thread th)
                     (tcp-close listener))))
@@ -578,8 +573,9 @@
   (test-case "Identify sources in advance of a fetch"
     (define path (build-path here "file.txt"))
     (check-equal? (port->bytes
-                   (identify (sources (http-mirrors-source '("x.com" "y.net"))
-                                      (http-source "https://z.org")
+                   (identify (sources (sources (http-source "x.com" 0)
+                                               (http-source "y.net" 0))
+                                      (http-source "https://z.org" 0)
                                       (text-source "hello world")
                                       (byte-source #"abc")
                                       (lines-source #\| '("line 1" "line 2"))

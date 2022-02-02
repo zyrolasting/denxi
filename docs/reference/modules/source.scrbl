@@ -337,11 +337,6 @@ If the source is @tech{exhausted}, it yields a relevant exception.
 }
 
 
-@defstruct[http-mirrors-source ([request-urls (listof (or/c url-string? url?))])]{
-Like @racket[http-source], but tries each of the given URLs using
-@racket[first-available-source].
-}
-
 @defstruct*[($http-failure $message) ([request-url string?]
                                       [status-line string?]
                                       [headers (listof (cons/c string? string?))]
