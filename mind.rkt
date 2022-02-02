@@ -7,7 +7,7 @@
           [mind-knowns
            (-> mind? (subprogram/c sequence?))]
           [mind-recall
-           (-> mind? string? (subprogram/c known?))]
+           (-> mind? string? (-> known? (subprogram/c void?)) (subprogram/c known?))]
           [mind-forget
            (-> mind? any/c (subprogram/c exact-nonnegative-integer?))]
           [mind-clean
@@ -26,13 +26,13 @@
 
 
 (define-generics mind
-  [mind-recall mind key]
+  [mind-recall mind key fail]
   [mind-forget mind key]
   [mind-knowns mind])
 
 
 (define mind-implementation/c
-  (mind/c [mind-recall (-> mind? bytes? known?)]
+  (mind/c [mind-recall (-> mind? bytes? (-> known?) known?)]
           [mind-knowns (-> mind? bytes? (subprogram/c sequence?))]
           [mind-forget (-> mind? bytes? (subprogram/c exact-nonnegative-integer?))]))
 
@@ -50,9 +50,17 @@
 
 (struct memory-mind (knowns)
   #:methods gen:mind
-  [(define (mind-recall mind key)
-     (subprogram-unit (hash-ref! (memory-mind-knowns mind) key know)))
-
+  [(define (mind-recall mind key learn)
+     (subprogram
+      (λ (messages)
+        (define table (memory-mind-knowns mind))
+        (if (hash-has-key? table key)
+            (values (hash-ref table key)
+                    messages)
+            (let*-values ([(k) (know)]
+                          [(value messages*) (run-subprogram (learn k) messages)])
+              (hash-set! table key k)
+              (values k messages*))))))
 
    (define (mind-forget mind key)
      (define known (hash-ref (memory-mind-knowns mind) key #f))
@@ -82,8 +90,8 @@
            (submod "subprogram.rkt" test))
   (test-case "Intraprocess mind"
     (define m (intraprocess-mind))
-    (define k (get-subprogram-value (mind-recall m #"a")))
-    (check-eq? (get-subprogram-value (mind-recall m #"a")) k)
+    (define k (get-subprogram-value (mind-recall m #"a" subprogram-unit)))
+    (check-eq? (get-subprogram-value (mind-recall m #"a" subprogram-unit)) k)
     (get-subprogram-value (known-put-bytes k (open-input-bytes #"xyz")))
     (check-equal? (sequence->list (sequence-map list (get-subprogram-value (mind-knowns m))))
                   (list (list #"a" k)))

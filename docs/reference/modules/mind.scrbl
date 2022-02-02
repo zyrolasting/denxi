@@ -39,10 +39,15 @@ contract for each method matches the method's entry in this section.
 Returns a subprogram that computes all knowns available in the mind.
 }
 
-@defproc[(mind-recall [m mind?] [key bytes?]) (subprogram/c known?)]{
-Returns a subprogram that returns exactly one @tech{known}.  The
-subprogram can only fail when no option to return a functional known
-exists.
+@defproc[(mind-recall [m mind?] [key bytes?] [learn (-> known? (subprogram/c void?))])
+         (subprogram/c known?)]{
+Returns a subprogram to access exactly one @tech{known}.
+
+In the event the subprogram finds no record of a known using
+@racket[key], it must eagerly create a compatible known @racket[k] and
+run the @racket[(learn k)] subprogram to populate @racket[k].  Unless
+@racket[(learn k)] fails, the mind must bind @racket[key] to
+@racket[k] before providing @racket[k] as the subprogram value.
 }
 
 @defproc[(mind-forget [m mind?] [key bytes?]) (subprogram/c exact-nonnegative-integer?)]{
