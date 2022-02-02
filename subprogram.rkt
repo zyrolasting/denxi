@@ -106,6 +106,7 @@
       (subprogram-bind (subprogram-fold initial (stream-rest fs))
                        (λ (v) ((stream-first fs) v)))))
 
+
 (define (dump-subprogram #:dump-message [dump-message writeln] #:force-value [v (void)] . preamble)
   (subprogram
    (λ (messages)
