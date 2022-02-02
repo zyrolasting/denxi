@@ -15,7 +15,7 @@ For all documentation, see @other-doc[denxi-index].
 @include-section{modules/package.scrbl}
 @include-section{modules/pkgdef.scrbl}
 @include-section{modules/launcher.scrbl}
-@include-section{modules/subprogram.scrbl}
+@include-section{modules/machine.scrbl}
 @include-section{modules/artifact.scrbl}
 @include-section{modules/message.scrbl}
 @include-section{modules/input.scrbl}
