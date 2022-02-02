@@ -32,8 +32,8 @@
 (define+provide-setting DENXI_TRUST_CERTIFICATES (listof path-string?) null)
 (define+provide-setting DENXI_TRUST_HOST_EXECUTABLES (listof string?) null)
 (define+provide-setting DENXI_TRUST_UNVERIFIED_HOST boolean? #f)
-(define+provide-setting DENXI_MEMORY_LIMIT_MB (>=/c 0) 200)
-(define+provide-setting DENXI_TIME_LIMIT_S (>=/c 0) (* 5 60))
+(define+provide-setting DENXI_MEMORY_LIMIT_MB (>=/c 0) 0)
+(define+provide-setting DENXI_TIME_LIMIT_S (>=/c 0) 0)
 
 
 (define (restrict halt
