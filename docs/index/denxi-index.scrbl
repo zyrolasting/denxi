@@ -20,5 +20,5 @@
 @logo-element
 
 @centered{
-@other-doc[denxi-guide] - @other-doc[denxi-reference] - @other-doc[denxi-white-paper]
+@other-doc[denxi-guide] - @other-doc[denxi-reference] - @other-doc[denxi-white-paper] - @hyperlink["https://github.com/zyrolasting/denxi"]{GitHub}
 }
