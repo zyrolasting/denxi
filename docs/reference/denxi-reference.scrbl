@@ -30,7 +30,6 @@ For all documentation, see @other-doc[denxi-index].
 @include-section{modules/url.scrbl}
 @include-section{modules/string.scrbl}
 @include-section{modules/l10n.scrbl}
-@include-section{modules/printer.scrbl}
 @include-section{modules/archive.scrbl}
 @include-section{modules/system.scrbl}
 @include-section{modules/monad.scrbl}
