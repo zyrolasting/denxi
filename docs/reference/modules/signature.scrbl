@@ -75,31 +75,6 @@ An estimated maximum number of bytes (chosen empirically) for a public
 key or signature.
 }
 
-@defproc[(call-with-snake-oil-cipher-trust [thunk (-> any)]) any]{
-Calls @racket[thunk] in tail position.  While control is in the
-@racket[thunk], @racket[(DENXI_TRUST_PUBLIC_KEYS)] is @racket[(list
-snake-oil-public-key)].
-
-Implies @racket[call-with-snake-oil-chf-trust].
-}
-
-@defsetting*[DENXI_TRUST_ANY_PUBLIC_KEY]{
-@bold{Dangerous}. When true, trust any public key used to verify a signature.
-}
-
-@defsetting*[DENXI_TRUST_UNSIGNED]{
-@bold{Dangerous}. When true, trust any input that lacks a valid signature.
-}
-
-@defsetting*[DENXI_TRUST_BAD_SIGNATURE]{
-@bold{Dangerous}. When true, trust any input that has a signature that
-does not match the input's integrity information.
-}
-
-@defsetting[DENXI_TRUST_PUBLIC_KEYS (listof well-formed-integrity?)]{
-A list of integrity information for public keys. Trusts public keys
-that can be used to reproduce an element of this list.
-}
 
 @define[pk-read-url
 "https://www.openssl.org/docs/man1.1.0/man3/PEM_read_bio_PrivateKey.html"]

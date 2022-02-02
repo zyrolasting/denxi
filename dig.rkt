@@ -29,7 +29,6 @@
 
 (require "artifact.rkt"
          "monad.rkt"
-         "setting.rkt"
          "subprogram.rkt"
          "message.rkt")
 

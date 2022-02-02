@@ -114,33 +114,31 @@
                      o)))
 
     ; We don't want to protect against use of this dummy data.
-    (DENXI_TRUST_BAD_DIGEST #t
-     (λ ()
-       (define faux-archive
-         (package-input "archive.tgz"
-                        (make-artifact (file-source .tar))))
+    (define faux-archive
+      (package-input "archive.tgz"
+                     (make-artifact (file-source .tar))))
 
-       (parameterize ([current-inputs (list faux-archive)]
-                      [current-output-port (open-output-nowhere)])
+    (parameterize ([current-inputs (list faux-archive)]
+                   [current-output-port (open-output-nowhere)])
+      (check-subprogram
+       (extract-input (package-input-name faux-archive))
+       (λ (result messages)
+         (check-false (link-exists? (package-input-name faux-archive)))
+         (test-file input-a)
+         (test-file input-b)
+         (test-file input-c)))
+
+      (delete-file input-a)
+      (delete-file input-b)
+      (delete-file input-c)
+
+      (call-with-snake-oil-chf-trust
+       (λ ()
          (check-subprogram
-          (extract-input (package-input-name faux-archive))
+          (extract-input #:keep? #t
+                         (package-input-name faux-archive))
           (λ (result messages)
-            (check-false (link-exists? (package-input-name faux-archive)))
+            (check-true (link-exists? (package-input-name faux-archive)))
             (test-file input-a)
             (test-file input-b)
-            (test-file input-c)))
-
-         (delete-file input-a)
-         (delete-file input-b)
-         (delete-file input-c)
-
-         (call-with-snake-oil-chf-trust
-          (λ ()
-            (check-subprogram
-             (extract-input #:keep? #t
-                            (package-input-name faux-archive))
-             (λ (result messages)
-               (check-true (link-exists? (package-input-name faux-archive)))
-               (test-file input-a)
-               (test-file input-b)
-               (test-file input-c))))))))))
+            (test-file input-c))))))))

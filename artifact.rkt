@@ -124,7 +124,7 @@
 
      (define status
        (check-integrity
-        #:trust-bad-digest (DENXI_TRUST_BAD_DIGEST)
+        #:trust-bad-digest trust-bad-digest
         (make-user-chf-trust-predicate)
         int/use
         (and chf
@@ -146,15 +146,12 @@
      (define int/use
        (and (well-formed-integrity? int)
             (lock-integrity int)))
-     (define trust-public-key?
-       (if (DENXI_TRUST_ANY_PUBLIC_KEY)
-           (λ (p) #t)
-           (bind-trust-list (DENXI_TRUST_PUBLIC_KEYS))))
+
      (define status
-       (check-signature #:trust-unsigned (DENXI_TRUST_UNSIGNED)
-                        #:trust-bad-digest (DENXI_TRUST_BAD_DIGEST)
+       (check-signature #:trust-unsigned trust-unsigned
+                        #:trust-bad-digest trust-bad-digest
                         #:trust-public-key? trust-public-key?
-                        #:verify-signature (current-verify-signature)
+                        #:verify-signature verify-signature
                         sig/use
                         int/use))
      ($attach (or (signature-check-passed? status) FAILURE)

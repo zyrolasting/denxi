@@ -32,7 +32,6 @@
    "racket-version.rkt"
    "rfc4648.rkt"
    "security.rkt"
-   "setting.rkt"
    "signature.rkt"
    "source.rkt"
    "state.rkt"

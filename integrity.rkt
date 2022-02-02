@@ -14,9 +14,6 @@
         ((listof chf?))
         (-> (or/c bytes? path-string? input-port?)
             boolean?))]
-  [build-builtin-chf-trust
-   (-> (listof symbol?)
-       (listof chf?))]
   [call-with-snake-oil-chf-trust
    (-> (-> any) any)]
   [load-builtin-chf
@@ -38,9 +35,7 @@
   [sourced-integrity?
    flat-contract?]
   [well-formed-integrity?
-   flat-contract?]
-  [DENXI_TRUST_BAD_DIGEST setting?]
-  [DENXI_TRUST_CHFS setting?]))
+   flat-contract?]))
 
 
 ;--------------------------------------------------------------------------------
@@ -52,11 +47,7 @@
          "integrity/base.rkt"
          "integrity/ffi.rkt"
          "port.rkt"
-         "setting.rkt"
          "source.rkt")
-
-(define-setting DENXI_TRUST_BAD_DIGEST boolean? #f)
-(define-setting DENXI_TRUST_CHFS (listof symbol?) null)
 
 
 (define sourced-integrity?
@@ -67,18 +58,6 @@
 
 (define malformed-integrity?
   (not/c well-formed-integrity?))
-
-
-(define (build-builtin-chf-trust [trust-chfs (DENXI_TRUST_CHFS)])
-  (chf-fold-trust
-   load-builtin-chf
-   (remove-duplicates trust-chfs)))
-
-
-(define (make-user-chf-trust-predicate)
-  (chf-bind-trust
-   (append (current-chfs)
-           (build-builtin-chf-trust (DENXI_TRUST_CHFS)))))
 
 
 (define (load-builtin-chf denxi-sym [fail-thunk (λ () (raise ($chf-unavailable denxi-sym)))])

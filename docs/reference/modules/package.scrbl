@@ -42,40 +42,6 @@ The @tech{package} with no content.
 Like @racket[current-package-definition-editor], but for packages.
 }
 
-@section{Package Settings}
-
-@defsetting*[DENXI_INSTALL_SOURCES]{
-Defines installations in a transaction.
-
-Each list in @racket[DENXI_INSTALL_SOURCES] consists of three strings:
-
-@itemlist[#:style 'ordered
-@item{The path to a symbolic link to create with respect to @racket[(current-directory)].}
-@item{The name of a desired output from a @tech{package definition}.}
-@item{A URL, file path, or @tech{launcher}-specific string used to find the @tech{package definition}.}
-]
-}
-
-@defsetting*[DENXI_INSTALL_ABBREVIATED_SOURCES]{
-Like @racket[DENXI_INSTALL_SOURCES], except each item in the list only needs to
-be a URL, file path, or @tech{launcher}-specific string used to find the @tech{package
-definition}. The symbolic link name is assumed to be the string bound to
-@racketfont{package} in the definition, and the output is assumed to be
-@racket{default}.
-}
-
-@defsetting*[DENXI_INSTALL_DEFAULT_SOURCES]{
-Like @racket[DENXI_INSTALL_SOURCES], except each list only needs two strings:
-
-
-@itemlist[#:style 'ordered
-@item{The path of a symbolic link to create with respect to @racket[(current-directory)].}
-@item{A URL, file path, or @tech{launcher}-specific string used to find the @tech{package definition}.}
-]
-
-The output is assumed to be @racket{default}.
-}
-
 
 @section{Package Messages}
 

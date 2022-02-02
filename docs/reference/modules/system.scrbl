@@ -17,11 +17,6 @@
 @racketmodname[racket/system]. It specializes process management in
 the context of packages.
 
-@defsetting*[DENXI_SUBPROCESS_TIMEOUT_S]{
-The maximum number of seconds a subprocess spawned by @racket[run]
-may live, according to the user.
-}
-
 @defthing[ALL_OS_SYMS (listof symbol?)]{
 A manually maintained list of every known value returned from @racket[(system-type 'os)].
 }

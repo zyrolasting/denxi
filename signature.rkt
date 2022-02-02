@@ -8,7 +8,6 @@
          "integrity.rkt"
          "integrity/ffi.rkt"
          "message.rkt"
-         "setting.rkt"
          "signature/base.rkt"
          "signature/snake-oil.rkt"
          "source.rkt")
@@ -38,12 +37,7 @@
   [sourced-signature?
    flat-contract?]
   [well-formed-signature?
-   flat-contract?]
-  [DENXI_TRUST_ANY_PUBLIC_KEY setting?]
-  [DENXI_TRUST_BAD_SIGNATURE setting?]
-  [DENXI_TRUST_PUBLIC_KEYS setting?]
-  [DENXI_TRUST_UNSIGNED setting?]))
-
+   flat-contract?]))
 
 (define (sourced-signature? v)
   (and (signature? v)
@@ -56,13 +50,9 @@
 (define malformed-signature?
   (not/c well-formed-signature?))
 
-(define-setting DENXI_TRUST_ANY_PUBLIC_KEY boolean? #f)
-(define-setting DENXI_TRUST_BAD_SIGNATURE boolean? #f)
-(define-setting DENXI_TRUST_PUBLIC_KEYS (listof well-formed-integrity?) null)
-(define-setting DENXI_TRUST_UNSIGNED boolean? #f)
-
-(define MAX_EXPECTED_SIGNATURE_PAYLOAD_LENGTH 24000)
-
+; TODO: Verify if this is reasonable.
+(define MAX_EXPECTED_SIGNATURE_PAYLOAD_LENGTH
+  24000)
 
 (define (make-snake-oil-signature digest chf)
   (signature snake-oil-public-key

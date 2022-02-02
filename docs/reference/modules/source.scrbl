@@ -122,26 +122,6 @@ input port produced from tapping a source will never exceed
 }
 
 
-@section{Source and Fetch Settings}
-
-@defsetting*[DENXI_HTTP_MAX_REDIRECTS]{
-The maximum number of HTTP redirects to follow when resolving a GET request.
-}
-
-@defsetting*[DENXI_FETCH_TOTAL_SIZE_MB]{
-The maximum total size of a single download allowed when fetching an input from
-a source, in mebibytes.
-}
-
-@defsetting*[DENXI_FETCH_BUFFER_SIZE_MB]{
-The maximum number of bytes to read at a time from a source, in mebibytes.
-}
-
-@defsetting*[DENXI_FETCH_TIMEOUT_MS]{
-The maximum number of seconds to wait for the next available byte from a
-source.
-}
-
 
 @section{Defining Source Types}
 

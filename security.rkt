@@ -17,23 +17,28 @@
          "state.rkt"
          "message.rkt"
          "path.rkt"
-         "port.rkt"
-         "setting.rkt")
+         "port.rkt")
 
-(provide restrict)
+(provide
+ (contract-out
+  [restrict
+   (-> procedure?
+       (-> any)
+       #:memory-limit (>=/c 0)
+       #:time-limit (>=/c 0)
+       #:trusted-executables (listof well-formed-integrity?)
+       #:allowed-envvars (listof (or/c bytes-environment-variable-name? string?))
+       #:trust-unverified-host? boolean?
+       #:trust-any-executable? boolean?
+       #:trust-host-executables (listof path-string?)
+       #:trust-certificates (listof path-string?)
+       #:writeable-directories (listof path-string?)
+       #:gc-period (>/c 0)
+       #:name string?)]))
 
 (define+provide-message $restrict (name))
 (define+provide-message $restrict:operation $restrict (reporting-guard summary args))
 (define+provide-message $restrict:budget $restrict (kind amount))
-
-(define+provide-setting DENXI_ALLOW_ENV (listof (or/c bytes-environment-variable-name? string?)) null)
-(define+provide-setting DENXI_TRUST_EXECUTABLES (listof well-formed-integrity?) null)
-(define+provide-setting DENXI_TRUST_ANY_EXECUTABLE boolean? #f)
-(define+provide-setting DENXI_TRUST_CERTIFICATES (listof path-string?) null)
-(define+provide-setting DENXI_TRUST_HOST_EXECUTABLES (listof string?) null)
-(define+provide-setting DENXI_TRUST_UNVERIFIED_HOST boolean? #f)
-(define+provide-setting DENXI_MEMORY_LIMIT_MB (>=/c 0) 0)
-(define+provide-setting DENXI_TIME_LIMIT_S (>=/c 0) 0)
 
 
 (define (restrict halt

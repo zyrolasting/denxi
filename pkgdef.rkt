@@ -68,7 +68,6 @@
          "output.rkt"
          "package.rkt"
          "racket-module.rkt"
-         "setting.rkt"
          "signature.rkt"
          "source.rkt"
          "string.rkt"

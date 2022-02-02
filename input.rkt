@@ -38,7 +38,6 @@
          "dig.rkt"
          "format.rkt"
          "integrity.rkt"
-         "state.rkt"
          "message.rkt"
          "monad.rkt"
          "port.rkt"

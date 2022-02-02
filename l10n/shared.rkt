@@ -24,7 +24,6 @@
    "../racket-module.rkt"
    "../racket-version.rkt"
    "../security.rkt"
-   "../setting.rkt"
    "../signature.rkt"
    "../source.rkt"
    "../string.rkt"

@@ -66,22 +66,3 @@
      (if (string-prefix? formatted "#<")
          (object-name proc)
          (read (open-input-string formatted)))))
-
-(define-syntax (defsetting stx)
-  (syntax-case stx ()
-    [(_ s cnt pre-content ...)
-      #`(let ([cf (find-cli-flag s)])
-          (defthing
-            #:kind "setting"
-            s cnt
-            #:value #,(datum->syntax stx (eval #'(s)) stx)
-            (para "CLI Flags: "
-                  (if cf
-                      (litchar (format-cli-flags cf))
-                      "N/A"))
-            pre-content ...))]))
-
-(define-syntax (defsetting* stx)
-  (syntax-case stx ()
-    [(_ s pre-content ...)
-      #`(defsetting s #,(infer-contract-expr stx (eval #'s)) pre-content ...)]))

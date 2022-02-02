@@ -28,7 +28,6 @@
          "pkgdef/static.rkt"
          "port.rkt"
          "racket-module.rkt"
-         "setting.rkt"
          "source.rkt"
          "subprogram.rkt")
 

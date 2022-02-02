@@ -66,17 +66,6 @@ Duck typing contracts for @racket[integrity] instances.
 }
 
 
-@section{Integrity Settings}
-
-@defsetting*[DENXI_TRUST_BAD_DIGEST]{
-@bold{Highly dangerous}. When true, disable integrity checking.
-}
-
-@defsetting*[DENXI_TRUST_CHFS]{
-A list of possible canonical names for @racket[chf]s to trust when
-checking data integrity.
-}
-
 
 @section{Integrity-based Trust}
 
@@ -89,22 +78,6 @@ Returns a procedure @racket[P].
 of @racket[trusted] using @racket[chfs].
 }
 
-
-@margin-note{@racket[make-user-chf-trust-predicate] is the fastest way
-to check if a user trusts a CHF.}
-@defproc[(make-user-chf-trust-predicate) (-> symbol? boolean?)]{
-Returns @racket[(chf-bind-trust configured)], where
-@racket[configured] combines existing values in
-@racket[(current-chfs)] with the built-in implementations found in
-@racket[(DENXI_TRUST_CHFS)].
-}
-
-@defproc[(build-builtin-chf-trust [trust-chfs (listof symbol?)]) (listof chf?)]{
-Returns a value suitable for use in @racket[current-chfs].
-
-The implementations of the given CHFs come from a bundled C library,
-any input symbols must appear in @racket[(integrity-ffi-get-c-chfs!)].
-}
 
 @section{Prototyping Integrity Checks}
 
