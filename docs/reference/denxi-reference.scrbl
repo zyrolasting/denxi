@@ -26,7 +26,6 @@ For all documentation, see @other-doc[denxi-index].
 @include-section{modules/main.scrbl}
 @include-section{modules/source.scrbl}
 @include-section{modules/mind.scrbl}
-@include-section{modules/setting.scrbl}
 @include-section{modules/format.scrbl}
 @include-section{modules/url.scrbl}
 @include-section{modules/string.scrbl}
