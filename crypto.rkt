@@ -7,30 +7,33 @@
          (rename-in ffi/unsafe [-> -->])
          "message.rkt")
 
-(define+provide-message $crypto ())
-(define+provide-message $crypto:error $crypto (queue))
-(define+provide-message $crypto:unavailable $crypto ())
-(define-runtime-path crypto/ "crypto")
+(provide (struct-out $crypto)
+         (struct-out $crypto:error)
+         (struct-out $crypto:unavailable)
+         (contract-out
+          [crypto-clear-ffi-cache!
+           (-> void?)]
+          [crypto-get-lib!
+           (-> (or/c ffi-lib? exn?))]
+          [crypto-get-obj!
+           (-> (or/c bytes? symbol? string?)
+               ctype?
+               any/c)]
+          [crypto-dump-error-queue!
+           (-> (or/c #f list?))]
+          [crypto-translate-error!
+           (-> exact-integer?
+               (or/c #f string?))]
+          [assert-crypto-availability
+           procedure?]
+          [crypto-raise!
+           procedure?]))
 
-(provide
- (contract-out
-  [crypto-clear-ffi-cache!
-   (-> void?)]
-  [crypto-get-lib!
-   (-> (or/c ffi-lib? exn?))]
-  [crypto-get-obj!
-   (-> (or/c bytes? symbol? string?)
-       ctype?
-       any/c)]
-  [crypto-dump-error-queue!
-   (-> (or/c #f list?))]
-  [crypto-translate-error!
-   (-> exact-integer?
-       (or/c #f string?))]
-  [assert-crypto-availability
-   procedure?]
-  [crypto-raise!
-   procedure?]))
+
+(define-message $crypto ())
+(define-message $crypto:error $crypto (queue))
+(define-message $crypto:unavailable $crypto ())
+(define-runtime-path crypto/ "crypto")
 
 (define ffi-cache (make-hash))
 
