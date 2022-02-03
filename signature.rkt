@@ -4,7 +4,6 @@
 
 (require racket/contract
          "crypto.rkt"
-         "file.rkt"
          "integrity.rkt"
          "integrity/ffi.rkt"
          "message.rkt"
@@ -12,32 +11,33 @@
          "signature/snake-oil.rkt"
          "source.rkt")
 
-(provide
- (all-from-out "signature/base.rkt"
-               "signature/snake-oil.rkt")
- (contract-out
-  [MAX_EXPECTED_SIGNATURE_PAYLOAD_LENGTH
-   budget/c]
-  [lock-signature
-   (->* (signature?)
-        (#:public-key-budget budget/c
-         #:signature-budget budget/c
-         exhaust/c)
-        signature?)]
-  [make-snake-oil-signature
-   (-> bytes? symbol? signature?)]
-  [call-with-snake-oil-cipher-trust
-   (-> (-> any) any)]
-  [make-signature
-   (->* (bytes? symbol? bytes?)
-        ((or/c #f bytes?))
-        bytes?)]
-  [malformed-signature?
-   flat-contract?]
-  [sourced-signature?
-   flat-contract?]
-  [well-formed-signature?
-   flat-contract?]))
+
+(provide (all-from-out "signature/base.rkt"
+                       "signature/snake-oil.rkt")
+         (contract-out
+          [MAX_EXPECTED_SIGNATURE_PAYLOAD_LENGTH
+           budget/c]
+          [lock-signature
+           (->* (signature?)
+                (#:public-key-budget budget/c
+                 #:signature-budget budget/c
+                 exhaust/c)
+                signature?)]
+          [snake-oil-signature
+           (-> bytes? symbol? signature?)]
+          [snake-oil-public-key-integrity
+           (-> symbol? well-formed-integrity?)]
+          [make-signature
+           (->* (bytes? symbol? bytes?)
+                ((or/c #f bytes?))
+                bytes?)]
+          [malformed-signature?
+           flat-contract?]
+          [sourced-signature?
+           flat-contract?]
+          [well-formed-signature?
+           flat-contract?]))
+
 
 (define (sourced-signature? v)
   (and (signature? v)
@@ -63,7 +63,7 @@
 
 
 (define (snake-oil-public-key-integrity chf)
-  (integrity chf (make-digest snake-oil-public-key)))
+  (integrity chf (make-digest snake-oil-public-key chf)))
 
 
 (define (make-signature . xs)
@@ -77,19 +77,18 @@
                         #:signature-budget
                         [signature-budget MAX_EXPECTED_SIGNATURE_PAYLOAD_LENGTH]
                         [exhaust raise])
-  (call/cc
-   (λ (abort)
-     (define (exhaust* v)
-       (abort (exhaust v)))
-     (signature
-      (and (signature-public-key siginfo)
-           (lock-source (signature-public-key siginfo)
-                        public-key-budget
-                        exhaust*))
-      (and (signature-body siginfo)
-           (lock-source (signature-body siginfo)
-                        signature-budget
-                        exhaust*))))))
+  (let/cc abort
+    (define (exhaust* v)
+      (abort (exhaust v)))
+    (signature
+     (and (signature-public-key siginfo)
+          (lock-source (signature-public-key siginfo)
+                       public-key-budget
+                       exhaust*))
+     (and (signature-body siginfo)
+          (lock-source (signature-body siginfo)
+                       signature-budget
+                       exhaust*)))))
 
 
 (module+ test
