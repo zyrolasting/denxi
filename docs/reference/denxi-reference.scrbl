@@ -33,7 +33,6 @@ For all documentation, see @other-doc[denxi-index].
 @include-section{modules/archive.scrbl}
 @include-section{modules/system.scrbl}
 @include-section{modules/monad.scrbl}
-@include-section{modules/file.scrbl}
 @include-section{modules/crypto.scrbl}
 @include-section{modules/port.scrbl}
 @include-section{modules/security.scrbl}
