@@ -78,6 +78,7 @@
           [eval-untrusted-source-expression
            (->* (any/c) (namespace?) subprogram?)]))
 
+
 ;-----------------------------------------------------------------------
 ; Implementation
 
@@ -289,7 +290,8 @@
 ;-----------------------------------------------------------------------
 ; Source expressions
 
-(define empty-source (byte-source #""))
+(define empty-source
+  (byte-source #""))
 
 
 (define (default-string->source s)
