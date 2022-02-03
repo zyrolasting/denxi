@@ -54,7 +54,7 @@
 (define MAX_EXPECTED_SIGNATURE_PAYLOAD_LENGTH
   24000)
 
-(define (make-snake-oil-signature digest chf)
+(define (snake-oil-signature digest chf)
   (signature snake-oil-public-key
              (make-signature digest
                              chf
@@ -62,13 +62,8 @@
                              snake-oil-private-key-password)))
 
 
-(define (call-with-snake-oil-cipher-trust f)
-  (call-with-snake-oil-chf-trust
-   (λ ()
-     (DENXI_TRUST_PUBLIC_KEYS
-      (list (integrity (get-default-chf)
-                       (make-digest snake-oil-public-key)))
-      f))))
+(define (snake-oil-public-key-integrity chf)
+  (integrity chf (make-digest snake-oil-public-key)))
 
 
 (define (make-signature . xs)

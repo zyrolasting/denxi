@@ -26,8 +26,6 @@
    (->* (source-variant?)
         (symbol?)
         raw-integrity?)]
-  [make-user-chf-trust-predicate
-   (-> (-> symbol? boolean?))]
   [malformed-integrity?
    flat-contract?]
   [snake-oil-chf
