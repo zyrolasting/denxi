@@ -28,8 +28,10 @@
     (check-equal? (pitch (λ () 1) (error)) 1)
     (check-true (pitch #t (pitch (λ (a b) 1) (error) #f)))))
 
+
 (define-syntax-rule (pitch c . xs)
   (dynamic-pitch #:catcher c #:batter (λ () . xs)))
+
 
 ; Read as analogy of a pitch in baseball
 (define (dynamic-pitch #:umpire [dispute values] #:catcher catch #:batter swing)
