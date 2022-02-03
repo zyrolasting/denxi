@@ -15,7 +15,8 @@
           [state-undefined
            state-undefined?]
           [machine/c
-           (-> contract? contract? contract?)]
+           (case-> (-> contract? contract?)
+                   (-> contract? contract? contract?))]
           [machine-acyclic
            (-> procedure? any/c machine?)]
           [machine-bind
@@ -38,6 +39,7 @@
            (-> state-like? any/c state-halt?)]
           [state-set-value
            (-> state-like? any/c state-like?)]))
+
 
 (define halt
   (string->uninterned-symbol "halt"))
@@ -90,8 +92,11 @@
    (define (return M v) (machine-unit v))])
 
 
-(define (machine/c domain/c range/c)
-  (struct/c machine (-> (state/c domain/c) (state/c range/c))))
+(define machine/c
+  (case-lambda [(range/c)
+                (machine/c any/c range/c)]
+               [(domain/c range/c)
+                (struct/c machine (-> (state/c domain/c) (state/c range/c)))]))
 
 
 (define (machine-bind m f)

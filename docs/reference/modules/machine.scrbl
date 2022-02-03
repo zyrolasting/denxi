@@ -59,9 +59,12 @@ Returns a @tech{machine} that sets @racket[v] as the new value for a
 state, with no added messages.
 }
 
-@defproc[(machine/c [domain/c contract?] [range/c contract?]) contract?]{
+
+@defproc[([(machine/c [range/c contract?]) contract?]
+          [(machine/c [domain/c contract?] [range/c contract?]) contract?])]{
 Returns a @tech/reference{contract} for a @tech{machine} that
-transitions a state from one value type to another.
+transitions a state from one value type to another. When specifying
+only a range contract, the domain contract is @racket[any/c].
 }
 
 
