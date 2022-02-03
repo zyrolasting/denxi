@@ -153,9 +153,10 @@
   (define-syntax-rule (check-machine-halt m . patterns)
     (check-match (m) (cons (? (curry eq? halt) _) (list . patterns))))
 
-  (define (check-machine-contract domain/c range/c m s)
-    (check-machine-halt ((invariant-assertion (machine/c domain/c range/c) m) s)
-                        ($show-string (regexp "assertion violation"))))
+  (define (check-machine-contract-violation domain/c range/c m s)
+    (check-match ((invariant-assertion (machine/c domain/c range/c) m) s)
+                 (list (? (curry eq? halt) _)
+                       ($show-string (regexp "assertion violation")))))
 
   (check-true (state-halt? (list halt)))
   (check-false (state-halt? (list 1)))
@@ -165,7 +166,7 @@
   (check-machine-contract-violation any/c
                                     (>=/c 0)
                                     (machine-unit -1)
-                                    default-state)
+                                    state-undefined)
 
   (test-case "Use machines in do notation"
     (define-message $initial (v))
@@ -194,5 +195,5 @@
   (test-case "Cycle detection"
     (define cyclic  (machine-acyclic 'cycles (λ (s) (cyclic s))))
     (define acyclic (machine-acyclic 'cycles (λ (s) (state-set-value s 'ok))))
-    (check-machine-value (acyclic) 'ok)
+    (check-machine-value acyclic 'ok)
     (check-machine-halt cyclic ($cycle 'cycles)))))
