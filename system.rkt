@@ -1,20 +1,20 @@
 #lang racket/base
 
+
 (require racket/contract
          racket/generic
          racket/port
          racket/system
          syntax/parse
-         "message.rkt"
-         "subprogram.rkt")
+         "machine.rkt"
+         "message.rkt")
+
 
 (provide (all-from-out racket/system)
          (struct-out $subprocess)
          (struct-out $subprocess:report)
          (struct-out $subprocess:command-not-found)
-         os-sym
          (contract-out
-          [ALL_OS_SYMS (listof symbol?)]
           [run (->* (path-string?)
                     (#:expected-exit-codes (listof (integer-in 0 255))
                      #:fail-on-stderr? any/c
@@ -23,13 +23,8 @@
                      #:timeout exact-positive-integer?
                      #:stdin (or/c #f (and/c output-port? file-stream-port?)))
                     #:rest (listof path-string?)
-                    subprogram?)]))
+                    machine?)]))
 
-
-(define ALL_OS_SYMS '(unix windows macosx))
-
-(define-syntax-class os-sym
-  (pattern (~var s id) #:when (member (syntax-e #'s) ALL_OS_SYMS)))
 
 (define-generics subprocess-controller
   [get-status subprocess-controller handle]
@@ -37,9 +32,11 @@
   [start subprocess-controller stdout stdin stderr group cmd args]
   [stop subprocess-controller handle])
 
+
 (define-message $subprocess ())
 (define-message $subprocess:report $subprocess (cmd args wd max-runtime actual-runtime expected-exit-codes actual-exit-code stderr?))
 (define-message $subprocess:command-not-found $subprocess (cmd))
+
 
 (struct subprocess-controller/production ()
   #:methods gen:subprocess-controller
@@ -84,56 +81,60 @@
              stderr<))])
 
 
-(define-subprogram (run #:expected-exit-codes [expected-exit-codes '(0)]
-                        #:timeout [timeout (* 60 60)]
-                        #:stdin [user-stdin #f]
-                        #:cwd [wd (current-directory)]
-                        #:fail-on-stderr? [fail-on-stderr? #t]
-                        #:controller [controller (subprocess-controller/production)]
-                        cmd . args)
-  (define cmd-actual (find-exe controller cmd))
+(define (run #:expected-exit-codes [expected-exit-codes '(0)]
+             #:timeout [timeout (* 60 60)]
+             #:stdin [user-stdin #f]
+             #:cwd [wd (current-directory)]
+             #:fail-on-stderr? [fail-on-stderr? #t]
+             #:controller [controller (subprocess-controller/production)]
+             cmd . args)
+  (machine
+   (λ (state)
+     (let/cc return
+       (define cmd-actual (find-exe controller cmd))
 
-  (unless cmd-actual
-    ($fail ($subprocess:command-not-found cmd)))
+       (unless cmd-actual
+         (return (state-halt-with state ($subprocess:command-not-found cmd))))
 
-  (define-values (handle stdout stdin stderr)
-    (parameterize ([current-directory wd])
-      (start controller (current-output-port) (current-input-port) #f #f cmd-actual args)))
+       (define-values (handle stdout stdin stderr)
+         (parameterize ([current-directory wd])
+           (start controller (current-output-port) (current-input-port) #f #f cmd-actual args)))
 
-  (when user-stdin
-    (copy-port user-stdin stdin)
-    (flush-output stdin))
+       (when user-stdin
+         (copy-port user-stdin stdin)
+         (flush-output stdin))
 
-  (define stderr? #f)
+       (define stderr? #f)
 
-  (define stderr-pump
-    (thread
-     (λ ()
-       (unless (eof-object? (peek-byte stderr))
-         (set! stderr? #t)
-         (copy-port stderr (current-error-port))))))
+       (define stderr-pump
+         (thread
+          (λ ()
+            (unless (eof-object? (peek-byte stderr))
+              (set! stderr? #t)
+              (copy-port stderr (current-error-port))))))
 
-  (define start-s (current-seconds))
+       (define start-s (current-seconds))
 
-  (define runtime
-    (if (sync/timeout timeout handle)
-        (- (current-seconds) start-s)
-        (begin (stop controller handle)
-               timeout)))
+       (define runtime
+         (if (sync/timeout timeout handle)
+             (- (current-seconds) start-s)
+             (begin (stop controller handle)
+                    timeout)))
 
-  (thread-wait stderr-pump)
+       (thread-wait stderr-pump)
 
-  (define exit-code (get-status controller handle))
+       (define exit-code (get-status controller handle))
+       (define report ($subprocess:report cmd-actual args wd timeout runtime expected-exit-codes exit-code stderr?))
+       (define state* (state-add-message state report))
 
-  (values (if (and (or (null? expected-exit-codes)
-                       (list? (member exit-code expected-exit-codes)))
-                   (or (not fail-on-stderr?)
-                       (not stderr?))
-                   (< runtime timeout))
-              (void)
-              FAILURE)
-          (cons ($subprocess:report cmd-actual args wd timeout runtime expected-exit-codes exit-code stderr?)
-                $messages)))
+       (state-set-value state*
+                        (if (and (or (null? expected-exit-codes)
+                                     (list? (member exit-code expected-exit-codes)))
+                                 (or (not fail-on-stderr?)
+                                     (not stderr?))
+                                 (< runtime timeout))
+                            (void)
+                            halt))))))
 
 
 (module+ test
@@ -142,17 +143,18 @@
   (define from-nothing (open-input-bytes #""))
   (define to-nowhere (open-output-nowhere))
 
-  (define-syntax-rule (test-subprocess msg #:should-fail? should-fail? l expected-report-pattern)
-    (call-with-values (λ ()
-                        (parameterize ([current-output-port to-nowhere]
-                                       [current-error-port to-nowhere])
-                          (run-subprogram l null)))
-                      (λ (v messages)
-                        (test-case msg
-                          (if should-fail?
-                              (check-eq? FAILURE v)
-                              (check-pred void? v))
-                          (check-match (car messages) expected-report-pattern)))))
+  (define-syntax-rule (test-subprocess msg #:should-fail? should-fail? m expected-report-pattern)
+    (test-case msg
+      (define state
+        (parameterize ([current-output-port to-nowhere]
+                       [current-error-port to-nowhere])
+          (m)))
+      (define value (car state))
+      (define messages (cdr state))
+      (if should-fail?
+          (check-equal? value halt)
+          (check-pred void? value))
+      (check-match (car messages) expected-report-pattern)))
 
   (define (noop . _)
     (values from-nothing to-nowhere from-nothing))
