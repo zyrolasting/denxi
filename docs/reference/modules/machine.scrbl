@@ -124,6 +124,14 @@ Returns a state with @racket[msg] as an additional message.
 Returns a state with @racket[v] as a new value.
 }
 
+@defproc[(state-get-messages [state state-like?]) any/c]{
+Returns @racket[(cdr state)]
+}
+
+@defproc[(state-get-value [state state-like?]) any/c]{
+Returns @racket[(car state)]
+}
+
 @defproc[(state/c [value/c contract?]) contract?]{
 Returns a @tech/reference{contract} for a @tech{machine} state with a
 specific value type.

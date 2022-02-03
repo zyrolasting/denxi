@@ -37,6 +37,10 @@
            predicate/c]
           [state-halt-with
            (-> state-like? any/c state-halt?)]
+          [state-get-value
+           (-> state-like? any/c)]
+          [state-get-messages
+           (-> state-like? list?)]
           [state-set-value
            (-> state-like? any/c state-like?)]))
 
@@ -51,6 +55,14 @@
 
 (define state-undefined
   (list undefined))
+
+
+(define (state-get-value state)
+  (car state))
+
+
+(define (state-get-messages state)
+  (cdr state))
 
 
 (define (state-like? v)
