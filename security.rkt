@@ -53,7 +53,7 @@
                   #:trust-certificates trust-certificates
                   #:writeable-directories writeable-directories
                   #:gc-period gc-period
-                  #:name [name (or (object-name proc) "")])
+                  #:name name)
   (call-with-managed-thread (make-gc-thread gc-period)
                             (λ _
                               ; The `plan' mechanic allows the two threads at play
