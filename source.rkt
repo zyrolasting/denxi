@@ -16,11 +16,10 @@
          "crypto.rkt"
          "format.rkt"
          "integrity/base.rkt"
+         "machine.rkt"
          "message.rkt"
          "port.rkt"
-         "printer.rkt"
          "string.rkt"
-         "subprogram.rkt"
          "url.rkt")
 
 
@@ -59,7 +58,7 @@
           [exhaust/c contract?]
           [fetch (-> source? tap/c exhaust/c any/c)]
           [identify (-> source? (or/c #f input-port?))]
-          [subprogram-fetch (-> source? tap/c subprogram?)]
+          [machine-fetch (-> source? tap/c machine?)]
           [make-limited-tap (-> exact-nonnegative-integer? tap/c)]
           [make-source-key (-> source? (or/c bytes? #f))]
           [source? predicate/c]
@@ -75,7 +74,7 @@
           [current-string->source
            (parameter/c (-> string? source?))]
           [eval-untrusted-source-expression
-           (->* (any/c) (namespace?) subprogram?)]))
+           (->* (any/c) (namespace?) machine?)]))
 
 
 (define-message $fetch (id errors))
@@ -87,26 +86,25 @@
 ;-----------------------------------------------------------------------
 ; Implementation
 
-(define (subprogram-fetch source p)
-  (subprogram
-   (λ (messages)
+(define (machine-fetch source p)
+  (machine
+   (λ (state)
      (define id (make-source-key source))
      (fetch source
             (λ a
-              (values (apply p a)
-                      (cons ($fetch id null)
-                            messages)))
+              (state-set-value (apply p a)
+                               (state-add-message ($fetch id null)
+                                                  state)))
             (λ (variant)
-              (values FAILURE
-                      (cons ($fetch id (log-exhausted-source messages variant))
-                            messages)))))))
+              (state-halt-with state
+                               ($fetch id (log-exhausted-source state variant))))))))
 
 
 (define (log-exhausted-source messages variant)
   (cond [(list? variant)
          (foldl (λ (n res) (log-exhausted-source res n)) messages variant)]
         [(exn? variant)
-         (cons ($show-string (exn->string variant)) messages)]
+         (cons ($show-string (format-value variant)) messages)]
         [($message? variant)
          (cons variant messages)]
         [else
@@ -347,34 +345,29 @@
 
 
 (define (eval-untrusted-source-expression datum [ns (current-namespace)])
-  (subprogram
-   (λ (messages)
-     (call/cc
-      (λ (return)
-        (define (block . context)
-          (return FAILURE
-                  (cons ($bad-source-eval 'security datum context)
-                        messages)))
-        (define variant
-          (parameterize ([current-security-guard
-                          (make-security-guard
-                           (current-security-guard)
-                           (λ (sym path-or-#f ops)
-                             (define (block/fs)
-                               (block 'fs sym path-or-#f ops))
-                             (when path-or-#f
-                               (when (or (member 'execute ops)
-                                         (member 'write ops)
-                                         (member 'delete ops))
-                                 (block/fs))))
-                           (λ _ (apply block 'network _))
-                           (λ _ (apply block 'link _)))])
-            (eval-syntax (namespace-syntax-introduce (datum->syntax #f datum) ns) ns)))
-        (if (source? variant)
-            (values variant messages)
-            (values FAILURE
-                    (cons ($bad-source-eval 'invariant datum #f)
-                          messages))))))))
+  (machine
+   (λ (state)
+     (let/cc return
+       (define (block . context)
+         (return (state-halt-with state ($bad-source-eval 'security datum context))))
+       (define variant
+         (parameterize ([current-security-guard
+                         (make-security-guard
+                          (current-security-guard)
+                          (λ (sym path-or-#f ops)
+                            (define (block/fs)
+                              (block 'fs sym path-or-#f ops))
+                            (when path-or-#f
+                              (when (or (member 'execute ops)
+                                        (member 'write ops)
+                                        (member 'delete ops))
+                                (block/fs))))
+                          (λ _ (apply block 'network _))
+                          (λ _ (apply block 'link _)))])
+           (eval-syntax (namespace-syntax-introduce (datum->syntax #f datum) ns) ns)))
+       (if (source? variant)
+           (state-set-value state variant)
+           (state-halt-with state ($bad-source-eval 'invariant datum #f)))))))
 
 (module+ test
   (require racket/file
@@ -382,8 +375,7 @@
            racket/runtime-path
            rackunit
            mzlib/etc
-           "file.rkt"
-           (submod "subprogram.rkt" test))
+           (submod "machine.rkt" test))
 
   (test-case "Detect budget amounts using predicate"
     (check-pred budget/c 0)
@@ -457,20 +449,19 @@
 
 
   (test-case "Fetch from file"
-    (call-with-temporary-file
-     (λ (tmp-path)
-       (display-to-file #:exists 'truncate/replace "123" tmp-path)
+    (define tmp-path (make-temporary-file))
+    (display-to-file #:exists 'truncate/replace "123" tmp-path)
 
-       (define (tap in est-size)
-         (and (equal? (read in) 123)
-              (<= (abs (- est-size (file-size tmp-path)))
-                  (* 20 1024))))
+    (define (tap in est-size)
+      (and (equal? (read in) 123)
+           (<= (abs (- est-size (file-size tmp-path)))
+               (* 20 1024))))
 
-       (check-true (fetch (file-source tmp-path) tap values))
-       (test-true "Fetch file via http-source"
-                  (fetch (http-source (~a "file://" tmp-path) 0)
-                         tap
-                         values)))))
+    (check-true (fetch (file-source tmp-path) tap values))
+    (test-true "Fetch file via http-source"
+               (fetch (http-source (~a "file://" tmp-path) 0)
+                      tap
+                      values)))
 
 
   (test-case "Fetch over HTTP"
@@ -523,42 +514,26 @@
   (define test-ns (namespace-anchor->namespace ns-anchor))
 
   (define (test-safe-expression intent predicate datum)
-    (test-subprogram
-     (format "Eval source expression (safe, ~a)" intent)
-     (eval-untrusted-source-expression datum test-ns)
-     (λ (val messages)
-       (check-pred predicate val)
-       (check-pred null? messages))))
+    (test-case (format "Eval source expression (safe, ~a)" intent)
+      (check-machine-value (eval-untrusted-source-expression datum test-ns)
+                           (? predicate _))))
 
   (define (test-unsafe-expression intent datum)
-    (test-subprogram
-     (format "Eval source expression (dangerous, ~a)" intent)
-     (eval-untrusted-source-expression datum test-ns)
-     (λ (val messages)
-       (check-eq? val FAILURE)
-       (check-match (car messages)
-                    ($bad-source-eval 'security
-                                      (? (λ (v) (equal? datum v)) _)
-                                      _)))))
+    (test-case (format "Eval source expression (dangerous, ~a)" intent)
+      (check-machine-halt (eval-untrusted-source-expression datum test-ns)
+                          ($bad-source-eval 'security
+                                            (? (λ (v) (equal? datum v)) _)
+                                            _))))
 
-  (test-subprogram
-   "Eval non-source expression"
-   (eval-untrusted-source-expression '1 test-ns)
-   (λ (val messages)
-     (check-eq? val FAILURE)
-     (check-match (car messages)
-                  ($bad-source-eval 'invariant
-                                    (? (λ (v) (equal? '1 v)) _)
-                                    _))))
+  (test-case "Eval non-source expression"
+    (check-machine-halt (eval-untrusted-source-expression '1 test-ns)
+                        ($bad-source-eval 'invariant
+                                          (? (λ (v) (equal? '1 v)) _)
+                                          _)))
 
-  (test-safe-expression
-   "Literal bytes"
-   byte-source?
-   '(byte-source #"abc"))
+  (test-safe-expression "Literal bytes" byte-source? '(byte-source #"abc"))
 
-  (test-unsafe-expression
-   "file output"
-   '(open-output-file "evil"))
+  (test-unsafe-expression "file output" '(open-output-file "evil"))
 
   (test-unsafe-expression
    "execute"
