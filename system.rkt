@@ -9,6 +9,9 @@
          "subprogram.rkt")
 
 (provide (all-from-out racket/system)
+         (struct-out $subprocess)
+         (struct-out $subprocess:report)
+         (struct-out $subprocess:command-not-found)
          os-sym
          (contract-out
           [ALL_OS_SYMS (listof symbol?)]
@@ -34,9 +37,9 @@
   [start subprocess-controller stdout stdin stderr group cmd args]
   [stop subprocess-controller handle])
 
-(define+provide-message $subprocess ())
-(define+provide-message $subprocess:report $subprocess (cmd args wd max-runtime actual-runtime expected-exit-codes actual-exit-code stderr?))
-(define+provide-message $subprocess:command-not-found $subprocess (cmd))
+(define-message $subprocess ())
+(define-message $subprocess:report $subprocess (cmd args wd max-runtime actual-runtime expected-exit-codes actual-exit-code stderr?))
+(define-message $subprocess:command-not-found $subprocess (cmd))
 
 (struct subprocess-controller/production ()
   #:methods gen:subprocess-controller

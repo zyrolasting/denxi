@@ -37,15 +37,14 @@
 (define exhaust/c
   (-> any/c any/c))
 
-(define+provide-message $fetch (id errors))
-(define+provide-message $http-failure (request-url status-line headers capped-body))
-(define+provide-message $bad-source-eval (reason datum context))
-(define+provide-message $untrusted-cert (url original-exn))
-
 (provide define-source
          empty-source
          from-file
          gen:source
+         (struct-out $fetch)
+         (struct-out $http-failure)
+         (struct-out $bad-source-eval)
+         (struct-out $untrusted-cert)
          (struct-out exhausted-source)
          (struct-out file-source)
          (struct-out first-available-source)
@@ -77,6 +76,12 @@
            (parameter/c (-> string? source?))]
           [eval-untrusted-source-expression
            (->* (any/c) (namespace?) subprogram?)]))
+
+
+(define-message $fetch (id errors))
+(define-message $http-failure (request-url status-line headers capped-body))
+(define-message $bad-source-eval (reason datum context))
+(define-message $untrusted-cert (url original-exn))
 
 
 ;-----------------------------------------------------------------------

@@ -3,6 +3,9 @@
 (require racket/contract)
 (provide (struct-out package-input)
          (struct-out untrusted-source)
+         (struct-out $input)
+         (struct-out $input:not-found)
+         (struct-out $input:abstract)
          (contract-out
           [abstract-package-input?
            flat-contract?]
@@ -41,15 +44,14 @@
          "message.rkt"
          "monad.rkt"
          "port.rkt"
-         "printer.rkt"
          "signature.rkt"
          "source.rkt"
          "string.rkt"
          "subprogram.rkt")
 
-(define+provide-message $input (name))
-(define+provide-message $input:not-found $input ())
-(define+provide-message $input:log $input (messages))
+(define-message $input (name))
+(define-message $input:not-found $input ())
+(define-message $input:abstract $input ())
 
 (define current-inputs
   (make-parameter null))

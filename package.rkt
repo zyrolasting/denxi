@@ -2,6 +2,11 @@
 
 (require racket/contract)
 (provide (struct-out package)
+         (struct-out $package)
+         (struct-out $package:output)
+         (struct-out $package:output:built)
+         (struct-out $package:output:reused)
+         (struct-out $package:output:undefined)
          (contract-out
           [current-package-editor
            (parameter/c (-> package? (subprogram/c package?)))]
@@ -39,13 +44,11 @@
            "file.rkt"))
 
 
-(define+provide-message $package ())
-(define+provide-message $package:output $package (name))
-(define+provide-message $package:output:built $package:output ())
-(define+provide-message $package:output:reused $package:output ())
-(define+provide-message $package:output:undefined $package:output (names))
-(define+provide-message $package:input $package (name))
-(define+provide-message $package:input:abstract $package:input ())
+(define-message $package ())
+(define-message $package:output $package (name))
+(define-message $package:output:built $package:output ())
+(define-message $package:output:reused $package:output ())
+(define-message $package:output:undefined $package:output (names))
 
 
 (define current-package-editor

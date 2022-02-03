@@ -6,6 +6,14 @@
 
 (provide (all-from-out racket/port)
          (struct-out transfer-policy)
+         (struct-out $transfer)
+         (struct-out $transfer:scope)
+         (struct-out $transfer:broken)
+         (struct-out $transfer:progress)
+         (struct-out $transfer:timeout)
+         (struct-out $transfer:budget)
+         (struct-out $transfer:budget:exceeded)
+         (struct-out $transfer:budget:rejected)
          (contract-out
           [full-trust-transfer-policy
            transfer-policy/c]
@@ -22,14 +30,14 @@
           [zero-trust-transfer-policy
            transfer-policy/c]))
 
-(define+provide-message $transfer ())
-(define+provide-message $transfer:scope $transfer (name timestamp-s message))
-(define+provide-message $transfer:broken $transfer (value))
-(define+provide-message $transfer:progress $transfer (bytes-read max-size))
-(define+provide-message $transfer:timeout $transfer (bytes-read wait-time))
-(define+provide-message $transfer:budget $transfer (allowed-max-size))
-(define+provide-message $transfer:budget:exceeded $transfer:budget (overrun-size))
-(define+provide-message $transfer:budget:rejected $transfer:budget (proposed-max-size))
+(define-message $transfer ())
+(define-message $transfer:scope $transfer (name timestamp-s message))
+(define-message $transfer:broken $transfer (value))
+(define-message $transfer:progress $transfer (bytes-read max-size))
+(define-message $transfer:timeout $transfer (bytes-read wait-time))
+(define-message $transfer:budget $transfer (allowed-max-size))
+(define-message $transfer:budget:exceeded $transfer:budget (overrun-size))
+(define-message $transfer:budget:rejected $transfer:budget (proposed-max-size))
 
 (require racket/match
          "string.rkt")

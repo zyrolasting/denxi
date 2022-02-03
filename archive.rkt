@@ -17,17 +17,17 @@
          "message.rkt"
          "monad.rkt")
 
-(provide
- (contract-out
-  [extract (-> (or/c path-string? input-port?) (subprogram/c void?))]
-  [extract-input (->* (string?) (#:keep? any/c) subprogram?)]
-  [current-find-extract-procedure
-   (-> path-string? (or/c #f (-> input-port? any)))]))
+(provide (struct-out $extract-report)
+         (contract-out
+          [extract (-> (or/c path-string? input-port?) (subprogram/c void?))]
+          [extract-input (->* (string?) (#:keep? any/c) subprogram?)]
+          [current-find-extract-procedure
+           (-> path-string? (or/c #f (-> input-port? any)))]))
 
 (define current-find-extract-procedure
   (make-parameter (λ _ #f)))
 
-(define+provide-message $extract-report (status target))
+(define-message $extract-report (status target))
 
 (define-subprogram (extract variant)
   (let start ([in variant])

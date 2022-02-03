@@ -19,31 +19,31 @@
          "subprogram.rkt"
          "system.rkt")
 
-(provide
- (struct-out bare-racket-module)
- (contract-out [racket-module-input-variant/c flat-contract?]
-               [racket-module-variant/c flat-contract?]
-               [code/c flat-contract?]
-               [coerce-datum (-> code/c list?)]
-               [list/syntax? predicate/c]
-               [any-racket-module-code? predicate/c]
-               [racket-module-code? (-> symbol? any/c boolean?)]
-               [strip (-> racket-module-variant/c bare-racket-module?)]
-               [dress (-> bare-racket-module? list?)]
-               [get-racket-module-body
-                (-> (or/c #f symbol?) racket-module-variant/c (or/c #f code/c))]
-               [make-racket-module-datum
-                (->* (symbol? list?)
-                     (#:id symbol?)
-                     list?)]
-               [read-racket-module
-                (->* (symbol? symbol? racket-module-input-variant/c)
-                     (subprogram/c syntax?))]
-               [keep-standalone-racket-module
-                (->* (string?) (#:compile-with (or/c path-string? #f))
-                     subprogram?)]))
+(provide (struct-out bare-racket-module)
+         (struct-out $racket-module-read-error)
+         (contract-out [racket-module-input-variant/c flat-contract?]
+                       [racket-module-variant/c flat-contract?]
+                       [code/c flat-contract?]
+                       [coerce-datum (-> code/c list?)]
+                       [list/syntax? predicate/c]
+                       [any-racket-module-code? predicate/c]
+                       [racket-module-code? (-> symbol? any/c boolean?)]
+                       [strip (-> racket-module-variant/c bare-racket-module?)]
+                       [dress (-> bare-racket-module? list?)]
+                       [get-racket-module-body
+                        (-> (or/c #f symbol?) racket-module-variant/c (or/c #f code/c))]
+                       [make-racket-module-datum
+                        (->* (symbol? list?)
+                             (#:id symbol?)
+                             list?)]
+                       [read-racket-module
+                        (->* (symbol? symbol? racket-module-input-variant/c)
+                             (subprogram/c syntax?))]
+                       [keep-standalone-racket-module
+                        (->* (string?) (#:compile-with (or/c path-string? #f))
+                             subprogram?)]))
 
-(define+provide-message $racket-module-read-error $message (variant reason context))
+(define-message $racket-module-read-error (variant reason context))
 
 ;------------------------------------------------------------------------
 ; Definitions

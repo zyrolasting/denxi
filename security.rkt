@@ -19,26 +19,28 @@
          "path.rkt"
          "port.rkt")
 
-(provide
- (contract-out
-  [restrict
-   (-> procedure?
-       (-> any)
-       #:memory-limit (>=/c 0)
-       #:time-limit (>=/c 0)
-       #:trusted-executables (listof well-formed-integrity?)
-       #:allowed-envvars (listof (or/c bytes-environment-variable-name? string?))
-       #:trust-unverified-host? boolean?
-       #:trust-any-executable? boolean?
-       #:trust-host-executables (listof path-string?)
-       #:trust-certificates (listof path-string?)
-       #:writeable-directories (listof path-string?)
-       #:gc-period (>/c 0)
-       #:name string?)]))
+(provide (struct-out $restrict)
+         (struct-out $restrict:operation)
+         (struct-out $restrict:budget)
+         (contract-out
+          [restrict
+           (-> procedure?
+               (-> any)
+               #:memory-limit (>=/c 0)
+               #:time-limit (>=/c 0)
+               #:trusted-executables (listof well-formed-integrity?)
+               #:allowed-envvars (listof (or/c bytes-environment-variable-name? string?))
+               #:trust-unverified-host? boolean?
+               #:trust-any-executable? boolean?
+               #:trust-host-executables (listof path-string?)
+               #:trust-certificates (listof path-string?)
+               #:writeable-directories (listof path-string?)
+               #:gc-period (>/c 0)
+               #:name string?)]))
 
-(define+provide-message $restrict (name))
-(define+provide-message $restrict:operation $restrict (reporting-guard summary args))
-(define+provide-message $restrict:budget $restrict (kind amount))
+(define-message $restrict (name))
+(define-message $restrict:operation $restrict (reporting-guard summary args))
+(define-message $restrict:budget $restrict (kind amount))
 
 
 (define (restrict halt

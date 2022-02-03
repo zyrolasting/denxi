@@ -5,26 +5,27 @@
 (define shovel/c
   (-> any/c (subprogram/c artifact?)))
 
-(provide
- (contract-out
-  [find-artifact
-   (->* (any/c)
-        (shovel/c)
-        (subprogram/c artifact?))]
-  [shovel/c
-   chaperone-contract?]
-  [broken-shovel
-   shovel/c]
-  [dig-failure
-   (-> (or/c symbol? string?)
-       any/c
-       subprogram?)]
-  [current-shovel
-   (parameter/c shovel/c)]
-  [shovel-cons
-   (-> shovel/c shovel/c shovel/c)]
-  [shovel-list
-   (->* () #:rest (listof shovel/c) shovel/c)]))
+(provide (struct-out $dig)
+         (struct-out $dig:no-artifact)
+         (contract-out
+          [find-artifact
+           (->* (any/c)
+                (shovel/c)
+                (subprogram/c artifact?))]
+          [shovel/c
+           chaperone-contract?]
+          [broken-shovel
+           shovel/c]
+          [dig-failure
+           (-> (or/c symbol? string?)
+               any/c
+               subprogram?)]
+          [current-shovel
+           (parameter/c shovel/c)]
+          [shovel-cons
+           (-> shovel/c shovel/c shovel/c)]
+          [shovel-list
+           (->* () #:rest (listof shovel/c) shovel/c)]))
 
 
 (require "artifact.rkt"
@@ -33,8 +34,8 @@
          "message.rkt")
 
 
-(define+provide-message $dig ())
-(define+provide-message $dig:no-artifact $dig (shovel-name hint))
+(define-message $dig ())
+(define-message $dig:no-artifact $dig (shovel-name hint))
 
 
 (define (dig-failure name hint)
