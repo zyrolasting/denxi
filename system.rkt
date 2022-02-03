@@ -6,7 +6,6 @@
          racket/system
          syntax/parse
          "message.rkt"
-         "setting.rkt"
          "subprogram.rkt")
 
 (provide (all-from-out racket/system)
