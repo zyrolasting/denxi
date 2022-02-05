@@ -36,15 +36,8 @@ your way through real-world problems.
 ## Package Definitions
 1. [Input Overriding](./input-overriding): Substitute inputs at
    runtime. (@zyrolasting)
-1. [Abstract Inputs](./abstract-inputs): How to work with inputs that
-   only have names.  (@zyrolasting)
-1. [Abstract Outputs](./abstract-outputs): How to work with outputs
-   that only have names.  (@zyrolasting)
 1. [Artifact Deterministim](./determinism): How to guarentee that an
    artifact is always useable.  (@zyrolasting)
-1. [Allow Racket Versions](./allow-racket-versions): Ask Denxi to
-   process a definition depending on the current Racket
-   version. (@zyrolasting)
 1. [Generated Racket Bindings](./generated-racket-bindings): Fix a
    problem with non-`eq?` generated bindings that plagues Racket
    programs distributed on PLaneT, and sometimes `raco pkg`. (@zyrolasting)
