@@ -7,7 +7,8 @@
          "message.rkt"
          "monad.rkt")
 
-(provide (struct-out $cycle)
+(provide machine-rule
+         (struct-out $cycle)
          (struct-out machine)
          (contract-out
           [halt
@@ -109,6 +110,10 @@
                 (machine/c any/c range/c)]
                [(domain/c range/c)
                 (struct/c machine (-> (state/c domain/c) (state/c range/c)))]))
+
+
+(define-syntax-rule (machine-rule x)
+  (machine (λ (s) (state-set-value s x))))
 
 
 (define (machine-bind m f)

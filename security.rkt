@@ -12,7 +12,6 @@
          racket/list
          openssl
          "codec.rkt"
-         "crypto.rkt"
          "integrity.rkt"
          "state.rkt"
          "message.rkt"
@@ -141,6 +140,7 @@
                                        stop-cust)
                stop-cust))))
 
+
 (define (call-with-custom-custodian memory-limit-mb proc)
   (let ([cust (make-custom-custodian memory-limit-mb)])
     (dynamic-wind void
@@ -150,6 +150,7 @@
                   (λ ()
                     (custodian-shutdown-all cust)))))
 
+
 (define (make-gc-thread period)
   (thread
    (λ ()
@@ -158,14 +159,12 @@
        (collect-garbage)
        (loop)))))
 
+
 (define (call-with-managed-thread th proc)
   (dynamic-wind void
                 (λ () (proc th))
                 (λ () (kill-thread th))))
 
-
-;-------------------------------------------------------------------------------
-; Environment variables
 
 (define (make-envvar-subset allowed [input-set (current-environment-variables)])
   (define subset-names (remove-duplicates (map coerce-bytes (cons "PATH" allowed))))
@@ -180,25 +179,11 @@
                mappings))))
 
 
-
 ;-------------------------------------------------------------------------------
-; Security guard
+; Security guards
 
-(define (make-custom-security-guard #:name name
-                                    #:trust-any-executable? trust-any-executable?
-                                    #:trust-executables trust-executables
-                                    #:writeable-directories writeable-directories
-                                    #:trust-host-executables trust-host-executables)
-  (make-security-guard
-   (current-security-guard)
-   (make-file-guard #:trust-any-executable? trust-any-executable?
-                    #:trust-host-executables trust-host-executables
-                    #:trust-executables trust-executables
-                    #:writeable-directories writeable-directories
-                    name)
-   (make-network-guard name)
-   (make-link-guard name writeable-directories)))
-
+(define (make-custom-security-guard . args)
+  (apply make-security-guard (current-security-guard) args))
 
 
 (define (make-file-guard #:trust-any-executable? trust-any-executable?

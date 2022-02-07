@@ -186,6 +186,12 @@
                            #t))
 
 
+(define (govern-tap from-source est-size policy)
+  (define-values (from-pipe to-pipe) (make-pipe))
+  (async (transfer from-source to-pipe est-size policy))
+  from-pipe)
+
+
 ;-----------------------------------------------------------------------
 ; Source types
 

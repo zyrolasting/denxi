@@ -16,9 +16,6 @@
           [resolve-input
            (-> package-input?
                (subprogram/c path-string?))]
-          [release-input
-           (-> package-input?
-               (subprogram/c void?))]
           [keep-input
            (-> string?
                (subprogram/c path-string?))]
@@ -34,6 +31,7 @@
                (subprogram/c artifact?))]
           [current-inputs
            (parameter/c (listof package-input?))]))
+
 
 (require racket/match
          racket/path
@@ -78,53 +76,16 @@
   (mdo i := (input-ref name)
        (resolve-input i)))
 
-(define-subprogram (release-input input)
-  (with-handlers ([exn:fail:filesystem? (λ _ ($use (void)))])
-    ($use (delete-file (package-input-name input)))))
-
-(define (fetch-input input)
-  (mdo arti           := (find-artifact-for-input input)
-       file-record    := (fetch-artifact (package-input-name input) arti)
-       (verify-artifact arti file-record) ; Security critical
-       (subprogram-unit file-record)))
-
-(define (find-artifact-for-input input)
-  (subprogram-combine
-   (find-artifact (package-input-plinth input))
-   (λ (messages to-wrap)
-     (cons ($input:log (package-input-name input)
-                       (reverse to-wrap))
-           messages))))
-
 (define (resolve-input input)
-  (mdo file-record    := (fetch-input input)
-       reference-name := (subprogram-unit (package-input-name input))
-       (subprogram
-        (λ (messages)
-          (error "Add reference-name as an alias")
-          (values reference-name
-                  messages)))))
+  (define name (package-input-name input))
+  (define plinth (package-input-plinth input))
+  (if (artifact? plinth)
+      (mdo known := (study-artifact (package-input-name input))
+           names := (known-get-names known)
+           (known-put-names known (cons name names)))
+      (subprogram-failure ($input:abstract name))))
 
-(define-source #:key get-untrusted-source-key (untrusted-source [input package-input?])
-  (error "Replace with an implementation that taps into a known blob.")
-  (define subprogram
-    (mdo record := (fetch-input input)
-         (subprogram-unit
-          (%fetch null))))
-  (define-values (result messages) (run-subprogram subprogram null))
-  (when (eq? result FAILURE)
-    (%fail messages)))
 
-(define (get-untrusted-source-key i)
-  (match-define (package-input name plinth) i)
-  (input-port-append
-   (open-input-string name)
-   (if (artifact? plinth)
-       (or (identify (artifact-source plinth))
-           (open-input-bytes #""))
-       (open-input-string
-        (with-handlers ([values (λ (e) (open-input-bytes #""))])
-          (~s plinth))))))
 
 (module+ test
   (require rackunit)

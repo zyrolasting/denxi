@@ -1,10 +1,6 @@
-#lang scribble/manual
+#lang denxi/document
 
 @title{Prerequisite Knowledge}
-
-@require[@for-label[racket
-                    denxi/integrity]
-         "../shared.rkt"]
 
 To understand this reference, you should have a working understanding
 of Denxi's model.

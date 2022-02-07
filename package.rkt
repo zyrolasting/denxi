@@ -55,10 +55,11 @@
   (make-parameter subprogram-unit))
 
 (struct package
-  (metadata inputs outputs))
+  (metadata outputs))
+
 
 (define empty-package
-  (package (hasheq) null null))
+  (package (hasheq) null))
 
 
 (define-syntax-rule (build-package . fields)
@@ -73,7 +74,7 @@
        (bind-output mind i o rkey)))
 
 
-(define (load-package-definition source name [max-size (mebibytes->bytes (DENXI_FETCH_PKGDEF_SIZE_MB))])
+(define (load-package-definition source name max-size)
   (mdo variant := (subprogram-fetch name source (make-limited-tap max-size))
        (read-package-definition variant)))
 

@@ -1,6 +1,5 @@
-#lang scribble/report
+#lang reader "../scribble.rkt"
 
-@require["../shared.rkt"]
 @title[#:style '(toc)]{Denxi Journal}
 @by-slg
 
@@ -16,4 +15,7 @@ log entry.
 For all documentation, see @other-doc[denxi-index].
 
 @table-of-contents[]
-@include-section{10-jan-2021.scrbl}
+@include-section{23-jan-2022.scrbl}
+@include-section{22-jan-2022.scrbl}
+@include-section{18-jan-2022.scrbl}
+@include-section{10-jan-2022.scrbl}

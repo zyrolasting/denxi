@@ -40,12 +40,13 @@
 
 
 (module+ test
-  (require rackunit)
+  (require "test.rkt")
 
   (define-message $foo (a b c))
   (define foo-inst ($foo 1 2 3))
 
-  (check-pred $foo? foo-inst)
-  (check-equal? ($foo-a foo-inst) 1)
-  (check-equal? ($foo-b foo-inst) 2)
-  (check-equal? ($foo-c foo-inst) 3))
+  (test message
+        (assert ($foo? foo-inst))
+        (assert (equal? ($foo-a foo-inst) 1))
+        (assert (equal? ($foo-b foo-inst) 2))
+        (assert (equal? ($foo-c foo-inst) 3))))

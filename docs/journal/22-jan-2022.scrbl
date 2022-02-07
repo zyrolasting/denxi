@@ -1,7 +1,5 @@
-#lang scribble/report
+#lang reader "../scribble.rkt"
 
-@require["../shared.rkt" scribble/manual
-         @for-label[racket/base racket/exn]]
 @title{22 January 2022}
 @by-slg
 

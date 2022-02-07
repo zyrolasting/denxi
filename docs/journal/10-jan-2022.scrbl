@@ -1,6 +1,5 @@
-#lang scribble/report
+#lang reader "../document.rkt"
 
-@require["../shared.rkt" scribble/manual]
 @title{10 January 2022}
 @by-slg
 

@@ -1,16 +1,14 @@
 #lang racket/base
 
 (require racket/contract)
-
 (provide (struct-out notary)
          (contract-out
           [lazy-notary notary?]
           [make-fraudulent-notary
            (-> symbol? notary?)]
           [make-notary
-           (->* ()
-                (#:chf symbol?
-                 #:private-key
+           (->* (string?)
+                (#:private-key
                  (or/c #f source-variant?)
                  #:public-key-source
                  (or/c #f source-variant?)
@@ -20,16 +18,18 @@
           [notarize
            (-> notary?
                (or/c artifact? source-variant?)
-               (subprogram/c artifact?))]))
+               (machine/c artifact?))]))
+
 
 (require racket/file
          racket/match
          "artifact.rkt"
          "crypto.rkt"
          "integrity.rkt"
+         "machine.rkt"
          "signature.rkt"
-         "source.rkt"
-         "subprogram.rkt")
+         "source.rkt")
+
 
 (struct notary
   (chf
@@ -37,7 +37,8 @@
    private-key
    private-key-password))
 
-(define (make-notary #:chf [chf (get-default-chf)]
+
+(define (make-notary chf
                      #:public-key-source [pb #f]
                      #:private-key [pk #f]
                      #:private-key-password [pkp #f])
@@ -46,6 +47,7 @@
 
 (define lazy-notary
   (make-notary))
+
 
 ; Don't reduce to normal constructor call. This counts as implicit
 ; test coverage based on module instantiations.
@@ -59,34 +61,17 @@
                snake-oil-private-key-password))
 
 
-(define (notarize the-notary content)
+(define (notarize the-notary source)
   (match-define (notary chf pubkey prvkey prvkeypass) the-notary)
-
-  (define user-source
-    (if (source-variant? content)
-        content
-        (artifact-source content)))
-
-  (define content-source
-    (coerce-source user-source))
-
   (if chf
-      (subprogram-fetch
-       "notary"
-       content-source
+      (machine-fetch source
        (λ (in est-size)
          (define intinfo
-           (and chf
-                (integrity
-                 chf
-                 (make-digest in chf))))
-
-         (close-input-port in)
-         
-         (artifact user-source
+           (integrity chf (make-digest in chf)))
+         (close-input-port in)         
+         (artifact source
                    intinfo
-                   (and intinfo
-                        pubkey
+                   (and pubkey
                         prvkey
                         (signature
                          pubkey
@@ -95,18 +80,18 @@
                           (integrity-chf-symbol intinfo)
                           prvkey
                           prvkeypass))))))
-      (subprogram-unit (artifact user-source #f #f))))
+      (machine-unit (artifact source #f #f))))
+
 
 (module+ test
   (require rackunit
-           (submod "subprogram.rkt" test))
+           (submod "machine.rkt" test))
   (check-pred notary? (make-notary))
   (call-with-snake-oil-cipher-trust
    (λ ()
-     (check-match
-      (get-subprogram-value
-       (notarize (make-fraudulent-notary)
-                 (make-artifact #"abc")))
+     (check-machine-value
+      (notarize (make-fraudulent-notary)
+                (make-artifact #"abc"))
       (artifact #"abc"
                 (integrity (? symbol? _)
                            (? bytes? _))

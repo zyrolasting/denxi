@@ -1,0 +1,123 @@
+@title{Versioning Software with Editions and Revisions}
+@summary{What it would be like to version software like textbooks?}
+@slug{edition-revision-versioning}
+@keywords{software versioning, version numbers}
+@published-date{2020-07-25}
+@last-updated-date{2020-07-25}
+
+
+@p{
+What if we versioned software releases with editions and revisions,
+like textbooks? I'm not the first to think of this, and obviously
+there are drawbacks because versioning is a hot mess anyway. But humor
+me for a moment.
+}
+
+@p{
+Let's say an @bold{edition} names a @italic{design}, and a
+@bold{revision} names an @italic{implementation}.
+}
+
+@p{
+An @bold{revision number} is a non-negative integer that acts as a
+sequential identifier. Every revision is forever assigned the next
+available number in an edition. Every release of a new edition must
+start with revision number @tt{0}. Every release of an existing edition
+must use an incremented revision number.
+}
+
+@p{
+A @bold{revision name} is a string alias for a revision number.  Let's
+reserve @tt{newest} for the times it would be useful, and prohibit
+digit strings to avoid conflict with revision numbers.  An ISO 8601
+date string works fine as a revision name, since dates are useful for
+tagging revisions.
+}
+
+@p{
+In general, revision names are useful for a target audience. Revision
+numbers are for no particular audience, meaning anybody.
+}
+
+@p{
+The default name of an edition is @tt{draft}, so every release
+version for some deliverable starts on the zeroth revision of the
+@tt{draft} edition.
+}
+
+
+@section{How do you know if a version bump comes with a breaking change?}
+
+@p{
+This scheme can accomodate others. For example, if you want to use
+Semantic Versioning (SemVer), then make an edition with semantic
+versions as revision names. You can have as much confidence as you
+want with that arrangement.
+}
+
+@p{
+However, I hear this question as "If I do X, will my software break?"
+If I knew a general answer to that, then that's between me and a
+patent attorney.
+}
+
+@p{
+Versions are as informative as humans are pedantic. Your automatic
+updates work because someone was vigilant, not because a version
+number somehow encodes vigilance.
+}
+
+@p{
+I'd argue that two revisions are accountable to the rules set by their
+edition, but this scheme does not claim that backwards-incompatible
+changes can only happen in new editions.  Breaking changes happen
+whenever you fix a serious error in a module-level contract, whenever
+you release a security patch, or whenever you incorporate feedback
+from your first production run.  The overall direction of a dependency
+might not change, but an interface can. How this impacts your relationship
+with the developer is a social problem.
+}
+
+
+@section{How does work change?}
+
+@p{
+First, some benefits. An author can define a new edition and rewrite
+everything without interrupting existing users.  You can make software
+under one brand name with strong boundaries between audiences. Rather
+than maintain a ball of mud, software takes the shape the beholder
+expects. This is all because there exists no automatic update between
+editions. There's also only one number line for version queries. With
+names and interval notation, you can say things like "For the Punk
+Rocker edition, give me the latest revision in @tt{[begin-beta,
+end-beta)}".
+}
+
+@p{
+The drawbacks are not hard to predict. Some people may @italic{want}
+automatic updates across editions, possibly for monitoring or
+aggregtion programs.  Also, if you define editions too liberally,
+you'll end up writing code that belongs in more than one edition. This
+can quickly justify arson if you don't stop and really think about
+what you're doing.  In the worst case, you'll end up like my
+ex-employer who is maintaining one Subversion branch per customer.
+Finally, there are fewer places to define information, so you'll have
+people who cram metadata into revision names and follow their own
+rules poorly.
+}
+
+@p{
+So come on everybody! Let's join hands and have faith in @italic{human
+discipline}!
+}
+
+@p{
+Maybe there's not much overall improvement, but I see another point in
+favor of using editions and revisions. I don't need a goat, a ritual
+knife, and a hesitant junior developer to figure out which integer is
+worthy of incrementing this time. I could feasibly work that out with
+a non-technical stakeholder, since the people impacted by a change is
+coupled to an edition. In that sense, an edition is a tool for framing
+discussion, and I haven't heard of people exploring that angle with
+software versions much.
+}

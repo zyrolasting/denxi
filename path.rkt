@@ -7,9 +7,6 @@
 
 (require racket/path)
 
-(define (../ path)
-  (simplify-path (build-path path 'up)))
-
 (define (path-prefix? to-check prefix-pathy)
   (define maybe-prefixed (explode-path (simplify-path (path->complete-path to-check))))
   (define pref (explode-path (simplify-path (path->complete-path prefix-pathy))))
@@ -20,16 +17,11 @@
          (equal? (list-ref maybe-prefixed index)
                  el))))
 
+
 (module+ test
-  (require racket/file
-           rackunit)
-
-  (test-case "Do not bypass root directory in upward traversals"
-    (for ([root (filesystem-root-list)])
-      (check-equal? root (../ root))))
-
-  (test-case "Detect path prefixes"
+  (require "test.rkt")
+  (test path-prefix?
     (define paths '("/a/b/c" "."))
     (for ([p (in-list paths)])
-      (check-true (path-prefix? p (../ p)))
-      (check-false (path-prefix? (../ p) p)))))
+      (assert (path-prefix? p (build-path p 'up)))
+      (assert (not (path-prefix? (build-path p 'up) p))))))

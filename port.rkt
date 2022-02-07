@@ -65,6 +65,15 @@
 
 
 
+(define ((progress-printer formatter) m)
+  (if ($transfer:progress? ($transfer:scope-message m))
+      (printf "\r~a~a" (formatter m)
+              (if (equal? ($transfer:progress-bytes-read ($transfer:scope-message m))
+                          ($transfer:progress-max-size ($transfer:scope-message m)))
+                  "\n" ""))
+      (displayln (formatter m))))
+
+
 (define (transfer from to est-size policy)
   (match-let* ([(transfer-policy buffer-size max-size name timeout-ms telemeter)
                policy]
@@ -134,22 +143,16 @@
 
 (module+ test
   (require racket/function
-           rackunit)
+           "test.rkt")
     
-  (test-case "Convert mebibytes to bytes"
-    (check-equal? (mebibytes->bytes +inf.0) +inf.0)
-    (check-eq? (mebibytes->bytes 0) 0)
-    (check-eqv? (mebibytes->bytes 1)
-                1048576)
-    (test-equal? "Allow real number expressions for mebibytes"
-                 (mebibytes->bytes (/ 1 2))
-                 (/ 1048576 2)))
-
-
+  (test mebibytes->bytes
+    (assert (equal? (mebibytes->bytes +inf.0) +inf.0))
+    (assert (eq? (mebibytes->bytes 0) 0))
+    (assert (eqv? (mebibytes->bytes 1) 1048576))
+    (assert (equal? (mebibytes->bytes (/ 1 2)) (/ 1048576 2))))
 
   (define-syntax-rule (overturn instance . assignments)
     (struct-copy transfer-policy instance . assignments))
-
 
   (define-syntax-rule (draft-transfer-policy . xs)
     (overturn zero-trust-transfer-policy . xs))

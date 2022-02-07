@@ -1,316 +1,165 @@
 #lang racket/base
 
-(require racket/contract
-         "integrity.rkt"
-         "signature.rkt")
+(require racket/contract)
 
-(provide
- (struct-out artifact)
- (struct-out $artifact)
- (struct-out $artifact:signature)
- (struct-out $artifact:integrity)
- (contract-out
-  [verify-artifact
-   (-> artifact?
-       known-implementation/c
-       (subprogram/c void?))]
-  [make-artifact
-   (->* (source-variant?)
-        ((or/c #f integrity?)
-         (or/c #f signature?))
-        artifact?)]
-  [lock-artifact
-   (->* (artifact?)
-        (exhaust/c
-         #:content? any/c
-         #:integrity? any/c
-         #:signature? any/c
-         #:content-budget budget/c
-         #:digest-budget budget/c
-         #:public-key-budget budget/c
-         #:signature-budget budget/c)
-        artifact?)]))
+(provide (struct-out artifact)
+         (struct-out $artifact)
+         (struct-out $artifact:signature)
+         (struct-out $artifact:integrity)
+         (struct-out $dig)
+         (struct-out $dig:no-artifact)
+         (contract-out
+          [verify-artifact
+           (-> artifact?
+               known-implementation/c
+               (machine/c void?))]
+          [make-artifact
+           (->* (source-variant?)
+                ((or/c #f integrity?)
+                 (or/c #f signature?))
+                artifact?)]
+          [study-artifact
+           (-> artifact?
+               transfer-policy?
+               (machine/c input-port?))]
+          [find-artifact
+           (->* (any/c)
+                (shovel/c)
+                (machine/c artifact?))]
+          [shovel/c
+           chaperone-contract?]
+          [broken-shovel
+           shovel/c]
+          [dig-failure
+           (-> (or/c symbol? string?)
+               any/c
+               machine?)]
+          [shovel-cons
+           (-> shovel/c shovel/c shovel/c)]
+          [shovel-list
+           (->* () #:rest (listof shovel/c) shovel/c)]))
 
 
 (require racket/match
-         "crypto.rkt"
          "format.rkt"
-         "known.rkt"
+         "integrity.rkt"
+         "machine.rkt"
          "message.rkt"
          "monad.rkt"
          "port.rkt"
-         "printer.rkt"
-         "source.rkt"
-         "subprogram.rkt")
+         "signature.rkt"
+         "source.rkt")
 
 
 (define-message $artifact ())
-(define-message $artifact:integrity (status chf-symbol))
+(define-message $artifact:integrity (status chf-name))
 (define-message $artifact:signature (status public-key))
 
-(struct artifact
-  (source      ; Defines where bytes come from
-   integrity   ; Integrity information: Did I get the right bytes?
-   signature)) ; Signature for authentication: Did the bytes come from someone I trust?
+
+(define shovel/c
+  (-> any/c (machine/c artifact?)))
+
+(require "artifact.rkt"
+         "monad.rkt"
+         "machine.rkt"
+         "message.rkt")
 
 
-(define (make-artifact source [integrity #f] [signature #f])
-  (artifact source integrity signature))
+(define-message $dig ())
+(define-message $dig:no-artifact $dig (shovel-name hint))
 
 
-(define (verify-artifact arti known)
-  (mdo (check-artifact-integrity arti known)
-       (check-artifact-signature arti known)
-       (subprogram-unit (void))))
+(define (dig-failure name hint)
+  (machine-failure ($dig:no-artifact name hint)))
 
 
-(define (lock-artifact #:content? [content? #t]
-                       #:integrity? [integrity? #t]
-                       #:signature? [signature? #t]
-                       #:content-budget [content-budget (* 1024 200)]
-                       #:digest-budget [digest-budget +inf.0]
-                       #:public-key-budget [public-key-budget +inf.0]
-                       #:signature-budget [signature-budget +inf.0]
-                       arti
-                       [exhaust raise])
-  (call/cc
-   (λ (abort)
-     (define (exhaust* v)
-       (abort (exhaust v)))
-     (let ([lock (λ (? s c) (if (and ? s) (c s) s))])
-       (artifact (lock content?
-                       (artifact-source arti)
-                       (λ (content)
-                         (lock-source content
-                                      content-budget
-                                      exhaust*)))
-                 (lock integrity?
-                       (artifact-integrity arti)
-                       (λ (intinfo)
-                         (lock-integrity #:digest-budget digest-budget
-                                         intinfo
-                                         exhaust*)))
-                 (lock signature?
-                       (artifact-signature arti)
-                       (λ (siginfo)
-                         (lock-signature #:public-key-budget public-key-budget
-                                         #:signature-budget signature-budget
-                                         siginfo
-                                         exhaust*))))))))
+(define (broken-shovel v)
+  (dig-failure (object-name broken-shovel) v))
 
 
-(define ((make-on-status formatter) m)
-  (if ($transfer:progress? ($transfer:scope-message m))
-      (printf "\r~a~a" (formatter m)
-              (if (equal? ($transfer:progress-bytes-read ($transfer:scope-message m))
-                          ($transfer:progress-max-size ($transfer:scope-message m)))
-                  "\n" ""))
-      (write-message #:newline? #f m formatter)))
+(define ((shovel-cons a b) k)
+  (machine (λ (m)
+                (define-values (r m*) (run-machine (a k) m))
+                (if (artifact? r)
+                    (values r m*)
+                    (run-machine (b k) m*)))))
 
 
-(define (check-artifact-integrity arti known)
-  (subprogram
-   (λ (messages)
-     (match-define (artifact content int sig) arti)
-
-     (define-values (int/use chf)
-       (if (well-formed-integrity? int)
-           (values (lock-integrity int)
-                   (integrity-chf-symbol int))
-           (values #f #f)))
-
-     (define-values (from-bytes messages*)
-       (run-subprogram (known-open-bytes known) messages))
-
-     (define status
-       (check-integrity
-        #:trust-bad-digest trust-bad-digest
-        (make-user-chf-trust-predicate)
-        int/use
-        (and chf
-             (make-digest from-bytes (integrity-chf-symbol (artifact-integrity arti))))))
-
-     (values (if (integrity-check-passed? status)
-                 (void)
-                 FAILURE)
-             (cons ($artifact:integrity status chf)
-                   messages*)))))
+(define (shovel-list . xs)
+  (if (null? xs)
+      broken-shovel
+      (shovel-cons
+       (car xs)
+       (apply shovel-list
+              (cdr xs)))))
 
 
-
-   (define-subprogram (check-artifact-signature arti path)
-     (match-define (artifact content int sig) arti)
-     (define sig/use
-       (and (well-formed-signature? sig)
-            (lock-signature sig)))
-     (define int/use
-       (and (well-formed-integrity? int)
-            (lock-integrity int)))
-
-     (define status
-       (check-signature #:trust-unsigned trust-unsigned
-                        #:trust-bad-digest trust-bad-digest
-                        #:trust-public-key? trust-public-key?
-                        #:verify-signature verify-signature
-                        sig/use
-                        int/use))
-     ($attach (or (signature-check-passed? status) FAILURE)
-              ($artifact:signature status
-                                   (and (signature? sig/use)
-                                        (signature-public-key sig/use)))))
+(define-machine (find-artifact plinth [dig (current-shovel)])
+  (if (artifact? plinth)
+      ($use plinth)
+      ($run! (dig plinth))))
 
 
 (module+ test
   (require rackunit
            racket/file
-           (submod "subprogram.rkt" test))
+           (submod "machine.rkt" test))
 
+  (test-case "Combine shovels"
+    (define ((bind-shovel v) k)
+      (if (eq? k v)
+          (machine-unit (make-artifact v))
+          (dig-failure v k)))
 
-  (define-syntax-rule (trust-chf . x)
-    (call-with-snake-oil-chf-trust (λ () . x)))
+    (define shovel
+      (shovel-list
+       (bind-shovel #"a")
+       (bind-shovel #"b")
+       (bind-shovel #"c")))
 
-  (define-syntax-rule (trust-cipher . x)
-    (call-with-snake-oil-cipher-trust (λ () . x)))
-
-  (test-case "Verify artifacts"
-    (trust-chf
-     (define data
-       #"abc")
-
-     (define known
-       (know))
-
-     (run-subprogram (known-put-bytes known (open-input-bytes data)))
-
-     (define intinfo
-       (make-trusted-integrity data))
-
-     (define siginfo
-       (make-snake-oil-signature
-        (integrity-digest intinfo)
-        (integrity-chf-symbol intinfo)))
-
-     (define arti
-       (artifact (byte-source data) intinfo siginfo))
-
-     (check-subprogram (verify-artifact arti known)
-                       (λ (result messages)
-                         (check-equal? result FAILURE)))
-
-     (trust-cipher (check-subprogram (verify-artifact arti known)
-                                     (λ (result messages)
-                                       (check-pred void? result))))))
-
-  (test-case "Lock artifacts"
-    (define with-content
-      (artifact (text-source "qr")
-                (integrity 'sha1 (text-source "st"))
-                (signature (text-source "uv")
-                           (text-source "wx"))))
-
-
-    (define (try content?
-                 integrity?
-                 signature?
-                 content-budget
-                 digest-budget
-                 public-key-budget
-                 signature-budget
-                 [arti with-content])
-      (lock-artifact #:content? content?
-                     #:integrity? integrity?
-                     #:signature? signature?
-                     #:content-budget content-budget
-                     #:digest-budget digest-budget
-                     #:public-key-budget public-key-budget
-                     #:signature-budget signature-budget
-                     arti
-                     values))
-
-    (check-match (try #t #t #t +inf.0 +inf.0 +inf.0 +inf.0)
-                 (artifact #"qr"
-                           (integrity 'sha1 #"st")
-                           (signature #"uv" #"wx")))
-
-    (check-match (try #f #t #t +inf.0 +inf.0 +inf.0 +inf.0)
-                 (artifact (text-source "qr")
-                           (integrity 'sha1 #"st")
-                           (signature #"uv" #"wx")))
-
-    (check-match (try #t #f #t +inf.0 +inf.0 +inf.0 +inf.0)
-                 (artifact #"qr"
-                           (integrity 'sha1 (text-source "st"))
-                           (signature #"uv" #"wx")))
-
-    (check-match (try #t #t #f +inf.0 +inf.0 +inf.0 +inf.0)
-                 (artifact #"qr"
-                           (integrity 'sha1 #"st")
-                           (signature (text-source "uv")
-                                      (text-source "wx"))))
-
-    (check-match (try #t #t #t 0 +inf.0 +inf.0 +inf.0)
-                 (artifact (text-source "qr")
-                           (integrity 'sha1 #"st")
-                           (signature #"uv" #"wx")))
-
-    (check-match (try #t #t #t 0 0 +inf.0 +inf.0)
-                 (artifact (text-source "qr")
-                           (integrity 'sha1 (text-source "st"))
-                           (signature #"uv" #"wx")))
-
-    (check-match (try #t #t #t 0 0 0 +inf.0)
-                 (artifact (text-source "qr")
-                           (integrity 'sha1 (text-source "st"))
-                           (signature (text-source "uv") #"wx")))
-
-    (define (check-exhaust arti [expected 1])
-      (check-equal? (lock-artifact arti values)
+    (define (check expected)
+      (check-equal? (artifact-source (get-machine-value (shovel expected)))
                     expected))
 
-    (check-exhaust
-     (artifact (exhausted-source 1)
-               (integrity 'sha1 #"")
-               (signature #"" #"")))
+    (check #"a")
+    (check #"b")
+    (check #"c")
 
-    (check-exhaust
-     (artifact #""
-               (integrity 'sha1 (exhausted-source 1))
-               (signature #"" #"")))
+    (define-values (should-be-failure messages)
+      (run-machine (shovel #"d")))
 
-    (check-exhaust
-     (artifact #""
-               (integrity 'sha1 #"")
-               (signature (exhausted-source 1) #"")))
+    (check-eq? should-be-failure FAILURE)
+    (check-equal? messages
+                  (list ($dig:no-artifact 'broken-shovel #"d")
+                        ($dig:no-artifact #"c" #"d")
+                        ($dig:no-artifact #"b" #"d")
+                        ($dig:no-artifact #"a" #"d"))))
 
-    (check-exhaust
-     (artifact #""
-               (integrity 'sha1 #"")
-               (signature #"" (exhausted-source 1))))
+  (test-machine-value
+   "Trivially find provided artifact"
+   (find-artifact (make-artifact #"") broken-shovel)
+   (λ (result)
+     (check-equal? (artifact-source result) #"")))
 
-    (check-exhaust
-     (artifact (exhausted-source 1)
-               (integrity 'sha1 (exhausted-source 2))
-               (signature (exhausted-source 3)
-                          (exhausted-source 4)))
-     1)
+  (test-machine
+   "Do not find an artifact by default when none is available"
+   (find-artifact #f)
+   (λ (result messages)
+     (check-equal? result FAILURE)
+     (check-equal? messages
+                   (list ($dig:no-artifact 'broken-shovel #f)))))
 
-    (check-exhaust
-     (artifact #""
-               (integrity 'sha1 (exhausted-source 2))
-               (signature (exhausted-source 3)
-                          (exhausted-source 4)))
-     2)
+  (test-case "Find an artifact using the right shovel"
+    (define (indy req)
+      (machine-unit
+       (make-artifact
+        (if req #"t" #"f"))))
 
-    (check-exhaust
-     (artifact #""
-               (integrity 'sha1 #"")
-               (signature (exhausted-source 3)
-                          (exhausted-source 4)))
-     3)
+    (define (check v expected)
+      (check-machine-value
+       (find-artifact v indy)
+       (λ (result)
+         (check-equal? (artifact-source result) expected))))
 
-    (check-exhaust
-     (artifact #""
-               (integrity 'sha1 #"")
-               (signature #""
-                          (exhausted-source 4)))
-     4)))
+    (check #t #"t")
+    (check #f #"f")))

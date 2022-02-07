@@ -7,14 +7,9 @@
 (r racket/base
    "archive.rkt"
    "artifact.rkt"
-   "cli-flag.rkt"
-   "cli.rkt"
    "cmdline.rkt"
    "codec.rkt"
    "crypto.rkt"
-   "dig.rkt"
-   "dig/filesystem.rkt"
-   "dig/http.rkt"
    "file.rkt"
    "format.rkt"
    "input.rkt"
@@ -34,12 +29,10 @@
    "security.rkt"
    "signature.rkt"
    "source.rkt"
-   "state.rkt"
    "string.rkt"
    "subprogram.rkt"
    "system.rkt"
    "transaction.rkt"
-   "url.rkt"
    "version.rkt")
 
 (module reader syntax/module-reader denxi/launcher)

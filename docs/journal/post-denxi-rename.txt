@@ -1,0 +1,48 @@
+@title{Software Distribution; or The World's Most Boring Essay}
+@summary{From zcpkg to Xiden}
+
+@p{
+The content you want determines the middleman program you need to get
+it. If you want Angry Birds, then you go to the Play Store or the App
+Store.  Some apps might not be available on either platform, so you
+have to look around. The sames reasoning goes for music, where artists
+may appear on Spotify but not YouTube.
+}
+
+@p{
+I'm a programmer, but I'm still a user. I start @tt{pipenv} and
+Netflix wishing that I didn't have to care about the difference.  I'm
+surrounded by middlemen.  I ended up trying all of this after
+wrestling with Racket's package manager.  I ended up writing my own
+package manager called zcpkg, which was then renamed to
+Xiden. Ironically, it is now pending another name change because
+conspiracy theorists started calling Joe Biden "Xiden." Ruined the
+search traffic, but that's another article.
+}
+
+@p{
+Even without the naming issues, I have a hard time getting people to
+understand what Xiden @italic{is}. Which is fair, since I sometimes
+struggle to explain what I'm trying to do, and Xiden is not a package
+manager. It is an attempt to model distribution as a domain, such that
+one can quickly crank out middlemen programs italic{like} package
+managers just like how Racket can quickly crank out new programming
+languages.
+}
+
+@p{
+If that sounded slightly less interesting than a plank's dream of
+becoming a fence post, it might help to understand that I view a
+package manager as a personal tool, like a pocket knife, or a
+@tt{.bashrc}. It's not something I download and update, it's something
+I open up and tweak as the world around me changes due to an
+information security incident. If I want other people to see something
+I can access, then I toss them my package manager and tell them the
+command to run on it. Xiden also made it so that if you want to
+install or update my software, you don't need my package manager. You
+can use it, of course, but you can also write your own and still get
+my software if your configuration is compatible.  My hope is if users
+can write their own middlemen programs to control how data arrives on
+their system, then they are better equipped to share work than the
+communal bereaucracies that form around existing package managers.
+}

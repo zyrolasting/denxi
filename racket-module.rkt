@@ -14,9 +14,9 @@
          syntax/parse
          racket/contract
          "input.rkt"
+         "machine.rkt"
          "message.rkt"
          "monad.rkt"
-         "subprogram.rkt"
          "system.rkt")
 
 (provide (struct-out bare-racket-module)
@@ -44,6 +44,7 @@
                              subprogram?)]))
 
 (define-message $racket-module-read-error (variant reason context))
+
 
 ;------------------------------------------------------------------------
 ; Definitions
@@ -218,9 +219,9 @@
     (check-false (code/c 1))
     (check-false (code/c #'"1")))
 
-  (define (expect-bad-module-form val messages)
+  (define (expect-bad-module-form val state)
     (check-equal? val FAILURE)
-    (check-match (car messages)
+    (check-match (car state)
                  ($racket-module-read-error _ 'bad-module-form _)))
 
   (test-case "Detect Racket module data"

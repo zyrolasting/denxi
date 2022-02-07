@@ -1,0 +1,10 @@
+(define ()
+  )
+
+: heal
+
+: http-artifact
+  "https://static.typeand.click/rehome.sh"
+
+: name "rehome.sh"
+

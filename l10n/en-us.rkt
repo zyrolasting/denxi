@@ -6,136 +6,6 @@
 (define (L . lines)
   (string-join lines "\n"))
 
-(define (get-string key)
-  (case key
-    [(top-level-cli-help)
-     (L "<action> is one of"
-        "  do      Run transaction"
-        "  gc      Collect garbage"
-        "  show    Print report"
-        "  fetch   Transfer bytes from source"
-        "  mkint   Make integrity info for bytes")]
-
-    [(show-command-help)
-     (L "where <what> is one of"
-        "  installed  Show a list of installed outputs"
-        "  log        Show all logged messages read from standard input"
-        "  links      Show a list of issued links")]
-
-    [(backwards-racket-version-interval)
-     "minimum Racket version cannot exceed maximum Racket version"]
-
-    [(no-user-facing-sources)
-     "no useable sources are defined for the end user"]
-
-    [(DENXI_TRUST_CERTIFICATES)
-     "Certificate file to trust when establishing HTTPS connections"]
-
-    [(DENXI_DEFAULT_CATALOG_BASE_URL)
-     "Base URL used for the default catalog"]
-
-    [(DENXI_MEMORY_LIMIT_MB)
-     "Memory limit for the process"]
-
-    [(DENXI_TIME_LIMIT_S)
-     "Time limit for the process"]
-
-    [(DENXI_INSTALL_SOURCES)
-     "Add installation to transaction"]
-
-    [(DENXI_INSTALL_ABBREVIATED_SOURCES)
-     "Add installation to transaction, assuming \"default\" output and package name link"]
-
-    [(DENXI_INSTALL_DEFAULT_SOURCES)
-     "Add installation to transaction, assuming \"default\" output"]
-
-    [(DENXI_PLUGIN_MODULE)
-     "A path to a module that extends Denxi."]
-
-    [(DENXI_TRUST_UNSIGNED)
-     "Trust unsigned packages"]
-
-    [(DENXI_TRUST_BAD_SIGNATURE)
-     "Trust signatures that don't match public key"]
-
-    [(DENXI_TRUST_UNVERIFIED_HOST)
-     "Download from any server without authenticating"]
-
-    [(DENXI_TRUST_CHFS)
-     "Trust cryptographic hash function implementations from OpenSSL"]
-
-    [(DENXI_TRUST_BAD_DIGEST)
-     "(DANGEROUS) Trust any input."]
-
-    [(DENXI_TRUST_ANY_PUBLIC_KEY)
-     "(DANGEROUS) Trust any public key"]
-
-    [(DENXI_TRUST_ANY_EXECUTABLE)
-     "(DANGEROUS) Trust any executable"]
-
-    [(DENXI_TRUST_HOST_EXECUTABLES)
-     "Trust executable file with given name if it can be found using find-executable-path"]
-
-    [(DENXI_TRUST_PUBLIC_KEYS)
-     "Trust a given public key using integrity information"]
-
-    [(DENXI_TRUST_EXECUTABLES)
-     "Trust an executable using integrity information"]
-
-    [(DENXI_FASL_OUTPUT)
-     "Use FASL program output"]
-
-    [(DENXI_FETCH_TOTAL_SIZE_MB)
-     "Maximum size, in mebibytes, to read from a source. +inf.0 = no limit"]
-
-    [(DENXI_FETCH_BUFFER_SIZE_MB)
-     "Buffer size, in mebibytes, used when reading bytes"]
-
-    [(DENXI_FETCH_PKGDEF_SIZE_MB)
-     "The maximum expected size, in mebibytes, of a package definition when scoping out work"]
-
-    [(DENXI_FETCH_TIMEOUT_MS)
-     "The maximum time, in milliseconds, to wait for a distinct read of bytes from a source"]
-
-    [(DENXI_READER_FRIENDLY_OUTPUT)
-     "Use (read)able program output"]
-
-    [(DENXI_VERBOSE)
-     "Show more information in program output"]
-
-    [(DENXI_BYTE_ENCODING)
-     "Byte encoding to use"]
-
-    [(DENXI_GENERATED_INPUT_NAME)
-     "Name to use for generated input expressions"]
-
-    [(DENXI_USER_FACING_SOURCES)
-     "Add a source for users to fetch data"]
-
-    [(DENXI_MESSAGE_DIGEST_ALGORITHM)
-     "Message digest algorithm to use"]
-
-    [(DENXI_SIGNER)
-     "Information used to sign package inputs"]
-
-    [(DENXI_CATALOGS)
-     "Sets default URL templates in from-catalogs"]
-
-    [(DENXI_DOWNLOAD_MAX_REDIRECTS)
-     "Maximum redirects to follow before downloading data"]
-
-    [(DENXI_ALLOW_UNSUPPORTED_RACKET)
-     "Install packages even if they declare that they do not support the running version of Racket."]
-
-    [(DENXI_ALLOW_ENV)
-     "Names of environment variables to expose to subprocesses"]
-
-    [(DENXI_SUBPROCESS_TIMEOUT_S)
-     "Maximum number of seconds a subprocess may run"]
-
-    [(DENXI_INPUT_OVERRIDES)
-     "Package input overrides"]))
-
 
 (define (restrict-preamble name)
   (format "~a halted because"
@@ -159,347 +29,299 @@
                (car r)))]))
 
 
-(define (make-$package-query-canon-preamble user-query autocompleted-query)
-  (~a "Failed to create canonical package query.\n"
-      "  user query:" (~s user-query) "\n"
-      "  autocompletion: " (~s autocompleted-query) "\n"))
+(define format-message/locale
+  (match-lambda
+    [($finished-collecting-garbage bytes-recovered)
+     (format "Recovered ~a"
+             (if (> bytes-recovered (/ (* 1024 2024) 10))
+                 (~a (~r (/ bytes-recovered (* 1024 1024)) #:precision 2)
+                     " mebibytes")
+                 (~a bytes-recovered
+                     " bytes")))]
 
+    [($racket-module-read-error variant reason content)
+     (case reason
+       [(exception) content]
+       [(unexpected-module-lang)
+        (format "Unexpected module lang: ~v"
+                content)]
+       [(blocked-reader)
+        (format "Unexpected reader extension: ~v"
+                content)]
+       [(bad-module-form)
+        (format "Malformed module: ~v"
+                variant)]
+       [else
+        (~s ($racket-module-read-error variant reason content))])]
 
-(define+provide-message-formatter format-message/locale
-  [($regarding name v)
-   (format "~a: ~a"
-           (format-message name)
-           (format-message v))]
+    [($transfer:scope name msg)
+     (format "transfer ~a: ~a" name (format-message msg))]
 
-  [($finished-collecting-garbage bytes-recovered)
-   (format "Recovered ~a"
-           (if (> bytes-recovered (/ (* 1024 2024) 10))
-               (~a (~r (/ bytes-recovered (* 1024 1024)) #:precision 2)
-                   " mebibytes")
-               (~a bytes-recovered
-                   " bytes")))]
+    [($transfer:progress bytes-read max-size timestamp)
+     (if (eq? max-size bytes-read)
+         "done"
+         (if (eq? max-size +inf.0)
+             (format "read ~a bytes" bytes-read)
+             (format "~a%" (~r (* 100 (/ bytes-read max-size)) #:precision 0))))]
 
-  [($cli:show-help body suffix-key)
-   (format "~a~a" body (if suffix-key (~a "\n" (get-string suffix-key)) ""))]
+    [($transfer:budget:rejected allowed-max-size proposed-max-size)
+     (format "can only copy ~a bytes, but estimate is ~a bytes"
+             allowed-max-size
+             proposed-max-size)]
 
-  [($cli:undefined-command m)
-   (format "Unrecognized command: ~s. Run with -h for usage information.~n" m)]
+    [($transfer:budget:exceeded allowed-max-size overrun-size)
+     (format "produced ~a more than the allowed ~a bytes"
+             overrun-size
+             allowed-max-size)]
 
-  [($racket-module-read-error variant reason content)
-   (case reason
-     [(exception) content]
-     [(unexpected-module-lang)
-      (format "Unexpected module lang: ~v"
-              content)]
-     [(blocked-reader)
-      (format "Unexpected reader extension: ~v"
-              content)]
-     [(bad-module-form)
-      (format "Malformed module: ~v"
-              variant)]
-     [else
-      (~s ($racket-module-read-error variant reason content))])]
+    [($transfer:timeout bytes-read wait-time)
+     (format "timed out after reading and ~a bytes waiting ~a ms for more"
+             bytes-read
+             wait-time)]
 
-  [($transfer:scope name msg)
-   (format "transfer ~a: ~a" name (format-message msg))]
+    [($package:abstract-input name)
+     (~a "cannot use abstract input " (~s name)
+         ". Either override it using "
+         (format-cli-flags --DENXI_INPUT_OVERRIDES)
+         ", or configure your launcher to address this.")]
 
-  [($transfer:progress bytes-read max-size timestamp)
-   (if (eq? max-size bytes-read)
-       "done"
-       (if (eq? max-size +inf.0)
-           (format "read ~a bytes" bytes-read)
-           (format "~a%" (~r (* 100 (/ bytes-read max-size)) #:precision 0))))]
+    [($package:output:built)
+     "built output"]
 
-  [($transfer:budget:rejected allowed-max-size proposed-max-size)
-   (format "can only copy ~a bytes, but estimate is ~a bytes"
-           allowed-max-size
-           proposed-max-size)]
+    [($package:output:reused)
+     "reused output"]
 
-  [($transfer:budget:exceeded allowed-max-size overrun-size)
-   (format "produced ~a more than the allowed ~a bytes"
-           overrun-size
-           allowed-max-size)]
+    [($package:output:undefined)
+     "requested output is not defined"]
 
-  [($transfer:timeout bytes-read wait-time)
-   (format "timed out after reading and ~a bytes waiting ~a ms for more"
-           bytes-read
-           wait-time)]
+    [($package:unavailable-output available)
+     (format "Requested output is not available. Available outputs: ~s" available)]
 
-  [($package:log query output-name messages)
-   (format "~a, output ~a~n~a"
-           query
-           output-name
-           (join-lines (map format-message messages)))]
+    [($fetch name errors)
+     (if (null? errors)
+         (format "~a: fetched" name)
+         (format "~a: fetch failed~n~a"
+                 name
+                 (string-join (map format-message errors)
+                              "\n")))]
 
-  [($package:abstract-input name)
-   (~a "cannot use abstract input " (~s name)
-       ". Either override it using "
-       (format-cli-flags --DENXI_INPUT_OVERRIDES)
-       ", or configure your launcher to address this.")]
+    [($artifact:signature status public-key)
+     (~a "signature check: "
+         (case status
+           [(signature-verified)
+            "passed verification"]
 
-  [($package:output:built)
-   "built output"]
+           [(signature-unverified)
+            "failed verification"]
 
-  [($package:output:reused)
-   "reused output"]
+           [(skip)
+            "trusting implicitly"]
 
-  [($package:output:undefined)
-   "requested output is not defined"]
+           [(skip-unsigned)
+            "trusting unsigned"]
 
-  [($package:unsupported-os supported)
-   (format "OS unsupported. Expected ~a"
-           (localized-comma-list supported "or"))]
+           [(unsigned)
+            (format "signature required (bypass: ~a)"
+                    (format-cli-flags --trust-unsigned))]
 
-  [($package:unsupported-racket-version versions)
-   (join-lines
-    (list (format "does not support Racket ~a (bypass: ~a)"
-                  (version)
-                  (format-cli-flags --assume-support))
-          (format "supported versions (ranges are inclusive):~n~a~n"
-                  (join-lines
-                   (map (λ (variant)
-                          (format "  ~a"
-                                  (if (pair? variant)
-                                      (format "~a - ~a"
-                                              (or (car variant)
-                                                  PRESUMED_MINIMUM_RACKET_VERSION)
-                                              (or (cadr variant)
-                                                  PRESUMED_MAXIMUM_RACKET_VERSION))
-                                      variant)))
-                        versions)))))]
+           [(blocked-public-key)
+            (define preamble "untrusted public key")
+            (define chf (get-default-chf))
+            (copy-port (open-input-bytes public-key)
+                       (current-output-port))
+            (if chf
+                ((λ (relevant-setting-id encoded)
+                   (~a preamble "\n"
+                       "To trust this key, add this to " relevant-setting-id ":\n"
+                       "(integrity '" chf " (base64 " (~s encoded) "))"))
+                 (setting-id DENXI_TRUST_PUBLIC_KEYS)
+                 (encode 'base64 (make-digest public-key)))
+                preamble)]))]
 
-  [($package:unavailable-output available)
-   (format "Requested output is not available. Available outputs: ~s" available)]
+    [($artifact:integrity status chf)
+     (~a "integrity check: "
+         (case status
+           [(digests-match)
+            "digests match"]
 
-  [($no-content-to-address path)
-   (format "Tried to create address for path where nothing exists:~n  ~a"
-           path)]
+           [(digests-differ)
+            (format "digests differ. To (dangerously) bypass, use ~a"
+                    (format-cli-flags --trust-any-digest))]
 
-  [($fetch name errors)
-   (if (null? errors)
-       (format "~a: fetched" name)
-       (format "~a: fetch failed~n~a"
-               name
-               (string-join (map format-message errors)
-                            "\n")))]
+           [(malformed-input)
+            "malformed input"]
 
-  [($artifact:signature status public-key)
-   (~a "signature check: "
-       (case status
-         [(signature-verified)
-          "passed verification"]
+           [(blocked-chf)
+            (format "not trusting CHF ~a. To bypass, add '~a to ~a"
+                    chf
+                    (setting-id DENXI_TRUST_CHFS))]
 
-         [(signature-unverified)
-          "failed verification"]
+           [(skip)
+            "trusting implicitly"]
 
-         [(skip)
-          "trusting implicitly"]
+           [else (format "unknown status: ~s" status)]))]
 
-         [(skip-unsigned)
-          "trusting unsigned"]
+    [($subprocess:report cmd args wd max-runtime actual-runtime expected-exit-codes actual-exit-code stderr?)
+     (L (format "subprocess `~a`" (string-join (cons (~a cmd) args) "` `"))
+        (format "  working dir: ~a" wd)
+        (format "  seconds left: ~a" (- max-runtime actual-runtime))
+        (format "  stderr: ~a"
+                (if stderr?
+                    "populated"
+                    "empty"))
+        (format "  exit code: ~a~a"
+                actual-exit-code
+                (if (member actual-exit-code expected-exit-codes)
+                    ""
+                    (case (length expected-exit-codes)
+                      [(0) ""]
+                      [(1) (format " [expected ~a]" (car expected-exit-codes))]
+                      [else (format " [expected one of ~s]"
+                                    expected-exit-codes)]))))]
 
-         [(unsigned)
-          (format "signature required (bypass: ~a)"
-                  (format-cli-flags --trust-unsigned))]
+    [($subprocess:command-not-found cmd)
+     (format "Cannot start subprocess `~a`: command not found" cmd)]
 
-         [(blocked-public-key)
-          (define preamble "untrusted public key")
-          (define chf (get-default-chf))
-          (copy-port (open-input-bytes public-key)
-                     (current-output-port))
-          (if chf
-              ((λ (relevant-setting-id encoded)
-                 (~a preamble "\n"
-                     "To trust this key, add this to " relevant-setting-id ":\n"
-                     "(integrity '" chf " (base64 " (~s encoded) "))"))
-               (setting-id DENXI_TRUST_PUBLIC_KEYS)
-               (encode 'base64 (make-digest public-key)))
-              preamble)]))]
+    [($extract-report status target)
+     (case status
+       [(done)
+        (format "Extracted ~a" target)]
+       [(unsupported)
+        (format "Cannot infer archive format for ~a" target)]
+       [else
+        (format "Malformed extraction report: ~s"
+                ($extract-report status target))])]
 
-  [($artifact:integrity status chf)
-   (~a "integrity check: "
-       (case status
-         [(digests-match)
-          "digests match"]
+    [($http-failure request-url status-line headers capped-body)
+     (~a "HTTP fetch failure: " request-url "\n"
+         "-----------\n"
+         (string-replace status-line "\r" "")
+         (join-lines
+          (map (λ (pair) (~a (car pair) ": " (cdr pair)))
+               (sort headers #:key car string<?)))
+         "\n\n"
+         (~s capped-body))]
 
-         [(digests-differ)
-          (format "digests differ. To (dangerously) bypass, use ~a"
-                  (format-cli-flags --trust-any-digest))]
+    [($restrict:budget name 'time amount)
+     (format "~a it took longer than ~a seconds"
+             (restrict-preamble name)
+             amount)]
 
-         [(malformed-input)
-          "malformed input"]
+    [($restrict:budget name 'space amount)
+     (format "~a its custodian held more than ~a mebibytes"
+             (restrict-preamble name)
+             amount)]
 
-         [(blocked-chf)
-          (format "not trusting CHF ~a. To bypass, add '~a to ~a"
-                  chf
-                  (setting-id DENXI_TRUST_CHFS))]
+    [($restrict:operation name 'network 'blocked-listen _)
+     (format "~a it tried to listen for connections"
+             (restrict-preamble name))]
 
-         [(skip)
-          "trusting implicitly"]
+    [($restrict:operation name 'file 'blocked-delete (list _ path _))
+     (format "~a it tried to delete ~a"
+             (restrict-preamble name))]
 
-         [else (format "unknown status: ~s" status)]))]
+    [($restrict:operation name 'file 'blocked-write (list _ path _))
+     (format "~a it tried to write to ~a"
+             (restrict-preamble name)
+             path)]
 
-  [($subprocess:report cmd args wd max-runtime actual-runtime expected-exit-codes actual-exit-code stderr?)
-   (L (format "subprocess `~a`" (string-join (cons (~a cmd) args) "` `"))
-      (format "  working dir: ~a" wd)
-      (format "  seconds left: ~a" (- max-runtime actual-runtime))
-      (format "  stderr: ~a"
-              (if stderr?
-                  "populated"
-                  "empty"))
-      (format "  exit code: ~a~a"
-              actual-exit-code
-              (if (member actual-exit-code expected-exit-codes)
-                  ""
-                  (case (length expected-exit-codes)
-                    [(0) ""]
-                    [(1) (format " [expected ~a]" (car expected-exit-codes))]
-                    [else (format " [expected one of ~s]"
-                                  expected-exit-codes)]))))]
+    [($restrict:operation name 'link 'blocked-link (list _ link-path target-path))
+     (format (~a "~a it tried to create a link outside of an allowed directory.~n"
+                 "  link path: ~a~n"
+                 "  target: ~a~n")
+             (restrict-preamble name)
+             link-path
+             target-path)]
 
-  [($subprocess:command-not-found cmd)
-   (format "Cannot start subprocess `~a`: command not found" cmd)]
+    [($restrict:operation name 'file 'blocked-execute (list _ path _))
+     (if (file-exists? path)
+         (format (~a "~a it tried to execute ~a.~n"
+                     "To trust this executable, add this to ~a:~n"
+                     "(integrity 'sha384 (base64 ~s))")
+                 (restrict-preamble name)
+                 path
+                 (setting-id DENXI_TRUST_EXECUTABLES)
+                 (~a (encode 'base64 (make-digest path 'sha384))))
+         (~a "Unauthorized attempt to execute non-existant " path))]
 
-  [($extract-report status target)
-   (case status
-     [(done)
-      (format "Extracted ~a" target)]
-     [(unsupported)
-      (format "Cannot infer archive format for ~a" target)]
-     [else
-      (format "Malformed extraction report: ~s"
-              ($extract-report status target))])]
+    [($racket-version:invalid-interval min-v max-v)
+     (format "Cannot match Racket version in reversed interval: [~a, ~a]"
+             min-v
+             max-v)]
 
-  [($http-failure request-url status-line headers capped-body)
-   (~a "HTTP fetch failure: " request-url "\n"
-       "-----------\n"
-       (string-replace status-line "\r" "")
-       (join-lines
-        (map (λ (pair) (~a (car pair) ": " (cdr pair)))
-             (sort headers #:key car string<?)))
-       "\n\n"
-       (~s capped-body))]
+    [($path-not-found pattern wrt)
+     (format "Could not find path matching ~s~n  w.r.t. ~a"
+             pattern
+             wrt)]
 
-  [($restrict:budget name 'time amount)
-   (format "~a it took longer than ~a seconds"
-           (restrict-preamble name)
-           amount)]
+    [($input:not-found name)
+     (format "Input not found: ~s"
+             name)]
 
-  [($restrict:budget name 'space amount)
-   (format "~a its custodian held more than ~a mebibytes"
-           (restrict-preamble name)
-           amount)]
+    [($input:log name messages)
+     (format "Resolving input ~s~n~a"
+             name
+             (join-lines (map format-message messages)))]
 
-  [($restrict:operation name 'network 'blocked-listen _)
-   (format "~a it tried to listen for connections"
-           (restrict-preamble name))]
+    [($dig:no-artifact shovel-name hint)
+     (format "Artifact not found with ~a and ~v"
+             shovel-name
+             hint)]
 
-  [($restrict:operation name 'file 'blocked-delete (list _ path _))
-   (format "~a it tried to delete ~a"
-           (restrict-preamble name))]
+    [($bad-source-eval reason datum context)
+     (format "Cannot evaluate alleged source expression: ~e~n  ~a"
+             datum
+             (case reason
+               [(security)
+                (format "security violation: ~s" context)]
+               [(invariant) "expression did not produce a source"]
+               [else "unknown reason"]))]
 
-  [($restrict:operation name 'file 'blocked-write (list _ path _))
-   (format "~a it tried to write to ~a"
-           (restrict-preamble name)
-           path)]
+    [($untrusted-cert uri original-exn)
+     (format (~a "Could not connect to a server due to an untrusted certificate.~n"
+                 "~n  ~a~n~n"
+                 "If you trust those running the servers at ~a, download the~n"
+                 "certificate from a location that your operating system trusts ~n"
+                 "(to mitigate the risk of man-in-the-middle attacks), then add ~n"
+                 "that certificate to ~a.~n~n"
+                 "Original error follows:~n"
+                 "~a")
+             (url->string uri)
+             (url-host uri)
+             (setting-id DENXI_TRUST_CERTIFICATES)
+             (exn->string original-exn))]
 
-  [($restrict:operation name 'link 'blocked-link (list _ link-path target-path))
-   (format (~a "~a it tried to create a link outside of an allowed directory.~n"
-               "  link path: ~a~n"
-               "  target: ~a~n")
-           (restrict-preamble name)
-           link-path
-           target-path)]
+    [($chf-unavailable chf)
+     (if chf
+         (~a "No implementation available for CHF " chf)
+         "No cryptographic hash functions installed")]
 
-  [($restrict:operation name 'file 'blocked-execute (list _ path _))
-   (if (file-exists? path)
-       (format (~a "~a it tried to execute ~a.~n"
-                   "To trust this executable, add this to ~a:~n"
-                   "(integrity 'sha384 (base64 ~s))")
-               (restrict-preamble name)
-               path
-               (setting-id DENXI_TRUST_EXECUTABLES)
-               (~a (encode 'base64 (make-digest path 'sha384))))
-       (~a "Unauthorized attempt to execute non-existant " path))]
+    [($cycle key)
+     (format "Found cycle at ~s. You may have a circular dependency." key)]
 
-  [($racket-version:invalid-interval min-v max-v)
-   (format "Cannot match Racket version in reversed interval: [~a, ~a]"
-           min-v
-           max-v)]
+    [($package-query-canon:backwards user-query autocompleted-query lo hi)
+     (~a (make-$package-query-canon-preamble user-query autocompleted-query)
+         "Resolved backwards interval {" lo " .. " hi "}")]
 
-  [($path-not-found pattern wrt)
-   (format "Could not find path matching ~s~n  w.r.t. ~a"
-           pattern
-           wrt)]
+    [($package-query-canon:no-minimum uq aq hint)
+     (~a (make-$package-query-canon-preamble uq aq)
+         "Unresolved minimum revision:" hint)]
 
-  [($input:not-found name)
-   (format "Input not found: ~s"
-           name)]
+    [($package-query-canon:no-maximum uq aq hint)
+     (~a (make-$package-query-canon-preamble uq aq)
+         "Unresolved maximum revision:" hint)]
 
-  [($input:log name messages)
-   (format "Resolving input ~s~n~a"
-           name
-           (join-lines (map format-message messages)))]
+    [($package-query-canon:no-selection uq aq minimum maximum hint)
+     (~a (make-$package-query-canon-preamble uq aq)
+         "Failed to select best fit in {" minimum "..." maximum "}\n"
+         "Value: " hint)]
 
-  [($dig:no-artifact shovel-name hint)
-   (format "Artifact not found with ~a and ~v"
-           shovel-name
-           hint)]
+    [($package-query-canon:oob uq aq minimum maximum selection)
+     (~a (make-$package-query-canon-preamble uq aq)
+         "Query is limited to {" minimum "..." maximum "},\n"
+         "but canon selected: " selection "\n"
+         "This is likely a bug with the service.\n"
+         "Please report it to the maintainer.")]
 
-  [($bad-source-eval reason datum context)
-   (format "Cannot evaluate alleged source expression: ~e~n  ~a"
-           datum
-           (case reason
-             [(security)
-              (format "security violation: ~s" context)]
-             [(invariant) "expression did not produce a source"]
-             [else "unknown reason"]))]
-
-  [($untrusted-cert uri original-exn)
-   (format (~a "Could not connect to a server due to an untrusted certificate.~n"
-               "~n  ~a~n~n"
-               "If you trust those running the servers at ~a, download the~n"
-               "certificate from a location that your operating system trusts ~n"
-               "(to mitigate the risk of man-in-the-middle attacks), then add ~n"
-               "that certificate to ~a.~n~n"
-               "Original error follows:~n"
-               "~a")
-           (url->string uri)
-           (url-host uri)
-           (setting-id DENXI_TRUST_CERTIFICATES)
-           (exn->string original-exn))]
-
-  [($chf-unavailable chf)
-   (if chf
-       (~a "No implementation available for CHF " chf)
-       "No cryptographic hash functions installed")]
-
-  [($cycle key)
-   (format "Found cycle at ~s. You may have a circular dependency." key)]
-
-  [($package-query-canon:backwards user-query autocompleted-query lo hi)
-   (~a (make-$package-query-canon-preamble user-query autocompleted-query)
-       "Resolved backwards interval {" lo " .. " hi "}")]
-
-  [($package-query-canon:no-minimum uq aq hint)
-   (~a (make-$package-query-canon-preamble uq aq)
-       "Unresolved minimum revision:" hint)]
-
-  [($package-query-canon:no-maximum uq aq hint)
-   (~a (make-$package-query-canon-preamble uq aq)
-       "Unresolved maximum revision:" hint)]
-
-  [($package-query-canon:no-selection uq aq minimum maximum hint)
-   (~a (make-$package-query-canon-preamble uq aq)
-       "Failed to select best fit in {" minimum "..." maximum "}\n"
-       "Value: " hint)]
-
-  [($package-query-canon:oob uq aq minimum maximum selection)
-   (~a (make-$package-query-canon-preamble uq aq)
-       "Query is limited to {" minimum "..." maximum "},\n"
-       "but canon selected: " selection "\n"
-       "This is likely a bug with the service.\n"
-       "Please report it to the maintainer.")]
-
-  [($crypto:error queue)
-   (string-join (map crypto-translate-error! queue) "\n")])
+    [($crypto:error queue)
+     (string-join (map crypto-translate-error! queue) "\n")]))
