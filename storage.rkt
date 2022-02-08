@@ -1,14 +1,37 @@
 #lang racket/base
 
+
+(require racket/contract
+         racket/exn
+         "machine.rkt"
+         "message.rkt")
+
+
+(define-message $interpreter ())
+(define-message $interpreter:done $interpreter ())
+(define-message $interpreter:redundant $interpreter ())
+
+
+(define transaction-mark-key
+  (string->uninterned-symbol "transaction"))
+
+
+; Interprocess locks are hard. Gate process using explicit, prescribed bytes.
+(define-subprogram (assert-external-consent path key)
+  (if (or (not (file-exists? path))
+          (with-input-from-file path
+            (λ ()
+              (define data (read-bytes (bytes-length key)))
+              (and (not (eof-object? data))
+                   (bytes=? data key)))))
+      (with-output-to-file (interprocess-lock-path ils) #:mode 'truncate/replace
+        (λ ()
+          (write-bytes (interprocess-lock-key ils))
+          ($use (void))))
+      ($fail ($locked))))
+#lang racket/base
+
 (require racket/contract)
-(provide mind-implementation/c
-         gen:mind
-         (contract-out
-          [mind-knowns
-           (-> mind? (machine/c sequence?))]
-          [mind-recall
-           (-> mind? string? (-> output-port? (machine/c void?))
-               (machine/c known?))]))
 
 
 (require racket/generic
@@ -21,46 +44,89 @@
          "source.rkt")
 
 
-(define-generics mind
-  [mind-recall mind key fill-bytes exchange-names]
-  [mind-knowns mind])
+(define-generics storage
+  [storage-open storage key fulfil]
+  [storage-aliases storage key]
+  [storage-resolve-alias storage alias]
+  [storage-add-alias storage key alias]
+  [storage-remove-alias storage key alias]
+  [storage-free storage key]
+  [storage-size storage key])
 
 
-(struct filesystem-mind (directory-path)
-  #:methods
-  [(define (mind-recall mind key fill-bytes exchange-names)
-     (machine
-      (λ (state)
-        (define path (filesystem-mind-path mind key))
-        (unless (file-exists? path)
-          (call-with-output-file path fill-bytes))
-        (define names (exchange-names))
-        names)))
+(struct directory-storage (path)
+  #:methods gen:storage
+  [(define (storage-open storage key fill)
+     (let ([path (directory-storage-path storage key)])
+       (if (file-exists? path)
+           (open-input-file path)
+           (begin (call-with-output-file path fill)
+                  (storage-open storage key fill)))))
 
-   (define (mind-forget mind key)
-     (machine
-      (λ (state)
-        (delete-file key)
-        state)))
+   
+   (define (storage-free storage key)
+     (when (storage-free? storage)
+       (delete-file key)))
 
-   (define (mind-knowns mind)
-     (machine
-      (λ (state)
-        (in-generator #:arity 2
-                      (for ([path (in-list (directory-list (filesystem-mind-directory-path mind)))])
-                        (yield path (file-known path)))))))])
+   
+   (define (storage-aliases storage key)
+     (in-generator
+      (call-with-input-file (links-path storage)
+        (λ (in)
+          (for ([line (in-lines in)])
+            (when (and (link-exists? (path storage line))
+                       (equal? (file-or-directory-identity link-path)
+                               (file-or-directory-identity file-path)))
+              (yield file-path)))))))
+   
+   (define (storage-add-alias storage key alias)
+     (make-file-or-directory-link key alias))
+
+   (define (storage-remove-alias storage alias)
+     (when (link-exists? alias)
+       (delete-file alias)))
+
+   (define (storage-free? storage key)
+     (andmap (negate link-exists?)
+             (storage-aliases storage)))
+
+   
 
 
-(define (filesystem-mind-path mind path)
-  (build-path (filesystem-mind-directory-path mind)
-              path))
+(define (store storage chf source policy)
+  (define id (source-id source))
+  (define key (chf id))
+  (storage-open key
+                (λ (to-storage)
+                  (transfer-machine source
+                                    to-storage
+                                    policy))))
 
+
+(define (index chf key)
+  (mdo port := (storage-open key (λ () (machine-halt-with #f)))
+       digest := (machine-unit (chf port))
+       (bind key digest)
+       (machine-unit digest)))
+
+
+
+(define (integrity state
+                   content-source
+                   content-policy
+                   digest-source
+                   digest-policy)
+  (mdo from-content := (obtain state content-source content-policy)
+       from-digest  := (obtain state digest-source digest-policy)
+       (equal? (port->bytes from-digest)
+               ((state-chf state content-source) from-content))))
 
 
 (define mind-implementation/c
   (mind/c [mind-recall (-> mind? bytes? (-> known?) known?)]
           [mind-knowns (-> mind? bytes? (machine/c sequence?))]
           [mind-forget (-> mind? bytes? (machine/c exact-nonnegative-integer?))]))
+
 
 
 (define (mind-clean mind)
