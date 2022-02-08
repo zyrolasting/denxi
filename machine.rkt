@@ -8,7 +8,6 @@
          "monad.rkt")
 
 (provide machine-rule
-         (struct-out $cycle)
          (struct-out machine)
          (contract-out
           [halt
@@ -18,8 +17,6 @@
           [machine/c
            (case-> (-> contract? contract?)
                    (-> contract? contract? contract?))]
-          [machine-acyclic
-           (-> procedure? any/c machine?)]
           [machine-bind
            (-> machine? (-> any/c machine?) machine?)]
           [machine-coerce
@@ -127,19 +124,6 @@
                ((f (car state*)) state*)))))))
 
 
-(define-message $cycle (key))
-(define machine-acyclic
-  (let ([mark-key (string->uninterned-symbol "denxi:cycle-detection")])
-    (λ (key proc)
-      (machine
-       (λ (state)
-         (let ([scope (or (continuation-mark-set-first (current-continuation-marks) mark-key) (set))])
-           (if (set-member? scope key)
-               (state-halt-with state ($cycle key))
-               (with-continuation-mark mark-key (set-add scope key)
-                 (proc state)))))))))
-
-
 (define (machine-unit v)
   (machine (λ (state) (state-set-value state v))))
 
@@ -154,43 +138,27 @@
       (machine-unit v)))
 
 
+(define (machine-or ? . machines)
+  (machine
+   (λ (state)
+     (for/fold ([state* state])
+               ([m machines]
+                #:break (? (state-get-value state*)))
+       (m state*)))))
+
+
 (module+ test
-  (require rackunit)
+  (require "test.rkt")
 
-  (provide check-machine-state
-           check-machine-value
-           check-machine-messages
-           check-machine-halt
-           check-machine-contract-violation)
+  (test machine-basics
+        (assert (state-halt? (list halt)))
+        (assert (not (state-halt? (list 1))))
+        (assert (equal? (state-set-value '(#f) #t) '(#t)))
+        (assert (match? ((invariant-assertion (machine/c any/c (>=/c 0)) (machine-unit -1)) state-undefined)
+                        (list (? (curry eq? halt) _)
+                              ($show-string (regexp "assertion violation"))))))
 
-  (define-syntax-rule (check-machine-state m pattern)
-    (check-match (m) pattern))
-
-  (define-syntax-rule (check-machine-value m pattern)
-    (check-match (m) (cons pattern (list _ ___))))
-
-  (define-syntax-rule (check-machine-messages m . patterns)
-    (check-match (m) (cons _ (list . patterns))))
-
-  (define-syntax-rule (check-machine-halt m . patterns)
-    (check-match (m) (cons (? (curry eq? halt) _) (list . patterns))))
-
-  (define (check-machine-contract-violation domain/c range/c m s)
-    (check-match ((invariant-assertion (machine/c domain/c range/c) m) s)
-                 (list (? (curry eq? halt) _)
-                       ($show-string (regexp "assertion violation")))))
-
-  (check-true (state-halt? (list halt)))
-  (check-false (state-halt? (list 1)))
-
-  (check-equal? (state-set-value '(#f) #t) '(#t))
-
-  (check-machine-contract-violation any/c
-                                    (>=/c 0)
-                                    (machine-unit -1)
-                                    state-undefined)
-
-  (test-case "Use machines in do notation"
+  (test machine-do-notation
     (define-message $initial (v))
 
     (define step1
@@ -201,21 +169,15 @@
     (define (step2 v)
       (machine
        (λ (state)
-         (check-equal? (car state) 2)
+         (assert (equal? (car state) 2))
          (state-set-value state (* v v)))))
 
-    (check-equal? ((mdo initial := step1
-                        next    := (step2 initial)
-                        (machine-unit next)))
-                  '(4))
+    (assert (equal? ((mdo initial := step1
+                          next    := (step2 initial)
+                          (machine-unit next)))
+                    '(4)))
 
-    (check-machine-halt (mdo x := (machine-unit 2)
-                             y := (machine-halt-with 1)
-                             (machine (λ _ (fail "Should not get here"))))
-                        ($show-string "1"))
-
-  (test-case "Cycle detection"
-    (define cyclic  (machine-acyclic 'cycles (λ (s) (cyclic s))))
-    (define acyclic (machine-acyclic 'cycles (λ (s) (state-set-value s 'ok))))
-    (check-machine-value acyclic 'ok)
-    (check-machine-halt cyclic ($cycle 'cycles)))))
+    (assert (match? ((mdo x := (machine-unit 2)
+                          y := (machine-halt-with 1)
+                          (machine (λ _ (error "Should not get here")))))
+                    (list halt ($show-string "1"))))))
