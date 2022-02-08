@@ -27,41 +27,41 @@
          racket/unsafe/ops)
 
 (module+ test
-  (require rackunit)
+  (require "test.rkt")
 
-  (test-case "Patch mutable byte string"
+  (test patch-bytes-test
     (define sample
       (subbytes #"hello world" 0))
 
-    (check-equal? (patch-bytes #:padding-byte 1 sample 6 #"padding" 8)
-                  #"hello padding\1\1\1")
+    (assert (equal? (patch-bytes #:padding-byte 1 sample 6 #"padding" 8)
+                    #"hello padding\1\1\1"))
 
-    (check-eq? (patch-bytes sample 0 sample 11)
-               sample))
+    (assert (eq? (patch-bytes sample 0 sample 11)
+                 sample)))
 
-  (test-case "Stitch a byte quilt with a granny"
+  (test granny-test
     (define quilts (make-async-channel))
     (define g (make-granny #"Where's the YouTubes on my phone?"))
-    (check-pred granny-stitching? g)
+    (assert (granny-stitching? g))
 
     (define 1st (sync (give-patch g #"pictures" 12)))
-    (check-equal? 1st #"Where's the pictures on my phone?")
+    (assert (equal? 1st #"Where's the pictures on my phone?"))
 
     (define 2nd (sync (give-patch g #"telly" 27)))
-    (check-eq? 2nd 1st) ; Check for no reallocation
-    (check-equal? 2nd #"Where's the pictures on my telly?")
+    (assert (eq? 2nd 1st)) ; Check for no reallocation
+    (assert (equal? 2nd #"Where's the pictures on my telly?"))
 
     (define 3rd (sync (give-patch g #" Come help gramma!" 33)))
-    (check-equal? 3rd
-                  (bytes-append #"Where's the pictures on my telly?"
-                                #" Come help gramma!"
-                                (make-bytes 15)))
+    (assert (equal? 3rd
+                    (bytes-append #"Where's the pictures on my telly?"
+                                  #" Come help gramma!"
+                                  (make-bytes 15))))
 
     (define final (take-quilt g))
-    (check-equal? final 3rd)
-    (check-pred immutable? final)
-    (check-pred granny-quilt-ready? g)
-    (check-false (granny-stitching? g))))
+    (assert (equal? final 3rd))
+    (assert (immutable? final))
+    (assert (granny-quilt-ready? g))
+    (assert (not (granny-stitching? g)))))
 
 
 ;--------------------------------------------------------------------------------
