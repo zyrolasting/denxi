@@ -23,7 +23,7 @@
 
 
 ; A claim regarding data integrity
-(struct integrity (chf-name digest))
+(struct integrity (chf digest))
 
 
 (define chf/c (-> input-port? bytes?))
@@ -38,20 +38,11 @@
   (hash-ref table (canonicalize utterance) #f))
 
 
-(define (integrity-check canon chf-name trusted-digest in)
+(define (integrity-check digest trusted-digest)
   (machine
    (λ (state)
-     (let/ec escape
-       (define (return pass? status)
-         (define message ($integrity chf-name status))
-         (define state* (state-add-message state message))
-         (define state** (state-set-value state* pass?))
-         (escape state**))
-       (define chf (canon policy chf-name))
-       (unless chf (return #f 0))
-       (if (equal? trusted-digest (chf in))
-           (return #t 1)
-           (return #f 2))))))
+     (state-set-value (state-add-message state ($integrity trusted-digest digest))
+                      (equal? trusted-digest digest)))))
 
 
 (define (integrity-check-passed? state)
@@ -61,9 +52,8 @@
 (module+ test
   (require racket/file
            racket/function
-           rackunit
            "codec.rkt"
-           "crypto.rkt")
+           "test.rkt")
 
   (define content #"abc")
   (define digest #"\251\231>6G\6\201j\272>%qxP\302l\234\320\330\235"))
