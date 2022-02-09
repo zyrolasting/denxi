@@ -148,15 +148,20 @@
 
 
 (module+ test
+  (provide match-halt?)
+
   (require "test.rkt")
+
+  (define-syntax-rule (match-halt? s . patt)
+    (match? s (list (? (curry eq? halt) _)
+                    . patt)))
 
   (test machine-basics
         (assert (state-halt? (list halt)))
         (assert (not (state-halt? (list 1))))
         (assert (equal? (state-set-value '(#f) #t) '(#t)))
-        (assert (match? ((invariant-assertion (machine/c any/c (>=/c 0)) (machine-unit -1)) state-undefined)
-                        (list (? (curry eq? halt) _)
-                              ($show-string (regexp "assertion violation"))))))
+        (assert (match-halt? ((invariant-assertion (machine/c any/c (>=/c 0)) (machine-unit -1)) state-undefined)
+                             ($show-string (regexp "assertion violation")))))
 
   (test machine-do-notation
     (define-message $initial (v))
