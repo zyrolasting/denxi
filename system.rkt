@@ -138,13 +138,13 @@
 
 
 (module+ test
-  (require rackunit)
+  (require "test.rkt")
 
   (define from-nothing (open-input-bytes #""))
   (define to-nowhere (open-output-nowhere))
 
   (define-syntax-rule (test-subprocess msg #:should-fail? should-fail? m expected-report-pattern)
-    (test-case msg
+    (test msg
       (define state
         (parameterize ([current-output-port to-nowhere]
                        [current-error-port to-nowhere])
@@ -152,9 +152,9 @@
       (define value (car state))
       (define messages (cdr state))
       (if should-fail?
-          (check-equal? value halt)
-          (check-pred void? value))
-      (check-match (car messages) expected-report-pattern)))
+          (assert (equal? value halt))
+          (assert (void? value)))
+      (assert (match? (car messages) expected-report-pattern))))
 
   (define (noop . _)
     (values from-nothing to-nowhere from-nothing))
@@ -165,33 +165,33 @@
   (define (exited-quickly? v)
     (< v 1))
 
-  (test-subprocess "Run subprocess without error in default case"
+  (test-subprocess run-without-error
                    #:should-fail? #f
                    (run #:controller (subprocess-controller/mock 0 0 noop) "abc" "1" "2" "3")
                    ($subprocess:report "abc" '("1" "2" "3") _ 3600 (? exited-quickly? _) '(0) 0 #f))
 
-  (test-subprocess "Detect unexpected exit codes"
+  (test-subprocess expect-status
                    #:should-fail? #t
                    (run #:expected-exit-codes '(2)
                         #:controller (subprocess-controller/mock 0 3 noop)
                         "mismatch")
                    ($subprocess:report _ _ _ _ _ '(2) 3 _))
 
-  (test-subprocess "Allow any exit code"
+  (test-subprocess allow-any-status
                    #:should-fail? #f
                    (run #:expected-exit-codes null
                         #:controller (subprocess-controller/mock 0 3 noop)
                         "mismatch")
                    ($subprocess:report _ _ _ _ _ '() 3 _))
 
-  (test-subprocess "Stop runaway processes"
+  (test-subprocess stop-runaways
                    #:should-fail? #t
                    (run #:timeout 0.5
                         #:controller (subprocess-controller/mock 2000 0 noop)
                         "forever")
                    ($subprocess:report _ _ _ 0.5 0.5 _ _ _))
 
-  (test-subprocess "Fail on non-empty STDERR"
+  (test-subprocess fail-non-empty-stderr
                    #:should-fail? #t
                    (run #:timeout 3
                         #:fail-on-stderr? #t
@@ -199,7 +199,7 @@
                         "stderr")
                    ($subprocess:report _ _ _ _ _ _ _ #t))
 
-  (test-subprocess "Allow non-empty STDERR when asked"
+  (test-subprocess allow-non-empty-stderr
                    #:should-fail? #f
                    (run #:timeout 3
                         #:fail-on-stderr? #f
@@ -207,7 +207,7 @@
                         "stderr")
                    ($subprocess:report _ _ _ _ _ _ _ #t))
 
-  (test-subprocess "Fail if command was not found"
+  (test-subprocess expect-existant-command
                    #:should-fail? #t
                    (run #:controller (subprocess-controller/mock 0 0 noop) #f)
                    ($subprocess:command-not-found #f))
