@@ -152,84 +152,92 @@
 
 
 (module+ test
-  (require rackunit)
+  (require "test.rkt")
 
-  (test-case "Coerce characters"
-    (check-eq? (coerce-character "a") #\a)
-    (check-eq? (coerce-character  'a) #\a)
-    (check-eq? (coerce-character #\a) #\a)
-    (check-false (coerce-character "aa"))
-    (check-false (coerce-character #t)))
+  (test coerce-characters
+        (assert (eq? (coerce-character "a") #\a))
+        (assert (eq? (coerce-character  'a) #\a))
+        (assert (eq? (coerce-character #\a) #\a))
+        (assert (not (coerce-character "aa")))
+        (assert (not (coerce-character #t))))
 
-  (test-case "Capture character range pattern"
-    (define forward (sequence->list "abc"))
-    (define backward (reverse forward))
-    (check-equal? (sequence->list (in-character-range #\a #\c)) forward)
-    (check-equal? (sequence->list (in-character-range #\c #\a)) backward))
+  (test character-range-pattern
+        (define forward (sequence->list "abc"))
+        (define backward (reverse forward))
+        (assert (equal? (sequence->list (in-character-range #\a #\c)) forward))
+        (assert (equal? (sequence->list (in-character-range #\c #\a)) backward)))
 
-  (test-case "Check for single-character strings"
-    (check-false (coerce-character ""))
-    (check-not-false (coerce-character "a"))
-    (check-false (coerce-character "aa")))
+  (test single-character-strings
+        (assert (not (coerce-character "")))
+        (assert (char=? #\a (coerce-character "a")))
+        (assert (not (coerce-character "aa"))))
 
-  (check-equal? (string->value "+inf.0") +inf.0)
+  (test coerce-infinity
+        (assert (equal? +inf.0 (string->value "+inf.0"))))
 
-  (check-equal? (get-shortest-string '("alvin" "bob" "v" "superduper"))
-                "v")
+  (test shortest-string
+        (assert (equal? "v" (get-shortest-string '("alvin" "bob" "v" "superduper")))))
 
-  (check-false (file-name-string? "/"))
-  (check-false (file-name-string? "\\"))
-  (check-false (file-name-string? ":"))
-  (check-false (file-name-string? "alvin:bet"))
-  (check-pred file-name-string? "alvin")
+  (test file-name-strings
+        (assert (not (file-name-string? "/")))
+        (assert (not (file-name-string? "\\")))
+        (assert (not (file-name-string? ":")))
+        (assert (not (file-name-string? "alvin:bet")))
+        (assert (file-name-string? "alvin")))
 
   (define windows-reserved-character?
     (make-rx-predicate windows-reserved-character-pattern-string))
   (define windows-reserved-name?
     (make-rx-predicate windows-reserved-name-pattern-string))
 
-  (check-true (windows-reserved-character? "<"))
-  (check-true (windows-reserved-character? ">"))
-  (check-true (windows-reserved-character? ":"))
-  (check-true (windows-reserved-character? "\\"))
-  (check-true (windows-reserved-character? "/"))
-  (check-true (windows-reserved-character? "|"))
-  (check-true (windows-reserved-character? "?"))
-  (check-true (windows-reserved-character? "*"))
-  (check-false (windows-reserved-character? "^"))
-  (check-false (windows-reserved-character? "a"))
+  (test windows-reserved-characters
+        (assert (windows-reserved-character? "<"))
+        (assert (windows-reserved-character? ">"))
+        (assert (windows-reserved-character? ":"))
+        (assert (windows-reserved-character? "\\"))
+        (assert (windows-reserved-character? "/"))
+        (assert (windows-reserved-character? "|"))
+        (assert (windows-reserved-character? "?"))
+        (assert (windows-reserved-character? "*"))
+        (assert (not (windows-reserved-character? "^")))
+        (assert (not (windows-reserved-character? "a"))))
 
-  (define (expect-windows-reserved-names . names)
-    (for ([name (in-list names)])
-      (test-case (format "Recognize ~a as a reserved name on Windows" name)
-        (check-true (windows-reserved-name? (string-downcase name)))
-        (check-true (windows-reserved-name? (string-upcase name))))))
+  (define (expect-windows-reserved-name name)
+    (and (windows-reserved-name? (string-downcase name))
+         (windows-reserved-name? (string-upcase name))))
 
-  (expect-windows-reserved-names "CON" "PRN" "AUX" "NUL" "CLOCK$" "." ".." "..." "...."
-                                 "COM0" "COM1" "COM2" "COM3" "COM4" "COM5" "COM6" "COM7" "COM8" "COM9"
-                                 "LPT0" "LPT1" "LPT2" "LPT3" "LPT4" "LPT5" "LPT6" "LPT7" "LPT8" "LPT9"
-                                 "$Mft" "$MftMirr" "$LogFile" "$Volume" "$AttrDef" "$Bitmap" "$Boot"
-                                 "$BadClus" "$Secure" "$Upcase" "$Extend" "$Quota" "$ObjId" "$Reparse"
-                                 "con.txt" "AUx.bin")
+  (define-syntax-rule (expect-windows-reserved-names x ...)
+    (begin (assert (expect-windows-reserved-name x)) ...))
 
-  (check-false (windows-reserved-name? "AuL"))
-  (check-false (windows-reserved-name? "AuL.txt"))
+  (test windows-names
+        (expect-windows-reserved-names
+         "CON" "PRN" "AUX" "NUL" "CLOCK$" "." ".." "..." "...."
+         "COM0" "COM1" "COM2" "COM3" "COM4" "COM5" "COM6" "COM7" "COM8" "COM9"
+         "LPT0" "LPT1" "LPT2" "LPT3" "LPT4" "LPT5" "LPT6" "LPT7" "LPT8" "LPT9"
+         "$Mft" "$MftMirr" "$LogFile" "$Volume" "$AttrDef" "$Bitmap" "$Boot"
+         "$BadClus" "$Secure" "$Upcase" "$Extend" "$Quota" "$ObjId" "$Reparse"
+         "con.txt" "AUx.bin")
+        (assert (not (windows-reserved-name? "AuL")))
+        (assert (not (windows-reserved-name? "AuL.txt"))))
 
-  (let ([three-digits^$ (make-rx-predicate "\\d\\d\\d")]
-        [three-digits (make-rx-predicate "\\d\\d\\d" #:whole? #f)])
-    (test-case "Match whole pattern by predicate"
-      (check-true (three-digits^$ "002"))
-      (check-false (three-digits^$ " 002"))
-      (check-true (three-digits " 002"))))
+  (test match-by-predicate
+        (define three-digits^$ (make-rx-predicate "\\d\\d\\d"))
+        (define three-digits (make-rx-predicate "\\d\\d\\d" #:whole? #f))
+        (assert (three-digits^$ "002"))
+        (assert (not (three-digits^$ " 002")))
+        (assert (three-digits " 002")))
 
-  (let ([choice (make-rx-predicate (or/pattstr "alpha" "beta") #:whole? #f)])
-    (check-true (choice "xxx alpha yyy"))
-    (check-true (choice "xxx beta yyy")))
+  (test test-or/pattstring
+        (define choice (make-rx-predicate (or/pattstr "alpha" "beta") #:whole? #f))
+        (assert (choice "xxx alpha yyy"))
+        (assert (choice "xxx beta yyy")))
 
-  (let ([capt (make-rx-matcher #:whole? #f
-                               (string-append
-                                (group/pattstr (or/pattstr "\\d\\d" "[a-f][a-f]"))
-                                "x"
-                                (group/pattstr (or/pattstr "\\d\\d" "[a-f][a-f]"))))])
-    (check-equal? (capt "dax29")
-                  (list "dax29" "da" "29"))))
+  (test pattern-grouping
+        (define capt
+          (make-rx-matcher #:whole? #f
+                           (string-append
+                            (group/pattstr (or/pattstr "\\d\\d" "[a-f][a-f]"))
+                            "x"
+                            (group/pattstr (or/pattstr "\\d\\d" "[a-f][a-f]")))))
+        (assert (equal? (capt "dax29")
+                        (list "dax29" "da" "29")))))
