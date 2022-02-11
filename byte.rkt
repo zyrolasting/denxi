@@ -54,7 +54,7 @@
     (assert (eq? (patch-bytes sample 0 sample 11)
                  sample)))
 
-  (test granny-test
+  (test hypothetical-granny
     (define quilts (make-async-channel))
     (define g (make-granny #"Where's the YouTubes on my phone?"))
     (assert (granny-stitching? g))
