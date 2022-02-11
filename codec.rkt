@@ -113,9 +113,9 @@
 
 
 (module+ test
-  (require rackunit)
-  (for ([encoding (in-list denxi-encodings)])
-    (test-case (format "Encode and decode a message using ~a" encoding)
-      (define bstr (encode encoding #"abc"))
-      (check-equal? (decode encoding bstr) #"abc")
-      (check-equal? (decode encoding (bytes->string/utf-8 bstr)) #"abc"))))
+  (require "test.rkt")
+  (test transcode
+        (for ([encoding (in-list denxi-encodings)])
+          (define bstr (encode encoding #"abc"))
+          (assert (equal? (decode encoding bstr) #"abc"))
+          (assert (equal? (decode encoding (bytes->string/utf-8 bstr)) #"abc")))))

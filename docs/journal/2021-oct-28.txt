@@ -1,0 +1,43 @@
+This is a retroactive essay written after zcpkg was renamed to Xiden,
+but before it was renamed again to Denxi.
+
+--------------------------------------------------------------------------------
+
+Fucking conspiracy theorists started calling Joe Biden "Xiden" and
+ruined my search traffic. Bit awkward considering that my logo
+designer, ScribeLogos, already put Xiden in their portfolio.
+
+I managed to get one more round of revisions by asking to use an
+anagram. I figured they wouldn't need to do as much math with the
+wordmark's grid if the letters only need to move horizontally.
+
+Naming issues aside, I've a hard time getting people to understand
+what Xiden even is. Which is fair, because when I try not to give long
+technical answers, I end up vague instead. Xiden is not even a package
+manager. It's a way quickly crank out ecosystem tools like package
+managers just like how Racket can quickly crank out new programming
+languages. I run pipenv, Steam, and Netflix wishing that I didn't have
+to care about the difference. Oh look, a bunch of steps between me and
+content.
+
+I get plenty of practice writing, but I can be less interesting than a
+plank's dream of becoming a fence post when speaking. My audience is
+currently programmers, so I can focus on the package manager as a
+personal tool. Kind of like a pocket knife, or a .bashrc. It's not
+something you just download and update, it's something you can freely
+open up and tweak as the world spins. If I want other people to see
+something I can access, then I toss them my package manager and tell
+them the command to run on it. Xiden also made it so that if you want
+to install or update my software, you don't need my package
+manager. You can use it, of course, but you can also write your own
+and still get my software if your configuration is compatible.  My
+hope is if users can write their own programs to control how data
+arrives on their system, then they are better equipped to share work
+than appeasing a bereaucracy of made up bullshit.
+
+Maybe it makes sense to think of Xiden as a framework for clients in a
+server/client model, but that's a massive scope of work. Not that it's
+a bad idea. But it might make more sense to think of it as a bunch of
+libraries for a user to define how data is received from a shipper.  I
+feel like I'm trying to define a branch of "software logistics," and I
+don't have the right vocabulary for it.

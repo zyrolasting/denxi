@@ -1,0 +1,92 @@
+                      Denxi Guide
+
+  Racket programmers who read this guide will understand how to
+distribute trusted data in untrusted conditions. You'll need Racket
+v7.0+ installed to use this guide. Minimal installations are fine.
+
+
+SETUP
+
+To install Denxi, run this Racket program. If you see an error, it
+will come with instructions for reporting the issue.
+
+...
+
+
+
+LAUNCHERS
+
+  A Denxi program performs monadic I/O and dependency management under
+custom restrictions. A launcher is an---ideally small---entry point
+meant to distribute itself and its own extensions. Launchers are
+written in the `denxi` language, which is an S-expression language and
+a superset of racket/base.
+
+  This launcher stores command line arguments in memory, and then
+prints the contents of storage. This illustrates data flow without
+dependency management.
+
+_
+
+  If you run this program using Racket, you'll see machine-readable
+output. This keeps Denxi localizable, and easier to debug. All
+messages defined by Denxi have an entry in the reference
+manual.
+
+_
+
+  This output says that Denxi halted because a data transfer requested
+untrusted I/O. Specifically, the text-source used to represent text in
+memory contains more bytes than it is allowed to transfer (zero, by
+default). A source is an abstraction Denxi uses to represent untrusted
+variable-length data.
+
+  Denxi trusts no I/O by default. It trusts no servers, no public
+keys, and no hash functions. As you can tell, it won't even trust
+effects that are limited to its own process' memory. It won't allow
+you to operate on storage without starting a transaction first.  Once
+you cross the boundary from racket/base to Denxi semantics, you must
+specify what Denxi will allow in as much detail as the situation
+requires. This makes it harder to accidentally open
+vulnerabilities. Use Racket's facilities to simplify the code as you
+wish.
+
+  Denxi uses the Racket runtime to prohibit Racket from performing any
+effects external to the process, except for particular cases you
+allow.  Note that these restrictions do not govern Racket's underlying
+implementation, so on underlying C libraries remain possible. Use your
+operating system's security model. Use Denxi's paranoia as a
+supplemental protection, not as a drop-in solution for security.
+
+  This version of the launcher configures a transfer in a way that
+implicitly trusts input. A bad idea. I show it here for contrast.  The
+security concern is that Denxi's is being programmed by untrusted data
+(user input, in this case). Learn to recognize this pattern.
+
+_
+
+
+  For something more useful, let's acquire a copy of U.S. English
+translations for output messages. This version of the same launcher
+downloads translations in advance of any transaction.
+
+_
+
+
+  Notice that the verbose configuration pattern extends to HTTP.
+Specifically, the request must use TLS and trust only a server that
+presents a given certificate. If the process fails, machine-readable
+output remains to explain that failure. Otherwise, the process behaves
+as before, with American English output.
+
+_
+
+
+  From here we can handle dependencies using ecosystems.  An ecosystem
+is a function that maps one string, representing a dependent, to at
+least zero strings, representing dependencies. Ecosystems cannot
+return strings that aren't defined by the ecosystem, and cannot cycle.
+
+
+_
+

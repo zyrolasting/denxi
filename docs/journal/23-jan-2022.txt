@@ -1,0 +1,145 @@
+23 January 2022
+
+Bah, I've done it again and increased the scope of my refactoring.  I
+just really love deleting code.  Nothing feels better than realizing I
+was overcomplicating something, because that means I get to replace it
+with a leaner approach. When you do it right, work is never lost, only
+reframed. If only I could realize such things more quickly.
+
+There's a few big changes.
+
+
+--------------------------------------------------------------------------------
+CLI, out!
+
+Denxi doesn't need a CLI. In my documentation and examples, I
+immediately point users to writing their own launchers, or entry
+points. If that's the case, there isn't much use for calling attention
+to the default CLI except as a means to distribute a launcher using a
+long command. A long command that people would share to simplify
+things, ironically producing a shell-variant of a launcher. The
+default launcher acts as a thin wrapper for what would already act as
+shared functionality for users, and removing the default CLI does not
+curtail one's ability to distribute a launcher with a vanilla Racket
+program. There is a baby in the bathwater that leads to a useful
+parameterization, but I can salvage it with a leaner approach.
+
+The other benefit to this change is that it simplifies Denxi's formal
+identity to that of a library.
+
+
+--------------------------------------------------------------------------------
+Goodbye Package Definitions, Hello Catalogs
+
+The name “package definition” is not entirely accurate. A package
+definition describes a set of possible packages as opposed to exactly
+one. Since a user can pick and choose artifacts by name in these
+definitions, it made sense to use the term “catalog” instead. By
+replacing `#lang denxi` with `#lang denxi/catalog`, I can still
+emphasize an artifact- and dependency-centric view without calling
+attention to packages that do not actually exist. Rather than view a
+package definition and package in a manner similar to a program and a
+process, I view a package as a dynamic entity built from selections in
+the catalog. This more accurately captures what's happening. What
+makes things tricky is how to model the dependency relationships when
+the user ultimately controls the name of each artifact. If names
+across catalogs conflict, it's up to the user to resolve what the
+names mean. I have not decided the best approach for this yet.
+
+--------------------------------------------------------------------------------
+State is Just an Idea
+
+The state model now abstracts over storage mediums. Denxi originally
+took a file-centric view to state, but it now has an interface for
+state that now points to memory in a prototyping context. No more file
+I/O in unit tests, no more SQLite dependency, and no more
+workspaces. All remain necessary for implementations of the interface,
+but none offered details relevant to Denxi's critical invariants. The
+implementations are best viewed as extensions to Denxi to leverage in
+a launcher.
+
+
+--------------------------------------------------------------------------------
+Leaner Guide and White Paper
+
+The source code for the guide has been consolidated into one document.
+Not needing queries or many package terms made things easier to think
+about.
+
+The white paper became easier to understand when I reframing Denxi's
+value in terms of shipping and receiving.
+
+
+--------------------------------------------------------------------------------
+Denxi's Dependencies Derail Demonstrations
+
+It's weird to write a dependency management solution with
+dependencies. It makes me feel like I want to be done so I can use my
+program for itself. It's better to lose the need for dependencies that
+are not available in racket-minimal.  SQLite3 is, from what I recall,
+but that's already gone. There should also be no use of GNU Make, no
+RackUnit, and, with luck, no Scribble.
+
+RackUnit is a heavy dependency for `minimal-racket`, since it includes
+utilities specific to DrRacket. That in turn means GUI-specific
+dependencies that are... not minimal. Rolling my own assertion styles
+is hardly an issue.
+
+Scribble is an odd case. It is the only reason why Denxi is still
+organized like a Racket package, which I think is an annoying way to
+organize files. I also feel increasingly uncomfortable with the code
+duplication Scribble seems to demand on account of defproc wanting its
+own copy of contract syntax. I also don't understand this idea of
+documents as programs. Programs are already documents!  Every time I
+write Scribble, I feel like I'm on a powerful horse staring at the
+back of a cart. Scribble also serves as a reminder of how I'm failing
+to reduce my dependence on third-party Racket collections.
+
+An entry of this diary still appeared in the shared online
+documentation for Racket because I failed to explicitly omit it from
+the search index.  The fact I could get free hosting for this text on
+docs.racket-lang.org... I still don't see eye-to-eye with the
+community about this. I can't just say "we're really small so it's not
+a problem." This isn't just a problem of scale, it's a problem
+of being way too trusting of strangers on the Internet. I want
+to be nowhere near the fan when shit gets thrown.
+
+
+--------------------------------------------------------------------------------
+Parameters are Too Easy to Misuse
+
+Racket parameters are fancy globals that help you avoid passing more
+arguments to functions. I'm not the first to say so, but this is the
+first time I feel I can be emphatic about how much parameters harm
+program design when they are misused.
+
+
+My earlier entry "Yak Shaving with Racket Mode" shows an example.
+
+https://github.com/racket/racket/issues/4131
+
+
+I no longer wish to allow my Racket code to use parameters unless I
+know I'm in complete control of the parameterization.  Problem is, I
+can't see a way to claim that I do. I cannot capture the value of
+(error-display-handler) on module instantiation because racket-mode
+preempts my code. This was patched (Thanks, Greg!), but that didn't
+change my now growing distrust of parameters. If we allow for the
+mistake that is exn->string, then I need to use fewer
+parameters. Denxi still needs to depend on current-security-guard,
+because no high-level I/O blocking can occur without the parameter.
+
+The problem now is that if I remove parameters, my function signatures
+would bloat. I could take the corporate programmer approach and
+dedicate structure types to each function input and output.  Problem
+is, that's an omnipresent extra step that bloats the code in a
+different way. It takes a different instinct to know what formals of a
+function signature should appear in a structure type, especially with
+generated bindings.
+
+I'm considering a new monadic type that carries configuration
+information.  Right now I use monomorphic returns with a single
+subprogram type. That type cobbles together semantics from State and
+Maybe monads. The subprogram type served me well, but I can't keep
+adding it. It's already a little hard to follow, and monads are hard
+enough.

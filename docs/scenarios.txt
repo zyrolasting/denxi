@@ -1,0 +1,59 @@
+Scenarios
+
+  I've directly observed scenarios that have second-, third-, and
+fourth- order effects on my teams and clients. Here I recite concrete
+causes of distribution problems. My hope is that if Denxi does not
+have a solution for each scenario, it would at least be easier to
+build that solution.
+
+- A DIBOL project in a Subversion repository has one branch per
+  customer. When one customer gets a new feature, some other customers
+  want the same feature. None of their branches merge automatically.
+
+- A stubborn developer with too much access pushing a breaking change
+  to a production system and refusing to take calls.
+
+- An update script that pulls unverified archives from an executive's
+  personal DropBox. It extracts the archive, clobbering itself and
+  other files in the running project.  The code controlled large
+  machines that could hurt somebody in over 40 locations in the
+  continental United States. No version control was available, so each
+  implementation is manually tweaked by on-site operators when the
+  DropBox deployment breaks. This script partially defines the flight
+  schedule of an operations manager.
+
+- A system that may or may not automatically reinstall a specific
+  application that day. If it does reinstall, we cannot predict what
+  version it would be.
+
+- A pile of Bash scripts that each expect files in magic
+  locations. The proper order of scripts is not clear, and calling the
+  wrong one means contractors can't submit work that day.
+
+- A marketing team that controls how Canadians and Australians
+  experience the corporate website, but not Puerto Ricans.
+
+- Programmers servicing unsupervised systems over TeamViewer to
+  get around security boundaries installed by DevOps.
+
+- Managers knowingly revering a patch by moving files from their
+  “backup” thumb drive to replace Python scripts in a folder they
+  happened to memorize. They do this every time they need to hit some
+  numbers for the day.
+
+- Regarding `raco pkg`: A catalog used by that won't store versioned
+  artifacts, and won't guarentee availability for the one it happens
+  to have. Also, name conflicts between unrelated projects on account
+  of their directory structure.
+
+- A content marketplace that a child can use to hijack
+  presentations in primary schools around the world.
+
+- Warehouse crews that won't replace their insecure hardware.
+
+- Programs that do not say they depend on each other, but won't
+  work unless you load them in a certain order.
+
+- In late 2021, Synology's DS220j started notifying users of a
+  software-compatible update that requires more memory than that
+  (non-upgradable) model holds.

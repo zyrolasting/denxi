@@ -1,0 +1,189 @@
+                       Denxi White Paper
+
+  Denxi reproduces trusted data and dependencies with untrusted
+I/O. Denxi's favors the receiving party's rules in all matters of
+trust and safety, including integrity, authentication, and resource
+limits. Use Denxi to reduce the cost of making a custom package
+manager, CI/CD system, or other project in need of structured input.
+
+  This white paper focuses more on Denxi's intentions and overall model,
+as opposed to repeating details from technical documentation.
+
+
+MOTIVATION
+
+  Denxi is a response to suppliers who perform destructive automatic
+software updates, and/or invasive telemetry. To this end, Denxi serves
+two objectives:
+
+1. Grant end-users all choices in data transfers and dependency
+   management, starting from a position of zero trust.
+
+2. Reduce the cost of authoring package managers, downloaders,
+   CI/CD systems, etc.
+
+  In a way, Denxi is an attempt to model a simple form of logistics in
+the context of software delivery. It's less about servers and clients,
+and more about shippers and receivers. Clients cannot control the
+responses they get from a server, but receivers decide what shipments
+are acceptable from a shipper. It seems to me that the end-user is
+never actually consulted as a receiver, because so much of the digital
+supply chain is hidden. Denxi makes it visible in the user's own
+terms.
+
+
+BENEFITS
+
+- Govern all I/O for an installation.
+- Manage and override dependencies for any project.
+- Trust only exact servers and files.
+
+Users of other software may appreciate more specific benefits.
+
+- NPM users: gain more safety checks to protect your system from an
+  ecosystem gone mad.
+
+- Racket users: Extend racket-minimal installations without `raco
+  pkg`, `planet`, or the problems affecting both.
+
+- PLaneT users: may install multiple versions of a project without
+  generating non-eq? bindings.
+
+- Guix/Nix users: Cross-platform support
+
+
+VISION
+
+  What if your package manager was a personal tool? It sits in a USB
+stick on your car keys, and represents your interests when installing
+software on an untrusted device or network.
+
+  If a modern package manager were a delivery driver, it would walk
+into your house, unpack a package, buy missing parts, and wait for
+another delivery driver to repeat the process. Convenient, but also
+invasive and disrespectful. A single “Yes” or “I agree” is not enough
+to excuse this behavior, since there are too many objectionable
+details about how a supplier may behave on your system.  A supplier
+reserves the right to refuse service for any reason, but where are the
+tools for a receiver to revoke their consent when they notice a
+problem? I have no intention of forcing software suppliers to change,
+so I offer more choices to users. I do not want to see an already
+unbalanced power dynamic get worse. The only way I see to do that is
+to expose software logistics to the user, and find a better way to
+protect their interests.
+
+  If Denxi was a delivery driver, it will ship data to you according
+to your rules, and then leave the package at your door with a relevant
+toolbox. The tools include a unique canonicalization model for
+managing discovery information, delayed assignment of dependency
+relationships, and solutions to dependency hell. How that plays out on
+your system is up to you.
+
+
+VALUE PROPOSITION
+
+  It's not enough to complain about a bad social situation.  People
+are driven by money.  In my experience, people won't do the right
+thing without being paid. Denxi pushes logistics work to the client,
+which reopens the discussion for how a non-technical user manages
+their own updates.
+
+  The value proposition (stated as a hypothesis) is that a
+non-technical user may hire independent developers to quickly hook up
+a server to their systems in the same way one might ask an electrician
+to run a wire behind a wall. This won't happen at time of writing,
+because we (in the United States) have a bad habit of trusting our
+suppliers for the sake of convenience. I hope to challenge this habit
+by giving independent developers a way to make money with
+customer-facing work that is fully auditable. This use of Denxi is
+meant to incentive smaller-scale operations to share content without
+depending on large platforms to host specialized content like video
+games or music. DRM may still exist, but a user must consent to its
+use through collaboration with an---ideally neutral---developer.
+
+
+SECURITY VS. CONVENIENCE
+
+Denxi's attack surface consists of a single process, under a user's
+privileges. All of Denxi's subsystems refuse to operate without a
+complete, explicit configuration. This is due to an application of
+zero-trust principles.
+
+Denxi's entry point is replaceable, and may bake in all of the little
+annoying---yet important!---decisions that protect a user's
+interests. This defines the boundary between security-critical code
+and a friendly experience. This boundary avoids a long line of
+annoying confirmation prompts, like Windows Vista did in their early
+rollout of UAC. But even with no prompts, the user's rules apply.
+
+
+LOCALIZATION
+
+  You can't share work effectively without a way to cross language
+barriers. To aid translation, Denxi's prints machine-readable
+documents.
+
+  At the time of this writing, Denxi only includes English as it's
+used in the United States. I'm a U.S. citizen, but want Denxi's
+intended impact to go beyond my home country.
+
+
+CANONICALIZATION
+
+  Names are assigned for subjective reasons. Denxi recognizes no
+naming authority outside of the end-user. This design decision
+fundamentally differs from most clients, which assume at least one
+external naming authority.
+
+  The consequences of rejecting outside names are severe, but creates
+a model closer to reality. Versions are made-up terms in someone
+else's language. It is arrogant to presume on their relevance to a
+user, or on their logical relationship to software.  Denxi forbids
+developers from appropriating a user's system or software with their
+own vocabulary. All installed or downloaded data has a user-defined
+identity.
+
+  Canonicalization remains a problem, because you cannot manage
+dependencies in a closed system of available software without a shared
+namespace. To solve this, Denxi uses a strange loop based on Owen
+Barfield's logomorphisms. Implementing logomorphisms as code made
+Barfield spin in his grave, and I use his spinning to end-user
+benefit.
+
+  Take cryptographic hash function (CHF) names as another
+example. CHFs have many implementations and aliases. One may refer to
+SHA-256 using as sha256, SHA-256, SHA256, or SHA_256. Additionally,
+not all implementatons are created equal in the eyes of an InfoSec
+expert. A logomorphism would declare exactly one string as the
+canonical form of acknowledged aliases, as uttered by untrusted
+parties.  Any string not belonging to the user's language may not be
+used to discover, acquire, or install software.
+
+  The tradeoff gives more work and power to users. If you tell me, a
+Denxi user, that you are offering version 9.4.1 of better-css, that
+does not change the fact I experience it as the latest tested version
+of a CSS library for my project. I find Semantic Versioning arrogant,
+so no one gets to use it on my system. Your software is simply
+`css-lib` according to me, and I'll only acknowledge your versions to
+the extent required to replace my copy in my chosen storage medium.
+
+  This design is powerful because it means naming conflicts only
+happen when a user allows them to happen. Multiple versioning schemes
+become subservient to one.
+
+  This approach to canonicalization is not an attempt to standardize
+human culture, but rather an attempt to help users negotiate other
+communities and idioms.
+
+
+CONCLUSION
+
+  I explained why I worry about software distribution, and how that
+impacted my quest to build an ecosystem-oriented ecosystem.  My hope
+is to turn dependency management into a personal
+problem. Standardization and canonicalization become up to the
+end-user. The package manager becomes a personal tool, with
+communities organizing around their development across---not
+within--ecosystems. My hypothesis is that this will lead to an
+ecosystem-oriented ecosystem, and reduce the leverage software
+suppliers have on their own users over time.

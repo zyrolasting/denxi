@@ -1,0 +1,108 @@
+This is a retroactive entry for "Prototyping a New Package Manager for
+Racket," the first essay I wrote regarding plans for this project.
+
+--------------------------------------------------------------------------------
+
+
+Racket has two package managers, but I do things differently enough to
+need a third called zcpkg. It will be done when it's done.
+
+When I started, I was driven by a few objectives:
+
+- Install a package such that it has no side-effect on a Racket installation.
+- Check digital signatures on artifacts.
+- Solve dependency hell using side-by-side versions and an answer for dependency cycles.
+- Experiment with a book cover-like versioning scheme.
+- Identify packages with URNs that include a verifiable provider identity.
+
+One thing's for sure: This is hard. This one project is why I have not
+updated this website in over a month.
+
+zcpkg is smart enough to handle dependency hell, in that conflicting
+versions and circular dependencies do not make it burst into
+flames. However, it does not define collections in a Racket
+installation, and it does not presume on the deliverables a package
+creates. I am substituting a file-oriented toolchain for Racket's
+canonical collection-oriented toolchain.  I also don't want to use
+`raco pkg` because that would defeat the purpose of what I'm doing.
+The result? A huge scope of work. I have to use only the bindings
+available in mininal Racket. I'll leave the specifics of my design for
+future articles.
+
+Despite the incumbents, I think a package manager for a
+language-oriented programming language is largely uncharted territory.
+Ada, Rust, Java, JavaScript, Python, etc. all change slowly enough to
+develop idioms for sharing work. Racket's idioms are deeply influenced
+by an assumption that you are contributing to a Racket installation
+with the same level of commitment to backwards-compatibility as the
+PLT. As a user of Racket, I'm sold on the idea that language is
+subject to change. In that situation, your idioms and best practices
+look like personal habits to me. This magnifies the subjective
+elements of package management.  How do you really form a community
+around a particular use of a language this malleable?
+
+Think about what happens when you release a collection with
+conflicting modules in a Racket package.  To get around the conflict,
+you need to reconfigure or tether a new Racket installation if you
+want to use both packages at the same time. In general: you don't
+depend on packages in Racket, you depend on a particular Racket
+installation.
+
+
+--------------------------------------------------------------------------------
+Matchmaking Giants with Sexy Shoulders
+
+I ended up doing a lot of reading on package managers, looking for
+good design decisions to borrow. I found out that there's a package
+manager called Nix that already does a lot of what I was looking
+for. Deterministic, reproducible, functional
+builds.—mmmm—Cross-ecosystem. Atomic upgrades. No dependency hell—oh
+god don't stop—Non-privileged installation. Capture everything down to
+the C compiler's compiler.
+
+It also has its own functional language for complete, unambiguous
+dependency specifications. Ah, it's only for Linux and macOS. Damn. I
+don't have an particular love for Windows, but if I'm targeting Racket
+programmers, then I should support it.
+
+If only there was a cross-platform tool that would let me define a
+language like Nix's.
+
+
+--------------------------------------------------------------------------------
+Building a Path from Nix to Racket
+
+My hypothesis is that a Racket package manager would be a huge
+improvement over `raco pkg` if it has a way to operate across
+ecosystems, offer at least some of Nix's (Guix's?) guarentees, and
+allow you to define a custom new Racket installation and non-Racket
+dependencies as a composition of packages.
+
+Again: Huge project. All I can do at this point is experiment and try
+to figure out how all this would work. I also don't expect much
+adoption of zcpkg since this is not a PLT-sponsored project. This is
+part a personal, ongoing effort to use Racket in a way that I find
+fulfilling.
+
+However, if you follow my work or want to use my Racket projects, a
+day may come where I will require zcpkg to install them (My packages
+on pkgs.racket-lang.org are still subject to my decision in an earlier
+announcement). That day might not come soon, but I invested enough
+time to at least try it out.
+
+Normally I wait until a project is useable before I announce it, but I
+made an exception here. Package managers are meant to address social
+problems as well as technical ones, and the worst thing I can do is
+let zcpkg accumulate my imperfect assumptions about how people will
+behave. So: Talk to me! I invite any Racket programmer to look at the
+source code and open an issue if they see any red flags, or if they
+even have a request for what they believe zcpkg should do.
+
+https://github.com/zyrolasting/zcpkg
+
+Knowing your opinions doesn't mean that I'll implement a feature that
+I think you will want, it means that I'll be careful not to bake
+something in that makes your life harder.
+
+In any case, this will take a while. If you are generally supportive
+of this project, then please consider helping me fund it.
