@@ -104,8 +104,7 @@
 
 
 (module+ test
-  (require racket/format
-           rackunit)
-
-  (check-equal? (indent-lines '("a" "b")) '("  a" "  b"))
-  (check-equal? (join-lines #:suffix "\n" '("a" "b" "c")) "a\nb\nc"))
+  (require racket/format "test.rkt")
+  (test formatting
+        (assert (equal? (indent-lines '("a" "b")) '("  a" "  b")))
+        (assert (equal? (join-lines #:suffix "\n" '("a" "b" "c")) "a\nb\nc"))))

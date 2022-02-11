@@ -27,7 +27,9 @@
          racket/promise)
 
 (module+ test
-  (require rackunit racket/list racket/pretty)
+  (require racket/list
+           racket/pretty
+           "test.rkt")
 
   ; Compare output of this library to Racket's built-in
   ; cartesian-product. The test passes if they agree on
@@ -43,21 +45,20 @@
     (define expected
       (apply cartesian-product
              (map sequence->list v)))
-
     (define actual
       (apply my-cartesian-product v))
+    (assert (equal? actual expected)))
 
-    (check-equal? actual expected))
 
-  (define gear
-    (in-range 3))
+  (test agree-with-racket
+        (define gear
+          (in-range 3))
+        (apply agree?
+               (build-list (random 3 5)
+                           (λ (n)
+                             (in-range (random 3 5))))))
 
-  (apply agree?
-         (build-list (random 3 5)
-                     (λ (n)
-                       (in-range (random 3 5)))))
-
-  (test-case "Map element of cartesian product to elements of other sets"
+  (test between-sets
     (define (in-char-range start end)
       (sequence-map integer->char (in-range start end)))
 
@@ -65,8 +66,8 @@
       (define a-or-b (in-char-range 97 99))
       (in-cartesian-map string (in-list (list a-or-b a-or-b))))
 
-    (check-equal? (sequence->list (in-ab-two-permutations))
-                  '("aa" "ab" "ba" "bb"))))
+    (assert (equal? (sequence->list (in-ab-two-permutations))
+                    '("aa" "ab" "ba" "bb")))))
 
 
 (define (in-cartesian-map f gears)

@@ -12,22 +12,25 @@
 
 
 (module+ test
-  (require rackunit racket/function)
-  (define has-none empty-stream)
-  (define has-one (stream-cons 1 has-none))
-  (define has-two (stream-cons 2 has-one))
-  (check-pred void? (stream-exactly-one has-none void))
-  (check-equal? (stream-exactly-one has-one void) 1)
-  (check-pred void? (stream-exactly-one has-two void))
-  (check-true (stream-next '(#t) (const #f)))
-  (check-false (stream-next '() (const #f)))
+  (require racket/function
+           "test.rkt")
 
-  (check-true (stream-consume empty-stream (const #f) (const #t)))
-  (stream-consume '(1)
-                  (λ (head tail)
-                    (check-equal? head 1)
-                    (check-pred stream-empty? tail))
-                  fail))
+  (test streams
+        (define has-none empty-stream)
+        (define has-one (stream-cons 1 has-none))
+        (define has-two (stream-cons 2 has-one))
+        (assert (void? (stream-exactly-one has-none void)))
+        (assert (equal? 1 (stream-exactly-one has-one void)))
+        (assert (void? (stream-exactly-one has-two void)))
+        (assert (stream-next '(#t) (const #f)))
+        (assert (not (stream-next '() (const #f))))
+
+        (assert (stream-consume empty-stream (const #f) (const #t)))
+        (stream-consume '(1)
+                        (λ (head tail)
+                          (assert (equal? head 1))
+                          (assert (stream-empty? tail)))
+                        (λ () (assert #f)))))
 
 
 (define (stream-exactly-one s fail-thunk)

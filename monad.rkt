@@ -26,7 +26,7 @@
 
 (module+ test
   (require racket/function
-           rackunit)
+           "test.rkt")
 
   (struct include-string (proc)
     #:methods gen:monad
@@ -47,16 +47,14 @@
          b := (include-string (λ (str) (values (add1 a) (string-append str "+"))))
          (include-string (λ (str) (values (* b 2) (string-append str "*"))))))
 
-  (test-pred "Allow empty (mdo) forms"
-             void?
-             (mdo))
+  (test empty-mdo
+        (assert (void? (mdo))))
 
-  (test-pred "Adopts value of monadic type using mdo"
-             include-string?
-             program)
+  (test monomorphism
+        (assert (include-string? program)))
 
-  (test-case "Compose operations with mdo"
-    (call-with-values (λ () ((include-string-proc program) "start"))
-                      (λ (v str)
-                        (check-equal? v 4)
-                        (check-equal? str "start+*")))))
+  (test composition
+        (call-with-values (λ () ((include-string-proc program) "start"))
+                          (λ (v str)
+                            (assert (equal? v 4))
+                            (assert (equal? str "start+*"))))))

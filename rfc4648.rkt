@@ -120,7 +120,7 @@
 
 
 (module+ test
-  (require rackunit)
+  (require "test.rkt")
 
   ; https://tools.ietf.org/html/rfc4648
   (define function
@@ -132,6 +132,7 @@
       (#"fooba" . #"csqpyrk1")
       (#"foobar" . #"csqpyrk1e8======")))
 
-  (for ([pairing (in-list function)])
-    (check-equal? (base32-encode (car pairing)) (cdr pairing))
-    (check-equal? (base32-decode (cdr pairing)) (car pairing))))
+  (test rfc4648
+        (for ([pairing (in-list function)])
+          (assert (equal? (base32-encode (car pairing)) (cdr pairing)))
+          (assert (equal? (base32-decode (cdr pairing)) (car pairing))))))
