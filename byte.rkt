@@ -6,6 +6,8 @@
   #:∃ granny
   [make-granny
    (-> bytes? granny)]
+  [mebibytes->bytes
+   (-> real? (or/c +inf.0 exact-nonnegative-integer?))]
   [granny-stitching?
    (-> granny boolean?)]
   [granny-quilt-ready?
@@ -26,10 +28,23 @@
 (require racket/async-channel
          racket/unsafe/ops)
 
+
+(define (mebibytes->bytes mib)
+  (if (equal? mib +inf.0)
+      mib
+      (inexact->exact (ceiling (* mib 1024 1024)))))
+
+
 (module+ test
   (require "test.rkt")
 
-  (test patch-bytes-test
+  (test mib2b
+        (assert (equal? (mebibytes->bytes +inf.0) +inf.0))
+        (assert (eq? (mebibytes->bytes 0) 0))
+        (assert (eqv? (mebibytes->bytes 1) 1048576))
+        (assert (equal? (mebibytes->bytes (/ 1 2)) (/ 1048576 2))))
+
+  (test patch-greeting
     (define sample
       (subbytes #"hello world" 0))
 
@@ -150,10 +165,10 @@
   (define required-length/bytes
     (max available-length
          (+ dest-start patch-length)))
-  
+
   (define buffer-units
     (ceiling (/ required-length/bytes buffer-length)))
-  
+
   (define required-length/buffer-aligned
     (inexact->exact (* buffer-length buffer-units)))
 
