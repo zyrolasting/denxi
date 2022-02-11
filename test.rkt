@@ -13,6 +13,20 @@
          (for-syntax racket/base))
 
 
+(module+ main
+  (require racket/cmdline)
+  (command-line
+   #:args args
+   (if (null? args)
+       (run-all-tests)
+       (for ([module-path (in-list args)])
+         (run-tests (test-module-path (expand-user-path module-path)))))))
+
+
+(module+ test
+  (run-all-tests))
+
+
 (define-runtime-path here ".")
 
 (define failure (gensym))
@@ -47,6 +61,7 @@
 
 
 (define (run-tests module-path)
+  (dynamic-require module-path #f)
   (define-values (provided _)
     (module->exports module-path))
   (for* ([provisions (in-list provided)]
@@ -56,18 +71,15 @@
       (bound))))
 
 
+(define (test-module-path module-path)
+  `(submod ,(format "~a" module-path) test))
+
+
 (define (run-all-tests)
   (parameterize ([current-directory here])
     (for ([file-path (in-directory)]
           #:when (regexp-match? #px"\\.rkt$" file-path))
-      (define module-path
-        `(submod ,(format "~a" (find-relative-path (current-directory) file-path)) test))
-      (define instantiation-status
-        (with-handlers ([values values])
-          (dynamic-require module-path #f)))
-      (unless (exn? instantiation-status)
-        (writeln module-path)
-        (run-tests module-path)))))
+      (run-tests (test-module-path (find-relative-path (current-directory) file-path))))))
 
 
 (define-syntax-rule (test id . xs)
