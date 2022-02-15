@@ -2,7 +2,8 @@
 
 ; Add source/sink semantics to TCP
 
-(provide (struct-out tcp-conduit))
+(provide (all-from-out racket/tcp)
+         (struct-out tcp-conduit))
 
 (require racket/function
          racket/generic
