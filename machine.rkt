@@ -2,12 +2,14 @@
 
 (require racket/contract
          racket/function
+         racket/sequence
          racket/set
          racket/undefined
          "message.rkt"
          "monad.rkt")
 
-(provide machine-rule
+(provide machine-effect
+         machine-rule
          (struct-out machine)
          (contract-out
           [halt
@@ -25,6 +27,8 @@
            (-> any/c machine?)]
           [machine-unit
            (-> any/c machine?)]
+          [machine-series
+           (-> (sequence/c machine?) machine?)]
           [state/c
            contract?]
           [state-add-message
@@ -109,8 +113,20 @@
                 (struct/c machine (-> (state/c domain/c) (state/c range/c)))]))
 
 
+(define-syntax-rule (machine-effect x)
+  (machine (λ (s) x s)))
+
+
 (define-syntax-rule (machine-rule x)
   (machine (λ (s) (state-set-value s x))))
+
+
+(define (machine-series machines)
+  (machine
+   (λ (state)
+     (for/fold ([state* state])
+               ([m machines] #:break (state-halt? state*))
+       (m state*)))))
 
 
 (define (machine-bind m f)
