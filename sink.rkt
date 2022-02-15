@@ -6,7 +6,15 @@
          "message.rkt"
          "source.rkt")
 
-(provide gen:sink)
+(provide gen:sink
+         sink?
+         sink/c
+         sink-drop
+         sink-keep
+         sink-open
+         sink-policy
+         sink-source
+         (struct-out $open))
 
 (define-message $open ())
 
