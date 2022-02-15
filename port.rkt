@@ -1,6 +1,7 @@
 #lang racket/base
 
 (require racket/contract
+         racket/match
          racket/port
          "message.rkt")
 
@@ -17,8 +18,6 @@
          (contract-out
           [full-trust-transfer-policy
            transfer-policy/c]
-          [mebibytes->bytes
-           (-> real? (or/c +inf.0 exact-nonnegative-integer?))]
           [transfer
            (-> input-port?
                output-port?
@@ -30,6 +29,7 @@
           [zero-trust-transfer-policy
            transfer-policy/c]))
 
+
 (define-message $transfer ())
 (define-message $transfer:scope $transfer (name timestamp-s message))
 (define-message $transfer:broken $transfer (value))
@@ -39,8 +39,6 @@
 (define-message $transfer:budget:exceeded $transfer:budget (overrun-size))
 (define-message $transfer:budget:rejected $transfer:budget (proposed-max-size))
 
-(require racket/match
-         "string.rkt")
 
 (struct transfer-policy
    (buffer-size
@@ -49,11 +47,14 @@
     timeout-ms
     telemeter))
 
+
 (define zero-trust-transfer-policy
   (transfer-policy 1 0 "" 0 void))
 
+
 (define full-trust-transfer-policy
   (transfer-policy 8192 +inf.0 "" +inf.0 void))
+
 
 (define transfer-policy/c
   (struct/c transfer-policy
@@ -64,13 +65,20 @@
             (-> $transfer? void?)))
 
 
+(define (coerce-input-port v fail)
+  (cond [(string? v) (open-input-string v)]
+        [(bytes? v) (open-input-bytes v)]
+        [else (fail v)]))
+
 
 (define ((progress-printer formatter) m)
   (if ($transfer:progress? ($transfer:scope-message m))
-      (printf "\r~a~a" (formatter m)
+      (printf "\r~a~a"
+              (formatter m)
               (if (equal? ($transfer:progress-bytes-read ($transfer:scope-message m))
                           ($transfer:progress-max-size ($transfer:scope-message m)))
-                  "\n" ""))
+                  "\n"
+                  ""))
       (displayln (formatter m))))
 
 
@@ -135,21 +143,15 @@
                   (telemeter ($transfer:broken variant))])))))
 
 
-(define (mebibytes->bytes mib)
-  (if (equal? mib +inf.0)
-      mib
-      (inexact->exact (ceiling (* mib 1024 1024)))))
+(define (open-input-struct s field->port)
+  (apply input-port-append #t
+         (for/list ([f (in-vector (struct->vector s))])
+           (field->port f))))
 
 
 (module+ test
   (require racket/function
            "test.rkt")
-    
-  (test mebibytes->bytes
-    (assert (equal? (mebibytes->bytes +inf.0) +inf.0))
-    (assert (eq? (mebibytes->bytes 0) 0))
-    (assert (eqv? (mebibytes->bytes 1) 1048576))
-    (assert (equal? (mebibytes->bytes (/ 1 2)) (/ 1048576 2))))
 
   (define-syntax-rule (overturn instance . assignments)
     (struct-copy transfer-policy instance . assignments))
@@ -166,38 +168,38 @@
   (define-syntax-rule (P . x)
     (overturn test-policy . x))
 
+
   (define ((expect-message m) telemeasure)
-    (check-equal? telemeasure
-                  ($transfer:scope (transfer-policy-name test-policy)
-                                   ($transfer:scope-timestamp-s telemeasure)
-                                   m)))
+    (assert (equal? telemeasure
+                    ($transfer:scope (transfer-policy-name test-policy)
+                                     ($transfer:scope-timestamp-s telemeasure)
+                                     m))))
   
-  (test-case "Transfer bytes with telemetry"
+  (test telemetry
     (define bstr #"ABCDEFG")
     (define bytes/source (open-input-bytes bstr))
     (define bytes/sink (open-output-bytes))
     (define size (bytes-length bstr))
 
     (define (telemeter m)
-      (check-match m
-                   ($transfer:scope (? (curry equal? (transfer-policy-name test-policy)) _)
-                                    (? exact-positive-integer? _)
-                                    ($transfer:progress
-                                     (? (integer-in 0 size) i)
-                                     size))))
+      (assert (match? m
+                      ($transfer:scope (? (curry equal? (transfer-policy-name test-policy)) _)
+                                       (? exact-positive-integer? _)
+                                       ($transfer:progress
+                                        (? (integer-in 0 size) i)
+                                        size)))))
 
-    (check-pred void?
-                (transfer bytes/source
-                          bytes/sink
-                          size
-                          (P [buffer-size size]
-                             [max-size size]
-                             [telemeter telemeter])))
+    (assert (void? (transfer bytes/source
+                             bytes/sink
+                             size
+                             (P [buffer-size size]
+                                [max-size size]
+                                [telemeter telemeter]))))
 
-    (check-equal? (get-output-bytes bytes/sink #t) bstr))
+    (assert (equal? (get-output-bytes bytes/sink #t) bstr)))
 
 
-  (test-case "Prohibit unlimited transfers unless max-size agrees"
+  (test budget-enforcement
     (transfer (open-input-string "")
               (open-output-nowhere)
               +inf.0
@@ -205,8 +207,7 @@
                  [telemeter
                   (expect-message ($transfer:budget:rejected 100 +inf.0))])))
 
-  (test-case "Time out on reads that block for too long"
-    ; Reading from a pipe in this way will block indefinitely.
+  (test timeout-on-block
     (let-values ([(i o) (make-pipe)])
       (transfer i o 2
                 (overturn test-policy
@@ -214,19 +215,19 @@
                           [telemeter
                            (expect-message ($transfer:timeout 0 1))]))))
   
-  (test-case "Reject jobs that exceed the budget"
-    (define bstr #"ABCDEFG")
-    (define bytes/source (open-input-bytes bstr))
-    (define bytes/sink (open-output-bytes))
-    (define size (bytes-length bstr))
-    (check-true
-     (let/cc return
-        (transfer bytes/source bytes/sink 1
-                  (P [buffer-size 5]
-                     [max-size 7]
-                     [telemeter
-                      (λ (message)
-                        (match ($transfer:scope-message message)
-                          [($transfer:budget:exceeded 1 4)
-                           (return #t)]
-                          [_ (void)]))]))))))
+  (test reject-over-budget
+        (define bstr #"ABCDEFG")
+        (define bytes/source (open-input-bytes bstr))
+        (define bytes/sink (open-output-bytes))
+        (define size (bytes-length bstr))
+        (assert
+         (let/ec return
+           (transfer bytes/source bytes/sink 1
+                     (P [buffer-size 5]
+                        [max-size 7]
+                        [telemeter
+                         (λ (message)
+                           (match ($transfer:scope-message message)
+                             [($transfer:budget:exceeded 1 4)
+                              (return #t)]
+                             [_ (void)]))]))))))
