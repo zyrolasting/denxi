@@ -5,11 +5,13 @@
          "machine.rkt")
 
 (provide gen:source
+         source?
          source/c
+         source-measure
+         source-tap
          (struct-out byte-source)
          (contract-out
           [empty-source source?]
-          [source? predicate/c]
           [text-source (-> string? source?)]))
 
 
