@@ -14,7 +14,8 @@
          sink-open
          sink-policy
          sink-source
-         (struct-out $open))
+         (struct-out $open)
+         (struct-out memory-sink))
 
 (define-message $open ())
 
