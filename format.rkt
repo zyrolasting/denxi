@@ -5,9 +5,9 @@
 (require racket/contract
          racket/format
          racket/pretty
+         racket/stream
          racket/string
-         racket/struct
-         "stream.rkt")
+         racket/struct)
 
 (provide (all-from-out racket/format)
          (contract-out
@@ -76,6 +76,7 @@
       (format-stream (stream-rest s)
                      (cons (format-values (λ () (stream-first s)))
                            output))))
+
 
 (define (format-string-list open-bracket close-bracket elements)
   (define element-count
