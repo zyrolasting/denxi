@@ -18,8 +18,6 @@
 (define-message $precosystem:unavailable (digest))
 
 
-;--------------------------------------------------------------------------------
-
 (struct response
   (name sink))
 
