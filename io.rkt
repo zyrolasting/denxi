@@ -146,4 +146,3 @@
         (display "abc" port)
         (close-output-port port)
         (assert (source? (state-get-value (source-machine))))))
-
