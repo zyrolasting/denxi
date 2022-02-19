@@ -2,35 +2,28 @@ Ecosystem-Oriented Ecosystem
 
 Denxi is written in Racket. Racket is a language-oriented programming
 language, which means that the surface syntax and compiler are both
-extensible via Racket. I can switch between a logic language and a
-markup language and keep the same package manager, documentation
-generator, and so on.
+extensible via Racket. Racket helps you create and prototype other
+languages, including alternatives to itself. I can switch between a
+logic language and a markup language in the same runtime.
 
-Racket helps you create and prototype other languages, including
-alternatives to itself. This is part of what it means to be
-language-oriented.  Unfortunately, Racket is not a complete solution
-for next-generation programming because it lacks an ecosystem-oriented
-ecosystem. The result is that you cannot switch to a different
-toolchain without in some way isolating yourself from the work others
-do.
+One of the cool points of this arrangement is that you keep the same
+package manager, documentation generator, and so on. Unfortunately,
+Racket lacks an ecosystem-oriented ecosystem. You can switch languages
+easily, but you cannot switch to a different toolchain without in some
+way isolating yourself from the work others do.
 
-Denxi aids creation of ecosystem tools. I am working towards a
-Racket+Denxi stack capable of capturing both the technical and social
-context required to share work.
-
-Denxi is built on the assumption that tools like it are going to keep
-proliferating, and that we should have more that are completely
-beholden to what a user expects from it. Just like how Racket argues
+Denxi is an attempt to aid creation of other ecosystems, without
+necessarily staying limited to Racket. Just like how Racket argues
 that there aren't enough programming languages, Denxi argues that
 there aren't enough package managers, downloaders, or clients. The
-question is: who is going to control that growth? You, or a business
-that doesn't seem to care about what they do to you? Racket taught me
-to expect more from programming languages, and I am disappointed to
-see Racket imprisoned by its own tools.
+question is: who is going to control that growth? You, or a
+business/community that doesn't seem to care about you?  Racket taught
+me to expect more from programming languages, and I aim to teach
+Racketeers to expect more from their ecosystems.
 
 Denxi's goal is to make sociotechnical contracts cheap to draft,
 perfect, and enforce. My hope is that if I ever spend years building a
 community, you can still leave and carry on in a different community
 within minutes. That is, without sacrificing everything you've
-gained. Nothing I know of makes that easy. Racket came close, and I
-aim to close the distance.
+gained. Nothing I know of makes that easy. Racket came close.  With
+luck, Denxi will close the distance.

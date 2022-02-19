@@ -1,0 +1,66 @@
+17 Feburary 2022
+
+My refactor has long become a rewrite, on account of sometimes
+replacing many interfaces with a more meaninful one.
+
+The goal is an ecosystem-oriented ecosystem, so the highest-level
+abstraction is an ecosystem. Based on my observations, I define an
+ecosystem as a structured association between interdependent fragments
+of software. The association does not have to require network I/O, but
+the useful ones do.
+
+Packages are an ecosystem-dependent artifact, but I'm no longer
+convinced that they require an explicit definition. Denxi's user
+retains control over the dependency graph used as input for an
+installation. For their purposes, a package is just a subgraph with
+discovery information.  Since my rewrite started with a need to remove
+my prescriptivist use of discovery information, I'm hoping that it's
+enough to ask a user to bind discovery information to their own
+dependecy subgraph.
+
+If that's not clear, think of NPM, which I expect is the world's
+largest package-oriented ecosystem at the time of this writing.  NPM
+packages declare their own dependencies in a configuration file, and
+NPM itself recursively fulfils these dependencies using rules about
+filesystem paths. In Denxi, the entire dependency graph must be known
+in advance. The difference is that the user can freely decide
+dependencies for any program fragment. Denxi already allowed for this
+via "input overriding," but that code had the stink of CSS'
+!important.  That is, it's something you write when you want to
+"correct" something that could have (and should have) been fixed
+earlier in the process.
+
+--------------------------------------------------------------------------------
+A minimal P2P ecosystem
+
+I'm currently working on a small scale builtin ecosystem. For the sake
+of a working title, I'll call it a picosystem. A picosystem
+distributes prescribed content as a small-scale operation requiring
+nothing more than a racket-minimal installation.
+
+A picosystem supports mutual authentication over TCP via the host's
+OpenSSL. The TCP protocol itself is peer-to-peer. A requesting peer
+consists of exactly one hex-encoded digest of a given hash function. A
+responding peer either responds with the bytes used to produce that
+digest, or closes the connection immediately. Peers serve everything
+they request.
+
+All responses and requests are prescribed by the server programmer,
+for storage in process memory. There are also no error codes. There
+are a few reasons to do it this way. Chief among them is that it's
+better to make a large-scale ecosystem using a small-scale ecosystem,
+than it is to make another large-scale ecosystem with only a
+general-purpose language. That is, it's better to derive the next NPM
+with a proto-NPM than to handwrite the next NPM.
+
+Keeping ecosystem data in memory trivializes availability and
+concurrency problems. Data not available? Add a process, pass in data.
+Throughput low on a host?  Add a process, pass in data. Clients only
+need to know digests and expected byte string lengths to communicate
+with a server, which also suffice to verify response integrity. All
+requests can be derived directly from response data, and
+human-friendly names are easy to map to a flat list of digests. The
+result is networked, integrous memory over an authenticated channel.
+
+Use for small-scale operations, or for storing code used for
+large-scale operations. Kind of like bootstrapping over TLS.

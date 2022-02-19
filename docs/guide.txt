@@ -1,70 +1,173 @@
-                      Denxi Guide
+                          Denxi Guide
 
-  Racket programmers who read this guide will understand how to
-distribute trusted data in untrusted conditions. You'll need Racket
-v7.0+ installed to use this guide. Minimal installations are fine.
+  This guide is for Racket programmers who wish to transfer trusted
+data using untrusted I/O, with flexible dependency management
+rules. You'll need Racket v7.0+ installed to use this guide. Minimal
+installations are fine.
 
 
+--------------------------------------------------------------------------------
 SETUP
 
-To install Denxi, run this Racket program. If you see an error, it
-will come with instructions for reporting the issue.
+  To install Denxi, run this Racket program. If there's a failure,
+you'll see instructions to report the issue.
 
 ...
 
 
 
-LAUNCHERS
+--------------------------------------------------------------------------------
+MODEL
 
-  A Denxi program performs monadic I/O and dependency management under
-custom restrictions. A launcher is an---ideally small---entry point
-meant to distribute itself and its own extensions. Launchers are
-written in the `denxi` language, which is an S-expression language and
-a superset of racket/base.
+  Denxi is an ecosystem-oriented ecosystem. That means Denxi can fetch
+data from different communities.  The result is a model that treats
+package managers and clients as personal tools. You are in Denxi's
+target audience if you like the idea of keeping a package manager on a
+USB thumb drive with your car keys or wallet.  Rather than allow
+third-parties to automatically distribute updates to you, you define
+what software or updates you accept. Third parties that try to thwart
+your restrictions are simply denied by virtue of Denxi's application
+of zero-trust principles.
 
-  This launcher stores command line arguments in memory, and then
-prints the contents of storage. This illustrates data flow without
-dependency management.
+  Denxi cannot fully govern its own runtime. Use Denxi's model only as
+a supplemental protection, not as a full security solution. There is
+no substitute for using your operating system's security model and
+wise administration habits.
 
-_
+  A Denxi user requests data using ecosystem-dependent queries. A data
+transfer from an ecosystem is asynchronous. The transfer is also
+atomic with regards to a user's trust in transferred data. A program
+performing more than one transfer is nonatomic.
 
-  If you run this program using Racket, you'll see machine-readable
-output. This keeps Denxi localizable, and easier to debug. All
-messages defined by Denxi have an entry in the reference
-manual.
+  Dependency management consists of a single atomic and acyclic
+binding operation. To understand the operation, recall that
+dependencies are organized in a directed acyclic graph (DAG) like this
+one.
 
-_
+   A--->B--->C
+        +--->D
 
-  This output says that Denxi halted because a data transfer requested
-untrusted I/O. Specifically, the text-source used to represent text in
-memory contains more bytes than it is allowed to transfer (zero, by
-default). A source is an abstraction Denxi uses to represent untrusted
-variable-length data.
+  Unlike other tools, Denxi allows the user to control this graph
+dynamically to escape dependency hells and respond to security
+incidents without waiting on a relevant developer. Also, the user may
+start an installation from any vertex in the graph.
 
-  Denxi trusts no I/O by default. It trusts no servers, no public
-keys, and no hash functions. As you can tell, it won't even trust
-effects that are limited to its own process' memory. It won't allow
-you to operate on storage without starting a transaction first.  Once
-you cross the boundary from racket/base to Denxi semantics, you must
-specify what Denxi will allow in as much detail as the situation
-requires. This makes it harder to accidentally open
-vulnerabilities. Use Racket's facilities to simplify the code as you
-wish.
+  Installation follows the reverse topological order of a DAG.  In the
+above example, a valid installation order is C, D, B, then A. I'll
+notate the order using square brackets, like [C D B A].
 
-  Denxi uses the Racket runtime to prohibit Racket from performing any
-effects external to the process, except for particular cases you
-allow.  Note that these restrictions do not govern Racket's underlying
-implementation, so on underlying C libraries remain possible. Use your
-operating system's security model. Use Denxi's paranoia as a
-supplemental protection, not as a drop-in solution for security.
+  Each dependent decides the installation order of its own
+dependencies. B may choose to install D before C, for instance.
+
+  Every dependent may associate a simple path in the DAG to a
+reference to transferred data. Given installation order [D C B A],
+installation visits the following logical vertex paths in the DAG.
+
+  D B A
+  C B A
+  B A
+  A
+
+  Notice that the first column, read top to bottom, is the
+installation order. The remaining elements of each row inform a
+dependent of upcoming installations. The last element of the path is
+always the dependent originally requested for installation.
+
+  The atomic bind operation succeeds only if a user associates every
+vertex path for an installation to exactly one distinct, successful
+transfer. The success implies that not only all transfers succeeded,
+but stored data reflects dependency structure.
+
+
+--------------------------------------------------------------------------------
+MACHINES
+
+  Denxi defines a two-register abstract machine as a monadic type.
+
+  The first register of the machine holds any Racket value,
+representing the machine's state. A functional update of this register
+represents a meaningful state transition. When a machine starts with
+no defined value, the register is set to `undefined`, from
+`racket/undefined`. If this register is set to the uninterned `halt`
+symbol from `denxi/machine`, then the machine will not transition to
+any new state.
+
+  The second register of the machine holds a list of prefabricated
+structure instances that are all subtypes of $message. This list acts
+as accumulated output for the program that contextualizes the current
+value.
+
+  If any Racket code raises a (negate exn:break?) value in the context
+of a machine, then the machine will transition to the `halt` state and
+add a serializable encoding of the exception to the second register.
+
+  To define a machine, wrap (machine) around a unary Racket procedure.
+The procedure must return a new state via functional update. For
+example, this machine sets the first register to 1. Each machine
+presents as a Racket procedure, and can be called with or without an
+existing state.
+
+  (define set-one (machine (lambda (state) (state-set-value state 1))))
+  (state-get-value (set-one)) ; 1
+
+  Combine machines with the `mdo` (monadic do) form. Currently, `mdo`
+only supports a monomorphic return operation because the machine is
+the only monadic type. This program defines a machine that uses the
+set-one machine, and a new machine that adds a message to the second
+register.
+
+  (define-message $foo (a b c))
+  (define set-one (machine (lambda (state) (state-set-value state 1))))
+  (define log-foo (machine (lambda (state) (state-add-message state ($foo 1 2 3)))))
+  (define composite (mdo set-one log-foo))
+  (composite)
+
+
+--------------------------------------------------------------------------------
+I/O
+
+  Denxi extends I/O using sources and sinks. Both sources and sinks
+implement generic interfaces of the same name, and the interfaces
+operate on machines. Plan I/O using the `io` form, which returns a
+machine for transmitting all bytes from a source to a sink.
+
+  (define (download-to-file url path)
+    (io (http-source url)
+        (file-sink path)))
+
+  Denxi sinks are special in that they restrict sources. A sink may
+define the number of bytes it will accept before terminating the
+transfer, for example. This allows `io` forms to imply safety limits.
+
+  Sink implementations that define `sink-source` are reversible.
+Reversible sinks may produce sources in terms of content previously
+accepted by the sink. This is useful for verifying data after
+completing a transfer. `sink-source` also returns a machine, and that
+machine will produce a halt state when the sink is accepting new data.
+
+  (sink-source (file-sink path))
+
+
+--------------------------------------------------------------------------------
+EXAMPLE PROGRAMS
+
+  The `denxi` language is a superset of `racket/base`. Use it to write
+programs using Denxi's model. You can use `denxi` as a reader
+extension or a Racket module language.
+
+  Denxi programs are unique in that they can distribute their own
+extensions. Denxi includes a small TCP server for bootstrapping a new
+distribution model in terms of Racket modules.
+
+  The printed report shows that Denxi won't even trust effects that
+are limited to its own memory. Specifically, the text-source used to
+represent bytes from a UTF-8 string in memory contains more bytes than
+the user allowed for a transfer (zero, by default).
 
   This version of the launcher configures a transfer in a way that
 implicitly trusts input. A bad idea. I show it here for contrast.  The
 security concern is that Denxi's is being programmed by untrusted data
 (user input, in this case). Learn to recognize this pattern.
-
-_
-
 
   For something more useful, let's acquire a copy of U.S. English
 translations for output messages. This version of the same launcher
@@ -90,3 +193,43 @@ return strings that aren't defined by the ecosystem, and cannot cycle.
 
 _
 
+
+
+Examples
+
+1. [From Guide](./from-guide): The example from the guide, repeated
+   for convenience and for comparison to later
+   examples. (@zyrolasting)
+1. [Integrity Checking](./integrity-checking): Verify that content is
+   correct.  (@zyrolasting)
+1. [Signature Checking](./signature-checking): Verify that content
+   came from someone you trust.  (@zyrolasting)
+1. [Versioning](./versioning): Add version information to package
+   definitions. (@zyrolasting)
+1. [Output Conflicts](./output-conflicts): Deal with conflicts in
+   installed outputs. (@zyrolasting)
+1. [Input Proliferation](./input-proliferation): Dealing with uncached
+   inputs. (@zyrolasting)
+
+
+## Package Definitions
+1. [Input Overriding](./input-overriding): Substitute inputs at
+   runtime. (@zyrolasting)
+1. [Artifact Deterministim](./determinism): How to guarentee that an
+   artifact is always useable.  (@zyrolasting)
+1. [Generated Racket Bindings](./generated-racket-bindings): Fix a
+   problem with non-`eq?` generated bindings that plagues Racket
+   programs distributed on PLaneT, and sometimes `raco pkg`. (@zyrolasting)
+1. [Self-hosted Denxi](./self-hosting): Install Racket with it's own
+   copy of Denxi. (@zyrolasting)
+
+
+## Launchers
+1. [Cryptography Backends](./cryptography-backends): Selecting a back
+   end for cryptographic operations. (@zyrolasting)
+1. [Racket Installation Manager](./racket-installation-manager):
+   Install and manage multiple versions of Racket. (@zyrolasting)
+1. [Extending `ln`](./extend-ln):
+   Create `ln` commands that get to the point of dependency management. (@zyrolasting)
+1. [Creating Digest and Signature Files](./make-verification-files):
+   Use a cryptographic backend to create digests and signatures (@zyrolasting)
