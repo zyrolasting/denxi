@@ -11,6 +11,7 @@
 
 
 (provide (struct-out memory-conduit)
+         (struct-out $open)
          (struct-out prescribed-source)
          gen:sink
          gen:source
@@ -31,7 +32,7 @@
           [io (-> source? sink? machine?)]
           [text-source (-> string? source?)]))
 
-
+(define-message $open ())
 
 (define-generics sink
   [sink-open sink]
