@@ -5,15 +5,18 @@
 (provide (all-from-out racket/tcp)
          (struct-out tcp-conduit))
 
+
 (require racket/function
          racket/generic
          racket/match
          racket/tcp
+         "io.rkt"
          "machine.rkt"
-         "port.rkt"
-         "sink.rkt"
-         "source.rkt")
+         "message.rkt"
+         "port.rkt")
 
+
+(define-message $open:tcp $open ())
 
 (struct tcp-connection (i o))
 
@@ -43,12 +46,10 @@
       (λ (state)
         (if (tcp-connection-closed? (tcp-conduit-connection sink))
             (state-set-value (sink-source/generic (tcp-conduit-sink sink)))
-            (state-halt-with ($open))))))
+            (state-halt-with ($open:tcp))))))
    (define (sink-open sink)
      (machine-rule (tcp-connection-o (tcp-conduit-connection! sink))))
-   (define (sink-keep sink)
-     (machine-effect (tcp-connection-close (tcp-conduit-connection sink))))
-   (define (sink-drop sink)
+   (define (sink-close sink)
      (machine-effect (tcp-connection-close (tcp-conduit-connection sink))))
    (define (sink-policy sink)
      (machine-rule (tcp-conduit-policy sink)))])
@@ -100,21 +101,21 @@
     (values (thread-receive)
             child))
 
-  
+
   (define (shipping-server response)
     (server
      (λ (from-client to-client)
        (write-byte (bytes-length response) to-client)
        (write-bytes response to-client))))
 
-  
+
   (define (receiving-server)
     (define parent (current-thread))
     (server
      (λ (from-client to-client)
        (thread-send parent (read from-client)))))
 
-  
+
   (test tcp-source
         (define-values (server-port server-thread)
           (shipping-server #"abc"))
@@ -126,7 +127,7 @@
                     (add1 server-port)
                     read-byte
                     full-trust-transfer-policy
-                    (memory-sink #"" full-trust-transfer-policy)
+                    (memory-conduit #"" full-trust-transfer-policy)
                     #f))
 
         (define measure (source-measure conduit))
@@ -134,6 +135,7 @@
         (assert (equal? (state-get-value (measure)) 3))
         (assert (equal? (port->bytes (state-get-value (tap))) #"\3abc"))
         (thread-wait server-thread))
+
 
   (test tcp-sink
         (define-values (server-port server-thread)
@@ -146,7 +148,7 @@
                     (add1 server-port)
                     read-byte
                     full-trust-transfer-policy
-                    (memory-sink #"" full-trust-transfer-policy)
+                    (memory-conduit #"" full-trust-transfer-policy)
                     #f))
 
         (define to-server (state-get-value ((sink-open conduit))))
