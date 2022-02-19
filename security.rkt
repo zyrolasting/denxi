@@ -1,27 +1,38 @@
 #lang racket/base
 
-(provide call-with-time-limit
-         call-with-memory-limit
-         call-with-environment-variable-subset)
+(provide (struct-out intraprocess-limits))
 
 (require racket/function)
 
+(struct intraprocess-limits (seconds bytes envvars)
+  #:property prop:procedure
+  (λ (self continue)
+    (define (with-envvar-limit)
+      (call-with-environment-variable-subset (current-environment-variables)
+                                             (intraprocess-limits-envvars self)
+                                             continue))
+    (define (with-memory-limit)
+      (call-with-memory-limit (intraprocess-limits-bytes self)
+                              with-envvar-limit))
+    (define (with-time-limit)
+      (call-with-time-limit (intraprocess-limits-seconds self)
+                            with-memory-limit))
+    (define (with-default-reader)
+      (call-with-default-reading-parameterization with-time-limit))
+    (with-default-reader)))
+
+
 (define (call-with-time-limit time-limit timed-out continue)
-  (define return-values
-    values)
-
+  (define return-values values)
   (define timed-thread
-    (thread (thunk (call-with-values continue
-                                     (λ A (set! return-values (λ () (apply values A))))))))
-
+    (thread (thunk (call-with-values continue (λ A (set! return-values (λ () (apply values A))))))))
   (sync/enable-break (handle-evt (alarm-evt (+ (current-inexact-milliseconds)
                                                (* time-limit 1000)))
                                  (λ _
                                    (kill-thread timed-thread)
                                    (timed-out)))
                      (handle-evt (thread-dead-evt timed-thread)
-                                 (λ _
-                                   (return-values)))))
+                                 (λ _ (return-values)))))
 
 
 (define (call-with-memory-limit limit continue)

@@ -34,20 +34,14 @@
    (λ (state)
      (define resp
        (request-response req))
-
      (define tap-response
        (mdo sink := (response-sink resp)
             source := (sink-source resp)
             (source-tap source)))
-
      (define fail
        (machine-halt-with ($precosystem:undefined (request-digest req))))
-     
      (define submachine
-       (if resp
-           tap-response
-           fail))
-
+       (if resp tap-response fail))
      (submachine state))))
 
 
@@ -56,12 +50,9 @@
   (define expected-digest (request-digest req))
   (hash-ref (peer-responses p)
             expected-digest
-            (λ ()
-              (for/or ([rm (peer-remotes p)])
-                (peer-try-remote p rm expected-digest)))))
+            (λ () (for/or ([rm (peer-remotes p)])
+                    (peer-try-remote p rm expected-digest)))))
 
-
-;--------------------------------------------------------------------------------
 
 (struct remote
   (hostname port))
@@ -87,9 +78,7 @@
 
 
 (define (peer-request p name)
-  (hash-ref (peer-requests p)
-            name
-            #f))
+  (hash-ref (peer-requests p) name #f))
 
 
 (define (peer-try-remote p rm expected-digest)
@@ -108,8 +97,7 @@
   (define body (read-bytes limit from-server))
 
   ; Verify
-  (and (equal? expected-digest (peer-digest p body))
-       body))
+  (and (equal? expected-digest (peer-digest p body)) body))
 
 
 (define (peer-store p name sink)
@@ -118,12 +106,8 @@
        size := (source-measure stored)
        (machine-effect
         (let ([digest (peer-digest p from-tap)])
-          (hash-set! (peer-responses p)
-                     digest
-                     (response sink))
-          (hash-set! (peer-requests p)
-                     name
-                     (request digest size))))))
+          (hash-set! (peer-responses p) digest (response sink))
+          (hash-set! (peer-requests p) name (request digest size))))))
 
 
 (define (peer-listen p)
