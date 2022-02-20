@@ -14,7 +14,7 @@
 (define source-code/ (normalize-path source-code-runtime-path))
 
 (define (link-denxi-collection)
-  (links denxi/ #:name "denxi" #:user? #f)
+  (links source-code/ #:name "denxi" #:user? #f)
   (printf "Linked ~a to the 'denxi' collection at installation scope~n"
           source-code/))
 
