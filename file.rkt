@@ -60,8 +60,8 @@
                    permissions)
   #:methods gen:sink
   [(define (sink-drain sink source)
-     (mdo policy := (machine-rule (file-sink-policy sink))
-          est-size    := (source-measure source)
+     (mdo policy := (machine-unit (file-sink-policy sink))
+          est-size := (source-measure source)
           from-source := (source-tap source)
           (machine
            (λ (state)
