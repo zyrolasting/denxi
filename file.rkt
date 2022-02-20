@@ -1,17 +1,16 @@
 #lang racket/base
 
 (require racket/contract)
-(provide (except-out (struct-out file-sink)
-                     file-sink)
-         (struct-out file-source)
+(provide (struct-out file-source)
+         (struct-out file-sink)
          (contract-out
-          (rename make-file-sink file-sink
-                  (->* (file-name?
-                        transfer-policy?)
-                       (complete-path?
-                        #:exists symbol?
-                        #:permissions (integer-in 0 65535))
-                       file-sink?))))
+          [make-file-sink
+           (->* (file-name?
+                 transfer-policy?)
+                (complete-path?
+                 #:exists symbol?
+                 #:permissions (integer-in 0 65535))
+                file-sink?)]))
 
 (require racket/file
          racket/match
@@ -19,9 +18,8 @@
          "io.rkt"
          "machine.rkt"
          "message.rkt"
+         "monad.rkt"
          "port.rkt")
-
-(define-message $file-open (path))
 
 
 (define (file-name? path)
@@ -35,14 +33,15 @@
 (define (make-file-sink file-name
                         policy
                         [directory-path (current-directory)]
+                        #:handle-directory [handle-directory void]
                         #:exists [exists 'error]
                         #:permissions [permissions #o666])
   (file-sink directory-path
              file-name
              policy
+             handle-directory
              exists
-             permissions
-             #f))
+             permissions))
 
 
 (struct file-source (path)
@@ -53,40 +52,35 @@
      (machine-rule (file-size (file-source-path source))))])
 
 
-(struct file-sink (directory-path file-name policy exists permissions [port #:mutable])
-  #:methods gen:source
-  [(define (sink-source sink)
-     (machine
-      (λ (state)
-        (if (opened-output-port? (file-sink-port sink))
-            (state-set-value state (file-source (file-sink-path sink)))
-            (state-halt-with state ($file-open (file-sink-path sink)))))))
-   (define (sink-open sink)
-     (machine
-      (λ (state)
-        (match-define (file-sink directory-path _ _ exists permissions _) sink)
-        (make-directory* directory-path)
-        (define out
-          (open-output-file (file-sink-path sink)
-                            #:exists exists
-                            #:permissions permissions))
-        (set-file-sink-port! sink out)
-        (state-set-value state out))))
-   (define (sink-close sink)
-     (machine-effect
-      (let ([out (file-sink-port sink)])
-        (when (opened-output-port? out)
-          (flush-output out)
-          (close-output-port out)
-          (set-file-sink-port! sink #f)))))])
+(struct file-sink (directory-path
+                   file-name
+                   policy
+                   handle-directory
+                   exists
+                   permissions)
+  #:methods gen:sink
+  [(define (sink-drain sink source)
+     (mdo policy := (machine-rule (file-sink-policy sink))
+          est-size    := (source-measure source)
+          from-source := (source-tap source)
+          (machine
+           (λ (state)
+             (match-define (file-sink directory-path
+                                      file-name
+                                      handle-directory
+                                      exists
+                                      permissions
+                                      _)
+               sink)
 
+             (define output-path
+               (simple-form-path
+                (build-path directory-path file-name)))
 
-(define (opened-output-port? out)
-  (and (output-port? out)
-       (not (port-closed? out))))
-
-
-(define (file-sink-path sink)
-  (simple-form-path
-   (build-path (file-sink-directory-path sink)
-               (file-sink-file-name sink))))
+             (handle-directory directory-path)
+             (call-with-output-file* output-path
+               #:exists exists
+               #:permissions permissions
+               (λ (to-file)
+                 (transfer from-source to-file est-size policy)
+                 output-path))))))])
