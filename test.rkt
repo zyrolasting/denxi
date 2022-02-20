@@ -6,6 +6,7 @@
          run-all-tests
          run-tests)
 
+
 (require racket/function
          racket/match
          racket/runtime-path
@@ -61,14 +62,16 @@
 
 
 (define (run-tests module-path)
-  (dynamic-require module-path #f)
-  (define-values (provided _)
-    (module->exports module-path))
-  (for* ([provisions (in-list provided)]
-         [has-identifier (in-list (cdr provisions))])
-    (define bound (dynamic-require module-path (car has-identifier)))
-    (when (dynamic-test? bound)
-      (bound))))
+  (ignore-benign-errors
+   (thunk (displayln module-path)
+          (dynamic-require module-path #f)
+          (define-values (provided _)
+            (module->exports module-path))
+          (for* ([provisions (in-list provided)]
+                 [has-identifier (in-list (cdr provisions))])
+            (define bound (dynamic-require module-path (car has-identifier)))
+            (when (dynamic-test? bound)
+              (bound))))))
 
 
 (define (test-module-path module-path)
@@ -80,6 +83,14 @@
     (for ([file-path (in-directory)]
           #:when (regexp-match? #px"\\.rkt$" file-path))
       (run-tests (test-module-path (find-relative-path (current-directory) file-path))))))
+
+
+(define (ignore-benign-errors continue)
+  (with-handlers ([exn?
+                   (λ (e)
+                     (unless (regexp-match? #px"unknown module" (exn-message e))
+                       (raise e)))])
+    (continue)))
 
 
 (define-syntax-rule (test id . xs)
