@@ -1,5 +1,39 @@
 #lang racket/base
 
+#|
+Define an abstract machine of two registers as a monadic type.  The
+machine's state S consists of both registers, expressed as a Racket
+list.
+
+(car S) is any Racket value. Defaults to `undefined`, from
+`racket/undefined`. If set to `halt`, then the machine will not
+transition to any new state.
+
+(cdr S) is a list of $message instances that contextualize (car S).
+
+If any Racket code raises a (negate exn:break?) value in the context
+of a machine, then the machine will transition to the `halt` state and
+add a serializable encoding of the exception to (cdr S) via cons.
+
+To define a machine, wrap (machine) around a unary Racket procedure.
+The procedure must return a new state via functional update. For
+example, this machine sets the first register to 1. Each machine
+presents as a Racket procedure, and can be called with or without an
+existing state.
+
+  (define set-one (machine (lambda (state) (state-set-value state 1))))
+  (state-get-value (set-one)) ; 1
+
+Combine machines with the `mdo` (monadic do) form.
+
+  (define-message $foo (a b c))
+  (define set-one (machine (lambda (state) (state-set-value state 1))))
+  (define log-foo (machine (lambda (state) (state-add-message state ($foo 1 2 3)))))
+  (define composite (mdo set-one log-foo))
+  (composite)
+|#
+
+
 (require racket/contract
          racket/function
          racket/sequence
@@ -23,6 +57,8 @@
            (-> machine? (-> any/c machine?) machine?)]
           [machine-coerce
            (-> any/c machine?)]
+          [machine-failover
+           (-> machine? machine? machine?)]
           [machine-halt-with
            (-> any/c machine?)]
           [machine-unit
@@ -140,6 +176,15 @@
                ((f (car state*)) state*)))))))
 
 
+(define (machine-failover m m*)
+  (machine
+   (λ (state)
+     (let ([state* (m state)])
+       (if (state-halt? state*)
+           (m* (state-set-value state* (state-get-value state)))
+           state*)))))
+
+
 (define (machine-unit v)
   (machine (λ (state) (state-set-value state v))))
 
@@ -165,7 +210,6 @@
 
 (module+ test
   (provide match-halt?)
-
   (require "test.rkt")
 
   (define-syntax-rule (match-halt? s . patt)
@@ -201,4 +245,9 @@
     (assert (match? ((mdo x := (machine-unit 2)
                           y := (machine-halt-with 1)
                           (machine (λ _ (error "Should not get here")))))
-                    (list halt ($show-string "1"))))))
+                    (list halt ($show-string "1")))))
+
+  (test failover
+        (assert (equal? ((machine-failover (machine-halt-with 1)
+                                           (machine-unit 2)))
+                        (list 2 ($show-string "1"))))))
