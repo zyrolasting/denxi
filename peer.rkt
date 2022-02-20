@@ -4,7 +4,7 @@
          racket/function
          racket/match
          (only-in file/sha1 bytes->hex-string)
-         openssl
+         "openssl.rkt"
          "machine.rkt"
          "message.rkt"
          "monad.rkt"
@@ -19,11 +19,9 @@
 
 
 (struct peer
-  (certificate-chain
-   ciphers
-   client-hostname
+  (client-hostname
    hash-function
-   private-key
+   openssl-identity
    remotes
    requests
    responses
@@ -51,14 +49,11 @@
                    name
                    (λ ()
                      (return (state-halt-with state ($peer:unnamed name))))))
-
-
        (define machines
          (for/list ([remote (peer-remotes p)])
            (define hostname (car remote))
            (define port (cdr remote))
            (peer-try-remote p hostname port digest)))
-
        (for/fold ([state* state]
                   #:result
                   (if (bytes? (state-get-value state*))
@@ -74,7 +69,7 @@
   (machine
    (λ (state)
      ; Connect
-     (define context (ssl-context (ssl-make-client-context 'auto) p))
+     (define context ((peer-openssl-identity p) 'server))
      (define-values (from-server to-server) (ssl-connect hostname port context))
 
      ; Send
@@ -110,8 +105,7 @@
                 queue-len
                 #f
                 expected-hostname
-                (ssl-context (ssl-make-server-context 'auto)
-                             p)))
+                ((peer-openssl-identity p) 'server?)))
   (define (loop)
     (peer-respond listener request-length p)
     (loop))
@@ -154,23 +148,3 @@
      (if (bytes? v)
          (open-input-bytes v)
          v)))))
-
-
-(define (ssl-context ctx p)
-  (define ciphers (peer-ciphers p))
-  (define vsources (peer-verify-sources p))
-  (define certs (peer-certificate-chain p))
-  (define key (peer-private-key p))
-  (define has-verify-sources?
-    (not (null? vsources)))
-
-  (for ([src (in-list vsources)])
-    (ssl-load-verify-source! ctx src))
-  (ssl-set-verify! ctx has-verify-sources?)
-  (ssl-set-verify-hostname! ctx has-verify-sources?)
-  (ssl-set-ciphers! ctx ciphers)
-  (when (and certs key)
-    (ssl-load-certificate-chain! ctx certs)
-    (ssl-load-private-key! ctx key))
-  (ssl-seal-context! ctx)
-  ctx)
