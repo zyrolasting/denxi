@@ -83,4 +83,5 @@
                #:permissions permissions
                (λ (to-file)
                  (transfer from-source to-file est-size policy)
+                 (close-input-port from-source)
                  output-path))))))])
