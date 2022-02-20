@@ -13,10 +13,9 @@
          "io.rkt"
          "machine.rkt"
          "message.rkt"
+         "monad.rkt"
          "port.rkt")
 
-
-(define-message $open:tcp $open ())
 
 (struct tcp-connection (i o))
 
@@ -40,29 +39,17 @@
        (peeking-input-port (tcp-connection-i (tcp-conduit-connection! source))))))]
 
   #:methods gen:sink
-  [(define/generic sink-source/generic sink-source)
-   (define (sink-source sink)
-     (machine
-      (λ (state)
-        (if (tcp-connection-closed? (tcp-conduit-connection sink))
-            (state-set-value (sink-source/generic (tcp-conduit-sink sink)))
-            (state-halt-with ($open:tcp))))))
-   (define (sink-open sink)
-     (machine-rule (tcp-connection-o (tcp-conduit-connection! sink))))
-   (define (sink-close sink)
-     (machine-effect (tcp-connection-close (tcp-conduit-connection sink))))
-   (define (sink-policy sink)
-     (machine-rule (tcp-conduit-policy sink)))])
-
-
-(define (tcp-connection-close tcpc)
-  (close-input-port (tcp-connection-i tcpc))
-  (close-output-port (tcp-connection-o tcpc)))
-
-
-(define (tcp-connection-closed? tcpc)
-  (or (port-closed? (tcp-connection-i tcpc))
-      (port-closed? (tcp-connection-o tcpc))))
+  [(define (sink-drain sink source)
+     (mdo conn := (machine-rule (tcp-conduit-connection! sink))
+          policy := (machine-rule (tcp-conduit-policy sink))
+          est-size    := (source-measure source)
+          from-source := (source-tap source)
+          (machine-effect
+           (let ([to-server (tcp-connection-o conn)]
+                 [from-server (tcp-connection-i conn)])
+             (transfer from-source to-server est-size policy)
+             (close-output-port to-server)
+             (close-input-port from-server)))))])
 
 
 (define (tcp-connection-open . args)
@@ -151,9 +138,6 @@
                     (memory-conduit #"" full-trust-transfer-policy)
                     #f))
 
-        (define to-server (state-get-value ((sink-open conduit))))
-        (write 100 to-server)
-        (flush-output to-server)
-        (close-output-port to-server)
+        (define to-server (state-get-value ((sink-drain conduit (byte-source #"100")))))
         (assert (equal? (thread-receive) 100))
         (thread-wait server-thread)))
