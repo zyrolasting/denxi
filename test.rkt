@@ -1,6 +1,7 @@
 #lang racket/base
 
 (provide assert
+         compare
          match?
          test
          run-all-tests
@@ -52,12 +53,28 @@
        #'(dynamic-assert src line expr 'expr))]))
 
 
+(define-syntax (compare stx)
+  (syntax-case stx ()
+    [(_ ? a b)
+     (with-syntax ([src (syntax-source stx)] [line (syntax-line stx)])
+       #'(dynamic-assert src
+                         line
+                         (? a b)
+                         (compare-message ? a b)))]))
+
+
+(define (compare-message ? a b)
+  (format "(~a ~e ~e)" (object-name ?) a b))
+
+
 (define (dynamic-assert src line result expr-datum)
-  (printf "~a (~a, line ~a): ~s~n"
+  (printf "~a (~a, line ~a): ~a~n"
           (if result "pass" "fail")
           (and src (file-name-from-path src))
           line
-          expr-datum)
+          (if (string? expr-datum)
+              expr-datum
+              (format "~s" expr-datum)))
   (unless result (raise failure)))
 
 
