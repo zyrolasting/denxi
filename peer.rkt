@@ -12,102 +12,91 @@
          "port.rkt")
 
 
-(define-message $precosystem ())
-(define-message $precosystem:undefined (hostname port name))
-(define-message $precosystem:unavailable (digest))
-
-
-(struct response
-  (name sink))
-
-
-(struct request (peer digest size)
-  #:methods gen:source
-  [(define (source-measure source)
-     (machine-rule (request-size source)))
-   (define (source-tap source)
-     (request-tap source))])
-
-
-(define (request-tap req)
-  (machine
-   (λ (state)
-     (define resp
-       (request-response req))
-     (define tap-response
-       (mdo sink := (response-sink resp)
-            source := (sink-source resp)
-            (source-tap source)))
-     (define fail
-       (machine-halt-with ($precosystem:undefined (request-digest req))))
-     (define submachine
-       (if resp tap-response fail))
-     (submachine state))))
-
-
-(define (request-response req)
-  (define p (request-peer req))
-  (define expected-digest (request-digest req))
-  (hash-ref (peer-responses p)
-            expected-digest
-            (λ () (for/or ([rm (peer-remotes p)])
-                    (peer-try-remote p rm expected-digest)))))
-
-
-(struct remote
-  (hostname port))
+(define-message $peer ())
+(define-message $peer:unavailable (digest))
+(define-message $peer:unnamed (name))
+(define-message $peer:receipt (hostname port expected-digest actual-digest))
 
 
 (struct peer
-  (requests
-   responses
+  (certificate-chain
+   ciphers
+   client-hostname
+   hash-function
+   private-key
    remotes
+   requests
+   responses
+   server-hostname
+   server-port
+   server-queue-length
+   server-timeout
    telemeter
    transfer-policy
-   client-hostname
-   client-limit
-   hash-function
-   server-hostname
-   server-queue-length
-   server-port
-   server-timeout
-   ciphers
-   verify-sources
-   certificate-chain
-   private-key))
+   verify-sources))
+
+
+(define (peer-store p name byte-string)
+  (define digest (peer-digest p byte-string))
+  (hash-set! (peer-responses p) digest byte-string)
+  (hash-set! (peer-requests p) name digest))
 
 
 (define (peer-request p name)
-  (hash-ref (peer-requests p) name #f))
+  (machine
+   (λ (state)
+     (let/ec return
+       (define digest
+         (hash-ref (peer-requests p)
+                   name
+                   (λ ()
+                     (return (state-halt-with state ($peer:unnamed name))))))
 
 
-(define (peer-try-remote p rm expected-digest)
-  ; Connect
-  (define hostname (remote-hostname rm))
-  (define port (remote-port rm))
-  (define context (ssl-context (ssl-make-client-context 'auto) p))
-  (define-values (from-server to-server) (ssl-connect hostname port context))
+       (define machines
+         (for/list ([remote (peer-remotes p)])
+           (define hostname (car remote))
+           (define port (cdr remote))
+           (peer-try-remote p hostname port digest)))
 
-  ; Send
-  (write-bytes expected-digest to-server)
-  (close-output-port to-server)
-
-  ; Receive
-  (define limit (peer-client-limit p))
-  (define body (read-bytes limit from-server))
-
-  ; Verify
-  (and (equal? expected-digest (peer-digest p body)) body))
+       (for/fold ([state* state]
+                  #:result
+                  (if (bytes? (state-get-value state*))
+                      state*
+                      (state-halt-with state*
+                                       ($peer:unavailable digest))))
+                 ([m (in-list machines)]
+                  #:break (bytes? (state-get-value state*)))
+         (m state*))))))
 
 
-(define (peer-store p name sink)
-  (mdo stored := (sink-source sink)
-       from-tap := (source-tap stored)
-       size := (source-measure stored)
-       (machine-effect
-        (let ([digest (peer-digest p from-tap)])
-          (hash-set! (peer-responses p) digest (response sink))
-          (hash-set! (peer-requests p) name (request digest size))))))
+(define (peer-try-remote p hostname port expected-digest)
+  (machine
+   (λ (state)
+     ; Connect
+     (define context (ssl-context (ssl-make-client-context 'auto) p))
+     (define-values (from-server to-server) (ssl-connect hostname port context))
+
+     ; Send
+     (write-bytes expected-digest to-server)
+     (close-output-port to-server)
+
+     ; Receive
+     (define policy (peer-transfer-policy p))
+     (define max-size (transfer-policy-max-size policy))
+     (define-values (from-pipe to-pipe) (make-pipe))
+     (transfer from-server to-pipe max-size policy)
+     (define body (port->bytes from-pipe))
+     (close-input-port from-pipe)
+     (close-input-port from-server)
+
+     ; Verify
+     (define actual-digest (peer-digest p body))
+     (define receipt ($peer:receipt hostname port expected-digest actual-digest))
+
+     (state-set-value (state-add-message state receipt)
+                      (equal? expected-digest actual-digest)))))
+
 
 
 (define (peer-listen p)
@@ -129,7 +118,7 @@
   (define cust
     (make-custodian))
   (define (stop)
-    (custodian-shutdown-all cust))  
+    (custodian-shutdown-all cust))
   (parameterize ([current-custodian cust])
     (thread loop)
     stop))
@@ -144,15 +133,12 @@
        (define responses (peer-responses p))
        (define key (read-bytes request-length from-client))
        (define response (hash-ref responses key #f))
-
        (when response
          (define machine
-           (mdo source := (sink-source response)
-                from-tap := (source-tap source)
+           (mdo from-tap := (source-tap response)
                 (machine-effect (copy-port from-tap to-client))))
          (for-each (peer-telemeter p)
                    (state-get-messages (machine))))
-
        (close-output-port to-client)
        (close-input-port from-client)))
     (thread
@@ -175,20 +161,16 @@
   (define vsources (peer-verify-sources p))
   (define certs (peer-certificate-chain p))
   (define key (peer-private-key p))
-
   (define has-verify-sources?
     (not (null? vsources)))
 
   (for ([src (in-list vsources)])
     (ssl-load-verify-source! ctx src))
-
   (ssl-set-verify! ctx has-verify-sources?)
   (ssl-set-verify-hostname! ctx has-verify-sources?)
-
   (ssl-set-ciphers! ctx ciphers)
   (when (and certs key)
     (ssl-load-certificate-chain! ctx certs)
     (ssl-load-private-key! ctx key))
-
   (ssl-seal-context! ctx)
   ctx)
