@@ -134,5 +134,5 @@
 
   (test rfc4648
         (for ([pairing (in-list function)])
-          (assert (equal? (base32-encode (car pairing)) (cdr pairing)))
-          (assert (equal? (base32-decode (cdr pairing)) (car pairing))))))
+          (compare equal? (base32-encode (car pairing)) (cdr pairing))
+          (compare equal? (base32-decode (cdr pairing)) (car pairing)))))
