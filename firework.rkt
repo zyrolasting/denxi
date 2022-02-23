@@ -2,6 +2,7 @@
 
 (require racket/contract
          racket/file
+         racket/function
          racket/format
          racket/generator
          racket/match
