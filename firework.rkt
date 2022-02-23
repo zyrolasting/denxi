@@ -12,6 +12,10 @@
 (provide powder
          (contract-out
           [powder/c contract?]
+          [file-as
+           (->* (path-string? bytes?)
+                (#:exists symbol?)
+                path-string?)]
           [firework
            (-> simple-file-name?
                powder/c
@@ -24,6 +28,12 @@
                  (not/c complete-path?))
           (cons/c (integer-in 0 65535)
                   bytes?)))
+
+
+(define (file-as #:exists [exists 'error] path content)
+  (call-with-output-file path #:exists exists
+    (curry write-bytes content))
+  path)
 
 
 (define (simple-file-name? path)
