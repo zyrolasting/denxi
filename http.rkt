@@ -31,7 +31,8 @@
          "port.rkt")
 
 
-(define-message $http1.1:unsupported-scheme (scheme))
+(define-message $http1.1:unsupported-scheme
+  (name))
 
 (define (http1.1-source-machine request-url-variant
                                 client-identity
@@ -52,7 +53,6 @@
                        client-identity
                        max-redirects
                        make-receiver))
-
      (if (member scheme '("http" "https" "file"))
          (if derived-file-source
              (state-set-value state derived-file-source)
@@ -60,8 +60,10 @@
          (state-halt-with state
                           ($http1.1:unsupported-scheme scheme))))))
 
+
 (define (default-http1.1-receiver status-code headers content-length from-server)
   (prescribed-source content-length from-server))
+
 
 (define (http1.1-invoke request-url id max-redirects make-source)
   (machine
