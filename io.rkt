@@ -27,12 +27,8 @@
          (contract-out
           [byte-source (-> bytes? prescribed-source?)]
           [empty-source source?]
-          [io (-> source? sink? machine?)]
-          [io/sync (-> source? sink? machine?)]
-          [io/cached (-> source? source? sink? machine?)]
           [text-source (-> string? source?)]))
 
-(define-message $io (source sink))
 
 (define-generics sink
   [sink-drain sink source])
@@ -41,34 +37,6 @@
 (define-generics source
   [source-measure source]
   [source-tap source])
-
-
-(define (io source sink)
-  (machine
-   (λ (state)
-     (define output (box #f))
-     (define (return . _)
-       (unbox output))
-     (define worker (thread (λ () (set-box! output ((sink-drain sink source))))))
-     (define event (handle-evt (thread-dead-evt worker) return))
-     (state-add-message (state-set-value state event)
-                        ($io source sink)))))
-
-
-(define (io/sync source sink)
-  (mdo evt := (io source sink)
-       (machine
-        (λ (state)
-          (define async-state (sync evt))
-          (cons (state-get-value async-state)
-                (append (state-get-messages async-state)
-                        (state-get-messages state)))))))
-
-
-(define (io/cached fast slow sink)
-  (machine-failover (source-tap fast)
-                    (mdo (io/sync slow sink)
-                         (source-tap fast))))
 
 
 (define (byte-source data)
@@ -129,14 +97,6 @@
   (require racket/port
            "test.rkt"
            (submod "machine.rkt" test))
-
-  (test high-level-io
-        (define source (memory-conduit #"x" full-trust-transfer-policy))
-        (define sink (memory-conduit #"" full-trust-transfer-policy))
-        ((io/cached source source sink))
-        (assert (equal? (memory-conduit-data sink) #""))
-        ((io/cached (void-source) source sink))
-        (assert (equal? (memory-conduit-data sink) #"x")))
 
   (test source-interface
         (define src (byte-source #"abc"))
