@@ -25,22 +25,24 @@
 
 
 (struct openssl-identity
-  (ciphers
+  (verify?
+   verify-hostname?
+   ciphers
    verify-sources
    certificate-chain
    private-key))
 
 
 (define full-trust-openssl-identity
-  (openssl-identity "ALL" null #f #f))
+  (openssl-identity #f #f "ALL" null #f #f))
 
 
 (define host-openssl-identity
-  (openssl-identity "ALL:!COMPLEMENTOFDEFAULT:!eNULL" (ssl-default-verify-sources) #f #f))
+  (openssl-identity #t #t "ALL:!COMPLEMENTOFDEFAULT:!eNULL" (ssl-default-verify-sources) #f #f))
 
 
 (define openssl-verification-source/c
-  (or/c (list/c #f path-string?)
+  (or/c path-string?
         (list/c 'directory path-string?)
         (list/c 'win32-store string?)
         (list/c 'macosx-keychain path-string?)))
@@ -48,6 +50,8 @@
 
 (define openssl-identity/c
   (struct/c openssl-identity
+            boolean?
+            boolean?
             string?
             (listof openssl-verification-source/c)
             (or/c #f path-string?)
@@ -60,16 +64,16 @@
         ssl-make-server-context
         ssl-make-client-context))
   (define ctx (ctor 'auto))
+  (define verify? (openssl-identity-verify? ident))
+  (define verify-hostname? (openssl-identity-verify-hostname? ident))
   (define ciphers (openssl-identity-ciphers ident))
   (define vsources (openssl-identity-verify-sources ident))
   (define certs (openssl-identity-certificate-chain ident))
   (define key (openssl-identity-private-key ident))
-  (define has-verify-sources?
-    (not (null? vsources)))
   (for ([src (in-list vsources)])
     (ssl-load-verify-source! ctx src))
-  (ssl-set-verify! ctx has-verify-sources?)
-  (ssl-set-verify-hostname! ctx has-verify-sources?)
+  (ssl-set-verify! ctx verify?)
+  (ssl-set-verify-hostname! ctx verify-hostname?)
   (ssl-set-ciphers! ctx ciphers)
   (when (and certs key)
     (ssl-load-certificate-chain! ctx certs)
