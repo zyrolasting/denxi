@@ -30,14 +30,18 @@
            transfer-policy/c]))
 
 
+(define epi? exact-positive-integer?)
+(define nat? exact-nonnegative-integer?)
+(define budget? (or/c nat? +inf.0))
+
 (define-message $transfer ())
-(define-message $transfer:scope $transfer (name timestamp-s message))
-(define-message $transfer:broken $transfer (value))
-(define-message $transfer:progress $transfer (bytes-read max-size))
-(define-message $transfer:timeout $transfer (bytes-read wait-time))
-(define-message $transfer:budget $transfer (allowed-max-size))
-(define-message $transfer:budget:exceeded $transfer:budget (overrun-size))
-(define-message $transfer:budget:rejected $transfer:budget (proposed-max-size))
+(define-message $transfer:scope $transfer ([name string?] [timestamp-s nat?] [message $transfer?]))
+(define-message $transfer:broken $transfer ([value any/c]))
+(define-message $transfer:progress $transfer ([bytes-read nat?] [max-size budget?]))
+(define-message $transfer:timeout $transfer ([bytes-read nat?] [wait-time (>/c 0)]))
+(define-message $transfer:budget $transfer ([allowed-max-size budget?]))
+(define-message $transfer:budget:exceeded $transfer:budget ([overrun-size epi?]))
+(define-message $transfer:budget:rejected $transfer:budget ([proposed-max-size budget?]))
 
 
 (struct transfer-policy

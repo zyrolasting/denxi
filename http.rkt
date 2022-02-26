@@ -14,7 +14,7 @@
                                source?))
                 (machine/c source?))]))
 
-         
+
 (require racket/file
          racket/generic
          racket/match
@@ -32,7 +32,7 @@
 
 
 (define-message $http1.1:unsupported-scheme
-  (name))
+  ([name string?]))
 
 (define (http1.1-source-machine request-url-variant
                                 client-identity
@@ -119,14 +119,17 @@
            (submod "machine.rkt" test)
            "test.rkt")
 
+  (define unsafe
+    (ssl-make-client-context 'auto))
+
   (define (test-http-source url)
-    (state-get-value ((http1.1-source-machine url full-trust-openssl-identity))))
+    (state-get-value ((http1.1-source-machine url unsafe))))
 
   (define (tap s)
     (mdo size := (source-measure s)
          port := (source-tap s)
          (machine-unit (λ () (values size port)))))
-  
+
   (test file-fetch
         (define tmp-path (make-temporary-file))
         (with-handlers ([values
@@ -150,7 +153,7 @@
           (verify-output file-variant)
           (verify-output http-variant)
           (delete-file tmp-path)))
-  
+
   (test http1.1-fetch
     (define listener
       (tcp-listen 8018 1 #t))
@@ -172,8 +175,7 @@
            (loop)))))
 
     (define state
-      ((mdo source := (http1.1-source-machine "http://127.0.0.1:8018"
-                                               full-trust-openssl-identity)
+      ((mdo source := (http1.1-source-machine "http://127.0.0.1:8018" unsafe)
             (tap source))))
 
     (call-with-values (state-get-value state)
