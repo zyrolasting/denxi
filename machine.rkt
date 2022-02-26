@@ -55,6 +55,8 @@ Combine machines with the `mdo` (monadic do) form.
                    (-> contract? contract? contract?))]
           [machine-bind
            (-> machine? (-> any/c machine?) machine?)]
+          [machine-imperative
+           (-> state-like? (-> state-like? void?) machine?)]
           [machine-coerce
            (-> any/c machine?)]
           [machine-failover
@@ -158,6 +160,14 @@ Combine machines with the `mdo` (monadic do) form.
 
 (define-syntax-rule (machine-rule x)
   (machine (λ (s) (state-set-value s x))))
+
+
+(define (machine-imperative m f)
+  (machine
+   (λ (state)
+     (define state* state)
+     (f state (λ (s) (set! state* s)))
+     state*)))
 
 
 (define (machine-series machines)
