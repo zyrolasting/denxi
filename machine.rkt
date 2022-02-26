@@ -83,6 +83,8 @@ Combine machines with the `mdo` (monadic do) form.
            (-> state-like? any/c state-like?)]))
 
 
+(define-message $exception ([value exn?]))
+
 (define halt
   (string->uninterned-symbol "halt"))
 
@@ -129,13 +131,14 @@ Combine machines with the `mdo` (monadic do) form.
 
 (define (state-halt-with state v)
   (state-add-message (state-set-value state halt)
-                     (coerce-$message v)))
+                     v))
 
 
 (struct machine (procedure)
   #:property prop:procedure
   (λ (self [state state-undefined])
-    (with-handlers ([(negate exn:break?) (curry state-halt-with state)])
+    (with-handlers ([(negate exn:break?)
+                     (λ (e) (state-halt-with state ($exception e)))])
       ((machine-procedure self) state)))
   #:methods gen:monad
   [(define (bind a b) (machine-bind a b))
@@ -221,10 +224,10 @@ Combine machines with the `mdo` (monadic do) form.
         (assert (not (state-halt? (list 1))))
         (assert (equal? (state-set-value '(#f) #t) '(#t)))
         (assert (match-halt? ((invariant-assertion (machine/c any/c (>=/c 0)) (machine-unit -1)) state-undefined)
-                             ($show-string (regexp "assertion violation")))))
+                             ($exception (exn:fail:contract:blame (regexp "assertion violation") _ _)))))
 
   (test machine-do-notation
-    (define-message $initial (v))
+    (define-message $initial ([v any/c]))
 
     (define step1
       (machine-bind
@@ -245,9 +248,9 @@ Combine machines with the `mdo` (monadic do) form.
     (assert (match? ((mdo x := (machine-unit 2)
                           y := (machine-halt-with 1)
                           (machine (λ _ (error "Should not get here")))))
-                    (list halt ($show-string "1")))))
+                    (list halt 1))))
 
   (test failover
         (assert (equal? ((machine-failover (machine-halt-with 1)
                                            (machine-unit 2)))
-                        (list 2 ($show-string "1"))))))
+                        (list 2 1)))))
