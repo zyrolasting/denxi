@@ -23,7 +23,10 @@
                output-port?
                (or/c +inf.0 exact-nonnegative-integer?)
                transfer-policy?
-               void?)]
+               boolean?)]
+          [transfer-done?
+           (-> (or/c $transfer:scope? $transfer:progress?)
+               boolean?)]
           [transfer-policy/c
            contract?]
           [zero-trust-transfer-policy
@@ -86,12 +89,22 @@
       (displayln (formatter m))))
 
 
+(define (transfer-done? m)
+  (if ($transfer:scope? m)
+      (transfer-done? ($transfer:scope-message m))
+      (and ($transfer:progress? m)
+           (equal? ($transfer:progress-bytes-read m)
+                   ($transfer:progress-max-size m)))))
+
+
 (define (transfer from to est-size policy)
   (match-let* ([(transfer-policy buffer-size max-size name timeout-ms telemeter)
                policy]
                [telemeter*
                 (λ (message)
-                  (telemeter ($transfer:scope name (current-seconds) message)))])
+                  (define done? (transfer-done? message))
+                  (telemeter ($transfer:scope name (current-seconds) message))
+                  done?)])
     (if (<= est-size max-size)
         (copy-port/incremental from
                                to
@@ -193,31 +206,31 @@
                                         (? (integer-in 0 size) i)
                                         size)))))
 
-    (assert (void? (transfer bytes/source
-                             bytes/sink
-                             size
-                             (P [buffer-size size]
-                                [max-size size]
-                                [telemeter telemeter]))))
+    (assert (transfer bytes/source
+                      bytes/sink
+                      size
+                      (P [buffer-size size]
+                         [max-size size]
+                         [telemeter telemeter])))
 
     (assert (equal? (get-output-bytes bytes/sink #t) bstr)))
 
 
   (test budget-enforcement
-    (transfer (open-input-string "")
-              (open-output-nowhere)
-              +inf.0
-              (P [max-size 100]
-                 [telemeter
-                  (expect-message ($transfer:budget:rejected 100 +inf.0))])))
+    (assert (not (transfer (open-input-string "")
+                           (open-output-nowhere)
+                           +inf.0
+                           (P [max-size 100]
+                              [telemeter
+                               (expect-message ($transfer:budget:rejected 100 +inf.0))])))))
 
   (test timeout-on-block
     (let-values ([(i o) (make-pipe)])
-      (transfer i o 2
-                (overturn test-policy
-                          [max-size 2]
-                          [telemeter
-                           (expect-message ($transfer:timeout 0 1))]))))
+      (assert (not (transfer i o 2
+                             (overturn test-policy
+                                       [max-size 2]
+                                       [telemeter
+                                        (expect-message ($transfer:timeout 0 1))]))))))
   
   (test reject-over-budget
         (define bstr #"ABCDEFG")
