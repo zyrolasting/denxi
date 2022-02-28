@@ -126,9 +126,16 @@ Combine machines with the `mdo` (monadic do) form.
   (cons v (cdr state)))
 
 
-(define (state-add-message state v)
+(define (state-add-message state m)
   (cons (car state)
-        (cons v (cdr state))))
+        (cons m (cdr state))))
+
+
+(define (state-add-messages state ms)
+  (if (null? ms)
+      state
+      (state-add-messages (state-add-message state (car ms))
+                          (cdr ms))))
 
 
 (define (state-halt-with state v)
@@ -154,8 +161,8 @@ Combine machines with the `mdo` (monadic do) form.
                 (struct/c machine (-> (state/c domain/c) (state/c range/c)))]))
 
 
-(define-syntax-rule (machine-effect x)
-  (machine (λ (s) x s)))
+(define-syntax-rule (machine-effect x [m null])
+  (machine (λ (s) x (state-add-messages s m))))
 
 
 (define-syntax-rule (machine-rule x)
