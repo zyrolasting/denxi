@@ -6,33 +6,39 @@
 (provide (struct-out $message)
          define-message)
 
-(require racket/contract
+(require syntax/parse/define
+         racket/contract
          (for-syntax racket/base
-                     racket/contract
+                     racket/struct-info
                      racket/syntax))
 
-(struct $message () #:prefab)
-(define-syntax $message-fields/c null)
+; With thanks to @sorawee for help
+(begin-for-syntax
+  (define-values (imp-prop:struct-contract
+                  imp-prop:struct-contract?
+                  imp-prop:struct-contract-get)
+    (make-impersonator-property 'imp-prop:struct-contract)))
 
+(define-syntax-parse-rule (define-message x:id {~optional super:id} ([field:id contract] ...))
+  #:with (super-contract ...)
+  (cond [(attribute super)
+         (imp-prop:struct-contract-get (syntax-local-value #'super))]
+        [else #'()])
+  #:with (current-contract ...) #'(super-contract ... contract ...)
+  #:with x/c (format-id this-syntax "~a/c" #'x)
+  #:with x-cons (format-id this-syntax "~a-constructor" #'x)
+  (begin (struct x {~? super} (field ...) #:prefab
+           #:name x-cons
+           #:constructor-name x-cons)
+         (define-syntax x
+           (impersonate-struct
+            (syntax-local-value #'x-cons)
+            struct:struct-info
+            imp-prop:struct-contract
+            #'(current-contract ...)))
+         (define x/c (struct/c x-cons (invariant-assertion flat-contract? current-contract) ...))))
 
-(define-syntax (define-message stx)
-  (syntax-case stx ()
-    [(_ id super-id ([field contract] ...))
-     (andmap identifier? (syntax-e #'(id super-id field ...)))
-     (with-syntax* ([id/c (format-id #'id "~a/c" #'id)]
-                    [id-fields/c (format-id #'id "~a-fields/c" #'id)]
-                    [(super-id-fields/c ...)
-                     (syntax-local-value
-                      (format-id #'super-id "~a-fields/c" #'super-id))])
-       #'(begin
-           (struct id super-id (field ...) #:prefab)
-           (define id/c
-             (invariant-assertion
-              flat-contract? (struct/c id super-id-fields/c ... contract ...)))
-           (define-syntax id-fields/c
-             #'(contract ...))))]
-    [(_ id (f+c ...))
-     #'(define-message id $message (f+c ...))]))
+(define-message $message ())
 
 
 (module+ test
@@ -53,8 +59,4 @@
         (assert ($foo/c valid))
         (assert ($subfoo/c valid))
         (assert ($foo/c invalid))
-        (assert (not ($subfoo/c invalid)))
-        (with-handlers ([exn:fail:contract?
-                         (λ (e) (assert 'define-message-blocked))])
-          (define-message $bar ([a (-> any)]))
-          (assert (not 'define-message-blocked)))))
+        (assert (not ($subfoo/c invalid)))))
