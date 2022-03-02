@@ -161,8 +161,8 @@ Combine machines with the `mdo` (monadic do) form.
                 (struct/c machine (-> (state/c domain/c) (state/c range/c)))]))
 
 
-(define-syntax-rule (machine-effect x [m null])
-  (machine (λ (s) x (state-add-messages s m))))
+(define-syntax-rule (machine-effect x . m)
+  (machine (λ (s) x (state-add-messages s (list . m)))))
 
 
 (define-syntax-rule (machine-rule x)
