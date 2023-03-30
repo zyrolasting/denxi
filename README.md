@@ -1,3 +1,9 @@
+This repository has been archived. Denxi remains under active
+development on a private host. Join the Racket community Discord
+or Discourse for announcements about new releases.
+
+<hr>
+
 ![](./logo.png)
 [![Racket](https://img.shields.io/badge/-Made%20with%20Racket-darkred?logo=racket)](https://racket-lang.org)
 [![Link to AGPLv3 License](https://img.shields.io/badge/license-AGPLv3-yellowgreen)](./COPYING)
